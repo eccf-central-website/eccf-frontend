@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ECCF Frontend — Next.js Application
 
-## Getting Started
+> Public website, Sermon Vault, Giving Hub, and Exco Dashboard portal for the **Edo State University Christian Campus Fellowship (ECCF)**.
 
-First, run the development server:
+---
+
+## 📌 Project Overview
+- **Project Name:** ECCF Central Website & Management Portal — Frontend
+- **Framework:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Backend Datastore:** [`eccf-backend`](https://github.com/eccf-central-website/eccf-backend) (Sanity Studio)
+- **Sanity Project ID:** `ynnot4j0`
+- **Hosting:** Vercel (Hobby Tier)
+
+---
+
+## 🚀 Getting Started
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Setup local environment variables
+cp .env.example .env.local
+
+# 3. Run development server (http://localhost:3000)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 4. Run build verification
+npm run build
+
+# 5. Run lint check
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Directory Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+eccf-frontend/
+├── app/
+│   ├── layout.tsx          # Root layout (Navbar + Footer + Global Navy Theme)
+│   ├── page.tsx            # Public Hero landing page
+│   └── globals.css         # Tailwind directives & CSS variables
+├── components/
+│   └── layout/
+│       ├── Navbar.tsx      # Sticky responsive navigation with mobile drawer
+│       └── Footer.tsx      # Brand footer with quick links & copyright
+├── lib/
+│   ├── sanity.ts           # @sanity/client setup (Read-only + Server-Side Write client)
+│   └── queries.ts          # GROQ query registry (PII fields excluded from public queries)
+├── types/
+│   └── index.ts            # Shared TypeScript interfaces mirroring eccf-backend schemas
+└── .env.example            # Template for environment secrets
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔒 Security & Architecture Rules
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Server-Side Write Client:** `SANITY_WRITE_TOKEN` lives strictly on the server (never prefixed with `NEXT_PUBLIC_`).
+2. **PII Masking:** `phoneNumber` and `roomNumber` are stripped from any client-facing API responses.
+3. **Canonical Field Naming:** Operational groups are strictly named `team` (never `unit`).
+4. **Stateless Tier:** No persistent in-memory state — all durable data reads/writes to Sanity via GROQ.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+Internal use for Edo State University Christian Campus Fellowship.
