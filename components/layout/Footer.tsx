@@ -1,28 +1,29 @@
 /**
- * Footer — Global footer component
+ * Footer — Global Footer Component
  *
- * Public-facing footer for the ECCF website.
- * Contains site links, social links placeholder, and copyright.
+ * Implements official brand identity, contact email, social links,
+ * and navigation links per Section 2.7 of the ECCF UI/UX Design Brief.
  */
 
 import Link from 'next/link'
+import Image from 'next/image'
 
 const footerLinks = {
   Ministry: [
-    {label: 'About Us', href: '/about'},
-    {label: 'Our Leadership', href: '/about#leadership'},
-    {label: 'Sermons', href: '/sermons'},
-    {label: 'Events', href: '/events'},
-    {label: 'Announcements', href: '/announcements'},
+    { label: 'Who We Are', href: '/#about' },
+    { label: 'Service Times', href: '/#services' },
+    { label: 'Our Teams', href: '/#teams' },
+    { label: 'Sermon Vault', href: '/sermons' },
+    { label: 'Announcements', href: '/announcements' },
   ],
   Connect: [
-    {label: 'Give Online', href: '/give'},
-    {label: 'Prayer Request', href: '/prayer'},
-    {label: 'Contact Us', href: '/contact'},
-    {label: 'Plan a Visit', href: '/visit'},
+    { label: 'Plan a Visit', href: '/#visit' },
+    { label: 'Give Online', href: '/give' },
+    { label: 'Prayer Request', href: '/#visit' },
+    { label: 'Contact Us', href: 'mailto:edsuchristiancampusfellowship@gmail.com' },
   ],
   Internal: [
-    {label: 'Exco Dashboard', href: '/dashboard'},
+    { label: 'EXCO Portal Login', href: '/dashboard' },
   ],
 }
 
@@ -30,40 +31,61 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-white/10 bg-[#0a0f1e]">
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="border-t border-sky-900/30 bg-[#040812] text-slate-300">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-sm font-bold text-[#0a0f1e] shadow-lg shadow-amber-500/20">
-                EC
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="relative h-12 w-12 overflow-hidden rounded-full border border-sky-500/30 bg-sky-950/40 p-0.5 shadow-md shadow-sky-500/20">
+                <Image
+                  src="/logos/ECCF LOGO.png"
+                  alt="ECCF Logo"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div>
-                <span className="block text-sm font-bold text-white leading-none">ECCF</span>
-                <span className="block text-[10px] text-amber-400/80 leading-none tracking-wide mt-0.5">
+                <span className="block text-lg font-extrabold text-white leading-none">
+                  ECCF
+                </span>
+                <span className="block text-xs font-medium text-sky-400 leading-none mt-1">
                   Edo State University
                 </span>
               </div>
             </div>
-            <p className="text-sm text-white/50 leading-relaxed max-w-xs">
-              Edo State University Christian Campus Fellowship — raising leaders for God&apos;s
-              kingdom on campus and beyond.
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-sky-400/90">
+              An Assembly Of Spiritual Dynamites And Academic Giants
             </p>
+
+            <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
+              A vibrant community of believer-students committed to spiritual excellence and academic dominance.
+            </p>
+
+            <div className="pt-2">
+              <a
+                href="mailto:edsuchristiancampusfellowship@gmail.com"
+                className="text-xs font-medium text-sky-400 hover:text-sky-300 transition-colors underline underline-offset-4"
+              >
+                edsuchristiancampusfellowship@gmail.com
+              </a>
+            </div>
           </div>
 
-          {/* Link Columns */}
+          {/* Nav Categories */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-amber-400/80">
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-sky-400">
                 {category}
               </h3>
-              <ul className="space-y-2.5">
+              <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-white/50 transition-colors hover:text-white"
+                      className="text-sm text-slate-400 transition-colors hover:text-white hover:underline underline-offset-4"
                     >
                       {link.label}
                     </Link>
@@ -75,13 +97,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-xs text-white/30">
-            &copy; {currentYear} Edo State University Christian Campus Fellowship. All rights
-            reserved.
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-sky-900/30 pt-8 sm:flex-row">
+          <p className="text-xs text-slate-500">
+            &copy; {currentYear} Edo State University Christian Campus Fellowship. All rights reserved.
           </p>
-          <p className="text-xs text-white/20">
-            Built with ❤️ by the ECCF Web Dev Team
+          <p className="text-xs text-slate-500">
+            JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.
           </p>
         </div>
       </div>
