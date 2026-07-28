@@ -1,60 +1,125 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { motion, Variants } from 'framer-motion'
+import GivingHubSection from '@/components/home/GivingHubSection'
+import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 },
+  },
+}
 
 export default function Home() {
+  // Audio Player State
+  const [audioPlayerOpen, setAudioPlayerOpen] = useState(false)
+  const [audioTitle, setAudioTitle] = useState('ECCF Radio 24/7')
+  const [audioSubtitle, setAudioSubtitle] = useState('Live Worship & Teaching')
+  const [isPlaying, setIsPlaying] = useState(true)
+
+  const handlePlayAudio = (title: string, subtitle: string) => {
+    setAudioTitle(title)
+    setAudioSubtitle(subtitle)
+    setAudioPlayerOpen(true)
+    setIsPlaying(true)
+  }
+
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white">
+    <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white overflow-x-hidden">
       {/* ========================================================================= */}
       {/* 1. HERO SECTION                                                          */}
       {/* ========================================================================= */}
       <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
-        {/* Location Pill Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-100 mb-8 shadow-sm">
-          <span className="h-2 w-2 rounded-full bg-[#00a8ff]" />
-          EDO STATE UNIVERSITY, IYAMHO
-        </div>
-
-        {/* Hero Title */}
-        <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.1]">
-          Spiritual Dynamites <br className="hidden sm:inline" />
-          <span className="text-[#00a8ff]">and Academic Giants.</span>
-        </h1>
-
-        {/* Hero Subtitle */}
-        <p className="mx-auto mt-6 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed">
-          A vibrant community of campus students pursuing God&apos;s purpose with academic excellence. You belong here &mdash; whether you&apos;re new on campus or looking for a spiritual family.
-        </p>
-
-        {/* Hero CTAs */}
-        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            href="#visit"
-            className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all hover:shadow-sky-500/35 hover:-translate-y-0.5"
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col items-center"
+        >
+          {/* Location Pill Badge */}
+          <motion.div
+            variants={itemVariants}
+            className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-100 mb-8 shadow-sm"
           >
-            Join the Fellowship
-          </Link>
-          <Link
-            href="/sermons"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-300 bg-white text-[#00a8ff] font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-sky-50 hover:border-sky-400 hover:-translate-y-0.5"
-          >
-            <span className="text-xs">▶</span> Watch a Sermon
-          </Link>
-        </div>
+            <span className="h-2 w-2 rounded-full bg-[#00a8ff] animate-ping" />
+            EDO STATE UNIVERSITY, IYAMHO
+          </motion.div>
 
-        {/* Quick Stats Bar */}
-        <div className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-10 text-center">
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">400+</div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">12</div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">5yrs</div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
-          </div>
-        </div>
+          {/* Hero Title */}
+          <motion.h1
+            variants={itemVariants}
+            className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.15]"
+          >
+            Spiritual Dynamites <br className="hidden sm:inline" />
+            <span className="text-[#00a8ff]">and Academic Giants.</span>
+          </motion.h1>
+
+          {/* Hero Subtitle */}
+          <motion.p
+            variants={itemVariants}
+            className="mx-auto mt-6 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed"
+          >
+            A vibrant community of campus students pursuing God&apos;s purpose with academic excellence. You belong here &mdash; whether you&apos;re new on campus or looking for a spiritual family.
+          </motion.p>
+
+          {/* Hero CTAs */}
+          <motion.div
+            variants={itemVariants}
+            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row w-full sm:w-auto"
+          >
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+              <Link
+                href="#visit"
+                className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
+              >
+                Join the Fellowship
+              </Link>
+            </motion.div>
+
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handlePlayAudio('ECCF Radio Live', 'Tune in to continuous worship & sermons')}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-300 bg-white text-[#00a8ff] font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-sky-50 hover:border-sky-400"
+            >
+              <span className="text-xs">▶</span> Watch / Tune In
+            </motion.button>
+          </motion.div>
+
+          {/* Quick Stats Bar */}
+          <motion.div
+            variants={itemVariants}
+            className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-10 text-center w-full"
+          >
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">400+</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">12</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">5yrs</div>
+              <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
+            </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ========================================================================= */}
@@ -106,18 +171,27 @@ export default function Home() {
                 bgGradient: 'from-emerald-400/20 to-sky-400/20',
               },
             ].map((sermon, idx) => (
-              <div
+              <motion.div
                 key={idx}
-                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                whileHover={{ y: -6 }}
+                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
+                onClick={() => handlePlayAudio(sermon.title, sermon.speaker)}
               >
                 {/* Thumbnail Image placeholder with Play Button */}
                 <div className={`relative h-48 w-full bg-gradient-to-br ${sermon.bgGradient} flex items-center justify-center p-4`}>
                   <div className="absolute top-3 right-3 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1">
                     {sermon.duration}
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white text-base shadow-lg group-hover:scale-110 transition-transform">
+                  <motion.div
+                    whileHover={{ scale: 1.15 }}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white text-base shadow-lg shadow-sky-500/30"
+                  >
                     ▶
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Content */}
@@ -132,119 +206,23 @@ export default function Home() {
                     {sermon.speaker} &bull; {sermon.date}
                   </p>
 
-                  <Link
-                    href="/sermons"
+                  <button
+                    type="button"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00a8ff] hover:underline"
                   >
                     <span>▶</span> Listen Now
-                  </Link>
+                  </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 3. GLOBAL GIVING HUB (CONTRIBUTION COMPONENT)                              */}
+      {/* 3. GLOBAL GIVING HUB (INTERACTIVE COMPONENT)                              */}
       {/* ========================================================================= */}
-      <section className="py-20 border-t border-slate-200/60 bg-[#f8fafc]">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 grid grid-cols-1 md:grid-cols-2">
-            {/* Left Card: Sky Blue Highlight */}
-            <div className="bg-[#00a8ff] text-white p-8 sm:p-12 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-sky-100">
-                  GLOBAL GIVING HUB
-                </span>
-                <h2 className="text-3xl font-extrabold mt-3 leading-tight">
-                  Support the Vision. <br />
-                  Fund the Future.
-                </h2>
-                <p className="mt-4 text-sky-50 text-sm leading-relaxed">
-                  Your seed powers campus outreaches, welfare funds, media production, and discipleship programmes. Every naira counts.
-                </p>
-              </div>
-
-              <ul className="mt-8 space-y-2 text-xs font-semibold text-sky-100">
-                <li className="flex items-center gap-2">✓ Tithes & Offerings</li>
-                <li className="flex items-center gap-2">✓ Project Contributions</li>
-                <li className="flex items-center gap-2">✓ Welfare Fund</li>
-                <li className="flex items-center gap-2">✓ Media Ministry</li>
-              </ul>
-            </div>
-
-            {/* Right Card: Interactive Payment Form Placeholder */}
-            <div className="p-8 sm:p-12 bg-white flex flex-col justify-between space-y-6">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">Make a Contribution</h3>
-
-                {/* Category Pills */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {['Tithe', 'Offering', 'Project', 'Welfare'].map((cat, i) => (
-                    <button
-                      key={cat}
-                      className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
-                        i === 0
-                          ? 'bg-[#00a8ff] text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Form Fields */}
-                <div className="mt-6 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      placeholder="Emmanuel Okonkwo"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 focus:border-[#00a8ff] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Amount (₦)</label>
-                    <input
-                      type="number"
-                      placeholder="5000"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 focus:border-[#00a8ff] focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Preset Amount Pills */}
-                  <div className="flex gap-2">
-                    {['₦1,000', '₦2,500', '₦5,000', '₦10,000'].map((amt) => (
-                      <button
-                        key={amt}
-                        className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-[#00a8ff] hover:text-[#00a8ff]"
-                      >
-                        {amt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit CTA Button in Orange */}
-              <div>
-                <Link
-                  href="/give"
-                  className="block w-full rounded-xl bg-[#f97316] hover:bg-orange-600 text-white text-center font-bold py-3 text-sm shadow-md transition-all"
-                >
-                  Give via Flutterwave &rarr;
-                </Link>
-                <p className="mt-2 text-center text-[10px] text-slate-400">
-                  Secured by Flutterwave &bull; SSL Encrypted
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <GivingHubSection />
 
       {/* ========================================================================= */}
       {/* 4. WHO WE ARE SECTION & SERVICE SCHEDULE                                   */}
@@ -253,7 +231,12 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             {/* Text & Service Grid */}
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
                 WHO WE ARE
               </span>
@@ -266,40 +249,42 @@ export default function Home() {
 
               {/* 2x2 Service Schedule */}
               <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">SUNDAY</div>
-                  <div className="text-base font-extrabold text-slate-900 mt-1">9:00 AM</div>
-                  <div className="text-xs text-slate-500">Praise & Worship</div>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">TUESDAY</div>
-                  <div className="text-base font-extrabold text-slate-900 mt-1">6:00 PM</div>
-                  <div className="text-xs text-slate-500">Bible Study</div>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">THURSDAY</div>
-                  <div className="text-base font-extrabold text-slate-900 mt-1">6:30 PM</div>
-                  <div className="text-xs text-slate-500">Prayer Meeting</div>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">FRIDAY</div>
-                  <div className="text-base font-extrabold text-slate-900 mt-1">5:00 PM</div>
-                  <div className="text-xs text-slate-500">Outreach</div>
-                </div>
+                {[
+                  { day: 'SUNDAY', time: '9:00 AM', title: 'Praise & Worship' },
+                  { day: 'TUESDAY', time: '6:00 PM', title: 'Bible Study' },
+                  { day: 'THURSDAY', time: '6:30 PM', title: 'Prayer Meeting' },
+                  { day: 'FRIDAY', time: '5:00 PM', title: 'Outreach' },
+                ].map((serv) => (
+                  <motion.div
+                    key={serv.day}
+                    whileHover={{ scale: 1.02 }}
+                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-all hover:border-sky-200 hover:bg-sky-50/50"
+                  >
+                    <div className="text-[10px] font-bold text-[#00a8ff] uppercase">{serv.day}</div>
+                    <div className="text-base font-extrabold text-slate-900 mt-1">{serv.time}</div>
+                    <div className="text-xs text-slate-500">{serv.title}</div>
+                  </motion.div>
+                ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Visual Photo Cards Collage */}
-            <div className="relative space-y-4">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative"
+            >
               <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-lg bg-sky-100 h-64 flex items-center justify-center p-6 text-center">
                 <p className="text-slate-400 text-sm font-medium">
                   📸 Worship & Fellowship Photography <br />
                   <span className="text-xs text-[#00a8ff] font-bold mt-2 block">
-                    EDO STATE UNIVERSITY, IYAMHO
+                    📍 EDO STATE UNIVERSITY, IYAMHO
                   </span>
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -308,7 +293,13 @@ export default function Home() {
       {/* 5. PLAN A VISIT (CTA SECTION)                                             */}
       {/* ========================================================================= */}
       <section id="visit" className="py-20 border-t border-slate-200/60 bg-[#f8fafc] text-center">
-        <div className="mx-auto max-w-3xl px-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-3xl px-6"
+        >
           <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
             JOIN US THIS SUNDAY
           </span>
@@ -320,21 +311,35 @@ export default function Home() {
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
+            <motion.a
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               href="mailto:edsuchristiancampusfellowship@gmail.com?subject=Planning%20a%20Visit"
               className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
             >
               Plan a Visit
-            </a>
-            <Link
-              href="/give"
-              className="w-full sm:w-auto rounded-full border border-slate-300 bg-white text-slate-700 font-bold px-8 py-3.5 hover:bg-slate-50"
-            >
-              Give Online
-            </Link>
+            </motion.a>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+              <Link
+                href="/give"
+                className="block w-full sm:w-auto rounded-full border border-slate-300 bg-white text-slate-700 font-bold px-8 py-3.5 hover:bg-slate-50 transition-all"
+              >
+                Give Online
+              </Link>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
+
+      {/* Interactive Floating Live Audio Player Component */}
+      <LiveAudioPlayer
+        isOpen={audioPlayerOpen}
+        title={audioTitle}
+        subtitle={audioSubtitle}
+        onClose={() => setAudioPlayerOpen(false)}
+        isPlaying={isPlaying}
+        onTogglePlay={() => setIsPlaying((prev) => !prev)}
+      />
     </div>
   )
 }
