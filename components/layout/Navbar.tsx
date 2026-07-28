@@ -1,8 +1,8 @@
 /**
- * Navbar — Global Sticky Navigation Component
+ * Navbar — Global Navigation & Live Audio Banner Component
  *
- * Designed to strictly follow the ECCF UI/UX Design Requirements Brief.
- * Uses official Light Blue brand color scheme (#0ea5e9 / Sky-500) and displays the official ECCF logo.
+ * Implements the exact clean, bright, professional layout from the official
+ * ECCF UI sketch (eccf_website_ui_sketch_.png).
  */
 
 'use client'
@@ -12,13 +12,10 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 
 const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Who We Are', href: '/#about' },
-  { label: 'Service Times', href: '/#services' },
-  { label: 'Teams', href: '/#teams' },
   { label: 'Sermons', href: '/sermons' },
+  { label: 'Giving', href: '/give' },
+  { label: 'About', href: '/#about' },
   { label: 'Announcements', href: '/announcements' },
-  { label: 'Give', href: '/give' },
 ]
 
 export default function Navbar() {
@@ -34,114 +31,140 @@ export default function Navbar() {
   }, [])
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        scrolled
-          ? 'bg-[#070d19]/90 backdrop-blur-xl border-b border-sky-900/30 shadow-lg shadow-sky-950/20 py-3.5'
-          : 'bg-[#070d19]/60 backdrop-blur-md border-b border-white/5 py-4'
-      }`}
-    >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6">
-        {/* Official ECCF Logo & Brand */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-sky-500/30 bg-sky-950/40 p-0.5 shadow-md shadow-sky-500/20 transition-transform group-hover:scale-105">
-            <Image
-              src="/logos/ECCF LOGO.png"
-              alt="ECCF Logo"
-              width={40}
-              height={40}
-              className="h-full w-full object-contain"
-              priority
-            />
-          </div>
-          <div>
-            <span className="block text-base font-extrabold tracking-tight text-white leading-none group-hover:text-sky-400 transition-colors">
-              ECCF
+    <div className="w-full">
+      {/* Top Banner — AzuraCast Live Radio Stream Bar */}
+      <div className="bg-slate-900 text-white text-xs py-2 px-4">
+        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            <span className="block text-[10px] font-medium text-sky-400/90 leading-none tracking-wider mt-0.5">
-              Edo State University
+            <span className="font-semibold text-slate-200">🎙️ ECCF Radio — Live Now</span>
+            <span className="hidden sm:inline-block rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider border border-amber-500/30">
+              LIVE
             </span>
+            <span className="hidden md:inline text-slate-400 text-[11px]">24/7 Worship & Teaching</span>
           </div>
-        </Link>
-
-        {/* Desktop Navigation Links */}
-        <ul className="hidden lg:flex items-center gap-1.5">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-sky-500/10 hover:text-sky-400"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        {/* Primary CTA: "Plan a Visit" Button */}
-        <div className="flex items-center gap-3">
           <Link
-            href="/#visit"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition-all hover:from-sky-400 hover:to-blue-500 hover:shadow-sky-400/40 hover:-translate-y-0.5 active:translate-y-0"
+            href="/sermons"
+            className="inline-flex items-center gap-1 rounded-full bg-sky-500 hover:bg-sky-400 text-white font-semibold px-3 py-1 text-[11px] transition-all"
           >
-            Plan a Visit
+            Tune In &rarr;
           </Link>
-
-          {/* Mobile Hamburger Toggle */}
-          <button
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((prev) => !prev)}
-            className="flex lg:hidden flex-col items-center justify-center h-10 w-10 gap-1.5 rounded-xl border border-sky-500/20 bg-sky-950/30 text-sky-400 hover:bg-sky-500/10 transition-colors"
-          >
-            <span
-              className={`block h-0.5 w-5 bg-sky-400 transition-all duration-300 ${
-                mobileOpen ? 'translate-y-2 rotate-45' : ''
-              }`}
-            />
-            <span
-              className={`block h-0.5 w-5 bg-sky-400 transition-all duration-300 ${
-                mobileOpen ? 'opacity-0' : ''
-              }`}
-            />
-            <span
-              className={`block h-0.5 w-5 bg-sky-400 transition-all duration-300 ${
-                mobileOpen ? '-translate-y-2 -rotate-45' : ''
-              }`}
-            />
-          </button>
         </div>
-      </nav>
+      </div>
 
-      {/* Mobile Menu Dropdown */}
-      <div
-        className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          mobileOpen ? 'max-h-[450px] border-t border-sky-900/30 bg-[#070d19]/95 backdrop-blur-2xl' : 'max-h-0'
+      {/* Main Sticky Navbar */}
+      <header
+        className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-3'
+            : 'bg-white border-b border-slate-100 py-4'
         }`}
       >
-        <ul className="flex flex-col px-6 py-5 gap-1.5">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:bg-sky-500/10 hover:text-sky-400"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-          <li className="mt-3 pt-3 border-t border-sky-900/30">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6">
+          {/* Brand Logo & Title */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative h-9 w-9 overflow-hidden rounded-full border border-sky-100 bg-sky-50 p-0.5 transition-transform group-hover:scale-105">
+              <Image
+                src="/logos/ECCF LOGO.png"
+                alt="ECCF Logo"
+                width={36}
+                height={36}
+                className="h-full w-full object-contain"
+                priority
+              />
+            </div>
+            <div>
+              <span className="block text-xl font-extrabold text-[#00a8ff] tracking-tight leading-none">
+                ECCF
+              </span>
+              <span className="block text-[10px] font-medium text-slate-400 leading-none mt-0.5">
+                Edo State University
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Nav Links */}
+          <ul className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-sm font-medium text-slate-600 transition-colors hover:text-[#00a8ff]"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Action CTA: Plan a Visit */}
+          <div className="flex items-center gap-3">
             <Link
               href="/#visit"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-sky-500/25"
+              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white text-sm font-bold px-6 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0"
             >
               Plan a Visit
             </Link>
-          </li>
-        </ul>
-      </div>
-    </header>
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((prev) => !prev)}
+              className="flex md:hidden flex-col items-center justify-center h-9 w-9 gap-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              <span
+                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
+                  mobileOpen ? 'translate-y-2 rotate-45' : ''
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
+                  mobileOpen ? 'opacity-0' : ''
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
+                  mobileOpen ? '-translate-y-2 -rotate-45' : ''
+                }`}
+              />
+            </button>
+          </div>
+        </nav>
+
+        {/* Mobile Dropdown Menu */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ${
+            mobileOpen ? 'max-h-80 border-t border-slate-100 bg-white' : 'max-h-0'
+          }`}
+        >
+          <ul className="flex flex-col px-6 py-4 gap-2">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#00a8ff]"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+            <li className="mt-2 pt-2 border-t border-slate-100">
+              <Link
+                href="/#visit"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-full bg-[#00a8ff] text-white text-center text-sm font-bold py-2.5 shadow-sm"
+              >
+                Plan a Visit
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </header>
+    </div>
   )
 }

@@ -1,266 +1,144 @@
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-[#070d19] text-slate-100 selection:bg-sky-500 selection:text-white">
-      {/* Background Ambient Glow Accents (Light Blue / Sky Blue theme) */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-[600px] w-full max-w-6xl -translate-x-1/2 rounded-full bg-sky-500/10 blur-[150px]" />
-      <div className="pointer-events-none absolute top-[800px] right-0 -z-10 h-[400px] w-[400px] rounded-full bg-blue-600/10 blur-[130px]" />
-      <div className="pointer-events-none absolute top-[1800px] left-0 -z-10 h-[450px] w-[450px] rounded-full bg-sky-400/10 blur-[140px]" />
-
+    <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white">
       {/* ========================================================================= */}
-      {/* 2.2 HERO SECTION                                                          */}
+      {/* 1. HERO SECTION                                                          */}
       {/* ========================================================================= */}
-      <section className="relative mx-auto max-w-7xl px-6 pt-16 pb-20 text-center lg:pt-28 lg:pb-32">
-        {/* Welcome Pill Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-950/40 px-4 py-2 text-xs font-semibold text-sky-400 backdrop-blur-md shadow-md shadow-sky-500/10 mb-8">
-          <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-          Edo State University Christian Campus Fellowship
+      <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
+        {/* Location Pill Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-100 mb-8 shadow-sm">
+          <span className="h-2 w-2 rounded-full bg-[#00a8ff]" />
+          EDO STATE UNIVERSITY, IYAMHO
         </div>
 
-        {/* Primary Tagline Headline */}
-        <h1 className="mx-auto max-w-5xl text-4xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl leading-[1.15]">
-          An Assembly Of{' '}
-          <span className="bg-gradient-to-r from-sky-400 via-sky-300 to-blue-500 bg-clip-text text-transparent">
-            Spiritual Dynamites
-          </span>{' '}
-          And Academic Giants.
+        {/* Hero Title */}
+        <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.1]">
+          Spiritual Dynamites <br className="hidden sm:inline" />
+          <span className="text-[#00a8ff]">and Academic Giants.</span>
         </h1>
 
-        {/* Supporting Tagline Subheadline */}
-        <p className="mx-auto mt-6 max-w-3xl text-lg font-medium text-sky-200/90 sm:text-2xl tracking-wide uppercase">
-          &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
-        </p>
-
-        {/* Subtitle Description */}
-        <p className="mx-auto mt-4 max-w-2xl text-base text-slate-400 sm:text-lg leading-relaxed">
-          Welcome to ECCF — a warm, vibrant community of believer-students at Edo State University dedicated to spiritual depth, kingdom impact, and academic dominance.
+        {/* Hero Subtitle */}
+        <p className="mx-auto mt-6 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed">
+          A vibrant community of campus students pursuing God&apos;s purpose with academic excellence. You belong here &mdash; whether you&apos;re new on campus or looking for a spiritual family.
         </p>
 
         {/* Hero CTAs */}
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
             href="#visit"
-            className="w-full sm:w-auto rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-sky-500/30 transition-all hover:from-sky-400 hover:to-blue-500 hover:shadow-sky-400/40 hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all hover:shadow-sky-500/35 hover:-translate-y-0.5"
           >
-            Plan a Visit
+            Join the Fellowship
           </Link>
           <Link
             href="/sermons"
-            className="w-full sm:w-auto rounded-full border border-sky-500/30 bg-sky-950/30 px-8 py-4 text-base font-semibold text-slate-200 backdrop-blur-md transition-all hover:bg-sky-500/10 hover:border-sky-400 hover:text-white hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-300 bg-white text-[#00a8ff] font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-sky-50 hover:border-sky-400 hover:-translate-y-0.5"
           >
-            Explore Sermon Vault 🎙️
+            <span className="text-xs">▶</span> Watch a Sermon
           </Link>
         </div>
 
-        {/* Hero Brand Visual Badge */}
-        <div className="mt-16 mx-auto flex items-center justify-center gap-4 opacity-90">
-          <div className="relative h-16 w-16 overflow-hidden rounded-full border border-sky-500/30 bg-sky-950/40 p-1 shadow-lg shadow-sky-500/20">
-            <Image
-              src="/logos/ECCF LOGO.png"
-              alt="ECCF Official Logo"
-              width={64}
-              height={64}
-              className="h-full w-full object-contain"
-            />
+        {/* Quick Stats Bar */}
+        <div className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-10 text-center">
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">400+</div>
+            <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">12</div>
+            <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">5yrs</div>
+            <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.3 WHO WE ARE SECTION                                                    */}
+      {/* 2. SERMON VAULT — LATEST MESSAGES                                         */}
       {/* ========================================================================= */}
-      <section id="about" className="relative border-t border-sky-900/30 bg-[#060b14]/70 py-24 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-sky-400 mb-3">
-              Who We Are
-            </h2>
-            <h3 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Equipping Students for Spiritual Power & Academic Supremacy
-            </h3>
-            <p className="mt-4 text-slate-400 text-base">
-              At ECCF, we believe spiritual fire and academic excellence are not mutually exclusive. We nurture both with equal diligence.
-            </p>
+      <section className="py-20 border-t border-slate-200/60 bg-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
+                SERMON VAULT
+              </span>
+              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-1">
+                Latest Messages
+              </h2>
+            </div>
+            <Link
+              href="/sermons"
+              className="text-sm font-bold text-[#00a8ff] hover:text-[#0092e0] transition-colors"
+            >
+              View all &rarr;
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {/* Card 1: Our Mission */}
-            <div className="rounded-2xl border border-sky-900/40 bg-sky-950/20 p-8 backdrop-blur-xl transition-all hover:border-sky-500/50 hover:bg-sky-950/40 hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 text-2xl font-bold mb-6 border border-sky-500/20">
-                🎯
-              </div>
-              <h4 className="text-xl font-bold text-white mb-3">Our Mission</h4>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                To raise a generation of university students grounded in prayer, deeply rooted in the Word, and shining as top academic performers across all faculties.
-              </p>
-            </div>
-
-            {/* Card 2: Our Vision */}
-            <div className="rounded-2xl border border-sky-900/40 bg-sky-950/20 p-8 backdrop-blur-xl transition-all hover:border-sky-500/50 hover:bg-sky-950/40 hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 text-2xl font-bold mb-6 border border-sky-500/20">
-                🔥
-              </div>
-              <h4 className="text-xl font-bold text-white mb-3">Our Vision</h4>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                To transform Edo State University into a hub of revival where students encounter Christ, discover their destiny, and graduate as leaders of influence.
-              </p>
-            </div>
-
-            {/* Card 3: Core Values */}
-            <div className="rounded-2xl border border-sky-900/40 bg-sky-950/20 p-8 backdrop-blur-xl transition-all hover:border-sky-500/50 hover:bg-sky-950/40 hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 text-2xl font-bold mb-6 border border-sky-500/20">
-                ⚡
-              </div>
-              <h4 className="text-xl font-bold text-white mb-3">Core Values</h4>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Spiritual Consecration · Academic Distinction · Authentic Fellowship · Kingdom Leadership · Integrity & Discipline.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 2.4 SERVICE TIMES & LOCATION SECTION                                      */}
-      {/* ========================================================================= */}
-      <section id="services" className="relative py-24 border-t border-sky-900/30">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-sky-400 mb-3">
-              Gatherings & Services
-            </h2>
-            <h3 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Weekly Service Schedule
-            </h3>
-            <p className="mt-4 text-slate-400 text-base">
-              Join us for high-energy worship, deep biblical exposition, and focused academic prayer sessions.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Service 1 */}
-            <div className="relative overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-b from-sky-950/40 to-slate-950/60 p-8 backdrop-blur-xl transition-all hover:border-sky-400 shadow-lg shadow-sky-950/30">
-              <div className="inline-block rounded-full bg-sky-500/20 border border-sky-500/30 px-3 py-1 text-xs font-semibold text-sky-300 mb-4">
-                Sunday Service
-              </div>
-              <h4 className="text-2xl font-bold text-white mb-2">Fellowship Service</h4>
-              <div className="text-3xl font-black text-sky-400 mb-4">08:00 AM</div>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Our main Sunday celebration featuring powerful worship, practical teaching, and fellowship.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-400 border-t border-sky-900/30 pt-4">
-                <span>📍 Venue: Main University Auditorium</span>
-              </div>
-            </div>
-
-            {/* Service 2 */}
-            <div className="relative overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-b from-sky-950/40 to-slate-950/60 p-8 backdrop-blur-xl transition-all hover:border-sky-400 shadow-lg shadow-sky-950/30">
-              <div className="inline-block rounded-full bg-sky-500/20 border border-sky-500/30 px-3 py-1 text-xs font-semibold text-sky-300 mb-4">
-                Wednesday Service
-              </div>
-              <h4 className="text-2xl font-bold text-white mb-2">Word Service</h4>
-              <div className="text-3xl font-black text-sky-400 mb-4">04:50 PM</div>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Midweek bible study for systematic verse-by-verse teaching and spiritual strengthening.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-400 border-t border-sky-900/30 pt-4">
-                <span>📍 Venue: Campus Chapel Hall</span>
-              </div>
-            </div>
-
-            {/* Service 3 */}
-            <div className="relative overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-b from-sky-950/40 to-slate-950/60 p-8 backdrop-blur-xl transition-all hover:border-sky-400 shadow-lg shadow-sky-950/30">
-              <div className="inline-block rounded-full bg-sky-500/20 border border-sky-500/30 px-3 py-1 text-xs font-semibold text-sky-300 mb-4">
-                Friday Service
-              </div>
-              <h4 className="text-2xl font-bold text-white mb-2">Academic Challenge / Wonder</h4>
-              <div className="text-3xl font-black text-sky-400 mb-4">04:50 PM</div>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Specialized prayer, academic mentoring, study strategy sessions, and miracle prayer.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-400 border-t border-sky-900/30 pt-4">
-                <span>📍 Venue: Campus Chapel Hall</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 2.5 OUR TEAMS & UNITS SECTION                                             */}
-      {/* ========================================================================= */}
-      <section id="teams" className="relative py-24 border-t border-sky-900/30 bg-[#060b14]/70">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-sky-400 mb-3">
-              Find Where You Belong
-            </h2>
-            <h3 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Fellowship Units & Operational Teams
-            </h3>
-            <p className="mt-4 text-slate-400 text-base">
-              Discover your spiritual gifts and serve with excellence alongside fellow student workers.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                title: 'Choir Unit',
-                emoji: '🎵',
-                description: 'Leading the fellowship into God’s presence through anointed worship and vocal music.',
+                tag: 'FAVOUR UNVEILED',
+                title: 'Walking in Uncommon Favour',
+                speaker: 'Bro. Emmanuel Obi',
+                date: 'July 6, 2025',
+                duration: '48 min',
+                bgGradient: 'from-amber-400/20 to-sky-400/20',
               },
               {
-                title: 'Drama Unit',
-                emoji: '🎭',
-                description: 'Communicating kingdom truths through creative stage plays, theatrical drama, and movies.',
+                tag: 'CAMPUS GIANTS',
+                title: 'The Discipline of the Anointed Student',
+                speaker: 'Sis. Grace Iyamu',
+                date: 'June 29, 2025',
+                duration: '52 min',
+                bgGradient: 'from-indigo-400/20 to-sky-400/20',
               },
               {
-                title: 'Prayer Unit',
-                emoji: '🔥',
-                description: 'Standing in the gap for campus revival, fellowship growth, and academic breakthroughs.',
+                tag: 'POWER & PRAYER',
+                title: 'Praying with Authority',
+                speaker: 'Bro. Samuel Edosa',
+                date: 'June 22, 2025',
+                duration: '45 min',
+                bgGradient: 'from-emerald-400/20 to-sky-400/20',
               },
-              {
-                title: 'Ushering Unit',
-                emoji: '🤝',
-                description: 'Creating a warm, organized, and welcoming environment for every service attendee.',
-              },
-              {
-                title: 'Media & Tech Unit',
-                emoji: '💻',
-                description: 'Managing live streaming, sound engineering, graphic design, website, and social media.',
-              },
-              {
-                title: 'Academic Unit',
-                emoji: '📚',
-                description: 'Organizing tutorials, study groups, past question archives, and academic mentoring.',
-              },
-              {
-                title: 'Welfare Unit',
-                emoji: '❤️',
-                description: 'Caring for student needs, supporting first-timers, and extending brotherly love.',
-              },
-              {
-                title: 'Outreach Unit',
-                emoji: '🌍',
-                description: 'Spearheading campus evangelism, hostel visitation, and community outreaches.',
-              },
-            ].map((team) => (
+            ].map((sermon, idx) => (
               <div
-                key={team.title}
-                className="group rounded-2xl border border-sky-900/40 bg-sky-950/20 p-6 backdrop-blur-xl transition-all hover:border-sky-400 hover:bg-sky-950/40 hover:-translate-y-1"
+                key={idx}
+                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-2xl mb-4 border border-sky-500/20 group-hover:scale-110 transition-transform">
-                  {team.emoji}
+                {/* Thumbnail Image placeholder with Play Button */}
+                <div className={`relative h-48 w-full bg-gradient-to-br ${sermon.bgGradient} flex items-center justify-center p-4`}>
+                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1">
+                    {sermon.duration}
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white text-base shadow-lg group-hover:scale-110 transition-transform">
+                    ▶
+                  </div>
                 </div>
-                <h4 className="text-lg font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">
-                  {team.title}
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {team.description}
-                </p>
+
+                {/* Content */}
+                <div className="p-6">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a8ff]">
+                    {sermon.tag}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 mt-1 mb-2 group-hover:text-[#00a8ff] transition-colors leading-snug">
+                    {sermon.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    {sermon.speaker} &bull; {sermon.date}
+                  </p>
+
+                  <Link
+                    href="/sermons"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00a8ff] hover:underline"
+                  >
+                    <span>▶</span> Listen Now
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -268,55 +146,192 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.6 PLAN A VISIT (ZERO-FRICTION CTA SECTION)                              */}
+      {/* 3. GLOBAL GIVING HUB (CONTRIBUTION COMPONENT)                              */}
       {/* ========================================================================= */}
-      <section id="visit" className="relative py-24 border-t border-sky-900/30">
+      <section className="py-20 border-t border-slate-200/60 bg-[#f8fafc]">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="relative overflow-hidden rounded-3xl border border-sky-500/40 bg-gradient-to-br from-sky-950/60 via-[#0a1428] to-slate-950/90 p-8 sm:p-14 backdrop-blur-2xl shadow-2xl shadow-sky-950/50 text-center">
-            {/* Background Accent */}
-            <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-sky-500/20 blur-[100px]" />
-
-            <span className="inline-block rounded-full bg-sky-500/20 border border-sky-500/30 px-4 py-1.5 text-xs font-bold text-sky-300 uppercase tracking-widest mb-6">
-              First-Time Visitor?
-            </span>
-
-            <h2 className="text-3xl font-black text-white sm:text-5xl tracking-tight leading-tight">
-              We Can&apos;t Wait to Welcome You!
-            </h2>
-
-            <p className="mx-auto mt-6 max-w-2xl text-base text-slate-300 leading-relaxed">
-              Visiting a new fellowship can feel overwhelming, but at ECCF, you are family from day one. Expect warm smiles, powerful worship, uncompromised Word, and zero awkward pressure.
-            </p>
-
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3 text-left max-w-3xl mx-auto">
-              <div className="rounded-xl border border-sky-900/40 bg-sky-950/30 p-4">
-                <div className="text-xs font-bold text-sky-400 uppercase">Dress Code</div>
-                <div className="text-sm font-semibold text-slate-200 mt-1">Modest & Comfortable</div>
+          <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 grid grid-cols-1 md:grid-cols-2">
+            {/* Left Card: Sky Blue Highlight */}
+            <div className="bg-[#00a8ff] text-white p-8 sm:p-12 flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-sky-100">
+                  GLOBAL GIVING HUB
+                </span>
+                <h2 className="text-3xl font-extrabold mt-3 leading-tight">
+                  Support the Vision. <br />
+                  Fund the Future.
+                </h2>
+                <p className="mt-4 text-sky-50 text-sm leading-relaxed">
+                  Your seed powers campus outreaches, welfare funds, media production, and discipleship programmes. Every naira counts.
+                </p>
               </div>
-              <div className="rounded-xl border border-sky-900/40 bg-sky-950/30 p-4">
-                <div className="text-xs font-bold text-sky-400 uppercase">Who to Look For</div>
-                <div className="text-sm font-semibold text-slate-200 mt-1">Ushers in ECCF Tags</div>
+
+              <ul className="mt-8 space-y-2 text-xs font-semibold text-sky-100">
+                <li className="flex items-center gap-2">✓ Tithes & Offerings</li>
+                <li className="flex items-center gap-2">✓ Project Contributions</li>
+                <li className="flex items-center gap-2">✓ Welfare Fund</li>
+                <li className="flex items-center gap-2">✓ Media Ministry</li>
+              </ul>
+            </div>
+
+            {/* Right Card: Interactive Payment Form Placeholder */}
+            <div className="p-8 sm:p-12 bg-white flex flex-col justify-between space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Make a Contribution</h3>
+
+                {/* Category Pills */}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Tithe', 'Offering', 'Project', 'Welfare'].map((cat, i) => (
+                    <button
+                      key={cat}
+                      className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                        i === 0
+                          ? 'bg-[#00a8ff] text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Form Fields */}
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="Emmanuel Okonkwo"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 focus:border-[#00a8ff] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Amount (₦)</label>
+                    <input
+                      type="number"
+                      placeholder="5000"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 focus:border-[#00a8ff] focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Preset Amount Pills */}
+                  <div className="flex gap-2">
+                    {['₦1,000', '₦2,500', '₦5,000', '₦10,000'].map((amt) => (
+                      <button
+                        key={amt}
+                        className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-[#00a8ff] hover:text-[#00a8ff]"
+                      >
+                        {amt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border border-sky-900/40 bg-sky-950/30 p-4">
-                <div className="text-xs font-bold text-sky-400 uppercase">Campus Location</div>
-                <div className="text-sm font-semibold text-slate-200 mt-1">Main Chapel Hall</div>
+
+              {/* Submit CTA Button in Orange */}
+              <div>
+                <Link
+                  href="/give"
+                  className="block w-full rounded-xl bg-[#f97316] hover:bg-orange-600 text-white text-center font-bold py-3 text-sm shadow-md transition-all"
+                >
+                  Give via Flutterwave &rarr;
+                </Link>
+                <p className="mt-2 text-center text-[10px] text-slate-400">
+                  Secured by Flutterwave &bull; SSL Encrypted
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. WHO WE ARE SECTION & SERVICE SCHEDULE                                   */}
+      {/* ========================================================================= */}
+      <section id="about" className="py-24 border-t border-slate-200/60 bg-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+            {/* Text & Service Grid */}
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
+                WHO WE ARE
+              </span>
+              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2 leading-tight">
+                A fellowship built on faith, love & excellence.
+              </h2>
+              <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+                ECCF is the campus arm of the Evangelical Church Winning All (ECWA), raised to produce students who are spiritual dynamites and academic giants. We meet weekly for Bible studies, prayer, worship, and outreach on the Edo State University campus.
+              </p>
+
+              {/* 2x2 Service Schedule */}
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">SUNDAY</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-1">9:00 AM</div>
+                  <div className="text-xs text-slate-500">Praise & Worship</div>
+                </div>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">TUESDAY</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-1">6:00 PM</div>
+                  <div className="text-xs text-slate-500">Bible Study</div>
+                </div>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">THURSDAY</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-1">6:30 PM</div>
+                  <div className="text-xs text-slate-500">Prayer Meeting</div>
+                </div>
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="text-[10px] font-bold text-[#00a8ff] uppercase">FRIDAY</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-1">5:00 PM</div>
+                  <div className="text-xs text-slate-500">Outreach</div>
+                </div>
               </div>
             </div>
 
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="mailto:edsuchristiancampusfellowship@gmail.com?subject=Planning%20a%20Visit%20to%20ECCF"
-                className="w-full sm:w-auto rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-sky-500/30 transition-all hover:from-sky-400 hover:to-blue-500 hover:shadow-sky-400/40 hover:-translate-y-0.5"
-              >
-                Let Us Know You&apos;re Coming
-              </a>
-              <Link
-                href="/give"
-                className="w-full sm:w-auto rounded-full border border-sky-500/30 bg-sky-950/30 px-8 py-4 text-base font-semibold text-slate-200 hover:bg-sky-500/10 hover:text-white"
-              >
-                Support Ministry (Give)
-              </Link>
+            {/* Visual Photo Cards Collage */}
+            <div className="relative space-y-4">
+              <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-lg bg-sky-100 h-64 flex items-center justify-center p-6 text-center">
+                <p className="text-slate-400 text-sm font-medium">
+                  📸 Worship & Fellowship Photography <br />
+                  <span className="text-xs text-[#00a8ff] font-bold mt-2 block">
+                    EDO STATE UNIVERSITY, IYAMHO
+                  </span>
+                </p>
+              </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. PLAN A VISIT (CTA SECTION)                                             */}
+      {/* ========================================================================= */}
+      <section id="visit" className="py-20 border-t border-slate-200/60 bg-[#f8fafc] text-center">
+        <div className="mx-auto max-w-3xl px-6">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
+            JOIN US THIS SUNDAY
+          </span>
+          <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2">
+            Planning a Visit to ECCF?
+          </h2>
+          <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+            We would love to welcome you in person! Whether you&apos;re a fresh student or a returning scholar, there is a place for you at our table.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="mailto:edsuchristiancampusfellowship@gmail.com?subject=Planning%20a%20Visit"
+              className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
+            >
+              Plan a Visit
+            </a>
+            <Link
+              href="/give"
+              className="w-full sm:w-auto rounded-full border border-slate-300 bg-white text-slate-700 font-bold px-8 py-3.5 hover:bg-slate-50"
+            >
+              Give Online
+            </Link>
           </div>
         </div>
       </section>
