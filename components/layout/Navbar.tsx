@@ -1,8 +1,8 @@
 /**
- * Navbar — Global Navigation & Live Audio Banner Component
+ * Navbar — Global Navigation & Stream Status Banner Component
  *
- * Implements the exact clean, bright, professional layout from the official
- * ECCF UI sketch (eccf_website_ui_sketch_.png).
+ * Implements crisp SVG icons from lucide-react, clean branding,
+ * and a single prominent primary CTA ("Plan a Visit") to avoid user decision fatigue.
  */
 
 'use client'
@@ -10,6 +10,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { Radio, Menu, X } from 'lucide-react'
 
 const navLinks = [
   { label: 'Sermons', href: '/sermons' },
@@ -32,25 +33,24 @@ export default function Navbar() {
 
   return (
     <div className="w-full">
-      {/* Top Banner — AzuraCast Live Radio Stream Bar */}
-      <div className="bg-slate-900 text-white text-xs py-2 px-4">
-        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-2">
+      {/* Top Banner — Subtle Live Stream Indicator (No competing CTA button) */}
+      <div className="bg-slate-900 text-slate-300 text-xs py-2 px-6 border-b border-slate-800">
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500" />
             </span>
-            <span className="font-semibold text-slate-200">🎙️ ECCF Radio — Live Now</span>
-            <span className="hidden sm:inline-block rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider border border-amber-500/30">
-              LIVE
-            </span>
-            <span className="hidden md:inline text-slate-400 text-[11px]">24/7 Worship & Teaching</span>
+            <Radio className="h-3.5 w-3.5 text-sky-400" />
+            <span className="font-semibold text-slate-200">ECCF Radio</span>
+            <span className="text-slate-400">&bull; Live 24/7 Worship & Teaching</span>
           </div>
+
           <Link
             href="/sermons"
-            className="inline-flex items-center gap-1 rounded-full bg-sky-500 hover:bg-sky-400 text-white font-semibold px-3 py-1 text-[11px] transition-all"
+            className="text-[11px] font-medium text-sky-400 hover:text-sky-300 transition-colors hidden sm:inline"
           >
-            Tune In &rarr;
+            Sermon Vault &rarr;
           </Link>
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function Navbar() {
       <header
         className={`sticky top-0 z-50 w-full transition-all duration-300 ${
           scrolled
-            ? 'bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-3'
+            ? 'bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-3'
             : 'bg-white border-b border-slate-100 py-4'
         }`}
       >
@@ -100,7 +100,7 @@ export default function Navbar() {
             ))}
           </ul>
 
-          {/* Action CTA: Plan a Visit */}
+          {/* Single Standout Primary CTA: Plan a Visit */}
           <div className="flex items-center gap-3">
             <Link
               href="/#visit"
@@ -114,23 +114,9 @@ export default function Navbar() {
               aria-label="Toggle navigation menu"
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="flex md:hidden flex-col items-center justify-center h-9 w-9 gap-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              className="flex md:hidden flex-col items-center justify-center h-9 w-9 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <span
-                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
-                  mobileOpen ? 'translate-y-2 rotate-45' : ''
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
-                  mobileOpen ? 'opacity-0' : ''
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-5 bg-slate-700 transition-all duration-300 ${
-                  mobileOpen ? '-translate-y-2 -rotate-45' : ''
-                }`}
-              />
+              {mobileOpen ? <X className="h-5 w-5 text-slate-700" /> : <Menu className="h-5 w-5 text-slate-700" />}
             </button>
           </div>
         </nav>

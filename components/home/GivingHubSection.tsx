@@ -2,13 +2,14 @@
  * GivingHubSection — Interactive Global Giving Component
  *
  * Provides real-time category selection, dynamic amount presets,
- * and smooth Framer Motion micro-interactions.
+ * SVG icons from lucide-react, and smooth Framer Motion micro-interactions.
  */
 
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Check, Lock, ArrowRight } from 'lucide-react'
 
 const categories = ['Tithe', 'Offering', 'Project', 'Welfare']
 const presetAmounts = [1000, 2500, 5000, 10000]
@@ -62,7 +63,9 @@ export default function GivingHubSection() {
                   whileHover={{ x: 4 }}
                   className="flex items-center gap-2"
                 >
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px]">✓</span>
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20">
+                    <Check className="h-2.5 w-2.5 text-white" />
+                  </span>
                   {item}
                 </motion.li>
               ))}
@@ -155,13 +158,15 @@ export default function GivingHubSection() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isSubmitting}
-                className="w-full rounded-xl bg-[#f97316] hover:bg-orange-600 text-white font-bold py-3.5 text-sm shadow-md shadow-orange-500/25 transition-all disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#f97316] hover:bg-orange-600 text-white font-bold py-3.5 text-sm shadow-md shadow-orange-500/25 transition-all disabled:opacity-50"
               >
-                {isSubmitting ? 'Processing...' : `Give ₦${Number(amount || 0).toLocaleString()} via Flutterwave →`}
+                <span>{isSubmitting ? 'Processing...' : `Give ₦${Number(amount || 0).toLocaleString()} via Flutterwave`}</span>
+                <ArrowRight className="h-4 w-4" />
               </motion.button>
-              <p className="mt-2.5 text-center text-[10px] text-slate-400 font-medium">
-                🔒 Secured by Flutterwave &bull; SSL Encrypted
-              </p>
+              <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                <Lock className="h-3 w-3 text-slate-400" />
+                <span>Secured by Flutterwave &bull; SSL Encrypted</span>
+              </div>
             </div>
           </form>
         </motion.div>

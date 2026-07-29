@@ -2,12 +2,13 @@
  * LiveAudioPlayer — Interactive Floating Audio & Live Stream Player
  *
  * Appears dynamically when tuning into ECCF Radio or playing a sermon message.
- * Includes animated EQ bars, play/pause controls, and volume controls.
+ * Includes SVG icons from lucide-react, animated EQ bars, play/pause controls, and volume controls.
  */
 
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { Radio, Play, Pause, X } from 'lucide-react'
 
 interface LiveAudioPlayerProps {
   isOpen: boolean
@@ -40,7 +41,7 @@ export default function LiveAudioPlayer({
             {/* Left: Animated Soundwave EQ & Track Info */}
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00a8ff] text-white font-bold shadow-md shadow-sky-500/25">
-                🎙️
+                <Radio className="h-5 w-5 text-white" />
               </div>
 
               <div className="min-w-0">
@@ -73,16 +74,16 @@ export default function LiveAudioPlayer({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onTogglePlay}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a8ff] text-white font-bold text-sm shadow-md hover:bg-[#0092e0] transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a8ff] text-white shadow-md hover:bg-[#0092e0] transition-colors"
               >
-                {isPlaying ? '⏸' : '▶'}
+                {isPlaying ? <Pause className="h-4 w-4 fill-white" /> : <Play className="h-4 w-4 fill-white ml-0.5" />}
               </motion.button>
 
               <button
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors text-xs font-bold"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>

@@ -3,6 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion, Variants } from 'framer-motion'
+import {
+  Play,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+  Camera,
+} from 'lucide-react'
 import GivingHubSection from '@/components/home/GivingHubSection'
 import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
 
@@ -56,8 +64,8 @@ export default function Home() {
             variants={itemVariants}
             className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-100 mb-8 shadow-sm"
           >
-            <span className="h-2 w-2 rounded-full bg-[#00a8ff] animate-ping" />
-            EDO STATE UNIVERSITY, IYAMHO
+            <MapPin className="h-3.5 w-3.5 text-[#00a8ff]" />
+            <span>EDO STATE UNIVERSITY, IYAMHO</span>
           </motion.div>
 
           {/* Hero Title */}
@@ -97,7 +105,8 @@ export default function Home() {
               onClick={() => handlePlayAudio('ECCF Radio Live', 'Tune in to continuous worship & sermons')}
               className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-300 bg-white text-[#00a8ff] font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-sky-50 hover:border-sky-400"
             >
-              <span className="text-xs">▶</span> Watch / Tune In
+              <Play className="h-4 w-4 fill-[#00a8ff]" />
+              <span>Watch / Tune In</span>
             </motion.button>
           </motion.div>
 
@@ -111,11 +120,11 @@ export default function Home() {
               <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">12</div>
+              <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">6</div>
               <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">5yrs</div>
+              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">10yrs</div>
               <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
             </div>
           </motion.div>
@@ -138,9 +147,10 @@ export default function Home() {
             </div>
             <Link
               href="/sermons"
-              className="text-sm font-bold text-[#00a8ff] hover:text-[#0092e0] transition-colors"
+              className="inline-flex items-center gap-1 text-sm font-bold text-[#00a8ff] hover:text-[#0092e0] transition-colors"
             >
-              View all &rarr;
+              <span>View all</span>
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -183,14 +193,15 @@ export default function Home() {
               >
                 {/* Thumbnail Image placeholder with Play Button */}
                 <div className={`relative h-48 w-full bg-gradient-to-br ${sermon.bgGradient} flex items-center justify-center p-4`}>
-                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1">
-                    {sermon.duration}
+                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>{sermon.duration}</span>
                   </div>
                   <motion.div
                     whileHover={{ scale: 1.15 }}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white text-base shadow-lg shadow-sky-500/30"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white shadow-lg shadow-sky-500/30"
                   >
-                    ▶
+                    <Play className="h-5 w-5 fill-white ml-0.5" />
                   </motion.div>
                 </div>
 
@@ -210,7 +221,8 @@ export default function Home() {
                     type="button"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00a8ff] hover:underline"
                   >
-                    <span>▶</span> Listen Now
+                    <Play className="h-3.5 w-3.5 fill-[#00a8ff]" />
+                    <span>Listen Now</span>
                   </button>
                 </div>
               </motion.div>
@@ -260,7 +272,10 @@ export default function Home() {
                     whileHover={{ scale: 1.02 }}
                     className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-all hover:border-sky-200 hover:bg-sky-50/50"
                   >
-                    <div className="text-[10px] font-bold text-[#00a8ff] uppercase">{serv.day}</div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#00a8ff] uppercase">
+                      <Calendar className="h-3 w-3" />
+                      <span>{serv.day}</span>
+                    </div>
                     <div className="text-base font-extrabold text-slate-900 mt-1">{serv.time}</div>
                     <div className="text-xs text-slate-500">{serv.title}</div>
                   </motion.div>
@@ -276,13 +291,15 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-lg bg-sky-100 h-64 flex items-center justify-center p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">
-                  📸 Worship & Fellowship Photography <br />
-                  <span className="text-xs text-[#00a8ff] font-bold mt-2 block">
-                    📍 EDO STATE UNIVERSITY, IYAMHO
-                  </span>
+              <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-lg bg-sky-50 h-64 flex flex-col items-center justify-center p-6 text-center">
+                <Camera className="h-10 w-10 text-sky-400 mb-3" />
+                <p className="text-slate-600 text-sm font-semibold">
+                  Worship & Fellowship Photography
                 </p>
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-[#00a8ff] font-bold">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>EDO STATE UNIVERSITY, IYAMHO</span>
+                </div>
               </div>
             </motion.div>
           </div>
