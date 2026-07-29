@@ -55,98 +55,113 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white overflow-x-hidden">
       {/* ========================================================================= */}
-      {/* 2.2 HERO SECTION (UI/UX BRIEF SPECIFICATION)                              */}
+      {/* 2.2 HERO SECTION WITH FELLOWSHIP PHOTO BACKGROUND (PER UI/UX SPEC 2.2)   */}
       {/* ========================================================================= */}
-      <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col items-center"
-        >
-          {/* Location Pill Badge */}
+      <section className="relative w-full overflow-hidden bg-slate-950 py-20 md:py-32">
+        {/* Real Fellowship Photo Background with Gradient Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/gallery/gallery-4.jpg"
+            alt="ECCF Fellowship Gathering"
+            fill
+            priority
+            className="object-cover object-center opacity-35 filter contrast-110"
+          />
+          {/* Subtle overlay gradients to guarantee 100% text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#f8fafc] via-slate-950/70 to-slate-950/90" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
           <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-100 mb-8 shadow-sm"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col items-center"
           >
-            <MapPin className="h-3.5 w-3.5 text-[#00a8ff]" />
-            <span>EDO STATE UNIVERSITY, IYAMHO</span>
-          </motion.div>
-
-          {/* Official Primary Headline Tagline */}
-          <motion.h1
-            variants={itemVariants}
-            className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.15]"
-          >
-            An Assembly Of <br className="hidden sm:inline" />
-            <span className="text-[#00a8ff]">Spiritual Dynamites And Academic Giants.</span>
-          </motion.h1>
-
-          {/* Official Subheadline Tagline */}
-          <motion.p
-            variants={itemVariants}
-            className="mx-auto mt-6 max-w-2xl text-lg font-bold text-slate-700 tracking-wide sm:text-xl uppercase"
-          >
-            &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
-          </motion.p>
-
-          <motion.p
-            variants={itemVariants}
-            className="mx-auto mt-3 max-w-xl text-sm text-slate-500 leading-relaxed"
-          >
-            The official campus fellowship of Edo State University (ECWA). Raising Kingdom leaders equipped spiritually and academically to dominate their spheres.
-          </motion.p>
-
-          {/* Hero CTAs */}
-          <motion.div
-            variants={itemVariants}
-            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row w-full sm:w-auto"
-          >
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
-              <Link
-                href="#visit"
-                className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
-              >
-                Plan a Visit
-              </Link>
+            {/* Location Pill Badge */}
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-sky-300 border border-sky-400/30 mb-8 shadow-md"
+            >
+              <MapPin className="h-3.5 w-3.5 text-sky-400" />
+              <span>EDO STATE UNIVERSITY, IYAMHO</span>
             </motion.div>
 
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => handlePlayAudio('ECCF Radio Live', 'Tune in to continuous worship & sermons')}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-300 bg-white text-[#00a8ff] font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-sky-50 hover:border-sky-400"
+            {/* Official Primary Headline Tagline */}
+            <motion.h1
+              variants={itemVariants}
+              className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-white sm:text-6xl md:text-7xl leading-[1.15] drop-shadow-sm"
             >
-              <Play className="h-4 w-4 fill-[#00a8ff]" />
-              <span>Watch / Tune In</span>
-            </motion.button>
-          </motion.div>
+              An Assembly Of <br className="hidden sm:inline" />
+              <span className="text-[#00a8ff]">Spiritual Dynamites And Academic Giants.</span>
+            </motion.h1>
 
-          {/* Quick Stats Bar */}
-          <motion.div
-            variants={itemVariants}
-            className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-10 text-center w-full"
-          >
-            <div>
-              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">400+</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
-            </div>
-            <div>
-              <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">6</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
-            </div>
-            <div>
-              <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">10yrs</div>
-              <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
-            </div>
+            {/* Official Subheadline Tagline */}
+            <motion.p
+              variants={itemVariants}
+              className="mx-auto mt-6 max-w-2xl text-lg font-bold text-sky-200 tracking-wider sm:text-xl uppercase drop-shadow-sm"
+            >
+              &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
+            </motion.p>
+
+            <motion.p
+              variants={itemVariants}
+              className="mx-auto mt-3 max-w-xl text-sm text-slate-300 leading-relaxed font-normal"
+            >
+              The official campus fellowship of Edo State University (ECWA). Raising Kingdom leaders equipped spiritually and academically to dominate their spheres.
+            </motion.p>
+
+            {/* Hero CTAs */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row w-full sm:w-auto"
+            >
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+                <Link
+                  href="#visit"
+                  className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-lg shadow-sky-500/30 transition-all"
+                >
+                  Plan a Visit
+                </Link>
+              </motion.div>
+
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handlePlayAudio('ECCF Radio Live', 'Tune in to continuous worship & sermons')}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-md text-white font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-white/20 hover:border-white/50"
+              >
+                <Play className="h-4 w-4 fill-white" />
+                <span>Watch / Tune In</span>
+              </motion.button>
+            </motion.div>
+
+            {/* Quick Stats Bar */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-800/80 pt-10 text-center w-full"
+            >
+              <div>
+                <div className="text-3xl font-extrabold text-white sm:text-4xl">400+</div>
+                <div className="text-xs font-semibold text-slate-400 mt-1">Active Members</div>
+              </div>
+              <div>
+                <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">6</div>
+                <div className="text-xs font-semibold text-slate-400 mt-1">Weekly Programs</div>
+              </div>
+              <div>
+                <div className="text-3xl font-extrabold text-white sm:text-4xl">10yrs</div>
+                <div className="text-xs font-semibold text-slate-400 mt-1">Of Impact</div>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ========================================================================= */}
       {/* 2.3 WHO WE ARE (MISSION, VISION, CORE VALUES)                              */}
       {/* ========================================================================= */}
-      <section id="about" className="py-24 border-t border-slate-200/60 bg-white">
+      <section id="about" className="py-24 bg-white">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             {/* Mission, Vision, Core Values Cards */}
