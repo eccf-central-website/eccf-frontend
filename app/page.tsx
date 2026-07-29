@@ -18,6 +18,7 @@ import GivingHubSection from '@/components/home/GivingHubSection'
 import PhotoGallerySection from '@/components/home/PhotoGallerySection'
 import TeamsSection from '@/components/home/TeamsSection'
 import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
+import CountUpNumber from '@/components/ui/CountUpNumber'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -55,23 +56,10 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white overflow-x-hidden">
       {/* ========================================================================= */}
-      {/* 2.2 HERO SECTION WITH FELLOWSHIP PHOTO BACKGROUND (PER UI/UX SPEC 2.2)   */}
+      {/* 2.2 HERO SECTION — HARMONIOUS SKY BLUE & SLATE COLOR PALETTE              */}
       {/* ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 py-20 md:py-32">
-        {/* Real Fellowship Photo Background with Gradient Overlay */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/gallery/gallery-4.jpg"
-            alt="ECCF Fellowship Gathering"
-            fill
-            priority
-            className="object-cover object-center opacity-35 filter contrast-110"
-          />
-          {/* Subtle overlay gradients to guarantee 100% text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#f8fafc] via-slate-950/70 to-slate-950/90" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
+      <section className="relative w-full bg-gradient-to-b from-sky-50/60 via-[#f8fafc] to-[#f8fafc] py-16 md:py-24 border-b border-slate-200/60">
+        <div className="mx-auto max-w-6xl px-6 text-center">
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -81,16 +69,16 @@ export default function Home() {
             {/* Location Pill Badge */}
             <motion.div
               variants={itemVariants}
-              className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-sky-300 border border-sky-400/30 mb-8 shadow-md"
+              className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#00a8ff] border border-sky-200/80 mb-8 shadow-sm"
             >
-              <MapPin className="h-3.5 w-3.5 text-sky-400" />
+              <MapPin className="h-3.5 w-3.5 text-[#00a8ff]" />
               <span>EDO STATE UNIVERSITY, IYAMHO</span>
             </motion.div>
 
             {/* Official Primary Headline Tagline */}
             <motion.h1
               variants={itemVariants}
-              className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-white sm:text-6xl md:text-7xl leading-[1.15] drop-shadow-sm"
+              className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.15]"
             >
               An Assembly Of <br className="hidden sm:inline" />
               <span className="text-[#00a8ff]">Spiritual Dynamites And Academic Giants.</span>
@@ -99,16 +87,17 @@ export default function Home() {
             {/* Official Subheadline Tagline */}
             <motion.p
               variants={itemVariants}
-              className="mx-auto mt-6 max-w-2xl text-lg font-bold text-sky-200 tracking-wider sm:text-xl uppercase drop-shadow-sm"
+              className="mx-auto mt-6 max-w-2xl text-base font-bold text-[#00a8ff] tracking-widest sm:text-lg uppercase"
             >
               &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
             </motion.p>
 
+            {/* Paragraph Text */}
             <motion.p
               variants={itemVariants}
-              className="mx-auto mt-3 max-w-xl text-sm text-slate-300 leading-relaxed font-normal"
+              className="mx-auto mt-3 max-w-xl text-sm sm:text-base text-slate-600 leading-relaxed font-normal"
             >
-              The official campus fellowship of Edo State University (ECWA). Raising Kingdom leaders equipped spiritually and academically to dominate their spheres.
+              The official website of Edo State University Christian Campus Fellowship (ECCF)
             </motion.p>
 
             {/* Hero CTAs */}
@@ -119,7 +108,7 @@ export default function Home() {
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
                 <Link
                   href="#visit"
-                  className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-lg shadow-sky-500/30 transition-all"
+                  className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 text-sm shadow-md shadow-sky-500/20 transition-all"
                 >
                   Plan a Visit
                 </Link>
@@ -129,9 +118,9 @@ export default function Home() {
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => handlePlayAudio('ECCF Radio Live', 'Tune in to continuous worship & sermons')}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-md text-white font-bold px-8 py-3.5 shadow-sm transition-all hover:bg-white/20 hover:border-white/50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-white text-[#00a8ff] font-bold px-8 py-3.5 text-sm shadow-sm transition-all hover:bg-sky-50 hover:border-sky-300"
               >
-                <Play className="h-4 w-4 fill-white" />
+                <Play className="h-4 w-4 fill-[#00a8ff]" />
                 <span>Watch / Tune In</span>
               </motion.button>
             </motion.div>
@@ -139,19 +128,52 @@ export default function Home() {
             {/* Quick Stats Bar */}
             <motion.div
               variants={itemVariants}
-              className="mt-16 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-800/80 pt-10 text-center w-full"
+              className="mt-12 mx-auto grid max-w-xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-8 text-center w-full"
             >
               <div>
-                <div className="text-3xl font-extrabold text-white sm:text-4xl">400+</div>
-                <div className="text-xs font-semibold text-slate-400 mt-1">Active Members</div>
+                <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                  <CountUpNumber end={400} suffix="+" />
+                </div>
+                <div className="text-xs font-semibold text-slate-500 mt-1">Active Members</div>
               </div>
               <div>
-                <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">6</div>
-                <div className="text-xs font-semibold text-slate-400 mt-1">Weekly Programs</div>
+                <div className="text-3xl font-extrabold text-[#00a8ff] sm:text-4xl">
+                  <CountUpNumber end={6} />
+                </div>
+                <div className="text-xs font-semibold text-slate-500 mt-1">Weekly Programs</div>
               </div>
               <div>
-                <div className="text-3xl font-extrabold text-white sm:text-4xl">10yrs</div>
-                <div className="text-xs font-semibold text-slate-400 mt-1">Of Impact</div>
+                <div className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                  <CountUpNumber end={10} suffix="yrs" />
+                </div>
+                <div className="text-xs font-semibold text-slate-500 mt-1">Of Impact</div>
+              </div>
+            </motion.div>
+
+            {/* Framed Fellowship Photo Showcase */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-14 w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-2 sm:p-3 shadow-xl shadow-slate-200/60"
+            >
+              <div className="relative h-64 sm:h-96 w-full overflow-hidden rounded-2xl">
+                <Image
+                  src="/gallery/gallery-4.jpg"
+                  alt="ECCF Student Fellowship Community"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 85vw"
+                  className="object-cover hover:scale-103 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-6">
+                  <div className="text-left text-white">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                      CAMPUS FELLOWSHIP COMMUNITY
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-0.5 leading-snug">
+                      Raising Kingdom Leaders on Campus
+                    </h3>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -177,43 +199,43 @@ export default function Home() {
               <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2 leading-tight">
                 Raised for Kingdom Impact & Academic Distinction.
               </h2>
-              <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+              <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
                 ECCF is dedicated to nurturing university students into grounded believers who excel in their studies and manifest the power of God on campus.
               </p>
 
               {/* Scannable Blocks */}
               <div className="mt-8 space-y-4">
-                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-sky-50/40">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff] border border-sky-200/50">
                     <Target className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Our Mission</h4>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    <h4 className="text-base font-bold text-slate-900">Our Mission</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
                       To raise Spirit-filled leaders, foster intellectual growth, and preach Christ across Edo State University.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-sky-50/40">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff] border border-sky-200/50">
                     <Sparkles className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Our Vision</h4>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    <h4 className="text-base font-bold text-slate-900">Our Vision</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
                       A campus transformed by the Gospel, producing graduates who excel spiritually and academically nationwide.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-sky-50/40">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff] border border-sky-200/50">
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Core Values</h4>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    <h4 className="text-base font-bold text-slate-900">Core Values</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
                       Faith, Academic Discipline, Integrity, Fellowship, and Unwavering Commitment to God&apos;s Word.
                     </p>
                   </div>
@@ -221,7 +243,7 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Photo Collage Collage */}
+            {/* Photo Collage */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -253,44 +275,45 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.4 SERVICE TIMES & LOCATION (EXACT SPECIFICATION FROM UI/UX BRIEF)       */}
+      {/* 2.4 SERVICE TIMES & LOCATION (UNIFIED FELLOWSHIP PALETTE)                  */}
       {/* ========================================================================= */}
-      <section className="py-20 border-t border-slate-200/60 bg-[#f8fafc]">
+      <section className="py-24 border-t border-slate-200/60 bg-[#f8fafc]">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
-              WEEKLY FELLOWSHIP SCHEDULE
+          <div className="text-center max-w-xl mx-auto mb-14">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff] flex items-center justify-center gap-1.5 mb-1">
+              <Calendar className="h-3.5 w-3.5 text-[#00a8ff]" />
+              <span>WEEKLY FELLOWSHIP SCHEDULE</span>
             </span>
-            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-1">
+            <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">
               Service Times & Location
             </h2>
             <p className="text-slate-500 text-sm mt-2">
-              Join us weekly on campus. Screenshot or reference these times!
+              Join us weekly on campus. Save or screenshot our fellowship hours!
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {[
               {
                 name: 'Sunday Service',
                 day: 'SUNDAY',
                 time: '08:00 AM',
+                subtitle: 'Praise, Worship & Word',
                 location: 'Campus Fellowship Hall',
-                accentColor: 'border-l-sky-500',
               },
               {
                 name: 'Word Service',
                 day: 'WEDNESDAY',
                 time: '04:50 PM',
+                subtitle: 'Deep Scripture Exposition',
                 location: 'Campus Fellowship Hall',
-                accentColor: 'border-l-indigo-500',
               },
               {
                 name: 'Academic Challenge / Wonder Service',
                 day: 'FRIDAY',
                 time: '04:50 PM',
+                subtitle: 'Academic Prayer & Empowerment',
                 location: 'Campus Fellowship Hall',
-                accentColor: 'border-l-emerald-500',
               },
             ].map((service, idx) => (
               <motion.div
@@ -299,30 +322,50 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
-                whileHover={{ y: -4 }}
-                className={`rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all border-l-4 ${service.accentColor} flex flex-col justify-between`}
+                whileHover={{ y: -6 }}
+                className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 transition-all hover:border-sky-300"
               >
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold text-[#00a8ff] tracking-wider uppercase mb-2">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" />
+                  {/* Top Header Badge */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 text-[#00a8ff] border border-sky-100 px-3.5 py-1 text-xs font-black uppercase tracking-wider">
+                      <Calendar className="h-3 w-3" />
                       {service.day}
                     </span>
                   </div>
-                  <h3 className="text-lg font-extrabold text-slate-900 leading-snug">
+
+                  {/* Service Title */}
+                  <h3 className="text-xl font-black text-slate-900 leading-snug min-h-[3.25rem] flex items-center">
                     {service.name}
                   </h3>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <Clock className="h-4 w-4 text-slate-400 self-center" />
-                    <span className="text-2xl font-black text-[#00a8ff]">
-                      {service.time}
-                    </span>
+
+                  {/* Subtitle / Focus */}
+                  <p className="text-xs text-slate-500 font-medium mb-6">
+                    {service.subtitle}
+                  </p>
+
+                  {/* Time Badge Box */}
+                  <div className="flex items-center gap-3 rounded-2xl bg-sky-50/60 border border-sky-100 p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00a8ff] text-white shadow-sm">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        START TIME
+                      </span>
+                      <span className="text-2xl font-black text-[#00a8ff] tracking-tight">
+                        {service.time}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-medium text-slate-500">
-                  <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{service.location}</span>
+                {/* Bottom Location Marker */}
+                <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-[#00a8ff] shrink-0" />
+                    <span className="truncate">{service.location}</span>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -331,12 +374,12 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.5 OUR TEAMS / UNITS (EXACT SPECIFICATION FROM UI/UX BRIEF)              */}
+      {/* 2.5 OUR TEAMS / UNITS                                                     */}
       {/* ========================================================================= */}
       <TeamsSection />
 
       {/* ========================================================================= */}
-      {/* SERMON VAULT — LATEST MESSAGES                                            */}
+      {/* SERMON VAULT — UNIFIED HARMONIOUS SERMON CARDS                            */}
       {/* ========================================================================= */}
       <section className="py-20 border-t border-slate-200/60 bg-white">
         <div className="mx-auto max-w-6xl px-6">
@@ -366,7 +409,6 @@ export default function Home() {
                 speaker: 'Bro. Emmanuel Obi',
                 date: 'July 6, 2025',
                 duration: '48 min',
-                bgGradient: 'from-amber-400/20 to-sky-400/20',
               },
               {
                 tag: 'CAMPUS GIANTS',
@@ -374,7 +416,6 @@ export default function Home() {
                 speaker: 'Sis. Grace Iyamu',
                 date: 'June 29, 2025',
                 duration: '52 min',
-                bgGradient: 'from-indigo-400/20 to-sky-400/20',
               },
               {
                 tag: 'POWER & PRAYER',
@@ -382,7 +423,6 @@ export default function Home() {
                 speaker: 'Bro. Samuel Edosa',
                 date: 'June 22, 2025',
                 duration: '45 min',
-                bgGradient: 'from-emerald-400/20 to-sky-400/20',
               },
             ].map((sermon, idx) => (
               <motion.div
@@ -392,18 +432,18 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 whileHover={{ y: -6 }}
-                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
+                className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
                 onClick={() => handlePlayAudio(sermon.title, sermon.speaker)}
               >
                 {/* Thumbnail Image placeholder with Play Button */}
-                <div className={`relative h-48 w-full bg-gradient-to-br ${sermon.bgGradient} flex items-center justify-center p-4`}>
-                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 flex items-center gap-1">
+                <div className="relative h-48 w-full bg-gradient-to-br from-sky-100/70 via-sky-50/50 to-slate-100 flex items-center justify-center p-4">
+                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/70 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-2.5 py-1 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     <span>{sermon.duration}</span>
                   </div>
                   <motion.div
                     whileHover={{ scale: 1.15 }}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white shadow-lg shadow-sky-500/30"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00a8ff] text-white shadow-md shadow-sky-500/20"
                   >
                     <Play className="h-5 w-5 fill-white ml-0.5" />
                   </motion.div>
@@ -411,19 +451,19 @@ export default function Home() {
 
                 {/* Content */}
                 <div className="p-6">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a8ff]">
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00a8ff]">
                     {sermon.tag}
                   </span>
                   <h3 className="text-lg font-bold text-slate-900 mt-1 mb-2 group-hover:text-[#00a8ff] transition-colors leading-snug">
                     {sermon.title}
                   </h3>
-                  <p className="text-xs text-slate-500 mb-4">
+                  <p className="text-xs sm:text-sm text-slate-500 mb-4">
                     {sermon.speaker} &bull; {sermon.date}
                   </p>
 
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00a8ff] hover:underline"
+                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#00a8ff] hover:underline"
                   >
                     <Play className="h-3.5 w-3.5 fill-[#00a8ff]" />
                     <span>Listen Now</span>
@@ -462,7 +502,7 @@ export default function Home() {
           <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2">
             Planning a Visit to ECCF?
           </h2>
-          <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+          <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
             We would love to welcome you in person! Whether you&apos;re a fresh student or a returning scholar, expect a warm welcome, powerful worship, and zero pressure.
           </p>
 
@@ -471,14 +511,14 @@ export default function Home() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               href="mailto:edsuchristiancampusfellowship@gmail.com?subject=Planning%20a%20Visit"
-              className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
+              className="w-full sm:w-auto rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 text-sm shadow-md shadow-sky-500/20 transition-all"
             >
               Plan a Visit
             </motion.a>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
               <Link
                 href="/give"
-                className="block w-full sm:w-auto rounded-full border border-slate-300 bg-white text-slate-700 font-bold px-8 py-3.5 hover:bg-slate-50 transition-all"
+                className="block w-full sm:w-auto rounded-full border border-slate-300 bg-white text-slate-700 font-bold px-8 py-3.5 text-sm hover:bg-slate-50 transition-all"
               >
                 Give Online
               </Link>

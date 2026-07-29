@@ -2,7 +2,7 @@
  * TeamsSection — Our Teams & Operational Units
  *
  * Implements Section 2.5 of the UI/UX Requirements Document.
- * Showcases Drama, Prayer, Choir, Ushering, and Media with photos and descriptions.
+ * Showcases Choir, Drama, Prayer, Ushering, and Media with clear typography and representative photos.
  */
 
 'use client'
@@ -48,10 +48,10 @@ export default function TeamsSection() {
             <Users className="h-3.5 w-3.5 text-[#00a8ff]" />
             <span>FIND YOUR PLACE TO SERVE</span>
           </span>
-          <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+          <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2">
             Our Teams & Operational Units
           </h2>
-          <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
             Every student has a God-given gift. Discover where your passion aligns with ministry and academic growth.
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function TeamsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: idx * 0.1 }}
               whileHover={{ y: -6 }}
-              className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-lg hover:shadow-sky-500/10 transition-all"
+              className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm hover:shadow-lg hover:shadow-sky-500/10 transition-all"
             >
               <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
                 <Image
@@ -76,13 +76,13 @@ export default function TeamsSection() {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
                 <div className="absolute bottom-3 left-4 text-white font-bold text-lg">
                   {team.name}
                 </div>
               </div>
               <div className="p-5">
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-sm font-normal text-slate-600 leading-relaxed">
                   {team.description}
                 </p>
               </div>
