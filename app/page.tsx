@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, Variants } from 'framer-motion'
 import {
   Play,
@@ -9,9 +10,9 @@ import {
   Calendar,
   Clock,
   ArrowRight,
-  Camera,
 } from 'lucide-react'
 import GivingHubSection from '@/components/home/GivingHubSection'
+import PhotoGallerySection from '@/components/home/PhotoGallerySection'
 import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
 
 const containerVariants: Variants = {
@@ -283,23 +284,29 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Visual Photo Cards Collage */}
+            {/* Visual Photo Cards Collage using Real Fellowship Pictures */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative"
+              className="grid grid-cols-2 gap-4"
             >
-              <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-lg bg-sky-50 h-64 flex flex-col items-center justify-center p-6 text-center">
-                <Camera className="h-10 w-10 text-sky-400 mb-3" />
-                <p className="text-slate-600 text-sm font-semibold">
-                  Worship & Fellowship Photography
-                </p>
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-[#00a8ff] font-bold">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span>EDO STATE UNIVERSITY, IYAMHO</span>
-                </div>
+              <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                <Image
+                  src="/gallery/gallery-1.jpg"
+                  alt="Worship at ECCF"
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-6">
+                <Image
+                  src="/gallery/gallery-2.jpg"
+                  alt="Student Prayer Session"
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                />
               </div>
             </motion.div>
           </div>
@@ -307,7 +314,12 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. PLAN A VISIT (CTA SECTION)                                             */}
+      {/* 5. PHOTO GALLERY SECTION                                                  */}
+      {/* ========================================================================= */}
+      <PhotoGallerySection />
+
+      {/* ========================================================================= */}
+      {/* 6. PLAN A VISIT (CTA SECTION)                                             */}
       {/* ========================================================================= */}
       <section id="visit" className="py-20 border-t border-slate-200/60 bg-[#f8fafc] text-center">
         <motion.div
