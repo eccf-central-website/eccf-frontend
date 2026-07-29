@@ -10,9 +10,13 @@ import {
   Calendar,
   Clock,
   ArrowRight,
+  Target,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react'
 import GivingHubSection from '@/components/home/GivingHubSection'
 import PhotoGallerySection from '@/components/home/PhotoGallerySection'
+import TeamsSection from '@/components/home/TeamsSection'
 import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
 
 const containerVariants: Variants = {
@@ -51,7 +55,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white overflow-x-hidden">
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION                                                          */}
+      {/* 2.2 HERO SECTION (UI/UX BRIEF SPECIFICATION)                              */}
       {/* ========================================================================= */}
       <section className="relative mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
         <motion.div
@@ -69,21 +73,28 @@ export default function Home() {
             <span>EDO STATE UNIVERSITY, IYAMHO</span>
           </motion.div>
 
-          {/* Hero Title */}
+          {/* Official Primary Headline Tagline */}
           <motion.h1
             variants={itemVariants}
-            className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.15]"
+            className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl md:text-7xl leading-[1.15]"
           >
-            Spiritual Dynamites <br className="hidden sm:inline" />
-            <span className="text-[#00a8ff]">and Academic Giants.</span>
+            An Assembly Of <br className="hidden sm:inline" />
+            <span className="text-[#00a8ff]">Spiritual Dynamites And Academic Giants.</span>
           </motion.h1>
 
-          {/* Hero Subtitle */}
+          {/* Official Subheadline Tagline */}
           <motion.p
             variants={itemVariants}
-            className="mx-auto mt-6 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed"
+            className="mx-auto mt-6 max-w-2xl text-lg font-bold text-slate-700 tracking-wide sm:text-xl uppercase"
           >
-            A vibrant community of campus students pursuing God&apos;s purpose with academic excellence. You belong here &mdash; whether you&apos;re new on campus or looking for a spiritual family.
+            &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
+          </motion.p>
+
+          <motion.p
+            variants={itemVariants}
+            className="mx-auto mt-3 max-w-xl text-sm text-slate-500 leading-relaxed"
+          >
+            The official campus fellowship of Edo State University (ECWA). Raising Kingdom leaders equipped spiritually and academically to dominate their spheres.
           </motion.p>
 
           {/* Hero CTAs */}
@@ -96,7 +107,7 @@ export default function Home() {
                 href="#visit"
                 className="block w-full sm:w-auto text-center rounded-full bg-[#00a8ff] hover:bg-[#0092e0] text-white font-bold px-8 py-3.5 shadow-md shadow-sky-500/25 transition-all"
               >
-                Join the Fellowship
+                Plan a Visit
               </Link>
             </motion.div>
 
@@ -133,7 +144,184 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2. SERMON VAULT — LATEST MESSAGES                                         */}
+      {/* 2.3 WHO WE ARE (MISSION, VISION, CORE VALUES)                              */}
+      {/* ========================================================================= */}
+      <section id="about" className="py-24 border-t border-slate-200/60 bg-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+            {/* Mission, Vision, Core Values Cards */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
+                WHO WE ARE
+              </span>
+              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2 leading-tight">
+                Raised for Kingdom Impact & Academic Distinction.
+              </h2>
+              <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+                ECCF is dedicated to nurturing university students into grounded believers who excel in their studies and manifest the power of God on campus.
+              </p>
+
+              {/* Scannable Blocks */}
+              <div className="mt-8 space-y-4">
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                    <Target className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Our Mission</h4>
+                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                      To raise Spirit-filled leaders, foster intellectual growth, and preach Christ across Edo State University.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Our Vision</h4>
+                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                      A campus transformed by the Gospel, producing graduates who excel spiritually and academically nationwide.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/80">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff]">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Core Values</h4>
+                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                      Faith, Academic Discipline, Integrity, Fellowship, and Unwavering Commitment to God&apos;s Word.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Photo Collage Collage */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                <Image
+                  src="/gallery/gallery-1.jpg"
+                  alt="Worship at ECCF"
+                  fill
+                  sizes="(max-width: 768px) 50vw, 30vw"
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-8">
+                <Image
+                  src="/gallery/gallery-2.jpg"
+                  alt="Student Prayer Session"
+                  fill
+                  sizes="(max-width: 768px) 50vw, 30vw"
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2.4 SERVICE TIMES & LOCATION (EXACT SPECIFICATION FROM UI/UX BRIEF)       */}
+      {/* ========================================================================= */}
+      <section className="py-20 border-t border-slate-200/60 bg-[#f8fafc]">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
+              WEEKLY FELLOWSHIP SCHEDULE
+            </span>
+            <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-1">
+              Service Times & Location
+            </h2>
+            <p className="text-slate-500 text-sm mt-2">
+              Join us weekly on campus. Screenshot or reference these times!
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                name: 'Sunday Service',
+                day: 'SUNDAY',
+                time: '08:00 AM',
+                location: 'Campus Fellowship Hall',
+                accentColor: 'border-l-sky-500',
+              },
+              {
+                name: 'Word Service',
+                day: 'WEDNESDAY',
+                time: '04:50 PM',
+                location: 'Campus Fellowship Hall',
+                accentColor: 'border-l-indigo-500',
+              },
+              {
+                name: 'Academic Challenge / Wonder Service',
+                day: 'FRIDAY',
+                time: '04:50 PM',
+                location: 'Campus Fellowship Hall',
+                accentColor: 'border-l-emerald-500',
+              },
+            ].map((service, idx) => (
+              <motion.div
+                key={service.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                whileHover={{ y: -4 }}
+                className={`rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all border-l-4 ${service.accentColor} flex flex-col justify-between`}
+              >
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold text-[#00a8ff] tracking-wider uppercase mb-2">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {service.day}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-extrabold text-slate-900 leading-snug">
+                    {service.name}
+                  </h3>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <Clock className="h-4 w-4 text-slate-400 self-center" />
+                    <span className="text-2xl font-black text-[#00a8ff]">
+                      {service.time}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate">{service.location}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2.5 OUR TEAMS / UNITS (EXACT SPECIFICATION FROM UI/UX BRIEF)              */}
+      {/* ========================================================================= */}
+      <TeamsSection />
+
+      {/* ========================================================================= */}
+      {/* SERMON VAULT — LATEST MESSAGES                                            */}
       {/* ========================================================================= */}
       <section className="py-20 border-t border-slate-200/60 bg-white">
         <div className="mx-auto max-w-6xl px-6">
@@ -233,93 +421,17 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 3. GLOBAL GIVING HUB (INTERACTIVE COMPONENT)                              */}
+      {/* GLOBAL GIVING HUB (INTERACTIVE COMPONENT)                                 */}
       {/* ========================================================================= */}
       <GivingHubSection />
 
       {/* ========================================================================= */}
-      {/* 4. WHO WE ARE SECTION & SERVICE SCHEDULE                                   */}
-      {/* ========================================================================= */}
-      <section id="about" className="py-24 border-t border-slate-200/60 bg-white">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
-            {/* Text & Service Grid */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
-                WHO WE ARE
-              </span>
-              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2 leading-tight">
-                A fellowship built on faith, love & excellence.
-              </h2>
-              <p className="mt-4 text-sm text-slate-600 leading-relaxed">
-                ECCF is the campus arm of the Evangelical Church Winning All (ECWA), raised to produce students who are spiritual dynamites and academic giants. We meet weekly for Bible studies, prayer, worship, and outreach on the Edo State University campus.
-              </p>
-
-              {/* 2x2 Service Schedule */}
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                {[
-                  { day: 'SUNDAY', time: '9:00 AM', title: 'Praise & Worship' },
-                  { day: 'TUESDAY', time: '6:00 PM', title: 'Bible Study' },
-                  { day: 'THURSDAY', time: '6:30 PM', title: 'Prayer Meeting' },
-                  { day: 'FRIDAY', time: '5:00 PM', title: 'Outreach' },
-                ].map((serv) => (
-                  <motion.div
-                    key={serv.day}
-                    whileHover={{ scale: 1.02 }}
-                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-all hover:border-sky-200 hover:bg-sky-50/50"
-                  >
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#00a8ff] uppercase">
-                      <Calendar className="h-3 w-3" />
-                      <span>{serv.day}</span>
-                    </div>
-                    <div className="text-base font-extrabold text-slate-900 mt-1">{serv.time}</div>
-                    <div className="text-xs text-slate-500">{serv.title}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Visual Photo Cards Collage using Real Fellowship Pictures */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-                <Image
-                  src="/gallery/gallery-1.jpg"
-                  alt="Worship at ECCF"
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-6">
-                <Image
-                  src="/gallery/gallery-2.jpg"
-                  alt="Student Prayer Session"
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 5. PHOTO GALLERY SECTION                                                  */}
+      {/* FELLOWSHIP PHOTO GALLERY                                                  */}
       {/* ========================================================================= */}
       <PhotoGallerySection />
 
       {/* ========================================================================= */}
-      {/* 6. PLAN A VISIT (CTA SECTION)                                             */}
+      {/* 2.6 PLAN A VISIT (ZERO-FRICTION CTA SECTION FROM UI/UX BRIEF)             */}
       {/* ========================================================================= */}
       <section id="visit" className="py-20 border-t border-slate-200/60 bg-[#f8fafc] text-center">
         <motion.div
@@ -336,7 +448,7 @@ export default function Home() {
             Planning a Visit to ECCF?
           </h2>
           <p className="mt-4 text-sm text-slate-600 leading-relaxed">
-            We would love to welcome you in person! Whether you&apos;re a fresh student or a returning scholar, there is a place for you at our table.
+            We would love to welcome you in person! Whether you&apos;re a fresh student or a returning scholar, expect a warm welcome, powerful worship, and zero pressure.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
