@@ -1,17 +1,18 @@
 /**
- * GivingHubSection — Interactive Global Giving Component
+ * GivingHubSection — High-Impact Interactive Global Giving Banner
  *
- * Provides real-time category selection, dynamic amount presets,
- * SVG icons from lucide-react, and smooth Framer Motion micro-interactions.
+ * Designed to stand out dramatically from standard 3-column card sections.
+ * Features an immersive midnight-slate conversion layout, real-time category selection,
+ * amount preset selectors, and Flutterwave SSL security verification.
  */
 
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Lock, ArrowRight } from 'lucide-react'
+import { Check, Lock, ArrowRight, ShieldCheck, Heart } from 'lucide-react'
 
-const categories = ['Tithe', 'Offering', 'Project', 'Welfare']
+const categories = ['Tithe', 'Offering', 'Project Levy', 'Welfare Fund']
 const presetAmounts = [1000, 2500, 5000, 10000]
 
 export default function GivingHubSection() {
@@ -30,91 +31,112 @@ export default function GivingHubSection() {
   }
 
   return (
-    <section className="py-20 border-t border-slate-200/60 bg-[#f8fafc]">
-      <div className="mx-auto max-w-5xl px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 grid grid-cols-1 md:grid-cols-2"
-        >
-          {/* Left Card: Sky Blue Highlight */}
-          <div className="bg-[#00a8ff] text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute -right-12 -bottom-12 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+    <section className="relative w-full overflow-hidden bg-slate-950 text-white py-24 border-y border-slate-800">
+      {/* Background Ambient Glow Accent */}
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
 
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-sky-100">
-                GLOBAL GIVING HUB
-              </span>
-              <h2 className="text-3xl font-extrabold mt-3 leading-tight">
-                Support the Vision. <br />
-                Fund the Future.
-              </h2>
-              <p className="mt-4 text-sky-50 text-sm leading-relaxed">
-                Your seed powers campus outreaches, welfare funds, media production, and discipleship programmes. Every naira counts.
-              </p>
+      <div className="relative z-10 mx-auto max-w-6xl px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Column: High-Impact Mission Statement (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-sky-300 border border-sky-400/30">
+              <Heart className="h-3.5 w-3.5 text-sky-400 fill-sky-400" />
+              <span>SUPPORT THE VISION</span>
             </div>
 
-            <ul className="mt-8 space-y-2.5 text-xs font-semibold text-sky-100">
-              {['Tithes & Offerings', 'Project Contributions', 'Welfare Fund', 'Media Ministry'].map((item) => (
-                <motion.li
-                  key={item}
-                  whileHover={{ x: 4 }}
-                  className="flex items-center gap-2"
-                >
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20">
-                    <Check className="h-2.5 w-2.5 text-white" />
+            <h2 className="text-3xl font-extrabold sm:text-4xl lg:text-5xl leading-tight text-white">
+              Partner With Us. <br />
+              <span className="text-[#00a8ff]">Empower Believers.</span>
+            </h2>
+
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
+              Your seed directly funds campus evangelism outreaches, student welfare assistance, sermon media production, and weekly fellowship operations across Edo State University.
+            </p>
+
+            <div className="space-y-3 pt-2">
+              {[
+                'Tithes & Weekly Offerings',
+                'Fellowship Project Contributions',
+                'Student Welfare & Relief Fund',
+                'Media & Audio Engineering',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00a8ff] text-white">
+                    <Check className="h-3 w-3 stroke-[3]" />
                   </span>
-                  {item}
-                </motion.li>
+                  <span>{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
+
+            <div className="pt-4 flex items-center gap-2 text-xs font-medium text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-sky-400" />
+              <span>Direct Bank & Card Payments via Flutterwave</span>
+            </div>
           </div>
 
-          {/* Right Card: Interactive Form */}
-          <form onSubmit={handleGive} className="p-8 sm:p-12 bg-white flex flex-col justify-between space-y-6">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Make a Contribution</h3>
-
-              {/* Interactive Category Tabs */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {categories.map((cat) => {
-                  const isActive = selectedCategory === cat
-                  return (
-                    <motion.button
-                      key={cat}
-                      type="button"
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`relative rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
-                        isActive
-                          ? 'bg-[#00a8ff] text-white shadow-md shadow-sky-500/20'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {cat}
-                    </motion.button>
-                  )
-                })}
+          {/* Right Column: Interactive Conversion Card (7 cols) */}
+          <div className="lg:col-span-7">
+            <motion.form
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              onSubmit={handleGive}
+              className="rounded-3xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl p-8 sm:p-10 shadow-2xl shadow-slate-950 space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 className="text-xl font-extrabold text-white">Online Contribution Hub</h3>
+                <span className="text-xs font-bold text-sky-400">Step 1 of 2</span>
               </div>
 
-              {/* Interactive Form Fields */}
-              <div className="mt-6 space-y-4">
+              {/* Category Selector Tabs */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
+                  Select Giving Category
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {categories.map((cat) => {
+                    const isActive = selectedCategory === cat
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center ${
+                          isActive
+                            ? 'bg-[#00a8ff] text-white shadow-md shadow-sky-500/25'
+                            : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Input Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Full Name</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1.5">
+                    Your Full Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Emmanuel Okonkwo"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 focus:border-[#00a8ff] focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-[#00a8ff] focus:ring-1 focus:ring-[#00a8ff] focus:outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Amount (₦)</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1.5">
+                    Amount (₦ NGN)
+                  </label>
                   <input
                     type="number"
                     required
@@ -122,54 +144,57 @@ export default function GivingHubSection() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="5000"
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-[#00a8ff] focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-bold text-white placeholder-slate-500 focus:border-[#00a8ff] focus:ring-1 focus:ring-[#00a8ff] focus:outline-none transition-all"
                   />
                 </div>
+              </div>
 
-                {/* Preset Amount Selector Pills */}
+              {/* Preset Selector Pills */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-2">
+                  Quick Amount Presets
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {presetAmounts.map((amt) => {
                     const isSelected = Number(amount) === amt
                     return (
-                      <motion.button
+                      <button
                         key={amt}
                         type="button"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.95 }}
                         onClick={() => setAmount(amt)}
-                        className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-all ${
+                        className={`rounded-lg border px-3.5 py-1.5 text-xs font-bold transition-all ${
                           isSelected
-                            ? 'border-[#00a8ff] bg-sky-50 text-[#00a8ff]'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                            ? 'border-[#00a8ff] bg-sky-500/20 text-sky-300'
+                            : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                         }`}
                       >
                         ₦{amt.toLocaleString()}
-                      </motion.button>
+                      </button>
                     )
                   })}
                 </div>
               </div>
-            </div>
 
-            {/* Interactive Submit CTA Button */}
-            <div>
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                disabled={isSubmitting}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#f97316] hover:bg-orange-600 text-white font-bold py-3.5 text-sm shadow-md shadow-orange-500/25 transition-all disabled:opacity-50"
-              >
-                <span>{isSubmitting ? 'Processing...' : `Give ₦${Number(amount || 0).toLocaleString()} via Flutterwave`}</span>
-                <ArrowRight className="h-4 w-4" />
-              </motion.button>
-              <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-medium">
-                <Lock className="h-3 w-3 text-slate-400" />
-                <span>Secured by Flutterwave &bull; SSL Encrypted</span>
+              {/* Submit CTA Button */}
+              <div className="pt-2">
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#00a8ff] hover:bg-[#0092e0] text-white font-extrabold py-4 text-sm shadow-lg shadow-sky-500/30 transition-all disabled:opacity-50"
+                >
+                  <span>{isSubmitting ? 'Processing...' : `Proceed to Give ₦${Number(amount || 0).toLocaleString()}`}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </motion.button>
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                  <Lock className="h-3 w-3 text-slate-500" />
+                  <span>Secured by Flutterwave Payment Gateway &bull; 256-Bit SSL</span>
+                </div>
               </div>
-            </div>
-          </form>
-        </motion.div>
+            </motion.form>
+          </div>
+        </div>
       </div>
     </section>
   )

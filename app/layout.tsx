@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: "ECCF — Edo State University Christian Campus Fellowship",
   description:
     "Official Central Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
+  icons: {
+    icon: "/logos/ECCF LOGO.png",
+    shortcut: "/logos/ECCF LOGO.png",
+    apple: "/logos/ECCF LOGO.png",
+  },
 };
 
 export default function RootLayout({

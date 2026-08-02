@@ -15,7 +15,6 @@ import {
   BookOpen,
 } from 'lucide-react'
 import GivingHubSection from '@/components/home/GivingHubSection'
-import PhotoGallerySection from '@/components/home/PhotoGallerySection'
 import TeamsSection from '@/components/home/TeamsSection'
 import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
 import CountUpNumber from '@/components/ui/CountUpNumber'
@@ -56,7 +55,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#00a8ff] selection:text-white overflow-x-hidden">
       {/* ========================================================================= */}
-      {/* 2.2 HERO SECTION — HARMONIOUS SKY BLUE & SLATE COLOR PALETTE              */}
+      {/* 2.2 HERO SECTION                                                          */}
       {/* ========================================================================= */}
       <section className="relative w-full bg-gradient-to-b from-sky-50/60 via-[#f8fafc] to-[#f8fafc] py-16 md:py-24 border-b border-slate-200/60">
         <div className="mx-auto max-w-6xl px-6 text-center">
@@ -92,7 +91,7 @@ export default function Home() {
               &ldquo;JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.&rdquo;
             </motion.p>
 
-            {/* Paragraph Text */}
+            {/* Hero Subtitle */}
             <motion.p
               variants={itemVariants}
               className="mx-auto mt-3 max-w-xl text-sm sm:text-base text-slate-600 leading-relaxed font-normal"
@@ -153,9 +152,9 @@ export default function Home() {
             {/* Framed Fellowship Photo Showcase */}
             <motion.div
               variants={itemVariants}
-              className="mt-14 w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-2 sm:p-3 shadow-xl shadow-slate-200/60"
+              className="mt-10 sm:mt-14 w-full max-w-4xl overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-2 sm:p-3 shadow-xl shadow-slate-200/60"
             >
-              <div className="relative h-64 sm:h-96 w-full overflow-hidden rounded-2xl">
+              <div className="relative h-44 sm:h-96 w-full overflow-hidden rounded-xl sm:rounded-2xl">
                 <Image
                   src="/gallery/gallery-4.jpg"
                   alt="ECCF Student Fellowship Community"
@@ -186,7 +185,6 @@ export default function Home() {
       <section id="about" className="py-24 bg-white">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
-            {/* Mission, Vision, Core Values Cards */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -194,7 +192,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff]">
-                WHO WE ARE
+                OUR FOUNDATION
               </span>
               <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mt-2 leading-tight">
                 Raised for Kingdom Impact & Academic Distinction.
@@ -203,7 +201,6 @@ export default function Home() {
                 ECCF is dedicated to nurturing university students into grounded believers who excel in their studies and manifest the power of God on campus.
               </p>
 
-              {/* Scannable Blocks */}
               <div className="mt-8 space-y-4">
                 <div className="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-sky-50/40">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#00a8ff] border border-sky-200/50">
@@ -243,15 +240,14 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Photo Collage */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="grid grid-cols-2 gap-4"
+              className="grid grid-cols-2 gap-3 sm:gap-4"
             >
-              <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+              <div className="relative h-36 sm:h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
                 <Image
                   src="/gallery/gallery-1.jpg"
                   alt="Worship at ECCF"
@@ -260,7 +256,7 @@ export default function Home() {
                   className="object-cover hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-8">
+              <div className="relative h-36 sm:h-56 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-4 sm:mt-8">
                 <Image
                   src="/gallery/gallery-2.jpg"
                   alt="Student Prayer Session"
@@ -275,14 +271,14 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.4 SERVICE TIMES & LOCATION (UNIFIED FELLOWSHIP PALETTE)                  */}
+      {/* 2.4 SERVICE TIMES & LOCATION                                              */}
       {/* ========================================================================= */}
       <section className="py-24 border-t border-slate-200/60 bg-[#f8fafc]">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center max-w-xl mx-auto mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff] flex items-center justify-center gap-1.5 mb-1">
               <Calendar className="h-3.5 w-3.5 text-[#00a8ff]" />
-              <span>WEEKLY FELLOWSHIP SCHEDULE</span>
+              <span>WEEKLY SCHEDULE</span>
             </span>
             <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">
               Service Times & Location
@@ -326,7 +322,6 @@ export default function Home() {
                 className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 transition-all hover:border-sky-300"
               >
                 <div>
-                  {/* Top Header Badge */}
                   <div className="flex items-center justify-between mb-4">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 text-[#00a8ff] border border-sky-100 px-3.5 py-1 text-xs font-black uppercase tracking-wider">
                       <Calendar className="h-3 w-3" />
@@ -334,17 +329,14 @@ export default function Home() {
                     </span>
                   </div>
 
-                  {/* Service Title */}
                   <h3 className="text-xl font-black text-slate-900 leading-snug min-h-[3.25rem] flex items-center">
                     {service.name}
                   </h3>
 
-                  {/* Subtitle / Focus */}
                   <p className="text-xs text-slate-500 font-medium mb-6">
                     {service.subtitle}
                   </p>
 
-                  {/* Time Badge Box */}
                   <div className="flex items-center gap-3 rounded-2xl bg-sky-50/60 border border-sky-100 p-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00a8ff] text-white shadow-sm">
                       <Clock className="h-5 w-5" />
@@ -360,7 +352,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Bottom Location Marker */}
                 <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-[#00a8ff] shrink-0" />
@@ -374,12 +365,12 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2.5 OUR TEAMS / UNITS                                                     */}
+      {/* 2.5 INTEGRATED TEAMS & FELLOWSHIP LIFE GALLERY                            */}
       {/* ========================================================================= */}
       <TeamsSection />
 
       {/* ========================================================================= */}
-      {/* SERMON VAULT — UNIFIED HARMONIOUS SERMON CARDS                            */}
+      {/* SERMON VAULT                                                              */}
       {/* ========================================================================= */}
       <section className="py-20 border-t border-slate-200/60 bg-white">
         <div className="mx-auto max-w-6xl px-6">
@@ -435,7 +426,6 @@ export default function Home() {
                 className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
                 onClick={() => handlePlayAudio(sermon.title, sermon.speaker)}
               >
-                {/* Thumbnail Image placeholder with Play Button */}
                 <div className="relative h-48 w-full bg-gradient-to-br from-sky-100/70 via-sky-50/50 to-slate-100 flex items-center justify-center p-4">
                   <div className="absolute top-3 right-3 rounded-full bg-slate-900/70 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-2.5 py-1 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -449,7 +439,6 @@ export default function Home() {
                   </motion.div>
                 </div>
 
-                {/* Content */}
                 <div className="p-6">
                   <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00a8ff]">
                     {sermon.tag}
@@ -476,17 +465,12 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* GLOBAL GIVING HUB (INTERACTIVE COMPONENT)                                 */}
+      {/* HIGH-IMPACT CONVERSION BANNER (GLOBAL GIVING HUB)                          */}
       {/* ========================================================================= */}
       <GivingHubSection />
 
       {/* ========================================================================= */}
-      {/* FELLOWSHIP PHOTO GALLERY                                                  */}
-      {/* ========================================================================= */}
-      <PhotoGallerySection />
-
-      {/* ========================================================================= */}
-      {/* 2.6 PLAN A VISIT (ZERO-FRICTION CTA SECTION FROM UI/UX BRIEF)             */}
+      {/* 2.6 PLAN A VISIT                                                          */}
       {/* ========================================================================= */}
       <section id="visit" className="py-20 border-t border-slate-200/60 bg-[#f8fafc] text-center">
         <motion.div
