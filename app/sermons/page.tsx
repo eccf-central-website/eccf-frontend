@@ -10,7 +10,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Search, Clock, BookOpen, Calendar, Filter } from 'lucide-react'
-import LiveAudioPlayer from '@/components/home/LiveAudioPlayer'
 
 // Fallback sermon data matching Sanity schema shape
 const fallbackSermons = [
@@ -81,16 +80,9 @@ const topicFilters = ['All', 'Academics', 'Faith', 'Prayer', 'Leadership', 'Favo
 export default function SermonsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState('All')
-  const [audioPlayerOpen, setAudioPlayerOpen] = useState(false)
-  const [audioTitle, setAudioTitle] = useState('')
-  const [audioSubtitle, setAudioSubtitle] = useState('')
-  const [isPlaying, setIsPlaying] = useState(true)
-
   const handlePlay = (title: string, preacher: string) => {
-    setAudioTitle(title)
-    setAudioSubtitle(preacher)
-    setAudioPlayerOpen(true)
-    setIsPlaying(true)
+    // Audio player removed per UI updates
+    console.log('Play clicked:', title, preacher)
   }
 
   const filteredSermons = fallbackSermons.filter((sermon) => {
@@ -240,15 +232,6 @@ export default function SermonsPage() {
         )}
       </div>
 
-      {/* Floating Audio Player */}
-      <LiveAudioPlayer
-        isOpen={audioPlayerOpen}
-        title={audioTitle}
-        subtitle={audioSubtitle}
-        onClose={() => setAudioPlayerOpen(false)}
-        isPlaying={isPlaying}
-        onTogglePlay={() => setIsPlaying((prev) => !prev)}
-      />
     </div>
   )
 }

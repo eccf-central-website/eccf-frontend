@@ -31,7 +31,7 @@ export default function GivingHubSection() {
   }
 
   return (
-    <section className="relative w-full overflow-hidden bg-slate-950 text-white py-24 border-y border-slate-800">
+    <section id="giving" className="relative w-full overflow-hidden bg-slate-950 text-white py-24 border-y border-slate-800">
       {/* Background Ambient Glow Accent */}
       <div className="absolute top-0 right-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-sky-500/15 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none" />
@@ -88,7 +88,6 @@ export default function GivingHubSection() {
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <h3 className="text-xl font-extrabold text-white">Online Contribution Hub</h3>
-                <span className="text-xs font-bold text-sky-400">Step 1 of 2</span>
               </div>
 
               {/* Category Selector Tabs */}
@@ -129,7 +128,7 @@ export default function GivingHubSection() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Emmanuel Okonkwo"
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-[#00a8ff] focus:ring-1 focus:ring-[#00a8ff] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-white/40 focus:ring-1 focus:ring-white/40 focus:outline-none transition-all"
                   />
                 </div>
 
@@ -144,7 +143,7 @@ export default function GivingHubSection() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="5000"
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm font-bold text-white placeholder-slate-500 focus:border-[#00a8ff] focus:ring-1 focus:ring-[#00a8ff] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white placeholder:text-white/50 focus:border-white/40 focus:ring-1 focus:ring-white/40 focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -162,10 +161,10 @@ export default function GivingHubSection() {
                         key={amt}
                         type="button"
                         onClick={() => setAmount(amt)}
-                        className={`rounded-lg border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                        className={`rounded-lg border px-4 py-2 text-sm font-bold transition-all ${
                           isSelected
                             ? 'border-[#00a8ff] bg-sky-500/20 text-sky-300'
-                            : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                            : 'border-white/20 bg-white/5 text-slate-300 hover:border-white/40 hover:text-white'
                         }`}
                       >
                         ₦{amt.toLocaleString()}

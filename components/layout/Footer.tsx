@@ -35,11 +35,23 @@ export default function Footer() {
               Edo State University Christian Campus Fellowship. Raising spiritual dynamites and academic giants for God&apos;s kingdom.
             </p>
 
-            <div className="flex items-center gap-4 text-xs font-semibold text-slate-400">
-              <span className="hover:text-[#00a8ff] cursor-pointer transition-colors">IG</span>
-              <span className="hover:text-[#00a8ff] cursor-pointer transition-colors">FB</span>
-              <span className="hover:text-[#00a8ff] cursor-pointer transition-colors">WA</span>
-              <span className="hover:text-[#00a8ff] cursor-pointer transition-colors">YT</span>
+            <div className="flex items-center gap-4 text-slate-400">
+              {/* Instagram SVG */}
+              <a href="#" className="hover:text-[#00a8ff] transition-colors">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              </a>
+              {/* Twitter SVG */}
+              <a href="#" className="hover:text-[#00a8ff] transition-colors">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+              </a>
+              {/* Facebook SVG */}
+              <a href="#" className="hover:text-[#00a8ff] transition-colors">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              {/* Youtube SVG */}
+              <a href="#" className="hover:text-[#00a8ff] transition-colors">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 7.1C2.5 7.1 2 9.4 2 12c0 2.6.5 4.9.5 4.9 0 0 1.9.1 5 .1h9c3 0 4.9-.1 4.9-.1.5-2.6.6-4.9.6-4.9 0-2.6-.6-4.9-.6-4.9 0 0-1.9-.1-5-.1h-9C4.4 7 2.5 7.1 2.5 7.1z"/><polygon points="9.5,15 15.5,12 9.5,9"/></svg>
+              </a>
             </div>
           </div>
 

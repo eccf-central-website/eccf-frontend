@@ -44,7 +44,6 @@ const galleryMoments = [
   { src: '/gallery/gallery-3.jpg', title: 'Word Exposition', category: 'Bible Study' },
   { src: '/gallery/gallery-7.jpg', title: 'Kingdom Leadership', category: 'Exco Roster' },
   { src: '/gallery/gallery-8.jpg', title: 'Youthful Fellowship', category: 'Student Life' },
-  { src: '/gallery/gallery-9.jpg', title: 'Campus Evangelism', category: 'Outreach' },
 ]
 
 export default function TeamsSection() {
@@ -87,8 +86,8 @@ export default function TeamsSection() {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
-                <div className="absolute bottom-3 left-4 text-white font-extrabold text-lg sm:text-xl">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
+                <div className="absolute bottom-4 left-5 text-white font-extrabold text-lg sm:text-xl">
                   {team.name}
                 </div>
               </div>
@@ -111,7 +110,7 @@ export default function TeamsSection() {
             <span className="text-[11px] sm:text-xs text-slate-400">Click photo to view</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {galleryMoments.map((img, idx) => (
               <motion.div
                 key={idx}
