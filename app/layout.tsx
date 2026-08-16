@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -40,6 +42,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f8fafc] text-slate-800 flex min-h-screen flex-col`}
       >
+        <Suspense fallback={null}>
+          <NavigationProgressBar />
+        </Suspense>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
