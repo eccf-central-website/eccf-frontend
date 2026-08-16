@@ -66,19 +66,17 @@ export default function ServiceScheduleConsole() {
       <div className="absolute top-1/2 -right-40 -translate-y-1/2 w-96 h-96 rounded-full bg-sky-100/60 blur-3xl pointer-events-none" />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
-        {/* Editorial Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-12 gap-4 sm:gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-2">
-              <span className="h-1.5 w-6 rounded-full bg-[#0095ff]" />
-              <span>FELLOWSHIP SCHEDULE</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-              Weekly Service Times & Location
-            </h2>
+        {/* Clean Centered Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3.5 py-1 text-xs font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest text-[10px] mb-3">
+            <Sparkles className="h-3 w-3 text-[#0095ff]" />
+            <span>WEEKLY FELLOWSHIP SCHEDULE</span>
           </div>
-          <p className="max-w-md text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-            We gather 3 times weekly at Edo State University. Every service is uniquely structured to nurture your spiritual life and academic journey.
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
+            Service Times & Location
+          </h2>
+          <p className="mt-3 text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
+            We gather 3 times weekly at Edo State University. Every service is uniquely structured to ignite your faith and nurture academic distinction.
           </p>
         </div>
 

@@ -310,22 +310,22 @@ export default function Home() {
       {/* ========================================================================= */}
       <section className="py-16 sm:py-24 bg-white border-t border-slate-200/60">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-12 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-12 gap-4 pb-4 border-b border-slate-100">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-2">
-                <span className="h-1.5 w-6 rounded-full bg-[#0095ff]" />
+              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest mb-2">
+                <Headphones className="h-3 w-3 text-[#0095ff]" />
                 <span>SERMON VAULT & PODCASTS</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
                 Latest Inspired Messages
               </h2>
             </div>
             <Link
               href="/sermons"
-              className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-[#0095ff] hover:text-sky-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0095ff] hover:text-sky-700 transition-colors group"
             >
               <span>Explore All Sermons</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
 

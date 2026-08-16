@@ -65,19 +65,17 @@ export default function TeamsSection() {
   return (
     <section className="py-24 bg-[#fafafa] border-t border-slate-200/60 relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-6">
-        {/* Editorial Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-2">
-              <Users className="h-4 w-4 text-[#0095ff]" />
-              <span>FELLOWSHIP OPERATIONAL TEAMS</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-              Find Your Place to Serve & Lead
-            </h2>
+        {/* Clean Centered Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3.5 py-1 text-xs font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest text-[10px] mb-3">
+            <Users className="h-3.5 w-3.5 text-[#0095ff]" />
+            <span>FELLOWSHIP OPERATIONAL TEAMS</span>
           </div>
-          <p className="max-w-md text-sm text-slate-600 leading-relaxed font-normal">
-            Every university student has a God-given gift. Connect with one of our operational teams to build lifelong leadership and ministry skills.
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
+            Find Your Place to Serve & Lead
+          </h2>
+          <p className="mt-3 text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
+            Every university student has a God-given gift. Connect with one of our operational teams to build lifelong leadership, ministry skills, and Christian character.
           </p>
         </div>
 
