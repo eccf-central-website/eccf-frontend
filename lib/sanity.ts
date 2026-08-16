@@ -12,7 +12,7 @@
 
 import {createClient} from '@sanity/client'
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || ''
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
 /** Public read-only client — safe for React Server Components */
