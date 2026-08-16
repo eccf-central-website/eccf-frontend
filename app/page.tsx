@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, Variants } from 'framer-motion'
@@ -17,6 +18,8 @@ import TeamsSection from '@/components/home/TeamsSection'
 import GivingHubSection from '@/components/home/GivingHubSection'
 import CountUpNumber from '@/components/ui/CountUpNumber'
 import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/PlatformIcons'
+import { sanityClient } from '@/lib/sanity'
+import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -38,12 +41,49 @@ const itemVariants: Variants = {
   },
 }
 
+interface SiteSettings {
+  heroHeadlineStart?: string
+  heroAccentWord?: string
+  heroHeadlineEnd?: string
+  heroCredo?: string
+  heroParagraph?: string
+  liveStatusText?: string
+  heroPhotoUrl?: string
+  statsActiveMembers?: string
+  statsMinistryTeams?: string
+  statsCampusLegacy?: string
+}
+
 export default function Home() {
+  const [settings, setSettings] = useState<SiteSettings | null>(null)
+
+  useEffect(() => {
+    sanityClient
+      .fetch<SiteSettings>(SITE_SETTINGS_QUERY)
+      .then((data) => {
+        if (data) setSettings(data)
+      })
+      .catch((err) => {
+        console.warn('Failed to load Sanity site settings, using defaults:', err)
+      })
+  }, [])
+
+  // Content with live Sanity CMS values & safe fallback defaults
+  const headlineStart = settings?.heroHeadlineStart || 'An Assembly Of'
+  const accentWord = settings?.heroAccentWord || 'Spiritual Dynamites'
+  const headlineEnd = settings?.heroHeadlineEnd || 'And Academic Giants.'
+  const credo = settings?.heroCredo || 'JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.'
+  const paragraph =
+    settings?.heroParagraph ||
+    'More than a fellowship — we are a family raising a generation of believers who excel spiritually and academically, rooted in faith, built for impact.'
+  const liveStatus = settings?.liveStatusText || 'NEXT UP • Sunday 08:00 AM • NLT 5 Law Auditorium'
+  const heroPhoto = settings?.heroPhotoUrl || '/gallery/gallery-8.jpg'
+
   return (
     <div className="relative min-h-screen bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0095ff] selection:text-white overflow-x-hidden pt-14 sm:pt-16">
       
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION — SPACIOUS, AIRY EDITORIAL LAYOUT                         */}
+      {/* 1. HERO SECTION — CLEAN EDITORIAL WITH NO CLUTTER OR OVERLAYS            */}
       {/* ========================================================================= */}
       <section className="relative w-full bg-gradient-to-b from-white via-[#fafaf9] to-[#fafaf9] py-10 sm:py-12 md:py-16 lg:py-20 border-b border-slate-200/60 overflow-hidden">
         {/* Soft Ambient Warm & Sky Radial Glows */}
@@ -53,7 +93,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 lg:gap-12 items-center">
             
-            {/* Left Column: Confident Editorial Copy with Generous Breathing Room */}
+            {/* Left Column: Confident Editorial Copy (CMS Dynamic) */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -70,27 +110,27 @@ export default function Home() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
                 <span className="font-extrabold uppercase tracking-wider text-slate-800">
-                  NEXT UP &bull; Sunday 08:00 AM &bull; NLT 5 Law Auditorium
+                  {liveStatus}
                 </span>
               </motion.div>
 
-              {/* Master Headline: Relaxed, Airy Line Height */}
+              {/* Master Headline: 3 Clean Lines without Overlap Collisions */}
               <motion.h1
                 variants={itemVariants}
                 className="text-[2.2rem] sm:text-3xl md:text-[2.6rem] lg:text-[3.25rem] font-black tracking-tight text-slate-950 leading-[1.24] sm:leading-[1.26]"
               >
-                An Assembly Of <br />
+                {headlineStart} <br />
                 <span className="font-serif italic font-normal tracking-normal text-[#0095ff] inline-block my-1 sm:my-2">
-                  Spiritual Dynamites
+                  {accentWord}
                 </span> <br />
-                And Academic Giants.
+                {headlineEnd}
               </motion.h1>
 
               {/* Credo Divider Line */}
               <motion.div variants={itemVariants} className="flex items-center gap-3 pt-1">
                 <span className="h-0.5 w-7 bg-[#0095ff] shrink-0" />
                 <span className="text-[9px] sm:text-xs font-black tracking-wider text-[#0095ff] uppercase font-mono">
-                  JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.
+                  {credo}
                 </span>
               </motion.div>
 
@@ -99,10 +139,10 @@ export default function Home() {
                 variants={itemVariants}
                 className="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal max-w-xl pt-0.5"
               >
-                More than a fellowship — we are a family raising a generation of believers who excel spiritually and academically, rooted in faith, built for impact.
+                {paragraph}
               </motion.p>
 
-              {/* Primary Actions: Generously Spaced CTAs */}
+              {/* Primary Actions: Plan a Visit Dominant, Sermon Podcasts Plain Text Link */}
               <motion.div
                 variants={itemVariants}
                 className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6"
@@ -124,7 +164,7 @@ export default function Home() {
                 </Link>
               </motion.div>
 
-              {/* Integrated Metric Counter Strip — Spacious & Distinct */}
+              {/* Integrated Metric Counter Strip */}
               <motion.div
                 variants={itemVariants}
                 className="pt-6 sm:pt-7 border-t border-slate-200/80 grid grid-cols-3 gap-3 sm:gap-8 text-left max-w-lg"
@@ -150,43 +190,28 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right Column: Proportional Pebble Photo Frame (5 cols on md/lg) */}
+            {/* Right Column: Clean, Pristine Organic Pebble Photo Frame (No Badges, No Footnotes) */}
             <motion.div
               initial={{ opacity: 0, scale: 0.94, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="md:col-span-5 flex flex-col items-center md:items-end justify-center pt-4 md:pt-0"
+              className="md:col-span-5 flex items-center justify-center md:justify-end pt-4 md:pt-0"
             >
               {/* Organic Pebble / Egg Mask Shape Frame */}
               <motion.div
                 whileHover={{ scale: 1.02, rotate: 0.5 }}
                 transition={{ duration: 0.4 }}
-                className="relative w-full max-w-[260px] xs:max-w-[290px] sm:max-w-[330px] md:max-w-[340px] lg:max-w-[380px] aspect-[4/5] overflow-hidden rounded-[42%_58%_70%_30%_/_45%_45%_55%_55%] border-4 border-white shadow-2xl shadow-slate-900/10 bg-slate-100"
+                className="relative w-full max-w-[270px] xs:max-w-[300px] sm:max-w-[340px] md:max-w-[350px] lg:max-w-[390px] aspect-[4/5] overflow-hidden rounded-[42%_58%_70%_30%_/_45%_45%_55%_55%] border-4 border-white shadow-2xl shadow-slate-900/10 bg-slate-100"
               >
-                {/* Safe-Area Centered Top Location Tag */}
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 rounded-full bg-slate-950/70 backdrop-blur-md px-3 py-1 text-[8.5px] sm:text-[9px] font-black uppercase tracking-wider text-sky-300 border border-white/15 shadow-md whitespace-nowrap pointer-events-none">
-                  EDO STATE UNIVERSITY, IYAMHO
-                </div>
-
                 <Image
-                  src="/gallery/gallery-8.jpg"
-                  alt="Student Scholar & Minister at Edo State University Christian Campus Fellowship"
+                  src={heroPhoto}
+                  alt="Students at Edo State University Christian Campus Fellowship"
                   fill
                   priority
-                  sizes="(max-width: 640px) 260px, (max-width: 1024px) 340px, 380px"
+                  sizes="(max-width: 640px) 270px, (max-width: 1024px) 350px, 390px"
                   className="object-cover object-top hover:scale-105 transition-transform duration-700"
                 />
               </motion.div>
-
-              {/* Charter Information Anchored Fully Outside Image */}
-              <div className="mt-3.5 sm:mt-4 text-center md:text-left w-full max-w-[260px] xs:max-w-[290px] sm:max-w-[330px] md:max-w-[340px] lg:max-w-[380px] md:ml-auto">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                  EST. 2014 — CHARTER
-                </span>
-                <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-relaxed mt-0.5">
-                  Nurturing spiritual growth and academic excellence at Edo State University, Iyamho.
-                </p>
-              </div>
             </motion.div>
 
           </div>

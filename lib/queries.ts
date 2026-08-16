@@ -99,13 +99,19 @@ export const TEAMS_QUERY = `
   }
 `
 
-/** Fetch site settings */
+/** Fetch site settings with full homepage hero CMS fields */
 export const SITE_SETTINGS_QUERY = `
   *[_type == "siteSettings"][0] {
-    siteTitle,
-    motto,
-    contactEmail,
-    fellowshipLocation
+    heroHeadlineStart,
+    heroAccentWord,
+    heroHeadlineEnd,
+    heroCredo,
+    heroParagraph,
+    liveStatusText,
+    "heroPhotoUrl": heroPhoto.asset->url,
+    statsActiveMembers,
+    statsMinistryTeams,
+    statsCampusLegacy
   }
 `
 
