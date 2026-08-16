@@ -1,11 +1,7 @@
 /**
  * GROQ Queries — eccf-frontend
  *
- * Centralised query strings for all Sanity data fetching.
- * Public queries (Sermons, Announcements, Gallery, Teams, SiteSettings) are used in Server Components.
- * Authenticated queries (Worker, Ledgers) must only be called from Server Actions.
- *
- * Keep field projections in sync with eccf-backend schemas and types/index.ts.
+ * Centralised query strings for all Sanity data fetching (ADR-002 Compliant).
  */
 
 // ---------------------------------------------------------------------------
@@ -22,6 +18,12 @@ export const SERMONS_QUERY = `
     topics,
     datePreached,
     scriptureReference,
+    spotifyUrl,
+    youtubeUrl,
+    youtubeMusicUrl,
+    spotifyEmbedId,
+    youtubeVideoId,
+    isAutoSynced,
     mediaUrl
   }
 `
@@ -36,6 +38,12 @@ export const SERMON_BY_ID_QUERY = `
     topics,
     datePreached,
     scriptureReference,
+    spotifyUrl,
+    youtubeUrl,
+    youtubeMusicUrl,
+    spotifyEmbedId,
+    youtubeVideoId,
+    isAutoSynced,
     mediaUrl
   }
 `

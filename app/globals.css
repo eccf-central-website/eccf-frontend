@@ -3,11 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --brand-sky: #00a8ff;
-  --brand-sky-hover: #0092e0;
-  --brand-orange: #f97316;
+  --background: #fafaf9;
+  --foreground: #090d16;
+  --brand-sky: #0095ff;
+  --brand-sky-hover: #0080e0;
+  --brand-navy: #090d16;
+  --brand-gold: #f59e0b;
 }
 
 html {
@@ -22,9 +23,9 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom smooth light scrollbar */
+/* Custom smooth modern scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -33,15 +34,40 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00a8ff;
+  background: #0095ff;
+}
+
+/* Hide default number input up/down spin buttons across Chrome, Safari, Edge, Firefox */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .dark-glass-card {
+    background: rgba(9, 13, 22, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(30, 41, 59, 0.7);
   }
 }
