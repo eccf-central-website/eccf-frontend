@@ -7,51 +7,53 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Camera, ArrowUpRight, Maximize2, X } from 'lucide-react'
 import Link from 'next/link'
+import { sanityClient } from '@/lib/sanity'
+import { GALLERY_QUERY, TEAMS_QUERY } from '@/lib/queries'
 
-const fellowshipTeams = [
+const defaultTeams = [
   {
     name: 'Choir Team',
     role: 'Worship Ministry',
     description: 'Leading the congregation into divine atmospheres of anointed praise and intimate worship during all services.',
-    image: '/gallery/gallery-1.jpg',
+    imageUrl: '/gallery/gallery-1.jpg',
     tag: 'VOCALS & INSTRUMENTS',
   },
   {
     name: 'Drama (Thespians)',
     role: 'Creative Arts',
     description: 'Preaching the Gospel through inspiring stage plays, spoken word, and creative theatrical productions.',
-    image: '/gallery/gallery-4.jpg',
+    imageUrl: '/gallery/gallery-4.jpg',
     tag: 'STAGE & DRAMA',
   },
   {
     name: 'Prayer Team',
     role: 'Intercessory Ministry',
     description: 'Interceding continuously for the university campus, spiritual awakening, and student academic victories.',
-    image: '/gallery/gallery-2.jpg',
+    imageUrl: '/gallery/gallery-2.jpg',
     tag: 'INTERCESSION',
   },
   {
     name: 'Ushering & Protocol',
     role: 'Hospitality & Order',
     description: 'Welcoming members and guests with warmth while maintaining order, comfort, and hospitality in God’s house.',
-    image: '/gallery/gallery-5.jpg',
+    imageUrl: '/gallery/gallery-5.jpg',
     tag: 'HOSPITALITY',
   },
   {
     name: 'Media & Technical',
     role: 'Digital Outreach',
     description: 'Capturing live audio/video streams, podcast syndication, sound engineering, and campus digital outreach.',
-    image: '/gallery/gallery-6.jpg',
+    imageUrl: '/gallery/gallery-6.jpg',
     tag: 'SOUND & MEDIA',
   },
 ]
 
-const galleryMoments = [
+const defaultMoments = [
   { src: '/gallery/gallery-3.jpg', title: 'Word Exposition & Study', category: 'Wednesday Service' },
   { src: '/gallery/gallery-7.jpg', title: 'Kingdom Leadership Council', category: 'Exco Roster' },
   { src: '/gallery/gallery-4.jpg', title: 'Student Life & Fellowship', category: 'Campus Moments' },
@@ -62,8 +64,61 @@ const galleryMoments = [
   { src: '/gallery/gallery-14.jpg', title: 'Exhortation & Preaching', category: 'Spiritual Dynamites' },
 ]
 
+interface SanityTeam {
+  _id: string
+  name: string
+  description?: string
+  imageUrl?: string
+  leadName?: string
+}
+
+interface SanityGalleryItem {
+  _id: string
+  title: string
+  category?: string
+  imageUrl?: string
+}
+
 export default function TeamsSection() {
   const [selectedImage, setSelectedImage] = useState<{ src: string; title: string; category: string } | null>(null)
+  const [teams, setTeams] = useState(defaultTeams)
+  const [gallery, setGallery] = useState(defaultMoments)
+
+  useEffect(() => {
+    // Fetch live operational teams from Sanity
+    sanityClient
+      .fetch<SanityTeam[]>(TEAMS_QUERY)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setTeams(
+            data.map((t, idx) => ({
+              name: t.name,
+              role: t.leadName || defaultTeams[idx % defaultTeams.length].role,
+              description: t.description || defaultTeams[idx % defaultTeams.length].description,
+              imageUrl: t.imageUrl || defaultTeams[idx % defaultTeams.length].imageUrl,
+              tag: defaultTeams[idx % defaultTeams.length].tag,
+            }))
+          )
+        }
+      })
+      .catch((err) => console.warn('Could not fetch Sanity teams, using defaults:', err))
+
+    // Fetch live gallery moments from Sanity
+    sanityClient
+      .fetch<SanityGalleryItem[]>(GALLERY_QUERY)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setGallery(
+            data.map((g) => ({
+              src: g.imageUrl || '/gallery/gallery-3.jpg',
+              title: g.title,
+              category: g.category || 'Fellowship Life',
+            }))
+          )
+        }
+      })
+      .catch((err) => console.warn('Could not fetch Sanity gallery, using defaults:', err))
+  }, [])
 
   return (
     <section className="py-16 sm:py-24 bg-[#fafafa] border-t border-slate-200/60 relative overflow-hidden">
@@ -90,7 +145,7 @@ export default function TeamsSection() {
 
         {/* 5-Column Grid with Spotlight Cards & Staggered Upward Entrance */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {fellowshipTeams.map((team, idx) => (
+          {teams.map((team, idx) => (
             <motion.div
               key={team.name}
               initial={{ opacity: 0, y: 30 }}
@@ -104,7 +159,7 @@ export default function TeamsSection() {
                 {/* Photo with Overlay */}
                 <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-2xl bg-slate-100">
                   <Image
-                    src={team.image}
+                    src={team.imageUrl}
                     alt={team.name}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -167,7 +222,7 @@ export default function TeamsSection() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {galleryMoments.map((img, idx) => (
+            {gallery.map((img, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, scale: 0.92 }}

@@ -77,14 +77,15 @@ export const LATEST_ANNOUNCEMENT_QUERY = `
 // Gallery Items & Team Units
 // ---------------------------------------------------------------------------
 
-/** Fetch all published gallery items */
+/** Fetch all published gallery items, prioritizing featured & recently updated */
 export const GALLERY_QUERY = `
-  *[_type == "galleryItem"] | order(_createdAt desc) {
+  *[_type == "galleryItem"] | order(featured desc, _updatedAt desc, _createdAt desc) {
     _id,
     title,
     category,
     "imageUrl": image.asset->url,
-    eventDate
+    eventDate,
+    featured
   }
 `
 
