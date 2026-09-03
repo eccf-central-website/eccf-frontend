@@ -491,13 +491,13 @@ export default function Home() {
               </div>
               <div className="text-center sm:text-left">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#0095ff] block">
-                  FELLOWSHIP AUDITORIUM VENUE
+                  FELLOWSHIP VENUE
                 </span>
                 <span className="text-base sm:text-xl font-black text-slate-900 block">
                   NLT 5, Faculty of Law, ESUI
                 </span>
                 <span className="text-xs text-slate-500 font-medium">
-                  Edo State University Iyamho &bull; Campus Auditorium
+                  Edo State University Iyamho &bull; NLT 5
                 </span>
               </div>
             </div>

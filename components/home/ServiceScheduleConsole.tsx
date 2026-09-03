@@ -202,7 +202,7 @@ export default function ServiceScheduleConsole() {
 
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 border-t border-slate-800 pt-3">
                 <span className="text-sky-300 font-semibold">{currentService.day} Fellowship Gathering</span>
-                <span className="text-slate-400">Campus Auditorium</span>
+                <span className="text-slate-400">NLT 5</span>
               </div>
             </div>
           </motion.div>

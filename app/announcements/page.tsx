@@ -30,7 +30,7 @@ const announcementsData = [
     content:
       'Join the fellowship this Friday for a specialized academic prayer and study empowerment session. Anointed senior scholars and faculty advisers will share practical study systems and lead intense breakthrough prayers ahead of university examinations.',
     publishDate: 'July 25, 2025',
-    location: 'Campus Fellowship Hall, Edo State University',
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
   {
     _id: '2',
@@ -43,7 +43,7 @@ const announcementsData = [
     content:
       'Glorious praise, intimate worship, and deep scripture exposition await you this Sunday morning. Free fellowship transport shuttles will be operating across all hostel quarters starting from 07:15 AM.',
     publishDate: 'July 20, 2025',
-    location: 'Campus Fellowship Hall, Edo State University',
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
   {
     _id: '3',
@@ -56,7 +56,7 @@ const announcementsData = [
     content:
       'Deep dive into the Epistle to the Romans every Wednesday. Come with your study Bibles, notebooks, and questions as we unpack grace, justification by faith, and Christian discipleship.',
     publishDate: 'July 16, 2025',
-    location: 'Campus Fellowship Hall, Edo State University',
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
   {
     _id: '4',
@@ -69,7 +69,7 @@ const announcementsData = [
     content:
       'All newly admitted and returning students interested in serving in the Choir, Drama (Thespians), Prayer, Media, or Ushering & Protocol teams are invited to the orientation and audition session this Saturday.',
     publishDate: 'July 10, 2025',
-    location: 'Choir & Media Room, Fellowship Hall',
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
 ]
 
