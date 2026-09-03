@@ -138,7 +138,7 @@ export const SITE_SETTINGS_QUERY = `
     liveStatusText,
     "heroPhotoUrl": heroPhoto.asset->url,
     statsActiveMembers,
-    statsMinistryTeams,
+    statsWeeklyServices,
     statsCampusLegacy
   }
 `
