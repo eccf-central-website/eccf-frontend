@@ -7,7 +7,6 @@ import { motion, Variants } from 'framer-motion'
 import {
   Clock,
   ArrowRight,
-  Headphones,
   Radio,
   MapPin,
 } from 'lucide-react'
@@ -74,44 +73,29 @@ export default function Home() {
   const paragraph =
     settings?.heroParagraph ||
     'More than a fellowship — we are a family raising a generation of believers who excel spiritually and academically, rooted in faith, built for impact.'
-  const liveStatus = settings?.liveStatusText || 'NEXT UP • Sunday 08:00 AM • NLT 5 Law Auditorium'
   const heroPhoto = settings?.heroPhotoUrl || '/gallery/gallery-8.jpg'
 
   return (
     <div className="relative min-h-screen bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0095ff] selection:text-white overflow-x-hidden pt-14 sm:pt-16">
       
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION — CLEAN EDITORIAL WITH NO CLUTTER OR OVERLAYS            */}
+      {/* 1. HERO SECTION — OPEN, AIRY EDITORIAL LAYOUT                             */}
       {/* ========================================================================= */}
-      <section className="relative w-full bg-gradient-to-b from-white via-[#fafaf9] to-[#fafaf9] py-10 sm:py-12 md:py-16 lg:py-20 border-b border-slate-200/60 overflow-hidden">
+      <section className="relative w-full bg-gradient-to-b from-white via-[#fafaf9] to-[#fafaf9] py-10 sm:py-14 md:py-18 lg:py-20 overflow-hidden">
         {/* Soft Ambient Warm & Sky Radial Glows */}
-        <div className="absolute top-10 -left-20 h-[350px] sm:h-[450px] w-[350px] sm:w-[450px] rounded-full bg-sky-100/50 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 right-10 h-[300px] sm:h-[400px] w-[300px] sm:w-[400px] rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
+        <div className="absolute top-10 -left-20 h-[350px] sm:h-[450px] w-[350px] sm:w-[450px] rounded-full bg-sky-100/40 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-10 h-[300px] sm:h-[400px] w-[300px] sm:w-[400px] rounded-full bg-amber-100/30 blur-3xl pointer-events-none" />
 
         <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 lg:gap-14 items-center">
             
-            {/* Left Column: Confident Editorial Copy (CMS Dynamic) */}
+            {/* Left Column: Confident Editorial Copy */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
               className="md:col-span-7 text-left space-y-4 sm:space-y-5"
             >
-              {/* Minimalist Live Status Pill */}
-              <motion.div
-                variants={itemVariants}
-                className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold text-slate-600 flex-wrap"
-              >
-                <span className="flex h-2 w-2 relative shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span className="font-extrabold uppercase tracking-wider text-slate-800">
-                  {liveStatus}
-                </span>
-              </motion.div>
-
               {/* Master Headline: 3 Clean Lines without Overlap Collisions */}
               <motion.h1
                 variants={itemVariants}
@@ -162,10 +146,10 @@ export default function Home() {
                 </Link>
               </motion.div>
 
-              {/* Integrated Metric Counter Strip */}
+              {/* Integrated Metric Counter Strip — Open, Clean Layout */}
               <motion.div
                 variants={itemVariants}
-                className="pt-6 sm:pt-7 border-t border-slate-200/80 grid grid-cols-3 gap-3 sm:gap-8 text-left max-w-lg"
+                className="pt-6 sm:pt-7 grid grid-cols-3 gap-3 sm:gap-8 text-left max-w-lg"
               >
                 <div>
                   <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
@@ -188,18 +172,17 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right Column: Clean, Pristine Organic Pebble Photo Frame */}
+            {/* Right Column: Clean Organic Pebble Photo */}
             <motion.div
               initial={{ opacity: 0, scale: 0.94, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="md:col-span-5 flex items-center justify-center md:justify-end pt-4 md:pt-0"
             >
-              {/* Organic Pebble / Egg Mask Shape Frame */}
               <motion.div
                 whileHover={{ scale: 1.02, rotate: 0.5 }}
                 transition={{ duration: 0.4 }}
-                className="relative w-full max-w-[270px] xs:max-w-[300px] sm:max-w-[340px] md:max-w-[350px] lg:max-w-[390px] aspect-[4/5] overflow-hidden rounded-[42%_58%_70%_30%_/_45%_45%_55%_55%] border-4 border-white shadow-2xl shadow-slate-900/10 bg-slate-100"
+                className="relative w-full max-w-[270px] xs:max-w-[300px] sm:max-w-[340px] md:max-w-[350px] lg:max-w-[390px] aspect-[4/5] overflow-hidden rounded-[42%_58%_70%_30%_/_45%_45%_55%_55%] shadow-2xl shadow-slate-900/10 bg-slate-100"
               >
                 <Image
                   src={heroPhoto}
@@ -217,35 +200,34 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2. WHO WE ARE — DUAL MANDATE EDITORIAL SECTION                            */}
+      {/* 2. WHO WE ARE — OPEN EDITORIAL LIST (NO CHUNKY BOX CARDS)                 */}
       {/* ========================================================================= */}
-      <section id="about" className="py-14 sm:py-20 md:py-24 bg-white border-b border-slate-200/60">
+      <section id="about" className="py-16 sm:py-24 bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 lg:gap-16 items-center">
             
-            {/* Left Column: The Dual Mandate (7 cols on md/lg) */}
+            {/* Left Column: The Dual Mandate */}
             <motion.div
               initial={{ opacity: 0, y: 25 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5 }}
-              className="md:col-span-7 space-y-5 sm:space-y-6"
+              className="md:col-span-7 space-y-6"
             >
               <div>
-                <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-2">
-                  <span className="h-1.5 w-6 rounded-full bg-[#0095ff]" />
-                  <span>WHO WE ARE</span>
-                </div>
+                <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-2 font-mono">
+                  WHO WE ARE
+                </span>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
                   Raised for Kingdom Impact & Academic Distinction.
                 </h2>
-                <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal">
+                <p className="mt-4 text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal">
                   ECCF exists to eliminate the false divide between spiritual fervency and academic excellence. We empower students to walk in the fullness of the Holy Spirit while attaining top academic honors.
                 </p>
               </div>
 
-              {/* Numbered Core Pillars — Clean Editorial Layout */}
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 pt-1">
+              {/* Numbered Core Pillars — Open Editorial Stream */}
+              <div className="divide-y divide-slate-100 pt-2">
                 {[
                   {
                     num: '01',
@@ -265,18 +247,19 @@ export default function Home() {
                 ].map((pillar, idx) => (
                   <motion.div
                     key={pillar.num}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15 }}
-                    transition={{ duration: 0.45, delay: idx * 0.1 }}
-                    whileHover={{ x: 6, transition: { duration: 0.2 } }}
-                    className="flex gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-2xl border border-slate-100 bg-[#fafaf9] hover:bg-white hover:border-slate-200 transition-colors shadow-sm"
+                    transition={{ duration: 0.4, delay: idx * 0.08 }}
+                    className="flex items-start gap-4 py-4 sm:py-5 group"
                   >
-                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0095ff] font-mono font-black text-xs sm:text-sm">
+                    <span className="text-xs sm:text-sm font-black text-[#0095ff] font-mono pt-0.5 tracking-wider shrink-0">
                       {pillar.num}
-                    </div>
+                    </span>
                     <div>
-                      <h4 className="text-sm sm:text-base font-black text-slate-900">{pillar.title}</h4>
+                      <h4 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#0095ff] transition-colors">
+                        {pillar.title}
+                      </h4>
                       <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed font-normal">
                         {pillar.desc}
                       </p>
@@ -286,15 +269,15 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Right Column: Dynamic Student Moments Collage (5 cols on md/lg) */}
-            <div className="md:col-span-5 grid grid-cols-2 gap-2.5 sm:gap-4">
+            {/* Right Column: Dynamic Student Moments Collage */}
+            <div className="md:col-span-5 grid grid-cols-2 gap-3 sm:gap-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.92 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.5 }}
                 whileHover={{ scale: 1.03 }}
-                className="relative h-44 sm:h-56 md:h-64 lg:h-72 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm"
+                className="relative h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-3xl shadow-sm"
               >
                 <Image
                   src="/gallery/gallery-1.jpg"
@@ -310,7 +293,7 @@ export default function Home() {
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 whileHover={{ scale: 1.03 }}
-                className="relative h-44 sm:h-56 md:h-64 lg:h-72 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm mt-3 sm:mt-6"
+                className="relative h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-3xl shadow-sm mt-4 sm:mt-8"
               >
                 <Image
                   src="/gallery/gallery-2.jpg"
@@ -337,15 +320,15 @@ export default function Home() {
       <TeamsSection />
 
       {/* ========================================================================= */}
-      {/* 5. SERMON VAULT & PODCASTS (ICON-ONLY STREAMING PLATFORMS)                */}
+      {/* 5. SERMON VAULT & PODCASTS (STREAMLINED EDITORIAL CARDS)                  */}
       {/* ========================================================================= */}
-      <section className="py-14 sm:py-20 md:py-24 bg-white border-t border-slate-200/60">
+      <section className="py-16 sm:py-24 bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-14 gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest mb-2">
-                <span>SERMON VAULT & PODCASTS</span>
-              </div>
+              <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-2 font-mono">
+                SERMON VAULT & PODCASTS
+              </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
                 Latest Inspired Messages
               </h2>
@@ -359,8 +342,8 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* 3-Column Sermon Cards with Upward Staggered Entrance */}
-          <div className="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* 3-Column Sermon Cards with Clean Organic Style */}
+          <div className="grid grid-cols-1 gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 tag: 'FAVOUR UNVEILED',
@@ -395,41 +378,41 @@ export default function Home() {
             ].map((sermon, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 25 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.45, delay: idx * 0.08 }}
-                whileHover={{ y: -7, transition: { duration: 0.25 } }}
-                className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm hover:shadow-xl hover:shadow-sky-500/10 transition-shadow"
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                className="group flex flex-col justify-between overflow-hidden rounded-3xl bg-[#fafaf9] shadow-sm hover:shadow-xl hover:shadow-slate-900/5 transition-all"
               >
                 <div>
-                  <div className="relative h-36 sm:h-44 w-full bg-gradient-to-br from-sky-100/70 via-sky-50/50 to-slate-100 flex items-center justify-center p-4">
-                    <div className="absolute top-3 right-3 rounded-full bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 flex items-center gap-1">
+                  <div className="relative h-40 sm:h-48 w-full bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-slate-200/50 flex items-center justify-center p-4">
+                    <div className="absolute top-3.5 right-3.5 rounded-full bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       <span>{sermon.duration}</span>
                     </div>
 
-                    <div className="absolute top-3 left-3 rounded-full bg-sky-500/20 backdrop-blur-md text-[#0095ff] text-[10px] font-black px-3 py-1 border border-sky-300/40">
+                    <div className="absolute top-3.5 left-3.5 rounded-full bg-white/80 backdrop-blur-md text-[#0095ff] text-[10px] font-black px-3 py-1">
                       {sermon.tag}
                     </div>
 
-                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white text-[#0095ff] shadow-md">
-                      <Headphones className="h-5 w-5 sm:h-6 sm:w-6 text-[#0095ff]" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0095ff] shadow-sm group-hover:scale-110 transition-transform">
+                      <Radio className="h-5 w-5 text-[#0095ff]" />
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-6">
+                  <div className="p-5 sm:p-6">
                     <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#0095ff] transition-colors leading-snug">
                       {sermon.title}
                     </h3>
-                    <p className="text-xs font-bold text-slate-500 mt-1">
+                    <p className="text-xs font-semibold text-slate-500 mt-1">
                       {sermon.speaker} &bull; {sermon.date}
                     </p>
                   </div>
                 </div>
 
-                {/* Clean Icon-Only Platform Buttons */}
-                <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 border-t border-slate-100 flex items-center justify-between">
+                {/* Clean Platform Buttons */}
+                <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-3 flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-400">Stream on:</span>
                   <div className="flex items-center gap-2">
                     <a
@@ -438,7 +421,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       title="Listen on Spotify"
                       aria-label="Listen on Spotify"
-                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 transition-all shadow-sm"
+                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
                     >
                       <SpotifyIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </a>
@@ -449,7 +432,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       title="Listen on YouTube Music"
                       aria-label="Listen on YouTube Music"
-                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition-all shadow-sm"
+                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
                     >
                       <YouTubeMusicIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </a>
@@ -460,7 +443,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       title="Watch on YouTube"
                       aria-label="Watch on YouTube"
-                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 transition-all shadow-sm"
+                      className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
                     >
                       <YouTubeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </a>
@@ -478,21 +461,20 @@ export default function Home() {
       <GivingHubSection />
 
       {/* ========================================================================= */}
-      {/* 7. PLAN A VISIT & LOCATION ENQUIRY SECTION                                */}
+      {/* 7. PLAN A VISIT & LOCATION ENQUIRY SECTION (OPEN INVITING LAYOUT)         */}
       {/* ========================================================================= */}
-      <section id="visit" className="py-14 sm:py-20 md:py-24 bg-[#fafaf9] border-t border-slate-200/60">
+      <section id="visit" className="py-16 sm:py-24 bg-[#fafaf9]">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <motion.div
-            initial={{ opacity: 0, y: 25, scale: 0.98 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.55 }}
-            className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-8 md:p-12 shadow-sm text-center"
+            className="text-center"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-2">
-              <span className="h-1.5 w-6 rounded-full bg-[#0095ff]" />
-              <span>JOIN OUR CAMPUS FAMILY</span>
-            </div>
+            <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-2 font-mono">
+              JOIN OUR CAMPUS FAMILY
+            </span>
 
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight mt-1">
               Planning a Visit to ECCF?
@@ -502,36 +484,36 @@ export default function Home() {
               Whether you&apos;re a fresher stepping onto campus for the first time or a returning scholar, we have a warm seat waiting for you. Expect vibrant praise, sound doctrine, and genuine community.
             </p>
 
-            {/* Exact Fellowship Location Box */}
-            <div className="mt-6 sm:mt-8 rounded-2xl bg-sky-50/70 border border-sky-100 p-4 sm:p-5 max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3.5 text-slate-800">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0095ff] text-white shadow-sm">
-                <MapPin className="h-5 w-5 text-white" />
+            {/* Fellowship Location Highlight */}
+            <div className="mt-8 rounded-3xl bg-white p-5 sm:p-7 max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 text-slate-800 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-[#0095ff]">
+                <MapPin className="h-6 w-6 text-[#0095ff]" />
               </div>
               <div className="text-center sm:text-left">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#0095ff] block">
                   FELLOWSHIP AUDITORIUM VENUE
                 </span>
-                <span className="text-sm sm:text-lg font-black text-slate-900 block">
+                <span className="text-base sm:text-xl font-black text-slate-900 block">
                   NLT 5, Faculty of Law, ESUI
                 </span>
-                <span className="text-[11px] sm:text-xs text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 font-medium">
                   Edo State University Iyamho &bull; Campus Auditorium
                 </span>
               </div>
             </div>
 
             {/* Direct Enquiry / Direction Assistance */}
-            <div className="mt-5 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100 max-w-xl mx-auto text-center space-y-3 sm:space-y-4">
+            <div className="mt-8 max-w-xl mx-auto text-center space-y-4">
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                Need any help locating the venue or arranging a ride? Message <span className="font-bold text-slate-900">Ransom</span> on WhatsApp or call our team:
+                Need any help locating the venue or arranging a ride? Message <span className="font-bold text-slate-900">Ransom</span> on WhatsApp or email our team:
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
                   href="https://wa.me/2348100000000?text=Hello%20Ransom%2C%20I%20am%20planning%20to%20visit%20ECCF%20and%20need%20help%20locating%20NLT%205%20Faculty%20of%20Law."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 sm:px-7 py-3 text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-7 py-3.5 text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
                 >
                   <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.586 1.861.947 3.013.947 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.768-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.782 0-3.454-.471-4.908-1.292l-5.092 1.354 1.38-5.041c-.911-1.507-1.428-3.266-1.428-5.021 0-5.514 4.486-10 10-10s10 4.486 10 10z" />
@@ -541,7 +523,7 @@ export default function Home() {
 
                 <a
                   href="mailto:edsuchristiancampusfellowship@gmail.com?subject=Planning%20a%20Visit%20to%20ECCF"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white text-slate-800 font-bold px-6 py-3 text-xs uppercase tracking-wider hover:bg-slate-50 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 text-slate-800 font-bold px-7 py-3.5 text-xs uppercase tracking-wider hover:bg-slate-200 transition-all hover:scale-[1.03] active:scale-[0.98]"
                 >
                   <span>Email Fellowship</span>
                 </a>

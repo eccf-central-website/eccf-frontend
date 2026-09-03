@@ -3,6 +3,7 @@
  *
  * Implements Section 2.5 of SDD and CLAUDE.md guidelines.
  * Naming Rule: Field/entity is strictly 'team' (Choir, Drama/Thespians, Prayer, Ushering, Media).
+ * Seamless, borderless cards with organic shadows.
  */
 
 'use client'
@@ -121,19 +122,20 @@ export default function TeamsSection() {
   }, [])
 
   return (
-    <section className="py-16 sm:py-24 bg-[#fafafa] border-t border-slate-200/60 relative overflow-hidden">
+    <section className="py-16 sm:py-24 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        
         {/* Clean Centered Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-2xl mx-auto mb-12 sm:mb-14"
+          className="text-center max-w-2xl mx-auto mb-12 sm:mb-16"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3.5 py-1 text-xs font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest text-[10px] mb-3">
-            <span>FELLOWSHIP OPERATIONAL TEAMS</span>
-          </div>
+          <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-2 font-mono">
+            FELLOWSHIP OPERATIONAL TEAMS
+          </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
             Find Your Place to Serve & Lead
           </h2>
@@ -142,21 +144,21 @@ export default function TeamsSection() {
           </p>
         </motion.div>
 
-        {/* 5-Column Grid with Spotlight Cards & Staggered Upward Entrance */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        {/* Seamless 3-Column Team Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {teams.map((team, idx) => (
             <motion.div
               key={team.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.5, delay: idx * 0.08 }}
-              whileHover={{ y: -8, transition: { duration: 0.25 } }}
-              className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-2.5 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 transition-shadow"
+              transition={{ duration: 0.45, delay: idx * 0.08 }}
+              whileHover={{ y: -6, transition: { duration: 0.25 } }}
+              className="group flex flex-col justify-between overflow-hidden rounded-3xl bg-[#fafaf9] shadow-sm hover:shadow-xl hover:shadow-slate-900/5 transition-all"
             >
               <div>
                 {/* Photo with Overlay */}
-                <div className="relative h-48 sm:h-52 w-full overflow-hidden rounded-2xl bg-slate-100">
+                <div className="relative h-52 sm:h-56 w-full overflow-hidden bg-slate-100">
                   <Image
                     src={team.imageUrl}
                     alt={team.name}
@@ -166,13 +168,13 @@ export default function TeamsSection() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
                   
-                  <div className="absolute top-3 left-3">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white border border-white/10">
+                  <div className="absolute top-3.5 left-3.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white">
                       {team.tag}
                     </span>
                   </div>
 
-                  <div className="absolute bottom-3 left-4 right-4 text-white">
+                  <div className="absolute bottom-3.5 left-4 right-4 text-white">
                     <span className="text-[11px] font-bold text-sky-300 block uppercase tracking-wider">
                       {team.role}
                     </span>
@@ -183,7 +185,7 @@ export default function TeamsSection() {
                 </div>
 
                 {/* Description */}
-                <div className="p-4 sm:p-5">
+                <div className="p-5 sm:p-6">
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                     {team.description}
                   </p>
@@ -191,7 +193,7 @@ export default function TeamsSection() {
               </div>
 
               {/* Bottom Join Action */}
-              <div className="p-4 pt-0 border-t border-slate-100/80 flex items-center justify-between">
+              <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-400">Open to all students</span>
                 <Link
                   href="#visit"
@@ -206,13 +208,13 @@ export default function TeamsSection() {
         </div>
 
         {/* Integrated Fellowship Moments Photo Stream */}
-        <div className="mt-16 sm:mt-20 border-t border-slate-200/80 pt-12 sm:pt-14">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-1">
-                <span>FELLOWSHIP LIFE</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+              <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-1 font-mono">
+                FELLOWSHIP LIFE
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-950">
                 Moments in God&apos;s Presence
               </h3>
             </div>
@@ -223,13 +225,13 @@ export default function TeamsSection() {
             {gallery.map((img, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.94 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.45, delay: idx * 0.05 }}
-                whileHover={{ scale: 1.04 }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                whileHover={{ scale: 1.03 }}
                 onClick={() => setSelectedImage(img)}
-                className="group relative h-32 sm:h-44 overflow-hidden rounded-2xl border border-slate-200/80 shadow-sm cursor-pointer"
+                className="group relative h-36 sm:h-48 overflow-hidden rounded-3xl shadow-sm cursor-pointer bg-slate-100"
               >
                 <Image
                   src={img.src}
@@ -238,7 +240,7 @@ export default function TeamsSection() {
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Maximize2 className="h-5 w-5 text-white" />
                 </div>
               </motion.div>
@@ -262,7 +264,7 @@ export default function TeamsSection() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-3xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700"
+              className="relative max-w-3xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl"
             >
               <div className="relative h-80 sm:h-[450px] w-full bg-black">
                 <Image
