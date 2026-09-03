@@ -68,7 +68,7 @@ export default function Home() {
   // Content with live Sanity CMS values & safe fallback defaults
   const headlineStart = settings?.heroHeadlineStart || 'An Assembly Of'
   const accentWord = settings?.heroAccentWord || 'Spiritual Dynamites'
-  const headlineEnd = settings?.heroHeadlineEnd || 'And Academic Giants.'
+  const headlineEnd = settings?.heroHeadlineEnd || 'And Academic Giants'
   const credo = settings?.heroCredo || 'JESUS IN OUR HEARTS, LETTERS IN OUR HEADS.'
   const paragraph =
     settings?.heroParagraph ||
@@ -94,18 +94,18 @@ export default function Home() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="md:col-span-7 text-left space-y-4 sm:space-y-5"
+              className="md:col-span-7 text-left space-y-5 sm:space-y-6"
             >
-              {/* Master Headline: 3 Clean Lines without Overlap Collisions */}
+              {/* Master Headline: Large Elegant Serif matching Design Reference */}
               <motion.h1
                 variants={itemVariants}
-                className="text-[2.2rem] sm:text-3xl md:text-[2.6rem] lg:text-[3.25rem] font-black tracking-tight text-slate-950 leading-[1.24] sm:leading-[1.26]"
+                className="font-serif text-[2.5rem] sm:text-4xl md:text-5xl lg:text-[3.75rem] xl:text-[4.25rem] font-medium tracking-tight text-slate-950 leading-[1.16] sm:leading-[1.14]"
               >
-                {headlineStart} <br />
-                <span className="font-serif italic font-normal tracking-normal text-[#0095ff] inline-block my-1 sm:my-2">
+                <span>{headlineStart}</span> <br />
+                <span className="italic text-[#1849a9] inline-block my-0.5">
                   {accentWord}
                 </span> <br />
-                {headlineEnd}
+                <span>{headlineEnd}</span>
               </motion.h1>
 
               {/* Credo Divider Line */}
