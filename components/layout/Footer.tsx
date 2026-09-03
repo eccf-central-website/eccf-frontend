@@ -2,10 +2,12 @@
  * Footer — Global Footer Component
  *
  * Implements Section 2.7 of SDD and CLAUDE.md guidelines.
+ * Uses official, pixel-perfect web SVG icons for social platforms and Lucide Lock for Exco auth.
  */
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { Lock } from 'lucide-react'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -35,7 +37,7 @@ export default function Footer() {
               Edo State University Christian Campus Fellowship. Raising spiritual dynamites and academic giants for God&apos;s kingdom.
             </p>
 
-            {/* Social Media Links including TikTok */}
+            {/* Social Media Links with Official Vector Paths */}
             <div className="flex items-center gap-4 text-slate-400">
               {/* Instagram */}
               <a
@@ -76,9 +78,8 @@ export default function Footer() {
                 aria-label="YouTube"
                 className="hover:text-[#0095ff] transition-colors"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2.5 7.1C2.5 7.1 2 9.4 2 12c0 2.6.5 4.9.5 4.9 0 0 1.9.1 5 .1h9c3 0 4.9-.1 4.9-.1.5-2.6.6-4.9.6-4.9 0-2.6-.6-4.9-.6-4.9 0 0-1.9-.1-5-.1h-9C4.4 7 2.5 7.1 2.5 7.1z"/>
-                  <polygon points="9.5,15 15.5,12 9.5,9"/>
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
               </a>
 
@@ -91,8 +92,8 @@ export default function Footer() {
                 aria-label="Twitter / X"
                 className="hover:text-[#0095ff] transition-colors"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </a>
 
@@ -105,8 +106,8 @@ export default function Footer() {
                 aria-label="Facebook"
                 className="hover:text-[#0095ff] transition-colors"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
               </a>
             </div>
@@ -173,7 +174,8 @@ export default function Footer() {
             href="/dashboard"
             className="flex items-center gap-1.5 text-slate-500 hover:text-[#0095ff] font-medium transition-colors"
           >
-            🔒 Exco Dashboard Login
+            <Lock className="h-3.5 w-3.5 text-slate-400" />
+            <span>Exco Dashboard Login</span>
           </Link>
         </div>
       </div>

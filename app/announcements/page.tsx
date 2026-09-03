@@ -10,12 +10,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Bell,
   Calendar,
   MapPin,
   Search,
   Filter,
-  Sparkles,
   Pin,
   Clock,
 } from 'lucide-react'
@@ -97,7 +95,6 @@ export default function AnnouncementsPage() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-black text-[#0095ff] border border-slate-200 shadow-sm mb-3">
-            <Bell className="h-3.5 w-3.5 text-[#0095ff]" />
             <span className="uppercase tracking-widest text-[10px]">CAMPUS BULLETINS & NOTICES</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
@@ -179,8 +176,7 @@ export default function AnnouncementsPage() {
                 {/* Main Content (10 cols) */}
                 <div className="md:col-span-10 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-0.5 text-[11px] font-black text-[#0095ff] border border-sky-100 uppercase tracking-wider">
-                      <Sparkles className="h-3 w-3" />
+                    <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-[11px] font-black text-[#0095ff] border border-sky-100 uppercase tracking-wider">
                       {item.category}
                     </span>
 

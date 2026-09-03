@@ -9,7 +9,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Lock, ArrowRight, ShieldCheck, Heart } from 'lucide-react'
+import { Check, Lock, ArrowRight, ShieldCheck } from 'lucide-react'
 
 const categories = ['Offering', 'Tithe', 'Building Project', 'Smile Project', 'Welfare']
 const presetAmounts = [1000, 2500, 5000, 10000, 20000]
@@ -50,7 +50,6 @@ export default function GivingHubSection() {
             className="md:col-span-5 space-y-5 sm:space-y-6 text-center md:text-left"
           >
             <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 backdrop-blur-md px-4 py-1.5 text-xs font-black text-sky-300 border border-sky-400/30">
-              <Heart className="h-3.5 w-3.5 text-sky-400 fill-sky-400" />
               <span>KINGDOM PARTNERSHIP</span>
             </div>
 

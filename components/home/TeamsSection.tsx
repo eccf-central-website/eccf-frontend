@@ -10,7 +10,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Camera, ArrowUpRight, Maximize2, X } from 'lucide-react'
+import { ArrowUpRight, Maximize2, X } from 'lucide-react'
 import Link from 'next/link'
 import { sanityClient } from '@/lib/sanity'
 import { GALLERY_QUERY, TEAMS_QUERY } from '@/lib/queries'
@@ -132,7 +132,6 @@ export default function TeamsSection() {
           className="text-center max-w-2xl mx-auto mb-12 sm:mb-14"
         >
           <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3.5 py-1 text-xs font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest text-[10px] mb-3">
-            <Users className="h-3.5 w-3.5 text-[#0095ff]" />
             <span>FELLOWSHIP OPERATIONAL TEAMS</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
@@ -211,7 +210,6 @@ export default function TeamsSection() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-black tracking-widest text-[#0095ff] uppercase mb-1">
-                <Camera className="h-4 w-4 text-[#0095ff]" />
                 <span>FELLOWSHIP LIFE</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900">

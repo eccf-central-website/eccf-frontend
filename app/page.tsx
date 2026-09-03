@@ -8,10 +8,8 @@ import {
   Clock,
   ArrowRight,
   Headphones,
-  GraduationCap,
-  Flame,
-  Users,
   Radio,
+  MapPin,
 } from 'lucide-react'
 import ServiceScheduleConsole from '@/components/home/ServiceScheduleConsole'
 import TeamsSection from '@/components/home/TeamsSection'
@@ -190,7 +188,7 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right Column: Clean, Pristine Organic Pebble Photo Frame (No Badges, No Footnotes) */}
+            {/* Right Column: Clean, Pristine Organic Pebble Photo Frame */}
             <motion.div
               initial={{ opacity: 0, scale: 0.94, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -246,54 +244,45 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Numbered Core Pillars with Hover Micro-interactions */}
+              {/* Numbered Core Pillars — Clean Editorial Layout */}
               <div className="grid grid-cols-1 gap-3 sm:gap-4 pt-1">
                 {[
                   {
                     num: '01',
-                    icon: Flame,
                     title: 'Spiritual Dynamites',
                     desc: 'Deep prayer, uncompromised scriptural doctrine, apostolic impartation, and practical holiness on campus.',
                   },
                   {
                     num: '02',
-                    icon: GraduationCap,
                     title: 'Academic Giants',
                     desc: 'Rigorous study discipline, peer tutorial mentorship, intellectual diligence, and graduating at the top of every faculty.',
                   },
                   {
                     num: '03',
-                    icon: Users,
                     title: 'Kingdom Family & Community',
                     desc: 'A loving, supportive brotherhood and sisterhood providing welfare assistance, encouragement, and lifelong Christian friendships.',
                   },
-                ].map((pillar, idx) => {
-                  const Icon = pillar.icon
-                  return (
-                    <motion.div
-                      key={pillar.num}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, amount: 0.15 }}
-                      transition={{ duration: 0.45, delay: idx * 0.1 }}
-                      whileHover={{ x: 6, transition: { duration: 0.2 } }}
-                      className="flex gap-3 sm:gap-4 p-3.5 sm:p-5 rounded-2xl border border-slate-100 bg-[#fafaf9] hover:bg-white hover:border-slate-200 transition-colors shadow-sm"
-                    >
-                      <div className="flex h-8 sm:h-10 w-8 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0095ff] font-mono font-black text-xs sm:text-sm">
-                        {pillar.num}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-[#0095ff]" />
-                          <h4 className="text-sm sm:text-base font-black text-slate-900">{pillar.title}</h4>
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed font-normal">
-                          {pillar.desc}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                ].map((pillar, idx) => (
+                  <motion.div
+                    key={pillar.num}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.45, delay: idx * 0.1 }}
+                    whileHover={{ x: 6, transition: { duration: 0.2 } }}
+                    className="flex gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-2xl border border-slate-100 bg-[#fafaf9] hover:bg-white hover:border-slate-200 transition-colors shadow-sm"
+                  >
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[#0095ff] font-mono font-black text-xs sm:text-sm">
+                      {pillar.num}
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-black text-slate-900">{pillar.title}</h4>
+                      <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed font-normal">
+                        {pillar.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
 
@@ -355,7 +344,6 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-slate-100">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[10px] font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest mb-2">
-                <Headphones className="h-3 w-3 text-[#0095ff]" />
                 <span>SERMON VAULT & PODCASTS</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
@@ -515,12 +503,9 @@ export default function Home() {
             </p>
 
             {/* Exact Fellowship Location Box */}
-            <div className="mt-6 sm:mt-8 rounded-2xl bg-sky-50/70 border border-sky-100 p-3.5 sm:p-5 max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 text-slate-800">
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#0095ff] text-white shadow-sm">
-                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+            <div className="mt-6 sm:mt-8 rounded-2xl bg-sky-50/70 border border-sky-100 p-4 sm:p-5 max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3.5 text-slate-800">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0095ff] text-white shadow-sm">
+                <MapPin className="h-5 w-5 text-white" />
               </div>
               <div className="text-center sm:text-left">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#0095ff] block">

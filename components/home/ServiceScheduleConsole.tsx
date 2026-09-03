@@ -14,7 +14,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, MapPin, Sparkles, BookOpen, Heart, ArrowRight } from 'lucide-react'
+import { Clock, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 const services = [
@@ -26,7 +26,6 @@ const services = [
     badge: 'FLAGSHIP WEEKLY GATHERING',
     description: 'An atmosphere of high praise, deep intimate worship, and anointed apostolic preaching. Come expectant for spiritual elevation and miracles.',
     focusPoints: ['Congregational Praise & Worship', 'Prophetic Ministration', 'Kingdom Communion', 'Freshers & Visitors Welcome'],
-    icon: Sparkles,
     color: 'from-sky-500 to-blue-600',
     tagBg: 'bg-sky-50 text-sky-600 border-sky-200',
   },
@@ -38,7 +37,6 @@ const services = [
     badge: 'MIDWEEK SCRIPTURAL EXPOSITION',
     description: 'Verse-by-verse scriptural deep dive designed to ground university students in sound Christian doctrine, faith principles, and kingdom character.',
     focusPoints: ['Systematic Bible Teaching', 'Interactive Q&A Session', 'Doctrinal Clarity', 'Personal Spiritual Growth'],
-    icon: BookOpen,
     color: 'from-blue-600 to-indigo-600',
     tagBg: 'bg-blue-50 text-blue-600 border-blue-200',
   },
@@ -50,7 +48,6 @@ const services = [
     badge: 'ACADEMIC EMPOWERMENT & PRAYER',
     description: 'Intense spiritual warfare, academic prayer sessions, and intellectual empowerment to raise academic giants and first-class minds for Christ.',
     focusPoints: ['Academic Breakthrough Prayers', 'Overcoming Exam Anxiety', 'Spiritual Empowerment', 'Testimonies of Excellence'],
-    icon: Heart,
     color: 'from-indigo-600 to-sky-600',
     tagBg: 'bg-indigo-50 text-indigo-600 border-indigo-200',
   },
@@ -69,7 +66,6 @@ export default function ServiceScheduleConsole() {
         {/* Clean Centered Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3.5 py-1 text-xs font-black text-[#0095ff] border border-sky-100/80 uppercase tracking-widest text-[10px] mb-3">
-            <Sparkles className="h-3 w-3 text-[#0095ff]" />
             <span>WEEKLY FELLOWSHIP SCHEDULE</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
