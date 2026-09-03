@@ -58,51 +58,78 @@ export const ANNOUNCEMENTS_QUERY = `
     _id,
     title,
     content,
-    publishDate,
-    isPublished
-  }
-`
-
-/** Fetch the single most recent live announcement */
-export const LATEST_ANNOUNCEMENT_QUERY = `
-  *[_type == "announcement" && isPublished == true] | order(publishDate desc)[0] {
-    _id,
-    title,
-    content,
-    publishDate
-  }
-`
-
-// ---------------------------------------------------------------------------
-// Gallery Items & Team Units
-// ---------------------------------------------------------------------------
-
-/** Fetch all published gallery items, prioritizing featured & recently updated */
-export const GALLERY_QUERY = `
-  *[_type == "galleryItem"] | order(featured desc, _updatedAt desc, _createdAt desc) {
-    _id,
-    title,
     category,
-    "imageUrl": image.asset->url,
+    isPinned,
+    publishDate,
     eventDate,
-    featured
+    location,
+    targetAudience,
+    actionUrl,
+    actionLabel
   }
 `
+
+// ---------------------------------------------------------------------------
+// Gallery & Moments
+// ---------------------------------------------------------------------------
+
+/** Fetch all active gallery items, featured first, then newest */
+export const GALLERY_QUERY = `
+  *[_type == "galleryItem" && isActive == true] | order(featured desc, _updatedAt desc) {
+    _id,
+    title,
+    caption,
+    category,
+    featured,
+    "imageUrl": photo.asset->url
+  }
+`
+
+// ---------------------------------------------------------------------------
+// Operational Teams
+// ---------------------------------------------------------------------------
 
 /** Fetch all operational team units */
 export const TEAMS_QUERY = `
   *[_type == "teamUnit"] | order(order asc) {
     _id,
     name,
+    tagline,
     description,
-    "imageUrl": image.asset->url,
-    leadName
+    meetingTime,
+    leadName,
+    order,
+    "imageUrl": photo.asset->url
   }
 `
 
-/** Fetch site settings with full homepage hero CMS fields */
+// ---------------------------------------------------------------------------
+// Service Schedule
+// ---------------------------------------------------------------------------
+
+/** Fetch weekly service schedule ordered by sequence */
+export const SERVICES_QUERY = `
+  *[_type == "serviceSchedule"] | order(order asc) {
+    _id,
+    day,
+    time,
+    title,
+    badge,
+    description,
+    tags,
+    location,
+    order
+  }
+`
+
+// ---------------------------------------------------------------------------
+// Site Settings & Hero Configuration
+// ---------------------------------------------------------------------------
+
+/** Fetch site settings / hero configuration */
 export const SITE_SETTINGS_QUERY = `
   *[_type == "siteSettings"][0] {
+    _id,
     heroHeadlineStart,
     heroAccentWord,
     heroHeadlineEnd,

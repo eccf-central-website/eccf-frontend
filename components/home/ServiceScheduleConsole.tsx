@@ -6,59 +6,84 @@
  * 2. Word Service — 04:50 PM (Wednesday)
  * 3. Academic Challenge / Wonder Service — 04:50 PM (Friday)
  *
- * Location: NLT 5, Faculty of Law, ESUI
- * Open, fluid editorial layout with no nested heavy border boxes.
+ * Fully dynamic via Sanity CMS with clean, uncluttered presentation.
+ * Highlights/tags can be added or removed by admins in Sanity Studio.
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, MapPin, ArrowRight } from 'lucide-react'
+import { MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { sanityClient } from '@/lib/sanity'
+import { SERVICES_QUERY } from '@/lib/queries'
 
-const services = [
+interface ServiceItem {
+  _id: string
+  day: string
+  time: string
+  title: string
+  badge?: string
+  description: string
+  tags?: string[]
+  location?: string
+}
+
+const defaultServices: ServiceItem[] = [
   {
-    id: 'sunday',
+    _id: 'sunday',
     day: 'Sunday',
     time: '08:00 AM',
     title: 'Sunday Worship Service',
     badge: 'FLAGSHIP WEEKLY GATHERING',
     description: 'An atmosphere of high praise, deep intimate worship, and anointed apostolic preaching. Come expectant for spiritual elevation and miracles.',
-    focusPoints: ['Congregational Praise & Worship', 'Prophetic Ministration', 'Kingdom Communion', 'Freshers & Visitors Welcome'],
-    color: 'from-sky-500 to-blue-600',
-    tagBg: 'bg-sky-50 text-sky-600',
+    tags: [], // Clean by default — manageable via Sanity CMS
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
   {
-    id: 'wednesday',
+    _id: 'wednesday',
     day: 'Wednesday',
     time: '04:50 PM',
     title: 'Word Service',
     badge: 'MIDWEEK SCRIPTURAL EXPOSITION',
     description: 'Verse-by-verse scriptural deep dive designed to ground university students in sound Christian doctrine, faith principles, and kingdom character.',
-    focusPoints: ['Systematic Bible Teaching', 'Interactive Q&A Session', 'Doctrinal Clarity', 'Personal Spiritual Growth'],
-    color: 'from-blue-600 to-indigo-600',
-    tagBg: 'bg-blue-50 text-blue-600',
+    tags: [], // Clean by default — manageable via Sanity CMS
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
   {
-    id: 'friday',
+    _id: 'friday',
     day: 'Friday',
     time: '04:50 PM',
     title: 'Academic Challenge / Wonder Service',
     badge: 'ACADEMIC EMPOWERMENT & PRAYER',
     description: 'Intense spiritual warfare, academic prayer sessions, and intellectual empowerment to raise academic giants and first-class minds for Christ.',
-    focusPoints: ['Academic Breakthrough Prayers', 'Overcoming Exam Anxiety', 'Spiritual Empowerment', 'Testimonies of Excellence'],
-    color: 'from-indigo-600 to-sky-600',
-    tagBg: 'bg-indigo-50 text-indigo-600',
+    tags: [], // Clean by default — manageable via Sanity CMS
+    location: 'NLT 5, Faculty of Law, ESUI',
   },
 ]
 
 export default function ServiceScheduleConsole() {
+  const [services, setServices] = useState<ServiceItem[]>(defaultServices)
   const [activeTab, setActiveTab] = useState(0)
-  const currentService = services[activeTab]
+
+  useEffect(() => {
+    sanityClient
+      .fetch<ServiceItem[]>(SERVICES_QUERY)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setServices(data)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch Sanity services, using defaults:', err)
+      })
+  }, [])
+
+  const currentService = services[activeTab] || services[0]
 
   return (
-    <section className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden">
+    <section id="services" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
         
         {/* Clean Centered Section Header */}
@@ -75,12 +100,12 @@ export default function ServiceScheduleConsole() {
         </div>
 
         {/* Minimalist Day Tabs */}
-        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8 flex-wrap">
           {services.map((srv, idx) => {
             const isActive = activeTab === idx
             return (
               <button
-                key={srv.id}
+                key={srv._id || srv.day}
                 type="button"
                 onClick={() => setActiveTab(idx)}
                 className={`flex items-center gap-2 py-2.5 px-4 sm:px-6 rounded-full font-bold text-xs sm:text-sm transition-all ${
@@ -103,7 +128,7 @@ export default function ServiceScheduleConsole() {
         {/* Active Service Card */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentService.id}
+            key={currentService._id || currentService.day}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -113,9 +138,11 @@ export default function ServiceScheduleConsole() {
             {/* Left Column: Details (7 cols) */}
             <div className="lg:col-span-7 space-y-4 sm:space-y-6">
               <div>
-                <span className={`inline-block text-[10px] sm:text-[11px] font-black tracking-wider uppercase px-3 py-1 rounded-full ${currentService.tagBg}`}>
-                  {currentService.badge}
-                </span>
+                {currentService.badge && (
+                  <span className="inline-block text-[10px] sm:text-[11px] font-black tracking-wider uppercase px-3 py-1 rounded-full bg-sky-50 text-[#0095ff]">
+                    {currentService.badge}
+                  </span>
+                )}
                 <h3 className="text-xl sm:text-3xl font-black text-slate-900 mt-2 tracking-tight">
                   {currentService.title}
                 </h3>
@@ -124,21 +151,23 @@ export default function ServiceScheduleConsole() {
                 </p>
               </div>
 
-              {/* Focus Highlights */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
-                {currentService.focusPoints.map((point) => (
-                  <div key={point} className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
-                    <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-[#0095ff] shrink-0" />
-                    <span>{point}</span>
-                  </div>
-                ))}
-              </div>
+              {/* Dynamic Focus Highlights (Rendered only if tags are added in Sanity CMS) */}
+              {currentService.tags && currentService.tags.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                  {currentService.tags.map((tag) => (
+                    <div key={tag} className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
+                      <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-[#0095ff] shrink-0" />
+                      <span>{tag}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* CTA / Location Bar */}
               <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                   <MapPin className="h-4 w-4 text-[#0095ff] shrink-0" />
-                  <span>NLT 5, Faculty of Law, ESUI</span>
+                  <span>{currentService.location || 'NLT 5, Faculty of Law, ESUI'}</span>
                 </div>
 
                 <Link
@@ -151,8 +180,8 @@ export default function ServiceScheduleConsole() {
               </div>
             </div>
 
-            {/* Right Column: Visual Time Display (5 cols) */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 flex flex-col justify-between h-full min-h-[200px] sm:min-h-[220px] relative overflow-hidden shadow-lg">
+            {/* Right Column: Clean Visual Time Display (5 cols) */}
+            <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 flex flex-col justify-between h-full min-h-[170px] sm:min-h-[190px] relative overflow-hidden shadow-lg">
               <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-sky-500/20 blur-2xl pointer-events-none" />
 
               <div className="flex items-center justify-between">
@@ -162,7 +191,7 @@ export default function ServiceScheduleConsole() {
                 <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-400 animate-pulse" />
               </div>
 
-              <div className="my-4 sm:my-6">
+              <div className="my-3 sm:my-5">
                 <div className="text-3xl sm:text-5xl font-black tracking-tight text-white">
                   {currentService.time}
                 </div>
@@ -172,11 +201,8 @@ export default function ServiceScheduleConsole() {
               </div>
 
               <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 border-t border-slate-800 pt-3">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-sky-400" />
-                  <span>Duration: ~90 Mins</span>
-                </div>
-                <span className="text-sky-300 font-semibold">Free Transport</span>
+                <span className="text-sky-300 font-semibold">{currentService.day} Fellowship Gathering</span>
+                <span className="text-slate-400">Campus Auditorium</span>
               </div>
             </div>
           </motion.div>

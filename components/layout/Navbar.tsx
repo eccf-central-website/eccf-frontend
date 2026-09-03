@@ -117,13 +117,13 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Primary CTA: Vibrant Blue Give Online */}
+        {/* Primary CTA: Plan a Visit */}
         <div className="flex items-center gap-3">
           <Link
-            href="/#giving"
+            href="/#visit"
             className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-xs font-bold px-6 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            Give Online
+            Plan a Visit
           </Link>
 
           {/* Mobile Menu Button */}
@@ -174,11 +174,11 @@ export default function Navbar() {
           })}
           <li className="mt-2 pt-2 border-t border-slate-100">
             <Link
-              href="/#giving"
+              href="/#visit"
               onClick={() => setMobileOpen(false)}
               className="flex items-center justify-center rounded-full bg-[#0095ff] text-white text-center text-xs font-bold py-3 shadow-md shadow-sky-500/20"
             >
-              Give Online
+              Plan a Visit
             </Link>
           </li>
         </ul>
