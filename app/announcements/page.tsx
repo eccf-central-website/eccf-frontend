@@ -89,24 +89,24 @@ export default function AnnouncementsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] py-12 sm:py-20 pt-24 text-slate-900">
-      <div className="mx-auto max-w-5xl px-6">
+    <div className="min-h-screen bg-[#fafaf9] pt-28 sm:pt-32 md:pt-36 pb-16 sm:pb-24 text-slate-900">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
         
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-black text-[#0095ff] border border-slate-200 shadow-sm mb-3">
-            <span className="uppercase tracking-widest text-[10px]">CAMPUS BULLETINS & NOTICES</span>
-          </div>
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <span className="text-xs font-black uppercase tracking-widest text-[#0095ff] font-mono block mb-2">
+            CAMPUS BULLETINS & NOTICES
+          </span>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
             Fellowship Announcements
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+          <p className="mt-3 text-xs sm:text-base text-slate-600 font-normal leading-relaxed">
             Stay updated on weekly service schedules, academic prayer alerts, leadership notices, and campus outreach events at Edo State University.
           </p>
         </div>
 
         {/* Search & Category Filter Toolbar */}
-        <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/90 shadow-sm">
+        <div className="mb-10 sm:mb-12 flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl shadow-sm">
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
@@ -114,7 +114,7 @@ export default function AnnouncementsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search announcements..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 focus:border-[#0095ff] focus:ring-1 focus:ring-[#0095ff] focus:outline-none transition-all"
+              className="w-full rounded-2xl border-0 bg-[#fafaf9] pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0095ff]/30 focus:outline-none transition-all"
             />
           </div>
 
@@ -127,7 +127,7 @@ export default function AnnouncementsPage() {
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                  className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-slate-950 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -148,8 +148,8 @@ export default function AnnouncementsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: idx * 0.08 }}
-              className={`relative overflow-hidden rounded-3xl border bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition-all ${
-                item.isPinned ? 'border-sky-300 ring-1 ring-sky-200/60' : 'border-slate-200/90'
+              className={`relative overflow-hidden rounded-3xl bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition-all ${
+                item.isPinned ? 'ring-2 ring-sky-400/40' : ''
               }`}
             >
               {item.isPinned && (
@@ -161,7 +161,7 @@ export default function AnnouncementsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 {/* Date Capsule (2 cols) */}
-                <div className="md:col-span-2 flex md:flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-200/80 p-3 text-center">
+                <div className="md:col-span-2 flex md:flex-col items-center justify-center rounded-2xl bg-[#fafaf9] p-3.5 text-center">
                   <span className="text-[10px] font-black uppercase tracking-widest text-[#0095ff] block">
                     {item.month}
                   </span>
@@ -176,7 +176,7 @@ export default function AnnouncementsPage() {
                 {/* Main Content (10 cols) */}
                 <div className="md:col-span-10 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-[11px] font-black text-[#0095ff] border border-sky-100 uppercase tracking-wider">
+                    <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-0.5 text-[11px] font-black text-[#0095ff] uppercase tracking-wider">
                       {item.category}
                     </span>
 
