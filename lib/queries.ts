@@ -54,12 +54,13 @@ export const SERMON_BY_ID_QUERY = `
 
 /** Fetch all live (published) announcements, pinned first, then newest */
 export const ANNOUNCEMENTS_QUERY = `
-  *[_type == "announcement" && isPublished != false] | order(coalesce(isPinned, false) desc, publishDate desc, _createdAt desc) {
+  *[_type == "announcement" && isPublished != false] | order(coalesce(isPinned, false) desc, coalesce(eventDate, publishDate) desc, _createdAt desc) {
     _id,
     title,
     content,
     category,
     isPinned,
+    eventDate,
     publishDate,
     time,
     location

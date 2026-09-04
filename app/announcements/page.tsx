@@ -24,6 +24,7 @@ interface SanityAnnouncement {
   title: string
   category?: string
   isPinned?: boolean
+  eventDate?: string
   publishDate?: string
   time?: string
   location?: string
@@ -73,17 +74,20 @@ export default async function AnnouncementsPage() {
     const raw = await sanityClient.fetch<SanityAnnouncement[]>(ANNOUNCEMENTS_QUERY)
     if (raw && raw.length > 0) {
       announcements = raw.map((item) => {
-        const d = parseDate(item.publishDate)
+        // Event date is prominently displayed in the left badge (falls back to publishDate if not specified)
+        const eventDateStr = item.eventDate || item.publishDate
+        const eventDateObj = parseDate(eventDateStr)
+        const publishDateObj = parseDate(item.publishDate)
         return {
           _id: item._id,
           title: item.title || 'Fellowship Announcement',
           category: (item.category || 'GENERAL').toUpperCase(),
           isPinned: Boolean(item.isPinned),
-          day: d.day,
-          month: d.month,
-          year: d.year,
-          publishDate: d.full,
-          rawDate: item.publishDate || '',
+          day: eventDateObj.day,
+          month: eventDateObj.month,
+          year: eventDateObj.year,
+          publishDate: publishDateObj.full,
+          rawDate: item.eventDate || item.publishDate || '',
           time: item.time || '',
           location: item.location || 'NLT 5, Faculty of Law, ESUI',
           content: extractText(item.content),
