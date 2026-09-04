@@ -90,7 +90,8 @@ export default async function AnnouncementsPage() {
           rawDate: item.eventDate || item.publishDate || '',
           time: item.time || '',
           location: item.location || 'NLT 5, Faculty of Law, ESUI',
-          content: extractText(item.content),
+          content: item.content,
+          plainText: extractText(item.content),
         }
       })
     }

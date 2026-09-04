@@ -11,6 +11,48 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, MapPin, Search, Filter, Pin, Clock, Megaphone } from 'lucide-react'
+import { PortableText, PortableTextComponents } from '@portabletext/react'
+
+const portableTextComponents: PortableTextComponents = {
+  marks: {
+    link: ({ value, children }) => {
+      const href = value?.href || '#'
+      const isExternal = href.startsWith('http') || href.startsWith('//')
+      return (
+        <a
+          href={href}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          className="font-bold text-[#0077cc] underline underline-offset-2 hover:text-sky-800 transition-colors"
+        >
+          {children}
+        </a>
+      )
+    },
+    strong: ({ children }) => <strong className="font-bold text-slate-900">{children}</strong>,
+    em: ({ children }) => <em className="italic">{children}</em>,
+    underline: ({ children }) => <span className="underline underline-offset-2">{children}</span>,
+  },
+  block: {
+    normal: ({ children }) => (
+      <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed mb-2 last:mb-0">
+        {children}
+      </p>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-2 mb-1">
+        {children}
+      </h3>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside space-y-1 my-1.5 text-xs sm:text-sm text-slate-600">
+        {children}
+      </ul>
+    ),
+  },
+}
 
 export interface AnnouncementItem {
   _id: string
@@ -24,7 +66,8 @@ export interface AnnouncementItem {
   rawDate?: string
   time: string
   location: string
-  content: string
+  content: any
+  plainText?: string
 }
 
 interface Props {
@@ -42,9 +85,10 @@ export default function AnnouncementsFeed({ announcements }: Props) {
 
   const filtered = announcements
     .filter((item) => {
+      const contentStr = item.plainText || (typeof item.content === 'string' ? item.content : '')
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.content.toLowerCase().includes(searchQuery.toLowerCase())
+        contentStr.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesCat =
         selectedCategory === 'All' ||
         item.category.toLowerCase() === selectedCategory.toLowerCase()
@@ -165,9 +209,13 @@ export default function AnnouncementsFeed({ announcements }: Props) {
                   </h2>
 
                   {item.content && (
-                    <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed whitespace-pre-line">
-                      {item.content}
-                    </p>
+                    <div className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                      {Array.isArray(item.content) ? (
+                        <PortableText value={item.content} components={portableTextComponents} />
+                      ) : (
+                        <p className="whitespace-pre-line">{item.content}</p>
+                      )}
+                    </div>
                   )}
 
                   <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-500">
