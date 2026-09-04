@@ -31,14 +31,17 @@ export interface GalleryItem {
 }
 
 interface Props {
-  teams?: TeamItem[]
-  gallery?: GalleryItem[]
+  teams?: TeamItem[] | null
+  gallery?: GalleryItem[] | null
 }
 
-export default function TeamsSection({ teams = [], gallery = [] }: Props) {
+export default function TeamsSection({ teams, gallery }: Props) {
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
 
-  if (teams.length === 0 && gallery.length === 0) return null
+  const safeTeams = teams || []
+  const safeGallery = gallery || []
+
+  if (safeTeams.length === 0 && safeGallery.length === 0) return null
 
   return (
     <section id="teams" className="py-16 sm:py-24 bg-white relative overflow-hidden">
@@ -64,9 +67,9 @@ export default function TeamsSection({ teams = [], gallery = [] }: Props) {
         </motion.div>
 
         {/* Seamless 3-Column Team Cards */}
-        {teams.length > 0 && (
+        {safeTeams.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {teams.map((team, idx) => (
+            {safeTeams.map((team, idx) => (
               <motion.div
                 key={team._id || team.name}
                 initial={{ opacity: 0, y: 20 }}
@@ -138,7 +141,7 @@ export default function TeamsSection({ teams = [], gallery = [] }: Props) {
         )}
 
         {/* Integrated Fellowship Moments Photo Stream */}
-        {gallery.length > 0 && (
+        {safeGallery.length > 0 && (
           <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-100">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -153,7 +156,7 @@ export default function TeamsSection({ teams = [], gallery = [] }: Props) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {gallery.map((img, idx) => (
+              {safeGallery.map((img, idx) => (
                 <motion.div
                   key={img._id || idx}
                   initial={{ opacity: 0, scale: 0.94 }}

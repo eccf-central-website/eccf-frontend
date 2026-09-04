@@ -94,15 +94,15 @@ export default async function Home() {
 
       {/* 2. Who We Are */}
       <WhoWeAreSection
-        photo1={gallery[0]?.src}
-        photo2={gallery[1]?.src}
+        photo1={gallery[0]?.src || undefined}
+        photo2={gallery[1]?.src || undefined}
       />
 
       {/* 3. Interactive Service Schedule Console */}
       <ServiceScheduleConsole services={services || []} />
 
       {/* 4. Teams & Fellowship Life Section */}
-      <TeamsSection teams={teams} gallery={gallery} />
+      <TeamsSection teams={teams || []} gallery={gallery || []} />
 
       {/* 5. Sermon Vault & Podcasts Section */}
       <LatestSermonsSection sermons={latestSermons || []} />
@@ -112,9 +112,9 @@ export default async function Home() {
 
       {/* 7. Plan a Visit Section */}
       <PlanAVisitSection
-        contactPerson={settings?.visitContactPerson}
-        whatsAppNumber={settings?.visitWhatsAppNumber}
-        email={settings?.fellowshipEmail}
+        contactPerson={settings?.visitContactPerson || undefined}
+        whatsAppNumber={settings?.visitWhatsAppNumber || undefined}
+        email={settings?.fellowshipEmail || undefined}
       />
     </div>
   )

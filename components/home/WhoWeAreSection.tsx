@@ -12,14 +12,17 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 
 interface Props {
-  photo1?: string
-  photo2?: string
+  photo1?: string | null
+  photo2?: string | null
 }
 
 export default function WhoWeAreSection({
-  photo1 = '/gallery/gallery-1.jpg',
-  photo2 = '/gallery/gallery-2.jpg',
+  photo1,
+  photo2,
 }: Props) {
+  const p1 = photo1 || '/gallery/gallery-1.jpg'
+  const p2 = photo2 || '/gallery/gallery-2.jpg'
+
   return (
     <section id="about" className="py-14 sm:py-24 bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -99,7 +102,7 @@ export default function WhoWeAreSection({
               className="relative h-44 xs:h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm bg-slate-100"
             >
               <Image
-                src={photo1}
+                src={p1}
                 alt="Worship at ECCF"
                 fill
                 sizes="(max-width: 768px) 50vw, 25vw"
@@ -115,7 +118,7 @@ export default function WhoWeAreSection({
               className="relative h-44 xs:h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm mt-3 sm:mt-8 bg-slate-100"
             >
               <Image
-                src={photo2}
+                src={p2}
                 alt="Student Prayer Session"
                 fill
                 sizes="(max-width: 768px) 50vw, 25vw"

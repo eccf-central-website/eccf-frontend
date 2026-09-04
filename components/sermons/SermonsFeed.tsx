@@ -28,28 +28,35 @@ export interface SermonItem {
 }
 
 interface Props {
-  sermons: SermonItem[]
+  sermons?: SermonItem[] | null
 }
 
 export default function SermonsFeed({ sermons }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState('All')
 
+  const safeSermons = sermons || []
+
   // Derive dynamic topic filters from live sermons
   const dynamicTopics = [
     'All',
     ...Array.from(
       new Set(
-        sermons.flatMap((s) => s.topics || []).filter(Boolean)
+        safeSermons.flatMap((s) => s.topics || []).filter(Boolean)
       )
     ),
   ]
 
-  const filtered = sermons.filter((sermon) => {
+  const filtered = safeSermons.filter((sermon) => {
+    const titleStr = sermon.title || ''
+    const preacherStr = sermon.preacher || ''
+    const seriesStr = sermon.series || ''
+    const query = searchQuery.toLowerCase()
+
     const matchesSearch =
-      sermon.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sermon.preacher.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (sermon.series || '').toLowerCase().includes(searchQuery.toLowerCase())
+      titleStr.toLowerCase().includes(query) ||
+      preacherStr.toLowerCase().includes(query) ||
+      seriesStr.toLowerCase().includes(query)
     const matchesTopic =
       selectedTopic === 'All' || (sermon.topics && sermon.topics.includes(selectedTopic))
     return matchesSearch && matchesTopic

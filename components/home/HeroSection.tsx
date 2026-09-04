@@ -53,7 +53,7 @@ interface Props {
   settings?: SiteSettingsData | null
 }
 
-function parseMetric(val?: string, defaultEnd: number = 0, defaultSuffix: string = '') {
+function parseMetric(val?: string | null, defaultEnd: number = 0, defaultSuffix: string = '') {
   if (!val) return { end: defaultEnd, suffix: defaultSuffix }
   const match = val.match(/^(\d+)(.*)$/)
   if (!match) return { end: defaultEnd, suffix: defaultSuffix }

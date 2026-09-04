@@ -29,15 +29,16 @@ export interface ServiceItem {
 }
 
 interface Props {
-  services?: ServiceItem[]
+  services?: ServiceItem[] | null
 }
 
-export default function ServiceScheduleConsole({ services = [] }: Props) {
+export default function ServiceScheduleConsole({ services }: Props) {
   const [activeTab, setActiveTab] = useState(0)
 
-  if (!services || services.length === 0) return null
+  const safeServices = services || []
+  if (safeServices.length === 0) return null
 
-  const currentService = services[activeTab] || services[0]
+  const currentService = safeServices[activeTab] || safeServices[0]
 
   return (
     <section id="services" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden">
@@ -61,7 +62,7 @@ export default function ServiceScheduleConsole({ services = [] }: Props) {
           
           {/* Day Tabs */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 pb-5 sm:pb-6">
-            {services.map((service, index) => {
+            {safeServices.map((service, index) => {
               const isActive = activeTab === index
               return (
                 <button

@@ -15,10 +15,12 @@ import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/Plat
 import { SermonItem } from '@/components/sermons/SermonsFeed'
 
 interface Props {
-  sermons?: SermonItem[]
+  sermons?: SermonItem[] | null
 }
 
-export default function LatestSermonsSection({ sermons = [] }: Props) {
+export default function LatestSermonsSection({ sermons }: Props) {
+  const safeSermons = sermons || []
+
   return (
     <section className="py-14 sm:py-24 bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -43,7 +45,7 @@ export default function LatestSermonsSection({ sermons = [] }: Props) {
         </div>
 
         {/* Empty State when no sermons uploaded yet */}
-        {sermons.length === 0 && (
+        {safeSermons.length === 0 && (
           <div className="rounded-3xl bg-[#fafaf9] p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-3">
             <Disc3 className="h-10 w-10 text-slate-300 animate-pulse" />
             <p className="text-base font-bold text-slate-700">Audio & Video Podcasts Coming Soon</p>
@@ -61,9 +63,9 @@ export default function LatestSermonsSection({ sermons = [] }: Props) {
         )}
 
         {/* Dynamic Sermon Cards */}
-        {sermons.length > 0 && (
+        {safeSermons.length > 0 && (
           <div className="grid grid-cols-1 gap-5 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {sermons.map((sermon, idx) => (
+            {safeSermons.map((sermon, idx) => (
               <motion.div
                 key={sermon._id}
                 initial={{ opacity: 0, y: 20 }}
