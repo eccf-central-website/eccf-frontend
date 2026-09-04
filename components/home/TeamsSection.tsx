@@ -2,127 +2,46 @@
  * TeamsSection — Fellowship Operational Teams & Student Life
  *
  * Implements Section 2.5 of SDD and CLAUDE.md guidelines.
- * Naming Rule: Field/entity is strictly 'team' (Choir, Drama/Thespians, Prayer, Ushering, Media).
- * Seamless, borderless cards with organic shadows.
+ * 100% powered by live Sanity Studio data (teamUnit & galleryItem).
+ * Zero hardcoded fallback arrays.
  */
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowUpRight, Maximize2, X } from 'lucide-react'
+import { ArrowUpRight, Maximize2, X, Users } from 'lucide-react'
 import Link from 'next/link'
-import { sanityClient } from '@/lib/sanity'
-import { GALLERY_QUERY, TEAMS_QUERY } from '@/lib/queries'
 
-const defaultTeams = [
-  {
-    name: 'Choir Team',
-    role: 'Worship Ministry',
-    description: 'Leading the congregation into divine atmospheres of anointed praise and intimate worship during all services.',
-    imageUrl: '/gallery/gallery-1.jpg',
-    tag: 'VOCALS & INSTRUMENTS',
-  },
-  {
-    name: 'Drama (Thespians)',
-    role: 'Creative Arts',
-    description: 'Preaching the Gospel through inspiring stage plays, spoken word, and creative theatrical productions.',
-    imageUrl: '/gallery/gallery-4.jpg',
-    tag: 'STAGE & DRAMA',
-  },
-  {
-    name: 'Prayer Team',
-    role: 'Intercessory Ministry',
-    description: 'Interceding continuously for the university campus, spiritual awakening, and student academic victories.',
-    imageUrl: '/gallery/gallery-2.jpg',
-    tag: 'INTERCESSION',
-  },
-  {
-    name: 'Ushering & Protocol',
-    role: 'Hospitality & Order',
-    description: 'Welcoming members and guests with warmth while maintaining order, comfort, and hospitality in God’s house.',
-    imageUrl: '/gallery/gallery-5.jpg',
-    tag: 'HOSPITALITY',
-  },
-  {
-    name: 'Media & Technical',
-    role: 'Digital Outreach',
-    description: 'Capturing live audio/video streams, podcast syndication, sound engineering, and campus digital outreach.',
-    imageUrl: '/gallery/gallery-6.jpg',
-    tag: 'SOUND & MEDIA',
-  },
-]
-
-const defaultMoments = [
-  { src: '/gallery/gallery-3.jpg', title: 'Word Exposition & Study', category: 'Wednesday Service' },
-  { src: '/gallery/gallery-7.jpg', title: 'Kingdom Leadership Council', category: 'Exco Roster' },
-  { src: '/gallery/gallery-4.jpg', title: 'Student Life & Fellowship', category: 'Campus Moments' },
-  { src: '/gallery/gallery-9.jpg', title: 'Campus Evangelism Outreach', category: 'Evangelism' },
-  { src: '/gallery/gallery-10.jpg', title: 'Scriptural Ministration & Reading', category: 'Sunday Worship' },
-  { src: '/gallery/gallery-11.jpg', title: 'Choir Anointed Worship', category: 'Music Ministry' },
-  { src: '/gallery/gallery-12.jpg', title: 'Congregational Prayer Warfare', category: 'Academic Challenge' },
-  { src: '/gallery/gallery-14.jpg', title: 'Exhortation & Preaching', category: 'Spiritual Dynamites' },
-]
-
-interface SanityTeam {
+export interface TeamItem {
   _id: string
   name: string
-  description?: string
+  role?: string
+  description: string
   imageUrl?: string
-  leadName?: string
+  tag?: string
 }
 
-interface SanityGalleryItem {
+export interface GalleryItem {
   _id: string
+  src: string
   title: string
-  category?: string
-  imageUrl?: string
+  category: string
 }
 
-export default function TeamsSection() {
-  const [selectedImage, setSelectedImage] = useState<{ src: string; title: string; category: string } | null>(null)
-  const [teams, setTeams] = useState(defaultTeams)
-  const [gallery, setGallery] = useState(defaultMoments)
+interface Props {
+  teams?: TeamItem[]
+  gallery?: GalleryItem[]
+}
 
-  useEffect(() => {
-    // Fetch live operational teams from Sanity
-    sanityClient
-      .fetch<SanityTeam[]>(TEAMS_QUERY)
-      .then((data) => {
-        if (data && data.length > 0) {
-          setTeams(
-            data.map((t, idx) => ({
-              name: t.name,
-              role: t.leadName || defaultTeams[idx % defaultTeams.length].role,
-              description: t.description || defaultTeams[idx % defaultTeams.length].description,
-              imageUrl: t.imageUrl || defaultTeams[idx % defaultTeams.length].imageUrl,
-              tag: defaultTeams[idx % defaultTeams.length].tag,
-            }))
-          )
-        }
-      })
-      .catch((err) => console.warn('Could not fetch Sanity teams, using defaults:', err))
+export default function TeamsSection({ teams = [], gallery = [] }: Props) {
+  const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
 
-    // Fetch live gallery moments from Sanity
-    sanityClient
-      .fetch<SanityGalleryItem[]>(GALLERY_QUERY)
-      .then((data) => {
-        if (data && data.length > 0) {
-          setGallery(
-            data.map((g) => ({
-              src: g.imageUrl || '/gallery/gallery-3.jpg',
-              title: g.title,
-              category: g.category || 'Fellowship Life',
-            }))
-          )
-        }
-      })
-      .catch((err) => console.warn('Could not fetch Sanity gallery, using defaults:', err))
-  }, [])
+  if (teams.length === 0 && gallery.length === 0) return null
 
   return (
-    <section className="py-16 sm:py-24 bg-white relative overflow-hidden">
+    <section id="teams" className="py-16 sm:py-24 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         
         {/* Clean Centered Section Header */}
@@ -133,7 +52,7 @@ export default function TeamsSection() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-2xl mx-auto mb-12 sm:mb-16"
         >
-          <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-2 font-mono">
+          <span className="text-xs font-black tracking-widest text-[#0077cc] uppercase block mb-2 font-mono">
             FELLOWSHIP OPERATIONAL TEAMS
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
@@ -145,108 +64,121 @@ export default function TeamsSection() {
         </motion.div>
 
         {/* Seamless 3-Column Team Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {teams.map((team, idx) => (
-            <motion.div
-              key={team.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45, delay: idx * 0.08 }}
-              whileHover={{ y: -6, transition: { duration: 0.25 } }}
-              className="group flex flex-col justify-between overflow-hidden rounded-3xl bg-[#fafaf9] shadow-sm hover:shadow-xl hover:shadow-slate-900/5 transition-all"
-            >
-              <div>
-                {/* Photo with Overlay */}
-                <div className="relative h-52 sm:h-56 w-full overflow-hidden bg-slate-100">
-                  <Image
-                    src={team.imageUrl}
-                    alt={team.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-                  
-                  <div className="absolute top-3.5 left-3.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white">
-                      {team.tag}
-                    </span>
-                  </div>
-
-                  <div className="absolute bottom-3.5 left-4 right-4 text-white">
-                    <span className="text-[11px] font-bold text-sky-300 block uppercase tracking-wider">
-                      {team.role}
-                    </span>
-                    <h3 className="text-xl font-black text-white leading-tight">
-                      {team.name}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="p-5 sm:p-6">
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                    {team.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Bottom Join Action */}
-              <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400">Open to all students</span>
-                <Link
-                  href="#visit"
-                  className="inline-flex items-center gap-1 text-xs font-black text-[#0095ff] group-hover:text-sky-700 transition-colors"
-                >
-                  <span>Join Team</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Integrated Fellowship Moments Photo Stream */}
-        <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <span className="text-xs font-black tracking-widest text-[#0095ff] uppercase block mb-1 font-mono">
-                FELLOWSHIP LIFE
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-950">
-                Moments in God&apos;s Presence
-              </h3>
-            </div>
-            <span className="text-xs text-slate-400 font-medium">Click photo to zoom</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {gallery.map((img, idx) => (
+        {teams.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {teams.map((team, idx) => (
               <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.94 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                key={team._id || team.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                whileHover={{ scale: 1.03 }}
-                onClick={() => setSelectedImage(img)}
-                className="group relative h-36 sm:h-48 overflow-hidden rounded-3xl shadow-sm cursor-pointer bg-slate-100"
+                transition={{ duration: 0.45, delay: idx * 0.08 }}
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                className="group flex flex-col justify-between overflow-hidden rounded-3xl bg-[#fafaf9] shadow-sm hover:shadow-xl hover:shadow-slate-900/5 transition-all"
               >
-                <Image
-                  src={img.src}
-                  alt={img.title}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Maximize2 className="h-5 w-5 text-white" />
+                <div>
+                  {/* Photo with Overlay */}
+                  <div className="relative h-52 sm:h-56 w-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                    {team.imageUrl ? (
+                      <Image
+                        src={team.imageUrl}
+                        alt={team.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                        <Users className="h-12 w-12 text-slate-300" />
+                        <span className="text-xs font-semibold">{team.name}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+                    
+                    <div className="absolute top-3.5 left-3.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white">
+                        {team.tag || 'MINISTRY TEAM'}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-3.5 left-4 right-4 text-white">
+                      {team.role && (
+                        <span className="text-[11px] font-bold text-sky-300 block uppercase tracking-wider">
+                          {team.role}
+                        </span>
+                      )}
+                      <h3 className="text-xl font-black text-white leading-tight">
+                        {team.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="p-5 sm:p-6">
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                      {team.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bottom Join Action */}
+                <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-0 flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400">Open to all students</span>
+                  <Link
+                    href="#visit"
+                    className="inline-flex items-center gap-1 text-xs font-black text-[#0077cc] group-hover:text-sky-800 transition-colors"
+                  >
+                    <span>Join Team</span>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </motion.div>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Integrated Fellowship Moments Photo Stream */}
+        {gallery.length > 0 && (
+          <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <span className="text-xs font-black tracking-widest text-[#0077cc] uppercase block mb-1 font-mono">
+                  FELLOWSHIP LIFE
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-950">
+                  Moments in God&apos;s Presence
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400 font-medium">Click photo to zoom</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {gallery.map((img, idx) => (
+                <motion.div
+                  key={img._id || idx}
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.3) }}
+                  whileHover={{ scale: 1.03 }}
+                  onClick={() => setSelectedImage(img)}
+                  className="group relative h-36 sm:h-48 overflow-hidden rounded-3xl shadow-sm cursor-pointer bg-slate-100"
+                >
+                  <Image
+                    src={img.src}
+                    alt={img.title}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="h-5 w-5 text-white" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}
@@ -279,14 +211,14 @@ export default function TeamsSection() {
                   <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block">
                     {selectedImage.category}
                   </span>
-                  <h4 className="text-lg font-black text-white mt-0.5">
+                  <h4 className="text-base sm:text-lg font-bold text-white">
                     {selectedImage.title}
                   </h4>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedImage(null)}
-                  className="h-10 w-10 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition-colors"
+                  className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>

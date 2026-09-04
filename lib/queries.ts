@@ -18,6 +18,7 @@ export const SERMONS_QUERY = `
     topics,
     datePreached,
     scriptureReference,
+    duration,
     spotifyUrl,
     youtubeUrl,
     youtubeMusicUrl,
@@ -25,6 +26,23 @@ export const SERMONS_QUERY = `
     youtubeVideoId,
     isAutoSynced,
     mediaUrl
+  }
+`
+
+/** Fetch latest 3 sermons for homepage */
+export const LATEST_SERMONS_QUERY = `
+  *[_type == "sermonVault"] | order(datePreached desc)[0...3] {
+    _id,
+    title,
+    preacher,
+    series,
+    topics,
+    datePreached,
+    scriptureReference,
+    duration,
+    spotifyUrl,
+    youtubeUrl,
+    youtubeMusicUrl
   }
 `
 
@@ -38,6 +56,7 @@ export const SERMON_BY_ID_QUERY = `
     topics,
     datePreached,
     scriptureReference,
+    duration,
     spotifyUrl,
     youtubeUrl,
     youtubeMusicUrl,
@@ -73,13 +92,13 @@ export const ANNOUNCEMENTS_QUERY = `
 
 /** Fetch all active gallery items, featured first, then newest */
 export const GALLERY_QUERY = `
-  *[_type == "galleryItem" && isActive == true] | order(featured desc, _updatedAt desc) {
+  *[_type == "galleryItem"] | order(coalesce(featured, false) desc, _createdAt desc) {
     _id,
     title,
     caption,
     category,
     featured,
-    "imageUrl": photo.asset->url
+    "imageUrl": image.asset->url
   }
 `
 
@@ -89,15 +108,14 @@ export const GALLERY_QUERY = `
 
 /** Fetch all operational team units */
 export const TEAMS_QUERY = `
-  *[_type == "teamUnit"] | order(order asc) {
+  *[_type == "teamUnit"] | order(order asc, _createdAt asc) {
     _id,
     name,
-    tagline,
-    description,
-    meetingTime,
+    tag,
     leadName,
+    description,
     order,
-    "imageUrl": photo.asset->url
+    "imageUrl": image.asset->url
   }
 `
 
@@ -137,7 +155,10 @@ export const SITE_SETTINGS_QUERY = `
     "heroPhotoUrl": heroPhoto.asset->url,
     statsActiveMembers,
     statsWeeklyServices,
-    statsCampusLegacy
+    statsCampusLegacy,
+    visitContactPerson,
+    visitWhatsAppNumber,
+    fellowshipEmail
   }
 `
 
