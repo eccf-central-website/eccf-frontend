@@ -1,15 +1,15 @@
 /**
- * Announcements Page — /announcements
+ * Announcements Page - /announcements
  *
  * 100% live from Sanity Studio. No hardcoded fallback data anywhere.
  * Shows a loading state while fetching, empty state if nothing is published,
  * and live results with search + category filtering.
  */
 
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar,
   MapPin,
@@ -19,9 +19,9 @@ import {
   Clock,
   Megaphone,
   Loader2,
-} from "lucide-react"
-import { sanityClient } from "@/lib/sanity"
-import { ANNOUNCEMENTS_QUERY } from "@/lib/queries"
+} from 'lucide-react'
+import { sanityClient } from '@/lib/sanity'
+import { ANNOUNCEMENTS_QUERY } from '@/lib/queries'
 
 interface PortableTextSpan {
   text?: string
@@ -58,31 +58,31 @@ interface ParsedAnnouncement {
 }
 
 function extractTextFromContent(content?: string | PortableTextBlock[]): string {
-  if (!content) return ""
-  if (typeof content === "string") return content
+  if (!content) return ''
+  if (typeof content === 'string') return content
   if (Array.isArray(content)) {
     return content
       .map((block) => {
         if (block && Array.isArray(block.children)) {
-          return block.children.map((child) => child.text || "").join("")
+          return block.children.map((child) => child.text || '').join('')
         }
-        return ""
+        return ''
       })
       .filter(Boolean)
-      .join("\n\n")
+      .join('\n\n')
   }
-  return ""
+  return ''
 }
 
 function parsePublishDate(dateStr?: string) {
-  if (!dateStr) return { day: "--", month: "---", year: "----", full: "Date not set" }
-  const parts = dateStr.split("-").map(Number)
+  if (!dateStr) return { day: '--', month: '---', year: '----', full: 'Date not set' }
+  const parts = dateStr.split('-').map(Number)
   const y = parts[0], m = parts[1], d = parts[2]
-  if (!y || !m || !d) return { day: "--", month: "---", year: "----", full: dateStr }
-  const months3 = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
-  const monthsFull = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  if (!y || !m || !d) return { day: '--', month: '---', year: '----', full: dateStr }
+  const months3 = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+  const monthsFull = ['January','February','March','April','May','June','July','August','September','October','November','December']
   return {
-    day: String(d).padStart(2, "0"),
+    day: String(d).padStart(2, '0'),
     month: months3[m - 1],
     year: String(y),
     full: `${monthsFull[m - 1]} ${d}, ${y}`,
@@ -94,15 +94,15 @@ function parseAnnouncements(data: SanityAnnouncement[]): ParsedAnnouncement[] {
     const dateObj = parsePublishDate(item.publishDate)
     return {
       _id: item._id,
-      title: item.title || "Fellowship Announcement",
-      category: (item.category || "GENERAL").toUpperCase(),
+      title: item.title || 'Fellowship Announcement',
+      category: (item.category || 'GENERAL').toUpperCase(),
       isPinned: Boolean(item.isPinned),
       day: dateObj.day,
       month: dateObj.month,
       year: dateObj.year,
       publishDate: dateObj.full,
-      time: item.time || "",
-      location: item.location || "NLT 5, Faculty of Law, ESUI",
+      time: item.time || '',
+      location: item.location || 'NLT 5, Faculty of Law, ESUI',
       content: extractTextFromContent(item.content),
     }
   })
@@ -112,8 +112,8 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<ParsedAnnouncement[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
 
   useEffect(() => {
     setIsLoading(true)
@@ -126,14 +126,14 @@ export default function AnnouncementsPage() {
         setIsLoading(false)
       })
       .catch((err) => {
-        console.error("Failed to fetch Sanity announcements:", err)
+        console.error('Failed to fetch Sanity announcements:', err)
         setFetchError(true)
         setIsLoading(false)
       })
   }, [])
 
   const dynamicCategories = [
-    "All",
+    'All',
     ...Array.from(new Set(announcements.map((a) => a.category).filter(Boolean))),
   ]
 
@@ -142,7 +142,7 @@ export default function AnnouncementsPage() {
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.content.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCat =
-      selectedCategory === "All" ||
+      selectedCategory === 'All' ||
       item.category.toLowerCase() === selectedCategory.toLowerCase()
     return matchesSearch && matchesCat
   })
@@ -203,8 +203,8 @@ export default function AnnouncementsPage() {
                       onClick={() => setSelectedCategory(cat)}
                       className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all uppercase ${
                         isActive
-                          ? "bg-slate-950 text-white shadow-sm"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? 'bg-slate-950 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
                       {cat}
@@ -218,14 +218,14 @@ export default function AnnouncementsPage() {
               <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                 <Megaphone className="h-14 w-14 text-slate-200" />
                 <p className="text-lg font-black text-slate-400 tracking-tight">
-                  {searchQuery || selectedCategory !== "All"
-                    ? "No announcements match your filter"
-                    : "No announcements published yet"}
+                  {searchQuery || selectedCategory !== 'All'
+                    ? 'No announcements match your filter'
+                    : 'No announcements published yet'}
                 </p>
                 <p className="text-sm text-slate-400 max-w-sm">
-                  {searchQuery || selectedCategory !== "All"
-                    ? "Try clearing your search or selecting a different category."
-                    : "Check back soon — the Exco team will post updates here as they are published in Sanity Studio."}
+                  {searchQuery || selectedCategory !== 'All'
+                    ? 'Try clearing your search or selecting a different category.'
+                    : 'Check back soon â€” the Exco team will post updates here as they are published in Sanity Studio.'}
                 </p>
               </div>
             )}
@@ -240,7 +240,7 @@ export default function AnnouncementsPage() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.35, delay: Math.min(idx * 0.04, 0.3) }}
                     className={`relative overflow-hidden rounded-3xl bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition-all ${
-                      item.isPinned ? "ring-2 ring-sky-400/40" : ""
+                      item.isPinned ? 'ring-2 ring-sky-400/40' : ''
                     }`}
                   >
                     {item.isPinned && (
