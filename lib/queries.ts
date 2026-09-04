@@ -54,7 +54,7 @@ export const SERMON_BY_ID_QUERY = `
 
 /** Fetch all live (published) announcements, pinned first, then newest */
 export const ANNOUNCEMENTS_QUERY = `
-  *[_type == "announcement" && (isPublished == true || !defined(isPublished))] | order(isPinned desc, publishDate desc, _createdAt desc) {
+  *[_type == "announcement" && isPublished != false] | order(isPinned desc, publishDate desc, _createdAt desc) {
     _id,
     title,
     content,
@@ -62,11 +62,7 @@ export const ANNOUNCEMENTS_QUERY = `
     isPinned,
     publishDate,
     time,
-    eventDate,
-    location,
-    targetAudience,
-    actionUrl,
-    actionLabel
+    location
   }
 `
 
