@@ -13,6 +13,7 @@ import Image from 'next/image'
 import { motion, Variants } from 'framer-motion'
 import { ArrowRight, Radio } from 'lucide-react'
 import CountUpNumber from '@/components/ui/CountUpNumber'
+import { urlForImage } from '@/lib/sanity'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -40,7 +41,12 @@ export interface SiteSettingsData {
   heroHeadlineEnd?: string
   heroCredo?: string
   heroParagraph?: string
+  heroPhoto?: unknown
   heroPhotoUrl?: string
+  whoWeArePhotoMinister?: unknown
+  whoWeArePhotoMinisterUrl?: string
+  whoWeArePhotoAudience?: unknown
+  whoWeArePhotoAudienceUrl?: string
   statsActiveMembers?: string
   statsWeeklyServices?: string
   statsCampusLegacy?: string
@@ -66,7 +72,7 @@ export default function HeroSection({ settings }: Props) {
   const headlineEnd = settings?.heroHeadlineEnd || 'And Academic Giants'
   const credo = settings?.heroCredo || 'Jesus in our hearts, letters in our heads.'
   const paragraph = settings?.heroParagraph || ''
-  const heroPhoto = settings?.heroPhotoUrl || '/gallery/gallery-8.jpg'
+  const heroPhoto = urlForImage(settings?.heroPhoto) || settings?.heroPhotoUrl || '/gallery/gallery-8.jpg'
 
   const m1 = parseMetric(settings?.statsActiveMembers, 400, '+')
   const m2 = parseMetric(settings?.statsWeeklyServices, 3, 'x')

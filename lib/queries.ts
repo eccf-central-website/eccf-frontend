@@ -98,6 +98,7 @@ export const GALLERY_QUERY = `
     caption,
     category,
     featured,
+    image,
     "imageUrl": image.asset->url
   }
 `
@@ -115,6 +116,7 @@ export const TEAMS_QUERY = `
     leadName,
     description,
     order,
+    image,
     "imageUrl": image.asset->url
   }
 `
@@ -152,7 +154,12 @@ export const SITE_SETTINGS_QUERY = `
     heroCredo,
     heroParagraph,
     liveStatusText,
+    heroPhoto,
     "heroPhotoUrl": heroPhoto.asset->url,
+    whoWeArePhotoMinister,
+    "whoWeArePhotoMinisterUrl": whoWeArePhotoMinister.asset->url,
+    whoWeArePhotoAudience,
+    "whoWeArePhotoAudienceUrl": whoWeArePhotoAudience.asset->url,
     statsActiveMembers,
     statsWeeklyServices,
     statsCampusLegacy,
