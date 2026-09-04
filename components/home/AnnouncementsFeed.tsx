@@ -54,6 +54,27 @@ const portableTextComponents: PortableTextComponents = {
   },
 }
 
+export interface PortableTextSpan {
+  _key?: string
+  _type?: string
+  text?: string
+  marks?: string[]
+}
+
+export interface PortableTextMarkDef {
+  _key: string
+  _type: string
+  href?: string
+}
+
+export interface PortableTextBlock {
+  _key?: string
+  _type?: string
+  children?: PortableTextSpan[]
+  markDefs?: PortableTextMarkDef[]
+  style?: string
+}
+
 export interface AnnouncementItem {
   _id: string
   title: string
@@ -66,7 +87,7 @@ export interface AnnouncementItem {
   rawDate?: string
   time: string
   location: string
-  content: any
+  content?: string | PortableTextBlock[]
   plainText?: string
 }
 
