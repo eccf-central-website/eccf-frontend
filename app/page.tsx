@@ -46,8 +46,15 @@ interface SiteSettings {
   heroParagraph?: string
   heroPhotoUrl?: string
   statsActiveMembers?: string
-  statsMinistryTeams?: string
+  statsWeeklyServices?: string
   statsCampusLegacy?: string
+}
+
+function parseMetric(val?: string, defaultEnd: number = 0, defaultSuffix: string = '') {
+  if (!val) return { end: defaultEnd, suffix: defaultSuffix }
+  const match = val.match(/^(\d+)(.*)$/)
+  if (!match) return { end: defaultEnd, suffix: defaultSuffix }
+  return { end: parseInt(match[1], 10), suffix: match[2] || '' }
 }
 
 export default function Home() {
@@ -151,24 +158,33 @@ export default function Home() {
                 variants={itemVariants}
                 className="pt-5 sm:pt-7 grid grid-cols-3 gap-2 xs:gap-3 sm:gap-8 text-left max-w-lg"
               >
-                <div>
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
-                    <CountUpNumber end={400} suffix="+" />
-                  </div>
-                  <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Active Members</div>
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0077cc] tracking-tight">
-                    <CountUpNumber end={3} suffix="x" />
-                  </div>
-                  <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Weekly Services</div>
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
-                    <CountUpNumber end={10} suffix="yrs+" />
-                  </div>
-                  <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Campus Legacy</div>
-                </div>
+                {(() => {
+                  const m1 = parseMetric(settings?.statsActiveMembers, 400, '+')
+                  const m2 = parseMetric(settings?.statsWeeklyServices, 3, 'x')
+                  const m3 = parseMetric(settings?.statsCampusLegacy, 10, 'yrs+')
+                  return (
+                    <>
+                      <div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
+                          <CountUpNumber end={m1.end} suffix={m1.suffix} />
+                        </div>
+                        <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Active Members</div>
+                      </div>
+                      <div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0077cc] tracking-tight">
+                          <CountUpNumber end={m2.end} suffix={m2.suffix} />
+                        </div>
+                        <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Weekly Services</div>
+                      </div>
+                      <div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
+                          <CountUpNumber end={m3.end} suffix={m3.suffix} />
+                        </div>
+                        <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Campus Legacy</div>
+                      </div>
+                    </>
+                  )
+                })()}
               </motion.div>
             </motion.div>
 
