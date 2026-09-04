@@ -9,15 +9,8 @@
 import { sanityClient } from '@/lib/sanity'
 import { ANNOUNCEMENTS_QUERY } from '@/lib/queries'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
-
-interface PortableTextSpan {
-  text?: string
-}
-
-interface PortableTextBlock {
-  _type?: string
-  children?: PortableTextSpan[]
-}
+import type { PortableTextBlock } from '@portabletext/types'
+import { toPlainText } from '@portabletext/react'
 
 interface SanityAnnouncement {
   _id: string
@@ -35,15 +28,11 @@ function extractText(content?: string | PortableTextBlock[]): string {
   if (!content) return ''
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
-    return content
-      .map((block) => {
-        if (block && Array.isArray(block.children)) {
-          return block.children.map((c) => c.text || '').join('')
-        }
-        return ''
-      })
-      .filter(Boolean)
-      .join('\n\n')
+    try {
+      return toPlainText(content)
+    } catch {
+      return ''
+    }
   }
   return ''
 }

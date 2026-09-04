@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, MapPin, Search, Filter, Pin, Clock, Megaphone } from 'lucide-react'
 import { PortableText, PortableTextComponents } from '@portabletext/react'
+import type { PortableTextBlock } from '@portabletext/types'
 
 const portableTextComponents: PortableTextComponents = {
   marks: {
@@ -52,27 +53,6 @@ const portableTextComponents: PortableTextComponents = {
       </ul>
     ),
   },
-}
-
-export interface PortableTextSpan {
-  _key?: string
-  _type?: string
-  text?: string
-  marks?: string[]
-}
-
-export interface PortableTextMarkDef {
-  _key: string
-  _type: string
-  href?: string
-}
-
-export interface PortableTextBlock {
-  _key?: string
-  _type?: string
-  children?: PortableTextSpan[]
-  markDefs?: PortableTextMarkDef[]
-  style?: string
 }
 
 export interface AnnouncementItem {
