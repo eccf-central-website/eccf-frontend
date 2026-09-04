@@ -83,6 +83,7 @@ export default async function AnnouncementsPage() {
           month: d.month,
           year: d.year,
           publishDate: d.full,
+          rawDate: item.publishDate || '',
           time: item.time || '',
           location: item.location || 'NLT 5, Faculty of Law, ESUI',
           content: extractText(item.content),

@@ -21,6 +21,7 @@ export interface AnnouncementItem {
   month: string
   year: string
   publishDate: string
+  rawDate?: string
   time: string
   location: string
   content: string
@@ -39,15 +40,22 @@ export default function AnnouncementsFeed({ announcements }: Props) {
     ...Array.from(new Set(announcements.map((a) => a.category).filter(Boolean))),
   ]
 
-  const filtered = announcements.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCat =
-      selectedCategory === 'All' ||
-      item.category.toLowerCase() === selectedCategory.toLowerCase()
-    return matchesSearch && matchesCat
-  })
+  const filtered = announcements
+    .filter((item) => {
+      const matchesSearch =
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.content.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesCat =
+        selectedCategory === 'All' ||
+        item.category.toLowerCase() === selectedCategory.toLowerCase()
+      return matchesSearch && matchesCat
+    })
+    .sort((a, b) => {
+      if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+        return a.isPinned ? -1 : 1
+      }
+      return (b.rawDate || '').localeCompare(a.rawDate || '')
+    })
 
   return (
     <>
