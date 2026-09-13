@@ -60,10 +60,19 @@ interface Props {
 }
 
 function parseMetric(val?: string | null, defaultEnd: number = 0, defaultSuffix: string = '') {
-  if (!val) return { end: defaultEnd, suffix: defaultSuffix }
-  const match = val.match(/^(\d+)(.*)$/)
-  if (!match) return { end: defaultEnd, suffix: defaultSuffix }
-  return { end: parseInt(match[1], 10), suffix: match[2] || '' }
+  if (!val || typeof val !== 'string') return { end: defaultEnd, suffix: defaultSuffix }
+  const trimmed = val.trim()
+  const match = trimmed.match(/^(\d+)(.*)$/)
+  if (!match) {
+    const digits = trimmed.match(/\d+/)
+    if (digits) {
+      const parsed = parseInt(digits[0], 10)
+      return { end: isNaN(parsed) ? defaultEnd : parsed, suffix: trimmed.replace(digits[0], '').trim() || defaultSuffix }
+    }
+    return { end: defaultEnd, suffix: defaultSuffix }
+  }
+  const parsed = parseInt(match[1], 10)
+  return { end: isNaN(parsed) ? defaultEnd : parsed, suffix: match[2] ? match[2].trim() : defaultSuffix }
 }
 
 export default function HeroSection({ settings }: Props) {
