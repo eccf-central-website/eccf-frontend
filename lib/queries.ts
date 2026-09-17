@@ -42,7 +42,9 @@ export const LATEST_SERMONS_QUERY = `
     duration,
     spotifyUrl,
     youtubeUrl,
-    youtubeMusicUrl
+    youtubeMusicUrl,
+    spotifyEmbedId,
+    youtubeVideoId
   }
 `
 
