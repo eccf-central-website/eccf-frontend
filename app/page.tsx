@@ -123,14 +123,14 @@ export default async function Home() {
         photo2={audiencePhoto}
       />
 
-      {/* 3. Interactive Service Schedule Console */}
+      {/* 3. Interactive Service Schedule Console (Service Times & Location) */}
       <ServiceScheduleConsole services={services || []} />
 
-      {/* 4. Teams & Fellowship Life Section */}
-      <TeamsSection teams={teams || []} gallery={gallery || []} />
-
-      {/* 5. Sermon Vault & Podcasts Section */}
+      {/* 4. Sermon Vault & Podcasts Section (Latest Messages) */}
       <LatestSermonsSection sermons={latestSermons || []} />
+
+      {/* 5. Teams & Fellowship Life Section */}
+      <TeamsSection teams={teams || []} gallery={gallery || []} />
 
       {/* 6. Giving Hub Section */}
       <GivingHubSection />

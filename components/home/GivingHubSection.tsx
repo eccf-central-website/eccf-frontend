@@ -7,28 +7,10 @@
 
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Lock, ArrowRight, ShieldCheck } from 'lucide-react'
-
-const categories = ['Offering', 'Tithe', 'Building Project', 'Smile Project', 'Welfare']
-const presetAmounts = [1000, 2500, 5000, 10000, 20000]
+import { Check, ShieldCheck } from 'lucide-react'
 
 export default function GivingHubSection() {
-  const [selectedCategory, setSelectedCategory] = useState('Offering')
-  const [fullName, setFullName] = useState('')
-  const [amount, setAmount] = useState<string | number>(5000)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleGive = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setTimeout(() => {
-      alert(`Redirecting to Flutterwave checkout for ${selectedCategory}: ₦${Number(amount).toLocaleString()}`)
-      setIsSubmitting(false)
-    }, 800)
-  }
-
   return (
     <section
       id="giving"
@@ -80,130 +62,59 @@ export default function GivingHubSection() {
 
             <div className="pt-3 sm:pt-4 flex items-center justify-center md:justify-start gap-2 text-[11px] sm:text-xs font-medium text-slate-400 border-t border-slate-800/80">
               <ShieldCheck className="h-4 w-4 text-sky-400 shrink-0" />
-              <span>Direct Bank & Card Payments via Flutterwave Payment Gateway</span>
+              <span>Direct Bank Transfers Accepted</span>
             </div>
           </motion.div>
 
           {/* Right Column: Interactive Conversion Card with Staggered Entrance */}
           <div className="md:col-span-7">
-            <motion.form
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.55 }}
-              onSubmit={handleGive}
               className="rounded-3xl border border-slate-800 bg-slate-900/95 backdrop-blur-2xl p-4 sm:p-8 shadow-2xl shadow-slate-950 space-y-4 sm:space-y-5"
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base sm:text-xl font-black text-white">Online Contribution Hub</h3>
-                <span className="text-xs font-bold text-sky-400">Step 1 of 2</span>
+                <h3 className="text-base sm:text-xl font-black text-white">Direct Bank Transfer</h3>
+                <span className="text-xs font-bold text-sky-400">Offline Mode</span>
               </div>
 
-              {/* Category Selector Tabs */}
-              <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
-                  Select Giving Category
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 sm:gap-2">
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory === cat
-                    return (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`rounded-xl py-2 sm:py-2.5 px-2 text-[11px] sm:text-xs font-bold transition-all text-center whitespace-nowrap overflow-hidden text-ellipsis ${
-                          isActive
-                            ? 'bg-[#0095ff] text-white shadow-md shadow-sky-500/25 font-black'
-                            : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`}
-                        title={cat}
-                      >
-                        {cat}
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-4 mb-4">
+                <p className="text-sm text-sky-300 font-medium">
+                  We are currently processing all giving via direct bank transfers. Please ensure you indicate the purpose of your transfer in the transaction narration (e.g., &quot;Tithe&quot;, &quot;Offering&quot;, &quot;Project Levy&quot;).
+                </p>
               </div>
 
-              {/* Input Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">
-                    Your Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Emmanuel Okonkwo"
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-[#0095ff] focus:outline-none focus:ring-1 focus:ring-[#0095ff]"
-                  />
+              <div className="space-y-4">
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center group">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-bold">Bank Name</p>
+                    <p className="font-semibold text-lg text-white">Access Bank</p>
+                  </div>
+                </div>
+                
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center group">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-bold">Account Name</p>
+                    <p className="font-semibold text-lg text-white">ECCF Iyamho</p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">
-                    Amount (₦ NGN)
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-xs sm:text-sm font-bold text-slate-400 pointer-events-none select-none">
-                      ₦
-                    </span>
-                    <input
-                      type="number"
-                      required
-                      min={100}
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="5000"
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-8 pr-3.5 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-[#0095ff] focus:outline-none focus:ring-1 focus:ring-[#0095ff] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
+                <div className="bg-[#0095ff]/10 p-4 rounded-xl border border-[#0095ff]/30 flex justify-between items-center group">
+                  <div>
+                    <p className="text-xs text-sky-400 uppercase tracking-wider mb-1 font-bold">Account Number</p>
+                    <p className="font-black text-2xl tracking-widest text-[#0095ff]">0123456789</p>
                   </div>
                 </div>
               </div>
-
-              {/* Quick Amount Presets */}
-              <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
-                  Quick Amount Presets
-                </label>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {presetAmounts.map((pVal) => (
-                    <button
-                      key={pVal}
-                      type="button"
-                      onClick={() => setAmount(pVal)}
-                      className={`rounded-lg border px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all ${
-                        Number(amount) === pVal
-                          ? 'border-[#0095ff] bg-sky-500/20 text-sky-300 font-extrabold'
-                          : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                      }`}
-                    >
-                      ₦{pVal.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
+              
+              <div className="text-center pt-4">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium italic">
+                  Thank you for your generosity. May God bless you abundantly.
+                </p>
               </div>
-
-              {/* Submit CTA Button */}
-              <div className="pt-2">
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0095ff] hover:bg-[#0080e0] text-white font-black py-3.5 sm:py-4 text-xs sm:text-sm shadow-lg shadow-sky-500/30 transition-all disabled:opacity-50"
-                >
-                  <span>{isSubmitting ? 'Processing...' : `Proceed to Give ₦${Number(amount || 0).toLocaleString()}`}</span>
-                  <ArrowRight className="h-4 w-4" />
-                </motion.button>
-                <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 font-medium">
-                  <Lock className="h-3 w-3 text-slate-500" />
-                  <span>Secured by Flutterwave Payment Gateway &bull; 256-Bit SSL</span>
-                </div>
-              </div>
-            </motion.form>
+            </motion.div>
           </div>
         </div>
       </div>

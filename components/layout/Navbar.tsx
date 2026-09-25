@@ -18,6 +18,7 @@ const navLinks = [
   { label: 'Giving', href: '/#giving' },
   { label: 'About', href: '/#about' },
   { label: 'Announcements', href: '/announcements' },
+  { label: 'Connect', href: '/connect' },
 ]
 
 export default function Navbar() {
