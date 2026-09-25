@@ -37,9 +37,11 @@ interface Props {
 
 export default function TeamsSection({ teams, gallery }: Props) {
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
+  const [showAllGallery, setShowAllGallery] = useState(false)
 
   const safeTeams = teams || []
   const safeGallery = gallery || []
+  const displayedGallery = showAllGallery ? safeGallery : safeGallery.slice(0, 8)
 
   if (safeTeams.length === 0 && safeGallery.length === 0) return null
 
@@ -156,7 +158,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {safeGallery.map((img, idx) => (
+              {displayedGallery.map((img, idx) => (
                 <motion.div
                   key={img._id || idx}
                   initial={{ opacity: 0, scale: 0.94 }}
@@ -180,6 +182,21 @@ export default function TeamsSection({ teams, gallery }: Props) {
                 </motion.div>
               ))}
             </div>
+
+            {/* Expand / Collapse Toggle for 3G Bandwidth Control */}
+            {safeGallery.length > 8 && (
+              <div className="mt-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllGallery((prev) => !prev)}
+                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 hover:text-[#0077cc] transition-colors shadow-sm"
+                >
+                  {showAllGallery
+                    ? 'Show Less Highlights'
+                    : `View All ${safeGallery.length} Moments`}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

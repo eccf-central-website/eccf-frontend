@@ -167,7 +167,21 @@ export const SITE_SETTINGS_QUERY = `
     statsCampusLegacy,
     visitContactPerson,
     visitWhatsAppNumber,
-    fellowshipEmail
+    fellowshipEmail,
+    heroTopPill,
+    heroCollagePhotos[] {
+      _key,
+      alt,
+      tag,
+      "imageUrl": asset->url
+    },
+    launcherLinks[] {
+      title,
+      subtitle,
+      url,
+      iconType,
+      isExternal
+    }
   }
 `
 

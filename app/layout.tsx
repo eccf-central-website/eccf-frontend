@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import TheLauncher from "@/components/layout/TheLauncher";
 import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <TheLauncher />
         <ScrollToTop />
       </body>
     </html>
