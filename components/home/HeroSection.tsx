@@ -111,22 +111,22 @@ export default function HeroSection({ settings }: Props) {
       <div className="flex flex-col lg:flex-row w-full h-full" style={{ minHeight: 'calc(100vh - 76px)' }}>
 
         {/* ================================================================ */}
-        {/* LEFT PANEL — padded text column, vertically centered             */}
+        {/* LEFT PANEL — text is the FOCUS, takes 55% of the screen         */}
         {/* ================================================================ */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[38%] xl:w-[36%] shrink-0"
+          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[55%] xl:w-[55%] shrink-0"
         >
           {/* "Join us this week" tiny label */}
           <span className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-400 uppercase mb-6 block">
             {topLabel}
           </span>
 
-          {/* Main headline — FBNO uses ~2rem–2.5rem, light-weight editorial serif */}
+          {/* Main headline — prominent, clear, editorial serif */}
           <h1 className="font-serif font-normal tracking-tight text-slate-900 leading-[1.2] mb-5"
-            style={{ fontSize: 'clamp(1.75rem, 2.8vw, 2.625rem)' }}
+            style={{ fontSize: 'clamp(2rem, 3.5vw, 3.25rem)' }}
           >
             {headline}
           </h1>
@@ -138,8 +138,8 @@ export default function HeroSection({ settings }: Props) {
             </p>
           )}
 
-          {/* Body — 2 lines max, small and quiet */}
-          <p className="text-sm text-slate-500 leading-[1.7] max-w-[260px] mb-9">
+          {/* Body — clear and readable, generous max-width */}
+          <p className="text-sm sm:text-base text-slate-500 leading-[1.7] max-w-sm mb-9">
             {bodyText}
           </p>
 
