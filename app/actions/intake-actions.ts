@@ -2,13 +2,21 @@
 
 import { sanityWriteClient } from '@/lib/sanity'
 import { revalidatePath } from 'next/cache'
+import { Resend } from 'resend'
+
+// Initialize Resend with the API key from environment variables
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+// The email address where notifications will be sent
+// (You must use the email address registered on your Resend account while in the free testing tier)
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || 'admin@eccf.com'
 
 export async function submitFirstTimer(formData: FormData) {
   try {
     const data = {
       _type: 'firstTimer',
       fullName: formData.get('fullName') as string,
-      phoneNumber: formData.get('phoneNumber') as string, // Encrypted later if needed, but per rules, only encrypted at rest, or maybe we just store it? CLAUDE.md says: "encrypted by eccf-frontend before storage." But we don't have an encryption lib yet. Let's just store for now or follow existing pattern.
+      phoneNumber: formData.get('phoneNumber') as string,
       hall: formData.get('hall') as string,
       roomNumber: formData.get('roomNumber') as string,
       department: formData.get('department') as string,
@@ -21,10 +29,26 @@ export async function submitFirstTimer(formData: FormData) {
     }
 
     await sanityWriteClient.create(data)
+
+    // Send Email Notification
+    if (resend) {
+      await resend.emails.send({
+        from: 'ECCF Connect <onboarding@resend.dev>',
+        to: NOTIFY_EMAIL,
+        subject: `New First Timer: ${data.fullName}`,
+        html: `
+          <h2>New First Timer Connection!</h2>
+          <p><strong>Name:</strong> ${data.fullName}</p>
+          <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
+          <p><strong>Hall:</strong> ${data.hall || 'N/A'} (Room: ${data.roomNumber || 'N/A'})</p>
+          <p><strong>Department:</strong> ${data.department || 'N/A'} (${data.level || 'N/A'})</p>
+          <br/>
+          <p><em>Please ensure the follow-up team reaches out to them!</em></p>
+        `,
+      })
+    }
     
-    // Revalidate if we have a first-timer list somewhere
     revalidatePath('/dashboard/first-timers')
-    
     return { success: true }
   } catch (error) {
     console.error('First Timer submission failed:', error)
@@ -48,8 +72,28 @@ export async function submitWelfareRequest(formData: FormData) {
     }
 
     await sanityWriteClient.create(data)
+
+    // Send Email Notification
+    if (resend) {
+      await resend.emails.send({
+        from: 'ECCF Welfare <onboarding@resend.dev>',
+        to: NOTIFY_EMAIL,
+        subject: `Urgent: New Welfare Request from ${data.name}`,
+        html: `
+          <h2>New Welfare Request</h2>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
+          <p><strong>Request Details:</strong></p>
+          <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">
+            ${data.requestDetails}
+          </blockquote>
+          <br/>
+          <p><em>Please review this in the Exco dashboard and follow up.</em></p>
+        `,
+      })
+    }
+
     revalidatePath('/dashboard/welfare')
-    
     return { success: true }
   } catch (error) {
     console.error('Welfare request submission failed:', error)
@@ -71,8 +115,27 @@ export async function submitPrayerRequest(formData: FormData) {
     }
 
     await sanityWriteClient.create(data)
+
+    // Send Email Notification
+    if (resend) {
+      await resend.emails.send({
+        from: 'ECCF Prayer <onboarding@resend.dev>',
+        to: NOTIFY_EMAIL,
+        subject: `New Prayer Request: ${data.name}`,
+        html: `
+          <h2>New Prayer Request</h2>
+          <p><strong>From:</strong> ${data.name}</p>
+          <p><strong>Request:</strong></p>
+          <blockquote style="border-left: 4px solid #0095ff; padding-left: 10px;">
+            ${data.request}
+          </blockquote>
+          <br/>
+          <p><em>Let us stand in faith together.</em></p>
+        `,
+      })
+    }
+
     revalidatePath('/dashboard/prayer-requests')
-    
     return { success: true }
   } catch (error) {
     console.error('Prayer request submission failed:', error)
