@@ -110,9 +110,9 @@ export default function HeroSection({ settings }: Props) {
   }
 
   return (
-    <section className="relative w-full bg-white min-h-[calc(100vh-76px)] flex items-center overflow-hidden border-b border-slate-100">
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 py-12 lg:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 xl:gap-16 items-center">
+    <section className="relative w-full bg-[#f9f8f5] min-h-[calc(100vh-76px)] flex items-center overflow-hidden border-b border-stone-200">
+      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 py-20 lg:py-28">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-20 items-center">
           
           {/* ========================================================== */}
           {/* LEFT COLUMN: Pure Formula 4 Clean Typography & Single CTA  */}
@@ -121,35 +121,35 @@ export default function HeroSection({ settings }: Props) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-5 xl:col-span-5 flex flex-col justify-center text-left"
+            className="lg:col-span-4 xl:col-span-4 flex flex-col justify-center text-left"
           >
-            {/* Top Label (Formula 4: Subtle, lowercase/title case sans-serif) */}
-            <span className="text-xs sm:text-sm font-medium tracking-wide text-slate-500 mb-4 block">
+            {/* Top Label (Formula 4: Subtle uppercase tiny label) */}
+            <span className="text-xs font-medium tracking-widest text-slate-400 uppercase mb-5 block">
               {topLabel}
             </span>
 
-            {/* Headline (Formula 4: Clean, high-impact editorial serif) */}
-            <h1 className="font-serif text-4xl xs:text-5xl sm:text-[3.5rem] lg:text-[3.75rem] xl:text-[4.25rem] font-normal tracking-tight text-slate-900 leading-[1.12] mb-6">
+            {/* Headline (Formula 4: Compact editorial serif — matches FBNO ~32–46px) */}
+            <h1 className="font-serif text-[1.85rem] sm:text-[2.25rem] lg:text-[2.6rem] xl:text-[2.875rem] font-normal tracking-tight text-slate-900 leading-[1.18] mb-5">
               {headline}
             </h1>
 
             {/* Credo Motto (Clean secondary line) */}
             {settings?.heroCredo && (
-              <p className="text-xs font-bold uppercase tracking-widest text-[#0077cc] mb-4 font-mono">
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#0077cc] mb-4 font-mono">
                 {settings.heroCredo}
               </p>
             )}
 
-            {/* Body (Formula 4: 2-3 lines of generous, readable text) */}
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-lg mb-8 sm:mb-10">
+            {/* Body (Formula 4: 2-3 lines, compact and readable) */}
+            <p className="text-sm sm:text-base text-slate-500 leading-relaxed font-normal max-w-xs mb-8">
               {bodyText}
             </p>
 
-            {/* CTA Button (Formula 4: Unmistakable, standalone pill button) */}
+            {/* CTA Button (Formula 4: Compact pill button) */}
             <div>
               <Link
                 href="/#visit"
-                className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-4 text-sm sm:text-base tracking-wide shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-semibold px-7 py-3 text-sm tracking-wide shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 Plan A Visit
               </Link>
@@ -164,7 +164,7 @@ export default function HeroSection({ settings }: Props) {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 xl:col-span-7 w-full"
+            className="lg:col-span-8 xl:col-span-8 w-full"
           >
             {/* 
               Desktop & Tablet Collage Grid:
