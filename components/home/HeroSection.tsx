@@ -98,6 +98,14 @@ export default function HeroSection({ settings }: Props) {
     photos[3] = { src: legacyPhoto, alt: 'ECCF Fellowship Life' }
   }
 
+  // Ensure 5 distinct photos (no duplicate adjacent photos)
+  if (photos[4] && photos[3] && photos[4].src === photos[3].src) {
+    photos[4] = { src: '/gallery/gallery-10.jpg', alt: 'ECCF Worship Gathering' }
+  }
+  if (photos[1] && photos[0] && photos[1].src === photos[0].src) {
+    photos[1] = { src: '/gallery/gallery-6.jpg', alt: 'ECCF Campus Fellowship' }
+  }
+
   return (
     /**
      * FBNO structure: full-viewport-height section, NO padding.
@@ -111,43 +119,43 @@ export default function HeroSection({ settings }: Props) {
       <div className="flex flex-col lg:flex-row w-full h-full" style={{ minHeight: 'calc(100vh - 76px)' }}>
 
         {/* ================================================================ */}
-        {/* LEFT PANEL — text is the FOCUS, takes 55% of the screen         */}
+        {/* LEFT PANEL — text is the FOCUS, bold & authoritative like FBNO   */}
         {/* ================================================================ */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[55%] xl:w-[55%] shrink-0"
+          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
         >
-          {/* "Join us this week" tiny label */}
-          <span className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-400 uppercase mb-6 block">
+          {/* Top Label (FBNO: "Join us this Sunday at 9:30 am" — bold, dark, title case) */}
+          <span className="text-sm sm:text-base font-bold text-slate-900 tracking-normal mb-3 block">
             {topLabel}
           </span>
 
-          {/* Main headline — prominent, clear, editorial serif */}
-          <h1 className="font-serif font-normal tracking-tight text-slate-900 leading-[1.2] mb-5"
-            style={{ fontSize: 'clamp(2rem, 3.5vw, 3.25rem)' }}
+          {/* Main headline — bold, high-contrast Playfair serif, commanding presence */}
+          <h1 className="font-serif font-bold tracking-tight text-slate-950 leading-[1.12] mb-6"
+            style={{ fontSize: 'clamp(2.35rem, 4.2vw, 3.85rem)' }}
           >
             {headline}
           </h1>
 
           {/* Credo (only if set in CMS) */}
           {settings?.heroCredo && (
-            <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#0077cc] mb-4 font-mono">
+            <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-[#0077cc] mb-4 font-mono">
               {settings.heroCredo}
             </p>
           )}
 
-          {/* Body — clear and readable, generous max-width */}
-          <p className="text-sm sm:text-base text-slate-500 leading-[1.7] max-w-sm mb-9">
+          {/* Body — clear, dark, legible text (matches FBNO: 17px/18px readable slate-700) */}
+          <p className="text-base sm:text-lg text-slate-700 font-medium leading-relaxed max-w-md mb-9">
             {bodyText}
           </p>
 
-          {/* CTA — FBNO uses a wide full-width-ish pill button */}
+          {/* CTA — FBNO bold standalone pill button */}
           <div>
             <Link
               href="/#visit"
-              className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#006fd6] text-white font-semibold px-8 py-3 text-sm tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+              className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
               Plan A Visit
             </Link>
