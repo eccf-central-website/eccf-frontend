@@ -1,9 +1,11 @@
 /**
- * HeroSection — Pure Formula 4 Overhaul
+ * HeroSection — Formula 4 (First Baptist New Orleans faithful replica)
  *
- * 100% faithful to "The Church Website Homepage Formula" — Formula 4 (First Baptist New Orleans).
- * Clean white canvas, generous editorial whitespace, clear typographic hierarchy,
- * a single unmistakable "Plan A Visit" CTA, and the signature 5-photo asymmetric collage grid.
+ * KEY structural insight:
+ * - The section itself has NO padding — it fills full viewport height
+ * - Left panel: padded internally, text centered vertically
+ * - Right panel: photo collage fills 100% height flush — no padding, no gap from edges
+ * - Small gap (p-2) between photos only, no outer margin
  */
 
 'use client'
@@ -47,29 +49,23 @@ interface Props {
   settings?: SiteSettingsData | null
 }
 
-// 5 curated authentic fellowship photos mapped to Formula 4's exact positions
 const DEFAULT_COLLAGE = [
-  // 1. Top-Left: Worship / Congregation in action
   {
     src: '/gallery/gallery-1.jpg',
-    alt: 'Students in vibrant worship at Edo State University Christian Campus Fellowship',
+    alt: 'Students in vibrant worship at ECCF',
   },
-  // 2. Middle-Left: Academic life & student smiles
   {
     src: '/gallery/gallery-4.jpg',
     alt: 'ECCF university students smiling on campus',
   },
-  // 3. Bottom-Left: Fellowship & conversation
   {
     src: '/gallery/gallery-2.jpg',
     alt: 'Teaching and fellowship at ECCF',
   },
-  // 4. Top-Right (TALL ANCHOR): Prominent smiling portrait
   {
     src: '/gallery/gallery-8.jpg',
     alt: 'Student with warm smile in ECCF fellowship',
   },
-  // 5. Bottom-Right: Choir / Team gathering
   {
     src: '/gallery/gallery-3.jpg',
     alt: 'ECCF Choir and ministry team',
@@ -77,20 +73,17 @@ const DEFAULT_COLLAGE = [
 ]
 
 export default function HeroSection({ settings }: Props) {
-  // Editorial Top Label (Formula 4: "Join us this week")
   const topLabel = settings?.heroTopPill || 'Join us this week'
 
-  // Unified Bold Editorial Headline (Formula 4: "Elevating Gospel Hope")
-  const headline = settings?.heroHeadlineStart && settings?.heroHeadlineEnd
-    ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
-    : 'An Assembly of Spiritual Dynamites & Academic Giants'
+  const headline =
+    settings?.heroHeadlineStart && settings?.heroHeadlineEnd
+      ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
+      : 'An Assembly of Spiritual Dynamites & Academic Giants'
 
-  // Warm, inviting body paragraph
   const bodyText =
     settings?.heroParagraph ||
-    'A community of believers at Edo State University dedicated to pursuing God’s purpose with academic excellence. You belong here.'
+    'Our aim is to win souls on the school campus for Jesus.'
 
-  // Process Sanity Collage Photos or use the curated Formula 4 defaults
   const rawCollage = settings?.heroCollagePhotos
   const photos =
     Array.isArray(rawCollage) && rawCollage.length >= 5
@@ -100,146 +93,142 @@ export default function HeroSection({ settings }: Props) {
         }))
       : DEFAULT_COLLAGE
 
-  // If a legacy single photo exists and no collage array is set, use it as the tall anchor
   const legacyPhoto = urlForImage(settings?.heroPhoto) || settings?.heroPhotoUrl
   if (legacyPhoto && (!rawCollage || rawCollage.length < 5)) {
-    photos[3] = {
-      src: legacyPhoto,
-      alt: 'ECCF Fellowship Life',
-    }
+    photos[3] = { src: legacyPhoto, alt: 'ECCF Fellowship Life' }
   }
 
   return (
-    <section className="relative w-full bg-[#f9f8f5] min-h-[calc(100vh-76px)] flex items-center overflow-hidden border-b border-stone-200">
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 py-20 lg:py-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-20 items-center">
-          
-          {/* ========================================================== */}
-          {/* LEFT COLUMN: Pure Formula 4 Clean Typography & Single CTA  */}
-          {/* ========================================================== */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-4 xl:col-span-4 flex flex-col justify-center text-left"
+    /**
+     * FBNO structure: full-viewport-height section, NO padding.
+     * Two panels sit side by side via flex:
+     *   - Left: ~38% width, padded, vertically centered text
+     *   - Right: ~62% width, zero padding, collage fills 100% height flush
+     */
+    <section className="relative w-full bg-[#f9f8f5] overflow-hidden border-b border-stone-200"
+      style={{ minHeight: 'calc(100vh - 76px)' }}
+    >
+      <div className="flex flex-col lg:flex-row w-full h-full" style={{ minHeight: 'calc(100vh - 76px)' }}>
+
+        {/* ================================================================ */}
+        {/* LEFT PANEL — padded text column, vertically centered             */}
+        {/* ================================================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[38%] xl:w-[36%] shrink-0"
+        >
+          {/* "Join us this week" tiny label */}
+          <span className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-400 uppercase mb-6 block">
+            {topLabel}
+          </span>
+
+          {/* Main headline — FBNO uses ~2rem–2.5rem, light-weight editorial serif */}
+          <h1 className="font-serif font-normal tracking-tight text-slate-900 leading-[1.2] mb-5"
+            style={{ fontSize: 'clamp(1.75rem, 2.8vw, 2.625rem)' }}
           >
-            {/* Top Label (Formula 4: Subtle uppercase tiny label) */}
-            <span className="text-xs font-medium tracking-widest text-slate-400 uppercase mb-5 block">
-              {topLabel}
-            </span>
+            {headline}
+          </h1>
 
-            {/* Headline (Formula 4: Compact editorial serif — matches FBNO ~32–46px) */}
-            <h1 className="font-serif text-[1.85rem] sm:text-[2.25rem] lg:text-[2.6rem] xl:text-[2.875rem] font-normal tracking-tight text-slate-900 leading-[1.18] mb-5">
-              {headline}
-            </h1>
-
-            {/* Credo Motto (Clean secondary line) */}
-            {settings?.heroCredo && (
-              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#0077cc] mb-4 font-mono">
-                {settings.heroCredo}
-              </p>
-            )}
-
-            {/* Body (Formula 4: 2-3 lines, compact and readable) */}
-            <p className="text-sm sm:text-base text-slate-500 leading-relaxed font-normal max-w-xs mb-8">
-              {bodyText}
+          {/* Credo (only if set in CMS) */}
+          {settings?.heroCredo && (
+            <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#0077cc] mb-4 font-mono">
+              {settings.heroCredo}
             </p>
+          )}
 
-            {/* CTA Button (Formula 4: Compact pill button) */}
-            <div>
-              <Link
-                href="/#visit"
-                className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-semibold px-7 py-3 text-sm tracking-wide shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Plan A Visit
-              </Link>
-            </div>
-          </motion.div>
+          {/* Body — 2 lines max, small and quiet */}
+          <p className="text-sm text-slate-500 leading-[1.7] max-w-[260px] mb-9">
+            {bodyText}
+          </p>
 
-          {/* ========================================================== */}
-          {/* RIGHT COLUMN: Formula 4 Asymmetric 5-Photo Collage Grid     */}
-          {/* (Exact First Baptist New Orleans 3-left / 2-right geometry) */}
-          {/* ========================================================== */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-8 xl:col-span-8 w-full"
+          {/* CTA — FBNO uses a wide full-width-ish pill button */}
+          <div>
+            <Link
+              href="/#visit"
+              className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#006fd6] text-white font-semibold px-8 py-3 text-sm tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+            >
+              Plan A Visit
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* ================================================================ */}
+        {/* RIGHT PANEL — photo collage, FLUSH to top/right/bottom           */}
+        {/* FBNO: photos start at the very top edge, fill full height        */}
+        {/* Layout: 3 stacked on left sub-col, 2 stacked on right sub-col   */}
+        {/* ================================================================ */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="lg:flex-1 w-full lg:w-auto"
+          style={{ minHeight: '480px' }}
+        >
+          {/* Grid: 2 sub-columns of photos, p-2 gap between, no outer padding */}
+          <div className="grid grid-cols-2 gap-2 p-2 h-full w-full"
+            style={{ minHeight: 'inherit' }}
           >
-            {/* 
-              Desktop & Tablet Collage Grid:
-              Height calibrated so Left Column (3 items) & Right Column (1 tall + 1 normal)
-              align perfectly with equal gutters (gap-3.5 or gap-4).
-            */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 h-[480px] sm:h-[580px] lg:h-[620px] w-full">
-              
-              {/* LEFT SUB-COLUMN: 3 Equal Stacked Photos */}
-              <div className="grid grid-rows-3 gap-3 sm:gap-4 h-full">
-                {/* Photo 1: Worship */}
-                <div className="relative rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
-                  <Image
-                    src={photos[0].src}
-                    alt={photos[0].alt}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 50vw, 320px"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
 
-                {/* Photo 2: Academics / Campus Life */}
-                <div className="relative rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
-                  <Image
-                    src={photos[1].src}
-                    alt={photos[1].alt}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 320px"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-
-                {/* Photo 3: Fellowship / Gathering */}
-                <div className="relative rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
-                  <Image
-                    src={photos[2].src}
-                    alt={photos[2].alt}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 320px"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
+            {/* LEFT sub-column: 3 equal-height stacked photos */}
+            <div className="grid grid-rows-3 gap-2 h-full">
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[0].src}
+                  alt={photos[0].alt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
               </div>
-
-              {/* RIGHT SUB-COLUMN: 2 Photos (1 Tall Anchor + 1 Lower Photo) */}
-              <div className="grid grid-rows-5 gap-3 sm:gap-4 h-full">
-                {/* Photo 4 (Row-span-3: 60% Height TALL ANCHOR) */}
-                <div className="row-span-3 relative rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
-                  <Image
-                    src={photos[3].src}
-                    alt={photos[3].alt}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 50vw, 340px"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-
-                {/* Photo 5 (Row-span-2: 40% Height Photo) */}
-                <div className="row-span-2 relative rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
-                  <Image
-                    src={photos[4].src}
-                    alt={photos[4].alt}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 340px"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[1].src}
+                  alt={photos[1].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
               </div>
-
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[2].src}
+                  alt={photos[2].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
             </div>
-          </motion.div>
 
-        </div>
+            {/* RIGHT sub-column: tall top photo (60%) + shorter bottom photo (40%) */}
+            <div className="grid gap-2 h-full" style={{ gridTemplateRows: '3fr 2fr' }}>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[3].src}
+                  alt={photos[3].alt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[4].src}
+                  alt={photos[4].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+          </div>
+        </motion.div>
+
       </div>
     </section>
   )

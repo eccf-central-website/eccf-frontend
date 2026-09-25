@@ -61,7 +61,7 @@ export default function Navbar() {
           : 'bg-white/70 backdrop-blur-sm border-b border-slate-100 py-4'
       }`}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6">
+      <nav className="w-full flex items-center justify-between px-6 sm:px-8 lg:px-12">
         {/* Brand Logo & Monogram */}
         <Link
           href="/"
