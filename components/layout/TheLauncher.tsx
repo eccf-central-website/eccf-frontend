@@ -159,12 +159,12 @@ export default function TheLauncher() {
                 <div className="flex flex-col flex-1 justify-between">
                   {/* Brand Header */}
                   <div className="text-center pt-2 pb-5">
-                    <div className="mx-auto mb-2.5 h-12 w-12 rounded-full bg-white/10 p-1 flex items-center justify-center border border-white/15 shadow-inner">
+                    <div className="mx-auto mb-2.5 h-12 w-12 flex items-center justify-center">
                       <Image
                         src="/logos/ECCF LOGO.png"
                         alt="ECCF Logo"
-                        width={38}
-                        height={38}
+                        width={44}
+                        height={44}
                         className="object-contain"
                       />
                     </div>

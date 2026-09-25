@@ -68,7 +68,7 @@ export default function Navbar() {
           onClick={() => handleLinkClick('/')}
           className="flex items-center gap-3 group focus:outline-none"
         >
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-sky-100 bg-sky-50 p-0.5 transition-transform group-hover:scale-105 shadow-sm">
+          <div className="relative h-10 w-10 transition-transform group-hover:scale-105">
             <Image
               src="/logos/ECCF LOGO.png"
               alt="ECCF Logo"

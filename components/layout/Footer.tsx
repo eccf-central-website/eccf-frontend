@@ -19,7 +19,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-sky-100 bg-sky-50 p-0.5">
+              <div className="relative h-10 w-10">
                 <Image
                   src="/logos/ECCF LOGO.png"
                   alt="ECCF Logo"
