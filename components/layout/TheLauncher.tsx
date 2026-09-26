@@ -495,26 +495,31 @@ export default function TheLauncher() {
 
       {/* ========================================================== */}
       {/* FLOATING ACTION TRIGGER BUTTON (Bottom-Right)              */}
-      {/* Closed: Circular button with Footprints icon (Formula 4)    */}
-      {/* Open: Circular close 'X' button just like FBNO screenshot  */}
+      {/* Closed: Feet icon that smoothly expands to "Next Steps"    */}
+      {/* Open: Circular close 'X' button                           */}
       {/* ========================================================== */}
       <motion.button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         aria-label={isOpen ? 'Close Next Steps' : 'Open Next Steps'}
         aria-expanded={isOpen}
         className={
           isOpen
             ? 'h-12 w-12 rounded-full bg-[#182329] border border-white/20 text-white flex items-center justify-center shadow-2xl shadow-black/60 hover:bg-[#22323a] transition-all'
-            : 'h-12 w-12 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white flex items-center justify-center shadow-xl shadow-sky-500/35 border border-white/20 transition-all duration-300'
+            : 'group relative h-12 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white flex items-center justify-center shadow-xl shadow-sky-500/35 border border-white/20 transition-all duration-300 px-3'
         }
       >
         {isOpen ? (
           <X className="h-6 w-6 text-white" />
         ) : (
-          <Footprints className="h-6 w-6 text-white" />
+          <div className="flex items-center transition-all duration-300">
+            <Footprints className="h-6 w-6 text-white shrink-0" />
+            <span className="max-w-0 opacity-0 group-hover:max-w-[120px] group-hover:opacity-100 group-hover:ml-2 overflow-hidden whitespace-nowrap text-sm font-bold tracking-wide transition-all duration-300 ease-out">
+              Next Steps
+            </span>
+          </div>
         )}
       </motion.button>
     </div>
