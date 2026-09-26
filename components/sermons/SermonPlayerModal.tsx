@@ -41,12 +41,26 @@ export function getYoutubeVideoId(sermon: { youtubeVideoId?: string; youtubeUrl?
   return match ? match[1] : null
 }
 
-export function getSpotifyEmbedId(sermon: { spotifyEmbedId?: string; spotifyUrl?: string } | null | undefined): string | null {
+export function getSpotifyEmbedUrl(sermon: { spotifyEmbedId?: string; spotifyUrl?: string } | null | undefined): string | null {
   if (!sermon) return null
-  if (sermon.spotifyEmbedId) return sermon.spotifyEmbedId
-  if (!sermon.spotifyUrl) return null
-  const match = sermon.spotifyUrl.match(/(?:episode|track|show)[/:]([a-zA-Z0-9]+)/)
-  return match ? match[1] : null
+  
+  // If we have a direct Anchor/Podcasters URL, convert it to an Anchor embed
+  if (sermon.spotifyUrl && sermon.spotifyUrl.includes('podcasters.spotify.com')) {
+    // Convert https://podcasters.spotify.com/pod/show/eccf/episodes/slug to 
+    // https://podcasters.spotify.com/pod/show/eccf/embed/episodes/slug
+    const match = sermon.spotifyUrl.match(/show\/([^\/]+)\/episodes?\/([^\/?]+)/)
+    if (match) {
+      return `https://podcasters.spotify.com/pod/show/${match[1]}/embed/episodes/${match[2]}`
+    }
+  }
+
+  // Fallback to native Spotify embed
+  const id = sermon.spotifyEmbedId || (sermon.spotifyUrl ? sermon.spotifyUrl.match(/(?:episode|track|show)[/:]([a-zA-Z0-9]+)/)?.[1] : null)
+  if (id) {
+    return `https://open.spotify.com/embed/episode/${id}?utm_source=generator&theme=0`
+  }
+
+  return null
 }
 
 interface Props {
@@ -57,10 +71,10 @@ interface Props {
 
 export default function SermonPlayerModal({ sermon, initialMode = 'video', onClose }: Props) {
   const youtubeId = getYoutubeVideoId(sermon)
-  const spotifyId = getSpotifyEmbedId(sermon)
+  const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
 
   const hasVideo = Boolean(youtubeId)
-  const hasAudio = Boolean(spotifyId || sermon?.mediaUrl)
+  const hasAudio = Boolean(spotifyEmbedUrl || sermon?.mediaUrl)
 
   const [activeTab, setActiveTab] = useState<'video' | 'audio'>('video')
 
@@ -163,10 +177,10 @@ export default function SermonPlayerModal({ sermon, initialMode = 'video', onClo
                 className="w-full h-full border-0"
               />
             </div>
-          ) : activeTab === 'audio' && spotifyId ? (
+          ) : activeTab === 'audio' && spotifyEmbedUrl ? (
             <div className="w-full max-w-2xl mx-auto rounded-2xl overflow-hidden bg-[#121212] p-2 border border-white/20 shadow-2xl">
               <iframe
-                src={`https://open.spotify.com/embed/episode/${spotifyId}?utm_source=generator&theme=0`}
+                src={spotifyEmbedUrl}
                 width="100%"
                 height="232"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
