@@ -31,7 +31,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "ECCF — Edo State University Christian Campus Fellowship",
   description:
-    "Official Central Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
+    "Official Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
   icons: {
     icon: [
       { url: "/logos/ECCF LOGO.png", type: "image/png" },

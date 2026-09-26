@@ -28,9 +28,14 @@ export default function Footer() {
                   className="h-full w-full object-contain"
                 />
               </div>
-              <span className="text-2xl font-black text-[#0095ff] tracking-tight">
-                ECCF
-              </span>
+              <div>
+                <span className="text-2xl font-black text-[#0095ff] tracking-tight block">
+                  ECCF
+                </span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mt-0.5">
+                  Edo State University Christian Campus Fellowship
+                </span>
+              </div>
             </div>
 
             <p className="text-sm text-slate-500 max-w-sm leading-relaxed">

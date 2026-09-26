@@ -115,42 +115,57 @@ export default function TheLauncher() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className={`fixed sm:absolute bottom-20 right-0 sm:right-0 ${
+            className={
               isExpanded
-                ? 'w-[calc(100vw-32px)] sm:w-[500px] h-[calc(100vh-140px)] sm:h-[680px]'
-                : 'w-[calc(100vw-32px)] sm:w-[370px] h-[580px] max-h-[82vh]'
-            } rounded-[30px] bg-[#182329] text-white border border-white/10 shadow-2xl shadow-black/70 flex flex-col overflow-hidden transition-all duration-300`}
+                ? 'fixed inset-0 z-[100] w-screen h-screen rounded-none bg-[#182329] text-white flex flex-col overflow-hidden transition-all duration-300'
+                : 'fixed sm:absolute bottom-20 right-0 w-[calc(100vw-32px)] sm:w-[370px] h-[580px] max-h-[82vh] rounded-[30px] bg-[#182329] text-white border border-white/10 shadow-2xl shadow-black/70 flex flex-col overflow-hidden transition-all duration-300'
+            }
           >
             {/* ========================================================== */}
-            {/* TOP BAR: Maximize & Sign In                                 */}
+            {/* TOP BAR: Maximize & Close                                  */}
             {/* ========================================================== */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-2 text-slate-400">
+            <div
+              className={`flex items-center justify-between px-6 pt-5 pb-2 text-slate-400 w-full ${
+                isExpanded ? 'max-w-2xl mx-auto' : ''
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setIsExpanded((prev) => !prev)}
-                className="hover:text-white transition-colors p-1 -ml-1 rounded-lg focus:outline-none"
-                aria-label={isExpanded ? 'Minimize' : 'Maximize'}
+                className="hover:text-white transition-colors p-1 -ml-1 rounded-lg focus:outline-none flex items-center gap-1.5 text-xs font-semibold"
+                aria-label={isExpanded ? 'Minimize' : 'Maximize to fill screen'}
+                title={isExpanded ? 'Minimize' : 'Fill Screen'}
               >
                 {isExpanded ? (
-                  <Minimize2 className="h-4 w-4" />
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    <span>Minimize</span>
+                  </>
                 ) : (
-                  <Maximize2 className="h-4 w-4" />
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                  </>
                 )}
               </button>
 
-              <Link
-                href="/dashboard"
+              <button
+                type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-xs font-bold text-slate-300 hover:text-white transition-colors tracking-wide"
+                className="p-1 text-slate-400 hover:text-white transition-colors rounded-lg"
+                aria-label="Close"
               >
-                Sign In
-              </Link>
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* ========================================================== */}
             {/* CARD CONTENT AREA (Scrollable)                            */}
             {/* ========================================================== */}
-            <div className="flex-1 overflow-y-auto px-6 py-3 flex flex-col justify-between custom-scrollbar">
+            <div
+              className={`flex-1 overflow-y-auto px-6 py-4 flex flex-col justify-between custom-scrollbar w-full ${
+                isExpanded ? 'max-w-2xl mx-auto my-auto py-8' : ''
+              }`}
+            >
               
               {/* ---------------------------------------------------- */}
               {/* VIEW: MAIN NEXT STEPS MENU                           */}
@@ -168,13 +183,13 @@ export default function TheLauncher() {
                         className="object-contain"
                       />
                     </div>
-                    <h3 className="font-serif text-lg font-bold tracking-tight text-white leading-tight">
-                      ECCF Central
+                    <h3 className="font-serif text-base sm:text-lg font-bold tracking-tight text-white leading-snug max-w-[280px] mx-auto">
+                      Edo State University Christian Campus Fellowship
                     </h3>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-sky-400 mt-0.5">
-                      Edo State University
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-sky-400 mt-1">
+                      ECCF
                     </p>
-                    <p className="text-xs text-slate-300 font-medium mt-1">
+                    <p className="text-xs text-slate-300 font-medium mt-1.5">
                       Take your next step here!
                     </p>
                   </div>
@@ -448,17 +463,7 @@ export default function TheLauncher() {
                 </div>
               )}
 
-              {/* ==================================================== */}
-              {/* CARD FOOTER (Nucleus style)                          */}
-              {/* ==================================================== */}
-              <div className="pt-3 border-t border-white/5 text-center">
-                <p className="text-[10px] text-slate-500">
-                  Secure & encrypted. By using you agree to our terms.
-                </p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                  Powered by ECCF Central
-                </p>
-              </div>
+
 
             </div>
           </motion.div>

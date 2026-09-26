@@ -82,7 +82,10 @@ export default function Navbar() {
             <span className="block text-xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="block text-[10px] font-bold text-slate-400 leading-none mt-1 tracking-wider uppercase">
+            <span className="hidden sm:block text-[10px] font-bold text-slate-500 leading-none mt-1 tracking-wider uppercase">
+              Edo State University Christian Campus Fellowship
+            </span>
+            <span className="block sm:hidden text-[10px] font-bold text-slate-500 leading-none mt-1 tracking-wider uppercase">
               Edo State University
             </span>
           </div>
