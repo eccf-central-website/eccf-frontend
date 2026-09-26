@@ -182,7 +182,7 @@ export default function SermonPlayerModal({ sermon, initialMode = 'video', onClo
               <iframe
                 src={spotifyEmbedUrl}
                 width="100%"
-                height="232"
+                height={spotifyEmbedUrl.includes('podcasters.spotify.com') ? "102" : "232"}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
                 className="rounded-xl w-full border-0"
