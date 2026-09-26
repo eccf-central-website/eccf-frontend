@@ -485,7 +485,7 @@ export default function TheLauncher() {
         className={
           isOpen
             ? 'h-12 w-12 rounded-full bg-[#182329] border border-white/20 text-white flex items-center justify-center shadow-2xl shadow-black/60 hover:bg-[#22323a] transition-all'
-            : 'h-12 w-12 rounded-full bg-[#bccd28] hover:bg-[#acc01f] text-white flex items-center justify-center shadow-2xl shadow-black/30 transition-all duration-300'
+            : 'h-12 w-12 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white flex items-center justify-center shadow-xl shadow-sky-500/35 border border-white/20 transition-all duration-300'
         }
       >
         {isOpen ? (
