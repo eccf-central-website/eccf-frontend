@@ -79,14 +79,11 @@ export default function Navbar() {
             />
           </div>
           <div>
-            <span className="block text-xl font-black text-slate-950 tracking-tight leading-none">
+            <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="hidden sm:block text-[10px] font-bold text-slate-500 leading-none mt-1 tracking-wider uppercase">
-              Edo State University Christian Campus Fellowship
-            </span>
-            <span className="block sm:hidden text-[10px] font-bold text-slate-500 leading-none mt-1 tracking-wider uppercase">
-              Edo State University
+            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal mt-1 leading-none">
+              ESUI Christian Campus Fellowship
             </span>
           </div>
         </Link>

@@ -1,9 +1,11 @@
 /**
- * WhoWeAreSection — Client Component
+ * WhoWeAreSection — Formula 4 Editorial Style
  *
- * Implements Section 2.2 of SDD & CLAUDE.md guidelines.
- * Displays the Dual Mandate (Spiritual Dynamites & Academic Giants)
- * with dynamic photo collage from live Sanity gallery.
+ * Redesigned to match the current theme:
+ * - Edge-to-edge alignment (px-6 sm:px-8 lg:px-12) matching Navbar & Hero
+ * - Finer editorial serif typography (Playfair Display) with larger, legible font sizes
+ * - Substantial, tall photography (up to 580px) giving presence and breathing room
+ * - Soft off-white canvas with clean editorial dividers
  */
 
 'use client'
@@ -16,6 +18,24 @@ interface Props {
   photo2?: string | null
 }
 
+const pillars = [
+  {
+    num: '01',
+    title: 'Spiritual Dynamites',
+    desc: 'Deep prayer, uncompromised scriptural doctrine, apostolic impartation, and practical holiness on campus.',
+  },
+  {
+    num: '02',
+    title: 'Academic Giants',
+    desc: 'Rigorous study discipline, peer tutorial mentorship, intellectual diligence, and graduating at the top of every faculty.',
+  },
+  {
+    num: '03',
+    title: 'Kingdom Family & Community',
+    desc: 'A loving, supportive brotherhood and sisterhood providing welfare assistance, encouragement, and lifelong Christian friendships.',
+  },
+]
+
 export default function WhoWeAreSection({
   photo1,
   photo2,
@@ -24,65 +44,54 @@ export default function WhoWeAreSection({
   const p2 = photo2 || '/gallery/gallery-2.jpg'
 
   return (
-    <section id="about" className="py-14 sm:py-24 bg-white">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
+    <section id="about" className="w-full bg-[#fcfbf9] border-b border-stone-200 py-20 lg:py-28 overflow-hidden">
+      <div className="w-full px-6 sm:px-8 lg:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-center">
           
-          {/* Left Column: The Dual Mandate */}
+          {/* ================================================================ */}
+          {/* LEFT COLUMN: Editorial Typography & Dual Mandate                 */}
+          {/* ================================================================ */}
           <motion.div
             initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.5 }}
-            className="md:col-span-7 space-y-4 sm:space-y-6"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-6 flex flex-col justify-center text-left"
           >
-            <div>
-              <span className="text-xs font-black tracking-widest text-[#0077cc] uppercase block mb-2 font-mono">
-                WHO WE ARE
-              </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-                Raised for Kingdom Impact & Academic Distinction.
-              </h2>
-              <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal">
-                ECCF exists to eliminate the false divide between spiritual fervency and academic excellence. We empower students to walk in the fullness of the Holy Spirit while attaining top academic honors.
-              </p>
-            </div>
+            {/* Top Label */}
+            <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase mb-4 block">
+              Who We Are
+            </span>
 
-            {/* Numbered Core Pillars — Open Editorial Stream */}
-            <div className="divide-y divide-slate-100 pt-1 sm:pt-2">
-              {[
-                {
-                  num: '01',
-                  title: 'Spiritual Dynamites',
-                  desc: 'Deep prayer, uncompromised scriptural doctrine, apostolic impartation, and practical holiness on campus.',
-                },
-                {
-                  num: '02',
-                  title: 'Academic Giants',
-                  desc: 'Rigorous study discipline, peer tutorial mentorship, intellectual diligence, and graduating at the top of every faculty.',
-                },
-                {
-                  num: '03',
-                  title: 'Kingdom Family & Community',
-                  desc: 'A loving, supportive brotherhood and sisterhood providing welfare assistance, encouragement, and lifelong Christian friendships.',
-                },
-              ].map((pillar, idx) => (
+            {/* Headline — Finer editorial serif, prominent & bold */}
+            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.16] mb-6">
+              Raised for Kingdom Impact & Academic Distinction.
+            </h2>
+
+            {/* Main paragraph — larger, clear & readable */}
+            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mb-10">
+              ECCF exists to eliminate the false divide between spiritual fervency and academic excellence. We empower students to walk in the fullness of the Holy Spirit while attaining top academic honors.
+            </p>
+
+            {/* Numbered Core Pillars — Refined Editorial Stream */}
+            <div className="divide-y divide-stone-200/80 border-t border-stone-200/80">
+              {pillars.map((pillar, idx) => (
                 <motion.div
                   key={pillar.num}
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.4, delay: idx * 0.08 }}
-                  className="flex items-start gap-3.5 sm:gap-4 py-3.5 sm:py-5 group"
+                  className="flex items-start gap-4 sm:gap-6 py-5 sm:py-6 group"
                 >
-                  <span className="text-xs sm:text-sm font-black text-[#0077cc] font-mono pt-0.5 tracking-wider shrink-0">
+                  <span className="font-serif text-lg sm:text-xl font-bold text-[#0095ff] shrink-0 pt-0.5">
                     {pillar.num}
                   </span>
                   <div>
-                    <h4 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#0077cc] transition-colors">
+                    <h4 className="font-serif text-lg sm:text-xl font-bold text-slate-950 group-hover:text-[#0077cc] transition-colors leading-tight">
                       {pillar.title}
                     </h4>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed font-normal">
+                    <p className="text-sm sm:text-base text-slate-600 mt-2 leading-relaxed font-normal max-w-lg">
                       {pillar.desc}
                     </p>
                   </div>
@@ -91,38 +100,42 @@ export default function WhoWeAreSection({
             </div>
           </motion.div>
 
-          {/* Right Column: Dynamic Student Moments Collage */}
-          <div className="md:col-span-5 grid grid-cols-2 gap-2.5 sm:gap-4">
+          {/* ================================================================ */}
+          {/* RIGHT COLUMN: Substantial, Tall Dynamic Photography Collage      */}
+          {/* ================================================================ */}
+          <div className="lg:col-span-6 grid grid-cols-2 gap-4 sm:gap-6 items-center">
+            {/* Photo 1 (Tall, Anchored) */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.5 }}
-              whileHover={{ scale: 1.03 }}
-              className="relative h-44 xs:h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm bg-slate-100"
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-[360px] sm:h-[480px] lg:h-[560px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 bg-stone-200"
             >
               <Image
                 src={p1}
-                alt="Worship at ECCF"
+                alt="Worship at Edo State University Christian Campus Fellowship"
                 fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover hover:scale-105 transition-transform duration-500"
+                priority
+                sizes="(max-width: 1024px) 50vw, 35vw"
+                className="object-cover hover:scale-105 transition-transform duration-700"
               />
             </motion.div>
+
+            {/* Photo 2 (Tall, Staggered offset for editorial rhythm) */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              whileHover={{ scale: 1.03 }}
-              className="relative h-44 xs:h-48 sm:h-60 md:h-68 lg:h-76 w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm mt-3 sm:mt-8 bg-slate-100"
+              transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-[360px] sm:h-[480px] lg:h-[560px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 mt-8 sm:mt-14 bg-stone-200"
             >
               <Image
                 src={p2}
-                alt="Student Prayer Session"
+                alt="Student Fellowship at Edo State University"
                 fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 1024px) 50vw, 35vw"
+                className="object-cover hover:scale-105 transition-transform duration-700"
               />
             </motion.div>
           </div>

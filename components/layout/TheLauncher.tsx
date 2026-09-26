@@ -33,7 +33,7 @@ import {
   Heart,
   Calendar,
   Radio,
-  Compass,
+  Footprints,
   Lock,
 } from 'lucide-react'
 import { submitFirstTimer } from '@/app/actions/intake-actions'
@@ -472,35 +472,26 @@ export default function TheLauncher() {
 
       {/* ========================================================== */}
       {/* FLOATING ACTION TRIGGER BUTTON (Bottom-Right)              */}
-      {/* Closed: Next Steps pill / icon                             */}
+      {/* Closed: Circular button with Footprints icon (Formula 4)    */}
       {/* Open: Circular close 'X' button just like FBNO screenshot  */}
       {/* ========================================================== */}
       <motion.button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
         aria-label={isOpen ? 'Close Next Steps' : 'Open Next Steps'}
         aria-expanded={isOpen}
         className={
           isOpen
-            ? 'h-11 w-11 rounded-full bg-[#182329] border border-white/20 text-white flex items-center justify-center shadow-2xl shadow-black/60 hover:bg-[#22323a] transition-all'
-            : 'relative flex items-center gap-2 rounded-full bg-[#182329] hover:bg-[#22323a] text-white px-4 py-3 shadow-2xl shadow-black/50 border border-white/15 transition-all duration-300'
+            ? 'h-12 w-12 rounded-full bg-[#182329] border border-white/20 text-white flex items-center justify-center shadow-2xl shadow-black/60 hover:bg-[#22323a] transition-all'
+            : 'h-12 w-12 rounded-full bg-[#bccd28] hover:bg-[#acc01f] text-white flex items-center justify-center shadow-2xl shadow-black/30 transition-all duration-300'
         }
       >
         {isOpen ? (
-          <X className="h-5 w-5 text-white" />
+          <X className="h-6 w-6 text-white" />
         ) : (
-          <>
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline-block">
-              Next Steps
-            </span>
-            <Compass className="h-4 w-4 text-sky-400" />
-          </>
+          <Footprints className="h-6 w-6 text-white" />
         )}
       </motion.button>
     </div>

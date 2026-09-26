@@ -117,35 +117,7 @@ export default async function Home() {
       {/* 1. Hero Section (Formula 4) */}
       <HeroSection settings={settings} />
 
-      {/* Social Proof Trust Ribbon (Airy & Clean) */}
-      <section className="w-full bg-slate-50/80 border-b border-slate-200/70 py-6 sm:py-8">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-3 gap-4 text-center divide-x divide-slate-200/80">
-          <div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-              {settings?.statsActiveMembers || '400+'}
-            </div>
-            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">
-              Active Members
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0077cc] tracking-tight">
-              {settings?.statsWeeklyServices || '3x'}
-            </div>
-            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">
-              Weekly Services
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-              {settings?.statsCampusLegacy || '10yrs+'}
-            </div>
-            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">
-              Campus Legacy
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* 2. Who We Are */}
       <WhoWeAreSection
