@@ -89,18 +89,18 @@ export default async function AnnouncementsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] pt-28 sm:pt-32 md:pt-36 pb-16 sm:pb-24 text-slate-900">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+    <div className="min-h-screen bg-[#fafaf9] pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28 text-slate-900">
+      <div className="w-full px-6 sm:px-8 lg:px-12">
 
         {/* Page Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <span className="text-xs font-black uppercase tracking-widest text-[#0077cc] font-mono block mb-2">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#0077cc] font-mono block mb-3">
             CAMPUS BULLETINS &amp; NOTICES
           </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight">
+          <h1 className="font-serif font-bold text-3xl sm:text-5xl lg:text-6xl text-slate-950 tracking-tight leading-tight">
             Fellowship Announcements
           </h1>
-          <p className="mt-3 text-xs sm:text-base text-slate-600 font-normal leading-relaxed">
+          <p className="mt-4 text-base sm:text-lg text-slate-700 font-normal leading-relaxed">
             Stay updated on weekly service schedules, academic prayer alerts, leadership notices, and campus outreach events at Edo State University.
           </p>
         </div>
