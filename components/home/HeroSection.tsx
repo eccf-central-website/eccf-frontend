@@ -127,27 +127,27 @@ export default function HeroSection({ settings }: Props) {
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
         >
-          {/* Top Label (FBNO: "Join us this Sunday at 9:30 am" — bold, dark, title case) */}
-          <span className="text-sm sm:text-base font-bold text-slate-900 tracking-normal mb-3 block">
+          {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block">
             {topLabel}
           </span>
 
-          {/* Main headline — bold, high-contrast Playfair serif, commanding presence */}
-          <h1 className="font-serif font-bold tracking-tight text-slate-950 leading-[1.12] mb-6"
-            style={{ fontSize: 'clamp(2.35rem, 4.2vw, 3.85rem)' }}
+          {/* Main headline — Belleza high-contrast editorial serif */}
+          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6"
+            style={{ fontSize: 'clamp(2.5rem, 4.5vw, 4.25rem)' }}
           >
             {headline}
           </h1>
 
           {/* Credo (only if set in CMS) */}
           {settings?.heroCredo && (
-            <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-[#0077cc] mb-4 font-mono">
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-4 font-mono">
               {settings.heroCredo}
             </p>
           )}
 
-          {/* Body — clear, dark, legible text (matches FBNO: 17px/18px readable slate-700) */}
-          <p className="text-base sm:text-lg text-slate-700 font-medium leading-relaxed max-w-md mb-9">
+          {/* Body — clear, readable Work Sans text */}
+          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-9">
             {bodyText}
           </p>
 

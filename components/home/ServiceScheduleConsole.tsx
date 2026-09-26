@@ -39,17 +39,17 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
   return (
     <section id="services" className="w-full py-20 lg:py-28 bg-[#fafaf9] border-b border-stone-200 relative overflow-hidden">
-      <div className="w-full px-6 sm:px-8 lg:px-12 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Clean Editorial Section Header */}
-        <div className="text-left max-w-3xl mb-12 sm:mb-16">
-          <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-3 font-mono">
+        <div className="text-left max-w-3xl mb-10 sm:mb-14">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] block mb-2.5 font-mono">
             Weekly Fellowship Schedule
           </span>
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.15]">
-            Service Times & Location
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-[1.15]">
+            Service Times &amp; Location
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-2xl">
+          <p className="mt-3.5 text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl">
             We gather weekly at Edo State University. Every service is uniquely structured to ignite your faith and nurture academic distinction.
           </p>
         </div>

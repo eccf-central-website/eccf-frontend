@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Playfair_Display } from "next/font/google";
+import { Belleza, Work_Sans } from "next/font/google";
 import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -21,10 +21,16 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-const playfair = Playfair_Display({
+const belleza = Belleza({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-serif",
-  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  variable: "--font-work-sans",
   display: "swap",
 });
 
@@ -50,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} ${belleza.variable} ${workSans.variable} antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans`}
       >
         <Suspense fallback={null}>
           <NavigationProgressBar />

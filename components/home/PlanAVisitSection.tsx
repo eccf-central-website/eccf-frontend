@@ -40,15 +40,15 @@ export default function PlanAVisitSection({
           transition={{ duration: 0.55 }}
           className="space-y-5 sm:space-y-6 max-w-4xl mx-auto"
         >
-          <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-2 font-mono">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] block mb-2 font-mono">
             JOIN OUR CAMPUS FAMILY
           </span>
 
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight">
-            Planning a Visit to ECCF?
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight">
+            Plan Your Visit
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
             Whether you&apos;re a fresher stepping onto campus for the first time or a returning scholar, we have a warm seat waiting for you. Expect vibrant praise, sound doctrine, and genuine community.
           </p>
 
