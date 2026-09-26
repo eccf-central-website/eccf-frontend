@@ -17,7 +17,7 @@ import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/Plat
 import { SermonItem } from '@/components/sermons/SermonsFeed'
 import SermonPlayerModal, {
   getYoutubeVideoId,
-  getSpotifyEmbedId,
+  getSpotifyEmbedUrl,
 } from '@/components/sermons/SermonPlayerModal'
 
 interface Props {
@@ -78,8 +78,8 @@ export default function LatestSermonsSection({ sermons }: Props) {
           <div className="grid grid-cols-1 gap-5 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {safeSermons.map((sermon, idx) => {
               const youtubeId = getYoutubeVideoId(sermon)
-              const spotifyId = getSpotifyEmbedId(sermon)
-              const hasPlayableMedia = Boolean(youtubeId || spotifyId || sermon.mediaUrl)
+              const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
+              const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.mediaUrl)
 
               return (
                 <motion.div

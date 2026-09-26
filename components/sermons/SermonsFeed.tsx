@@ -15,7 +15,7 @@ import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/Plat
 import SermonPlayerModal, {
   SermonPlayerItem,
   getYoutubeVideoId,
-  getSpotifyEmbedId,
+  getSpotifyEmbedUrl,
 } from '@/components/sermons/SermonPlayerModal'
 
 export type SermonItem = SermonPlayerItem
@@ -120,8 +120,8 @@ export default function SermonsFeed({ sermons }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filtered.map((sermon, idx) => {
             const youtubeId = getYoutubeVideoId(sermon)
-            const spotifyId = getSpotifyEmbedId(sermon)
-            const hasPlayableMedia = Boolean(youtubeId || spotifyId || sermon.mediaUrl)
+            const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
+            const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.mediaUrl)
 
             return (
               <motion.div
