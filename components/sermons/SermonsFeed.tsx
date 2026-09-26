@@ -12,13 +12,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Search, Clock, BookOpen, Calendar, Filter, Radio, Disc3, Play } from 'lucide-react'
 import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/PlatformIcons'
-import SermonPlayerModal, {
-  SermonPlayerItem,
-  getYoutubeVideoId,
-  getSpotifyEmbedUrl,
-} from '@/components/sermons/SermonPlayerModal'
-
-export type SermonItem = SermonPlayerItem
+import { SermonPlayerItem as SermonItem, getYoutubeVideoId } from '@/lib/sermonUtils'
 
 interface Props {
   sermons?: SermonItem[] | null
@@ -27,10 +21,6 @@ interface Props {
 export default function SermonsFeed({ sermons }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState('All')
-  const [activePlayer, setActivePlayer] = useState<{
-    sermon: SermonItem
-    mode: 'video' | 'audio'
-  } | null>(null)
 
   const safeSermons = sermons || []
 
@@ -165,14 +155,10 @@ export default function SermonsFeed({ sermons }: Props) {
 
                     {/* Play Button Trigger */}
                     {hasPlayableMedia ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActivePlayer({
-                            sermon,
-                            mode: youtubeId ? 'video' : 'audio',
-                          })
-                        }
+                      <a
+                        href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         aria-label={`Play ${sermon.title}`}
                         className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-xl group-hover:scale-110 transition-all cursor-pointer ${
                           youtubeId
@@ -181,7 +167,7 @@ export default function SermonsFeed({ sermons }: Props) {
                         }`}
                       >
                         <Play className="h-5 w-5 fill-white translate-x-0.5" />
-                      </button>
+                      </a>
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
                         <Radio className="h-5 w-5 text-[#0077cc]" />
@@ -207,21 +193,16 @@ export default function SermonsFeed({ sermons }: Props) {
                       )}
                     </div>
 
-                    <h3
-                      onClick={() => {
-                        if (hasPlayableMedia) {
-                          setActivePlayer({
-                            sermon,
-                            mode: youtubeId ? 'video' : 'audio',
-                          })
-                        }
-                      }}
-                      className={`text-lg font-black text-slate-900 group-hover:text-[#0077cc] transition-colors leading-snug ${
+                    <a
+                      href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`block text-lg font-black text-slate-900 group-hover:text-[#0077cc] transition-colors leading-snug ${
                         hasPlayableMedia ? 'cursor-pointer' : ''
                       }`}
                     >
                       {sermon.title}
-                    </h3>
+                    </a>
 
                     <p className="text-xs font-semibold text-slate-500 mt-1">
                       {sermon.preacher}
@@ -229,22 +210,17 @@ export default function SermonsFeed({ sermons }: Props) {
                   </div>
                 </div>
 
-                {/* Clean Platform Links & Quick Play */}
                 <div className="px-6 pb-6 pt-2 flex items-center justify-between border-t border-slate-100/60">
                   {hasPlayableMedia ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActivePlayer({
-                          sermon,
-                          mode: youtubeId ? 'video' : 'audio',
-                        })
-                      }
+                    <a
+                      href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0077cc] hover:text-sky-800 transition-colors"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
                       <span>{youtubeId ? 'Watch Video' : 'Listen Now'}</span>
-                    </button>
+                    </a>
                   ) : (
                     <span className="text-[11px] font-bold text-slate-400">Stream on:</span>
                   )}
@@ -295,13 +271,6 @@ export default function SermonsFeed({ sermons }: Props) {
           })}
         </div>
       )}
-
-      {/* Embedded Player Modal */}
-      <SermonPlayerModal
-        sermon={activePlayer?.sermon ?? null}
-        initialMode={activePlayer?.mode ?? 'video'}
-        onClose={() => setActivePlayer(null)}
-      />
     </>
   )
 }
