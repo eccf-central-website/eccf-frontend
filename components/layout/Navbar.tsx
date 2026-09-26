@@ -78,11 +78,11 @@ export default function Navbar() {
               priority
             />
           </div>
-          <div>
+          <div className="flex flex-col justify-center">
             <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal mt-1 leading-none">
+            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5">
               ESUI Christian Campus Fellowship
             </span>
           </div>

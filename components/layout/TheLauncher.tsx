@@ -122,23 +122,23 @@ export default function TheLauncher() {
             }
           >
             {/* ========================================================== */}
-            {/* TOP BAR: Maximize & Close                                  */}
+            {/* TOP BAR: Maximize & Close (Fixed to Outer Edges)           */}
             {/* ========================================================== */}
             <div
-              className={`flex items-center justify-between px-6 pt-5 pb-2 text-slate-400 w-full ${
-                isExpanded ? 'max-w-2xl mx-auto' : ''
+              className={`flex items-center justify-between text-slate-400 w-full shrink-0 ${
+                isExpanded ? 'px-6 sm:px-10 lg:px-12 pt-6 pb-2' : 'px-6 pt-5 pb-2'
               }`}
             >
               <button
                 type="button"
                 onClick={() => setIsExpanded((prev) => !prev)}
-                className="hover:text-white transition-colors p-1 -ml-1 rounded-lg focus:outline-none flex items-center gap-1.5 text-xs font-semibold"
+                className="hover:text-white transition-colors p-2 rounded-xl bg-white/5 hover:bg-white/10 flex items-center gap-2 text-xs sm:text-sm font-bold"
                 aria-label={isExpanded ? 'Minimize' : 'Maximize to fill screen'}
                 title={isExpanded ? 'Minimize' : 'Fill Screen'}
               >
                 {isExpanded ? (
                   <>
-                    <Minimize2 className="h-4 w-4" />
+                    <Minimize2 className="h-5 w-5" />
                     <span>Minimize</span>
                   </>
                 ) : (
@@ -151,10 +151,10 @@ export default function TheLauncher() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-slate-400 hover:text-white transition-colors rounded-lg"
+                className="p-2 text-slate-300 hover:text-white transition-colors rounded-xl bg-white/5 hover:bg-white/10"
                 aria-label="Close"
               >
-                <X className="h-5 w-5" />
+                <X className={isExpanded ? 'h-6 w-6' : 'h-5 w-5'} />
               </button>
             </div>
 
@@ -173,37 +173,49 @@ export default function TheLauncher() {
               {view === 'menu' && (
                 <div className="flex flex-col flex-1 justify-between">
                   {/* Brand Header */}
-                  <div className="text-center pt-2 pb-5">
-                    <div className="mx-auto mb-2.5 h-12 w-12 flex items-center justify-center">
+                  <div className={`text-center ${isExpanded ? 'pt-2 pb-8' : 'pt-2 pb-5'}`}>
+                    <div className={`mx-auto mb-3 flex items-center justify-center ${isExpanded ? 'h-20 w-20' : 'h-14 w-14'}`}>
                       <Image
                         src="/logos/ECCF LOGO.png"
                         alt="ECCF Logo"
-                        width={44}
-                        height={44}
+                        width={isExpanded ? 76 : 52}
+                        height={isExpanded ? 76 : 52}
                         className="object-contain"
                       />
                     </div>
-                    <h3 className="font-serif text-base sm:text-lg font-bold tracking-tight text-white leading-snug max-w-[280px] mx-auto">
+                    <h3 className={`font-serif font-bold tracking-tight text-white leading-snug mx-auto ${
+                      isExpanded
+                        ? 'text-2xl sm:text-3xl lg:text-4xl max-w-xl'
+                        : 'text-lg sm:text-xl max-w-[300px]'
+                    }`}>
                       Edo State University Christian Campus Fellowship
                     </h3>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-sky-400 mt-1">
+                    <p className={`font-black uppercase tracking-wider text-sky-400 mt-2 ${
+                      isExpanded ? 'text-sm sm:text-base' : 'text-xs'
+                    }`}>
                       ECCF
                     </p>
-                    <p className="text-xs text-slate-300 font-medium mt-1.5">
+                    <p className={`text-slate-200 font-medium mt-1.5 ${
+                      isExpanded ? 'text-base sm:text-lg' : 'text-xs sm:text-sm text-slate-300'
+                    }`}>
                       Take your next step here!
                     </p>
                   </div>
 
-                  {/* Nucleus Stacked Pill Action Buttons */}
-                  <div className="space-y-2.5 my-auto">
+                  {/* Nucleus Stacked Pill Action Buttons — Big, Bold, Legible */}
+                  <div className={`space-y-3 my-auto w-full ${isExpanded ? 'space-y-4' : 'space-y-3'}`}>
                     {/* 1. CONNECT CARD (Interactive Form Slide-in) */}
                     <button
                       type="button"
                       onClick={() => setView('connect-card')}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 text-center font-bold text-white text-[15px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm flex items-center justify-center gap-2 group"
+                      className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md flex items-center justify-center gap-3 group ${
+                        isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
+                      }`}
                     >
                       <span>Connect Card</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                      <span className={`font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 ${
+                        isExpanded ? 'text-sm' : 'text-xs'
+                      }`}>
                         New
                       </span>
                     </button>
@@ -212,7 +224,9 @@ export default function TheLauncher() {
                     <Link
                       href="/connect"
                       onClick={() => setIsOpen(false)}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 text-center font-bold text-white text-[15px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm block"
+                      className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md block ${
+                        isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
+                      }`}
                     >
                       Join Fellowship & Teams
                     </Link>
@@ -221,7 +235,9 @@ export default function TheLauncher() {
                     <Link
                       href="/announcements"
                       onClick={() => setIsOpen(false)}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 text-center font-bold text-white text-[15px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm block"
+                      className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md block ${
+                        isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
+                      }`}
                     >
                       Registrations & Events
                     </Link>
@@ -230,7 +246,9 @@ export default function TheLauncher() {
                     <Link
                       href="/sermons"
                       onClick={() => setIsOpen(false)}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 text-center font-bold text-white text-[15px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm block"
+                      className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md block ${
+                        isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
+                      }`}
                     >
                       Weekly Podcasts & Messages
                     </Link>
@@ -239,7 +257,9 @@ export default function TheLauncher() {
                     <Link
                       href="/#giving"
                       onClick={() => setIsOpen(false)}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 text-center font-bold text-white text-[15px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm block"
+                      className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md block ${
+                        isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
+                      }`}
                     >
                       Give Online
                     </Link>
@@ -248,13 +268,16 @@ export default function TheLauncher() {
                     <button
                       type="button"
                       onClick={() => setView('more-steps')}
-                      className="w-full py-2.5 text-center text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                      className={`w-full text-center font-bold text-slate-300 hover:text-white transition-colors ${
+                        isExpanded ? 'py-4 text-base sm:text-lg' : 'py-3 text-sm font-semibold'
+                      }`}
                     >
                       or, See more next steps
                     </button>
                   </div>
                 </div>
               )}
+
 
               {/* ---------------------------------------------------- */}
               {/* VIEW: INLINE CONNECT CARD FORM                       */}
