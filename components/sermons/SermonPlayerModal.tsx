@@ -178,14 +178,19 @@ export default function SermonPlayerModal({ sermon, initialMode = 'video', onClo
               />
             </div>
           ) : activeTab === 'audio' && spotifyEmbedUrl ? (
-            <div className="w-full max-w-2xl mx-auto rounded-2xl overflow-hidden bg-[#121212] p-2 border border-white/20 shadow-2xl">
+            <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-2xl ${
+              spotifyEmbedUrl.includes('podcasters.spotify.com') 
+                ? 'bg-transparent' 
+                : 'bg-[#121212] p-2 border border-white/20'
+            }`}>
               <iframe
                 src={spotifyEmbedUrl}
                 width="100%"
                 height={spotifyEmbedUrl.includes('podcasters.spotify.com') ? "102" : "232"}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
-                className="rounded-xl w-full border-0"
+                scrolling="no"
+                className="w-full border-0"
               />
             </div>
           ) : sermon.mediaUrl ? (
