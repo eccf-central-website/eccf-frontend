@@ -117,7 +117,7 @@ export default function TheLauncher() {
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className={
               isExpanded
-                ? 'fixed inset-0 z-[100] w-screen h-screen rounded-none bg-[#182329] text-white flex flex-col overflow-hidden transition-all duration-300'
+                ? 'fixed inset-0 z-[100] w-screen h-screen rounded-none bg-[#182329] text-white flex flex-col overflow-y-auto no-scrollbar transition-all duration-300'
                 : 'fixed sm:absolute bottom-20 right-0 w-[calc(100vw-32px)] sm:w-[370px] h-[580px] max-h-[82vh] rounded-[30px] bg-[#182329] text-white border border-white/10 shadow-2xl shadow-black/70 flex flex-col overflow-hidden transition-all duration-300'
             }
           >
@@ -162,8 +162,10 @@ export default function TheLauncher() {
             {/* CARD CONTENT AREA (Scrollable)                            */}
             {/* ========================================================== */}
             <div
-              className={`flex-1 overflow-y-auto px-6 py-4 flex flex-col justify-between custom-scrollbar w-full ${
-                isExpanded ? 'max-w-2xl mx-auto my-auto py-8' : ''
+              className={`flex-1 flex flex-col justify-between w-full ${
+                isExpanded
+                  ? 'max-w-2xl mx-auto my-auto py-6 sm:py-8 overflow-y-visible px-4 sm:px-6'
+                  : 'overflow-y-auto px-6 py-4 no-scrollbar'
               }`}
             >
               
