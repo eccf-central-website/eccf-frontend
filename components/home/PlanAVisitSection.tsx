@@ -32,7 +32,7 @@ export default function PlanAVisitSection({
 
   return (
     <section id="visit" className="py-16 sm:py-24 bg-[#fafaf9] border-t border-stone-200/80 scroll-mt-16 sm:scroll-mt-20">
-      <div className="w-full px-6 sm:px-8 lg:px-12 text-center">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}

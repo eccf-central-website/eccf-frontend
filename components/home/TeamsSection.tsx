@@ -47,7 +47,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
 
   return (
     <section id="teams" className="py-16 sm:py-24 bg-white relative overflow-hidden border-t border-stone-100">
-      <div className="w-full px-6 sm:px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
         
         {/* Clean Centered Section Header */}
         <motion.div

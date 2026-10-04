@@ -125,7 +125,7 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-6 sm:px-8 lg:px-12 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
+          className="flex flex-col justify-center px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
         >
           {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
           <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block">

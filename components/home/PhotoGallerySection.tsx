@@ -28,7 +28,7 @@ export default function PhotoGallerySection() {
 
   return (
     <section className="py-24 border-t border-slate-200/60 bg-[#f8fafc]">
-      <div className="w-full px-6 sm:px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff] flex items-center gap-1.5 mb-1">

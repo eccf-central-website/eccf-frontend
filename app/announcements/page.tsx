@@ -90,7 +90,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9] pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28 text-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto px-6 sm:px-10 lg:px-12">
 
         {/* Page Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">

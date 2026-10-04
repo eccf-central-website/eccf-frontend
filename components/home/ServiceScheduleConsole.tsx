@@ -39,7 +39,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
   return (
     <section id="services" className="w-full py-20 lg:py-28 bg-[#fafaf9] border-b border-stone-200 relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
         
         {/* Clean Editorial Section Header */}
         <div className="text-left max-w-3xl mb-10 sm:mb-14">
