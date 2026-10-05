@@ -44,7 +44,7 @@ export default function WhoWeAreSection({
   const p2 = photo2 || '/gallery/gallery-2.jpg'
 
   return (
-    <section id="about" className="w-full bg-[#fcfbf9] border-b border-stone-200 py-20 lg:py-28 overflow-hidden">
+    <section id="about" className="w-full bg-[#fcfbf9] border-b border-stone-200 py-12 lg:py-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-center">
           
@@ -69,12 +69,12 @@ export default function WhoWeAreSection({
             </h2>
 
             {/* Main paragraph — larger, clear & readable */}
-            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mb-10">
+            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mb-6">
               ECCF exists to eliminate the false divide between spiritual fervency and academic excellence. We empower students to walk in the fullness of the Holy Spirit while attaining top academic honors.
             </p>
 
             {/* Numbered Core Pillars — Refined Editorial Stream */}
-            <div className="divide-y divide-stone-200/80 border-t border-stone-200/80">
+            <div className="flex flex-col gap-2">
               {pillars.map((pillar, idx) => (
                 <motion.div
                   key={pillar.num}
@@ -82,7 +82,7 @@ export default function WhoWeAreSection({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.4, delay: idx * 0.08 }}
-                  className="flex items-start gap-4 sm:gap-6 py-5 sm:py-6 group"
+                  className="flex items-start gap-4 sm:gap-6 py-2 sm:py-3 group"
                 >
                   <span className="font-serif text-lg sm:text-xl font-bold text-[#0095ff] shrink-0 pt-0.5">
                     {pillar.num}
@@ -110,7 +110,7 @@ export default function WhoWeAreSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-[360px] sm:h-[480px] lg:h-[560px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 bg-stone-200"
+              className="relative h-[280px] sm:h-[360px] lg:h-[420px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 bg-stone-200"
             >
               <Image
                 src={p1}
@@ -128,7 +128,7 @@ export default function WhoWeAreSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-[360px] sm:h-[480px] lg:h-[560px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 mt-8 sm:mt-14 bg-stone-200"
+              className="relative h-[280px] sm:h-[360px] lg:h-[420px] w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 mt-6 sm:mt-10 bg-stone-200"
             >
               <Image
                 src={p2}
