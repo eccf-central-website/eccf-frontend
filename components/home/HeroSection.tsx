@@ -125,15 +125,15 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
+          className="flex flex-col justify-center px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0 text-center lg:text-left items-center lg:items-start"
         >
           {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
-          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block text-center lg:text-left">
             {topLabel}
           </span>
 
           {/* Main headline — Belleza high-contrast editorial serif */}
-          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6"
+          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6 text-center lg:text-left text-balance"
             style={{ fontSize: 'clamp(2.5rem, 4.5vw, 4.25rem)' }}
           >
             {headline}
@@ -141,18 +141,18 @@ export default function HeroSection({ settings }: Props) {
 
           {/* Credo (only if set in CMS) */}
           {settings?.heroCredo && (
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-4 font-mono">
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-4 font-mono text-center lg:text-left">
               {settings.heroCredo}
             </p>
           )}
 
           {/* Body — clear, readable Work Sans text */}
-          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-9">
+          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-9 text-center lg:text-left mx-auto lg:mx-0">
             {bodyText}
           </p>
 
           {/* CTA — FBNO bold standalone pill button */}
-          <div>
+          <div className="w-full flex justify-center lg:justify-start">
             <Link
               href="/#visit"
               className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
