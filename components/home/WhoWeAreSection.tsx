@@ -56,25 +56,25 @@ export default function WhoWeAreSection({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 flex flex-col justify-center text-left"
+            className="lg:col-span-6 flex flex-col justify-center text-center lg:text-left items-center lg:items-start"
           >
             {/* Top Label */}
-            <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase mb-4 block">
+            <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase mb-4 block text-center lg:text-left">
               Who We Are
             </span>
 
             {/* Headline — Finer editorial serif, prominent & bold */}
-            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.16] mb-6">
+            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.16] mb-6 text-center lg:text-left text-balance">
               Raised for Kingdom Impact & Academic Distinction.
             </h2>
 
             {/* Main paragraph — larger, clear & readable */}
-            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mb-6">
+            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mb-6 text-center lg:text-left mx-auto lg:mx-0">
               ECCF exists to eliminate the false divide between spiritual fervency and academic excellence. We empower students to walk in the fullness of the Holy Spirit while attaining top academic honors.
             </p>
 
             {/* Numbered Core Pillars — Refined Editorial Stream */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full text-left">
               {pillars.map((pillar, idx) => (
                 <motion.div
                   key={pillar.num}
