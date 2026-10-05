@@ -40,7 +40,10 @@ export async function POST(request: Request) {
         for (const item of items) {
           const spotifyEmbedId = extractSpotifyId(item.link || item.guid)
           const existing = await sanityWriteClient.fetch(
-            `*[_type == "sermonVault" && (spotifyEmbedId == $id || title == $title)][0]`,
+            `*[_type == "sermonVault" && (
+              (defined($id) && spotifyEmbedId == $id) || 
+              title == $title
+            )][0]`,
             { id: spotifyEmbedId, title: item.title }
           )
 
@@ -84,7 +87,10 @@ export async function POST(request: Request) {
           const youtubeMusicUrl = youtubeVideoId ? `https://music.youtube.com/watch?v=${youtubeVideoId}` : undefined
 
           const existing = await sanityWriteClient.fetch(
-            `*[_type == "sermonVault" && (youtubeVideoId == $id || title == $title)][0]`,
+            `*[_type == "sermonVault" && (
+              (defined($id) && youtubeVideoId == $id) || 
+              title == $title
+            )][0]`,
             { id: youtubeVideoId, title: item.title }
           )
 
@@ -158,11 +164,13 @@ function parseRssItems(xml: string) {
 }
 
 function extractSpotifyId(urlStr: string) {
-  const match = urlStr.match(/episode\/([a-zA-Z0-9]+)/)
-  return match ? match[1] : ''
+  if (!urlStr) return null
+  const match = urlStr.match(/episodes?\/([a-zA-Z0-9_-]+)/)
+  return match ? match[1] : null
 }
 
 function extractYoutubeId(urlStr: string) {
+  if (!urlStr) return null
   const match = urlStr.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-  return match ? match[1] : ''
+  return match ? match[1] : null
 }

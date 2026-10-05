@@ -114,8 +114,10 @@ export default async function Home() {
 
   return (
     <div className="relative min-h-screen bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0077cc] selection:text-white overflow-x-hidden pt-16 sm:pt-20">
-      {/* 1. Hero Section */}
+      {/* 1. Hero Section (Formula 4) */}
       <HeroSection settings={settings} />
+
+
 
       {/* 2. Who We Are */}
       <WhoWeAreSection
@@ -123,14 +125,14 @@ export default async function Home() {
         photo2={audiencePhoto}
       />
 
-      {/* 3. Interactive Service Schedule Console */}
+      {/* 3. Interactive Service Schedule Console (Service Times & Location) */}
       <ServiceScheduleConsole services={services || []} />
 
-      {/* 4. Teams & Fellowship Life Section */}
-      <TeamsSection teams={teams || []} gallery={gallery || []} />
-
-      {/* 5. Sermon Vault & Podcasts Section */}
+      {/* 4. Sermon Vault & Podcasts Section (Latest Messages) */}
       <LatestSermonsSection sermons={latestSermons || []} />
+
+      {/* 5. Teams & Fellowship Life Section */}
+      <TeamsSection teams={teams || []} gallery={gallery || []} />
 
       {/* 6. Giving Hub Section */}
       <GivingHubSection />

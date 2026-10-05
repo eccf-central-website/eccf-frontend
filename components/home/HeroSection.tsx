@@ -1,38 +1,26 @@
 /**
- * HeroSection — Client Component
+ * HeroSection — Formula 4 (First Baptist New Orleans faithful replica)
  *
- * Implements Section 2.1 of SDD & CLAUDE.md guidelines.
- * Displays live headline, accent word, credo, and description from Sanity Studio siteSettings.
- * Animated metric counters for active members, weekly services, and campus legacy.
+ * KEY structural insight:
+ * - The section itself has NO padding — it fills full viewport height
+ * - Left panel: padded internally, text centered vertically
+ * - Right panel: photo collage fills 100% height flush — no padding, no gap from edges
+ * - Small gap (p-2) between photos only, no outer margin
  */
 
 'use client'
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, Variants } from 'framer-motion'
-import { ArrowRight, Radio } from 'lucide-react'
-import CountUpNumber from '@/components/ui/CountUpNumber'
+import { motion } from 'framer-motion'
 import { urlForImage } from '@/lib/sanity'
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
-    },
-  },
-}
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-  },
+export interface CollagePhotoItem {
+  _key?: string
+  alt?: string
+  tag?: string
+  imageUrl?: string
+  image?: unknown
 }
 
 export interface SiteSettingsData {
@@ -41,8 +29,10 @@ export interface SiteSettingsData {
   heroHeadlineEnd?: string
   heroCredo?: string
   heroParagraph?: string
+  heroTopPill?: string
   heroPhoto?: unknown
   heroPhotoUrl?: string
+  heroCollagePhotos?: CollagePhotoItem[]
   whoWeArePhotoMinister?: unknown
   whoWeArePhotoMinisterUrl?: string
   whoWeArePhotoAudience?: unknown
@@ -59,151 +49,194 @@ interface Props {
   settings?: SiteSettingsData | null
 }
 
-function parseMetric(val?: string | null, defaultEnd: number = 0, defaultSuffix: string = '') {
-  if (!val || typeof val !== 'string') return { end: defaultEnd, suffix: defaultSuffix }
-  const trimmed = val.trim()
-  const match = trimmed.match(/^(\d+)(.*)$/)
-  if (!match) {
-    const digits = trimmed.match(/\d+/)
-    if (digits) {
-      const parsed = parseInt(digits[0], 10)
-      return { end: isNaN(parsed) ? defaultEnd : parsed, suffix: trimmed.replace(digits[0], '').trim() || defaultSuffix }
-    }
-    return { end: defaultEnd, suffix: defaultSuffix }
-  }
-  const parsed = parseInt(match[1], 10)
-  return { end: isNaN(parsed) ? defaultEnd : parsed, suffix: match[2] ? match[2].trim() : defaultSuffix }
-}
+const DEFAULT_COLLAGE = [
+  {
+    src: '/gallery/gallery-1.jpg',
+    alt: 'Students in vibrant worship at ECCF',
+  },
+  {
+    src: '/gallery/gallery-4.jpg',
+    alt: 'ECCF university students smiling on campus',
+  },
+  {
+    src: '/gallery/gallery-2.jpg',
+    alt: 'Teaching and fellowship at ECCF',
+  },
+  {
+    src: '/gallery/gallery-8.jpg',
+    alt: 'Student with warm smile in ECCF fellowship',
+  },
+  {
+    src: '/gallery/gallery-3.jpg',
+    alt: 'ECCF Choir and ministry team',
+  },
+]
 
 export default function HeroSection({ settings }: Props) {
-  const headlineStart = settings?.heroHeadlineStart || 'An Assembly Of'
-  const accentWord = settings?.heroAccentWord || 'Spiritual Dynamites'
-  const headlineEnd = settings?.heroHeadlineEnd || 'And Academic Giants'
-  const credo = settings?.heroCredo || 'Jesus in our hearts, letters in our heads.'
-  const paragraph = settings?.heroParagraph || ''
-  const heroPhoto = urlForImage(settings?.heroPhoto) || settings?.heroPhotoUrl || '/gallery/gallery-8.jpg'
+  const topLabel = settings?.heroTopPill || 'Join us this week'
 
-  const m1 = parseMetric(settings?.statsActiveMembers, 400, '+')
-  const m2 = parseMetric(settings?.statsWeeklyServices, 3, 'x')
-  const m3 = parseMetric(settings?.statsCampusLegacy, 10, 'yrs+')
+  const headline =
+    settings?.heroHeadlineStart && settings?.heroHeadlineEnd
+      ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
+      : 'An Assembly of Spiritual Dynamites & Academic Giants'
+
+  const bodyText =
+    settings?.heroParagraph ||
+    'Our aim is to win souls on the school campus for Jesus.'
+
+  const rawCollage = settings?.heroCollagePhotos
+  const photos =
+    Array.isArray(rawCollage) && rawCollage.length >= 5
+      ? rawCollage.slice(0, 5).map((item, idx) => ({
+          src: item.imageUrl || urlForImage(item.image) || DEFAULT_COLLAGE[idx].src,
+          alt: item.alt || DEFAULT_COLLAGE[idx].alt,
+        }))
+      : DEFAULT_COLLAGE
+
+  const legacyPhoto = urlForImage(settings?.heroPhoto) || settings?.heroPhotoUrl
+  if (legacyPhoto && (!rawCollage || rawCollage.length < 5)) {
+    photos[3] = { src: legacyPhoto, alt: 'ECCF Fellowship Life' }
+  }
+
+  // Ensure 5 distinct photos (no duplicate adjacent photos)
+  if (photos[4] && photos[3] && photos[4].src === photos[3].src) {
+    photos[4] = { src: '/gallery/gallery-10.jpg', alt: 'ECCF Worship Gathering' }
+  }
+  if (photos[1] && photos[0] && photos[1].src === photos[0].src) {
+    photos[1] = { src: '/gallery/gallery-6.jpg', alt: 'ECCF Campus Fellowship' }
+  }
 
   return (
-    <section className="relative w-full bg-gradient-to-b from-white via-[#fafaf9] to-[#fafaf9] py-8 sm:py-14 md:py-18 lg:py-20 overflow-hidden">
-      {/* Soft Ambient Warm & Sky Radial Glows */}
-      <div className="absolute top-10 -left-20 h-[280px] sm:h-[450px] w-[280px] sm:w-[450px] rounded-full bg-sky-100/40 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 h-[250px] sm:h-[400px] w-[250px] sm:w-[400px] rounded-full bg-amber-100/30 blur-3xl pointer-events-none" />
+    /**
+     * FBNO structure: full-viewport-height section, NO padding.
+     * Two panels sit side by side via flex:
+     *   - Left: ~38% width, padded, vertically centered text
+     *   - Right: ~62% width, zero padding, collage fills 100% height flush
+     */
+    <section className="relative w-full bg-[#f9f8f5] overflow-hidden border-b border-stone-200"
+      style={{ minHeight: 'calc(100vh - 76px)' }}
+    >
+      <div className="flex flex-col lg:flex-row w-full h-full" style={{ minHeight: 'calc(100vh - 76px)' }}>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-10 lg:gap-14 items-center">
-          
-          {/* Left Column: Headline, Credo, Description & CTAs */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="md:col-span-7 text-left space-y-4 sm:space-y-5"
+        {/* ================================================================ */}
+        {/* LEFT PANEL — text is the FOCUS, bold & authoritative like FBNO   */}
+        {/* ================================================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col justify-center px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0"
+        >
+          {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block">
+            {topLabel}
+          </span>
+
+          {/* Main headline — Belleza high-contrast editorial serif */}
+          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6"
+            style={{ fontSize: 'clamp(2.5rem, 4.5vw, 4.25rem)' }}
           >
-            {/* Master Headline: Large Serif with Darker Shade of Brand Blue */}
-            <motion.h1
-              variants={itemVariants}
-              className="font-serif text-[2.25rem] xs:text-[2.65rem] sm:text-4xl md:text-5xl lg:text-[3.85rem] font-medium tracking-tight text-slate-950 leading-[1.14] sm:leading-[1.12]"
+            {headline}
+          </h1>
+
+          {/* Credo (only if set in CMS) */}
+          {settings?.heroCredo && (
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-4 font-mono">
+              {settings.heroCredo}
+            </p>
+          )}
+
+          {/* Body — clear, readable Work Sans text */}
+          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-9">
+            {bodyText}
+          </p>
+
+          {/* CTA — FBNO bold standalone pill button */}
+          <div>
+            <Link
+              href="/#visit"
+              className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>{headlineStart}</span> <br />
-              <span className="italic text-[#0077cc] inline-block my-0.5">
-                {accentWord}
-              </span> <br />
-              <span>{headlineEnd}</span>
-            </motion.h1>
+              Plan A Visit
+            </Link>
+          </div>
+        </motion.div>
 
-            {/* Fellowship Credo */}
-            <motion.div variants={itemVariants} className="pt-0.5">
-              <p className="text-xs sm:text-sm font-semibold tracking-wide text-slate-500 italic">
-                {credo}
-              </p>
-            </motion.div>
-
-            {/* Description Paragraph (from Sanity Studio) */}
-            {paragraph && (
-              <motion.p
-                variants={itemVariants}
-                className="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed font-normal max-w-xl pt-0.5"
-              >
-                {paragraph}
-              </motion.p>
-            )}
-
-            {/* Primary Actions: Mobile-first Touch-friendly CTAs */}
-            <motion.div
-              variants={itemVariants}
-              className="pt-2 flex flex-col xs:flex-row items-stretch xs:items-center gap-3.5 sm:gap-6"
-            >
-              <Link
-                href="#visit"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 hover:bg-slate-800 text-white font-bold px-7 sm:px-8 py-3.5 sm:py-4 text-xs uppercase tracking-wider shadow-lg shadow-slate-950/15 transition-all text-center hover:scale-[1.03] active:scale-[0.98] w-full xs:w-auto min-h-[44px]"
-              >
-                <span>Plan a Visit</span>
-                <ArrowRight className="h-4 w-4 text-sky-400" />
-              </Link>
-
-              <Link
-                href="/sermons"
-                className="inline-flex items-center justify-center xs:justify-start gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-[#0077cc] transition-all hover:translate-x-0.5 py-2.5 px-1 min-h-[44px]"
-              >
-                <Radio className="h-4 w-4 text-[#0077cc]" />
-                <span>Sermon Podcasts</span>
-              </Link>
-            </motion.div>
-
-            {/* Integrated Metric Counter Strip — Fluid Mobile Grid */}
-            <motion.div
-              variants={itemVariants}
-              className="pt-5 sm:pt-7 grid grid-cols-3 gap-2 xs:gap-3 sm:gap-8 text-left max-w-lg"
-            >
-              <div>
-                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
-                  <CountUpNumber end={m1.end} suffix={m1.suffix} />
-                </div>
-                <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Active Members</div>
-              </div>
-              <div>
-                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-[#0077cc] tracking-tight">
-                  <CountUpNumber end={m2.end} suffix={m2.suffix} />
-                </div>
-                <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Weekly Services</div>
-              </div>
-              <div>
-                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
-                  <CountUpNumber end={m3.end} suffix={m3.suffix} />
-                </div>
-                <div className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 sm:mt-1">Campus Legacy</div>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Column: Clean Organic Pebble Photo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="md:col-span-5 flex items-center justify-center md:justify-end pt-2 md:pt-0"
+        {/* ================================================================ */}
+        {/* RIGHT PANEL — photo collage, FLUSH to top/right/bottom           */}
+        {/* FBNO: photos start at the very top edge, fill full height        */}
+        {/* Layout: 3 stacked on left sub-col, 2 stacked on right sub-col   */}
+        {/* ================================================================ */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="lg:flex-1 w-full lg:w-auto"
+          style={{ minHeight: '480px' }}
+        >
+          {/* Grid: 2 sub-columns of photos, p-2 gap between, no outer padding */}
+          <div className="grid grid-cols-2 gap-2 p-2 h-full w-full"
+            style={{ minHeight: 'inherit' }}
           >
-            <motion.div
-              whileHover={{ scale: 1.02, rotate: 0.5 }}
-              transition={{ duration: 0.4 }}
-              className="relative w-full max-w-[260px] xs:max-w-[285px] sm:max-w-[340px] md:max-w-[350px] lg:max-w-[390px] aspect-[4/5] overflow-hidden rounded-[42%_58%_70%_30%_/_45%_45%_55%_55%] shadow-2xl shadow-slate-900/10 bg-slate-100"
-            >
-              <Image
-                src={heroPhoto}
-                alt="Students at Edo State University Christian Campus Fellowship"
-                fill
-                priority
-                sizes="(max-width: 640px) 260px, (max-width: 1024px) 350px, 390px"
-                className="object-cover object-top hover:scale-105 transition-transform duration-700"
-              />
-            </motion.div>
-          </motion.div>
 
-        </div>
+            {/* LEFT sub-column: 3 equal-height stacked photos */}
+            <div className="grid grid-rows-3 gap-2 h-full">
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[0].src}
+                  alt={photos[0].alt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[1].src}
+                  alt={photos[1].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[2].src}
+                  alt={photos[2].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            {/* RIGHT sub-column: tall top photo (60%) + shorter bottom photo (40%) */}
+            <div className="grid gap-2 h-full" style={{ gridTemplateRows: '3fr 2fr' }}>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[3].src}
+                  alt={photos[3].alt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-xl bg-stone-200">
+                <Image
+                  src={photos[4].src}
+                  alt={photos[4].alt}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+          </div>
+        </motion.div>
+
       </div>
     </section>
   )

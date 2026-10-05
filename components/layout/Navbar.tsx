@@ -18,6 +18,7 @@ const navLinks = [
   { label: 'Giving', href: '/#giving' },
   { label: 'About', href: '/#about' },
   { label: 'Announcements', href: '/announcements' },
+  { label: 'Connect', href: '/connect' },
 ]
 
 export default function Navbar() {
@@ -60,14 +61,14 @@ export default function Navbar() {
           : 'bg-white/70 backdrop-blur-sm border-b border-slate-100 py-4'
       }`}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 sm:px-10 lg:px-16 xl:px-20">
         {/* Brand Logo & Monogram */}
         <Link
           href="/"
           onClick={() => handleLinkClick('/')}
           className="flex items-center gap-3 group focus:outline-none"
         >
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-sky-100 bg-sky-50 p-0.5 transition-transform group-hover:scale-105 shadow-sm">
+          <div className="relative h-10 w-10 transition-transform group-hover:scale-105">
             <Image
               src="/logos/ECCF LOGO.png"
               alt="ECCF Logo"
@@ -77,12 +78,12 @@ export default function Navbar() {
               priority
             />
           </div>
-          <div>
-            <span className="block text-xl font-black text-slate-950 tracking-tight leading-none">
+          <div className="flex flex-col justify-center">
+            <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="block text-[10px] font-bold text-slate-400 leading-none mt-1 tracking-wider uppercase">
-              Edo State University
+            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5">
+              ESUI Christian Campus Fellowship
             </span>
           </div>
         </Link>
@@ -98,7 +99,7 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 focus:outline-none ${
+                  className={`relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-200 focus:outline-none ${
                     active
                       ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/70 shadow-sm'
                       : isPending
@@ -106,7 +107,7 @@ export default function Navbar() {
                       : 'text-slate-600 hover:text-[#0095ff] hover:bg-slate-50'
                   }`}
                 >
-                  {isPending && <Loader2 className="h-3 w-3 animate-spin text-[#0095ff]" />}
+                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff]" />}
                   {active && !isPending && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#0095ff] shrink-0" />
                   )}
@@ -121,7 +122,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/#visit"
-            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-xs font-bold px-6 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-sm font-bold px-7 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             Plan a Visit
           </Link>
@@ -131,7 +132,7 @@ export default function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="flex md:hidden items-center justify-center h-9 w-9 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none"
+            className="flex md:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -141,10 +142,10 @@ export default function Navbar() {
       {/* Mobile Dropdown with Active States */}
       <div
         className={`md:hidden overflow-hidden transition-all duration-300 ${
-          mobileOpen ? 'max-h-80 border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
+          mobileOpen ? 'max-h-96 border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
         }`}
       >
-        <ul className="flex flex-col px-6 py-4 gap-1.5">
+        <ul className="flex flex-col px-6 py-4 gap-2">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
             const isPending = pendingHref === link.href
@@ -154,7 +155,7 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors ${
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm sm:text-base font-bold uppercase tracking-wider transition-colors ${
                     active
                       ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/60'
                       : isPending
@@ -164,7 +165,7 @@ export default function Navbar() {
                 >
                   <span>{link.label}</span>
                   {isPending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff]" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />
                   ) : active ? (
                     <span className="h-2 w-2 rounded-full bg-[#0095ff]" />
                   ) : null}
@@ -176,7 +177,7 @@ export default function Navbar() {
             <Link
               href="/#visit"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center justify-center rounded-full bg-[#0095ff] text-white text-center text-xs font-bold py-3 shadow-md shadow-sky-500/20"
+              className="flex items-center justify-center rounded-full bg-[#0095ff] text-white text-center text-sm font-bold py-3.5 shadow-md shadow-sky-500/20"
             >
               Plan a Visit
             </Link>

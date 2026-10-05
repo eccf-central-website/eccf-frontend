@@ -23,17 +23,9 @@ export type WorkerRole = 'admin' | 'hall_rep' | 'finance'
 
 /** Valid fellowship teams. Must stay in sync with eccf-backend worker schema. */
 export type FellowshipTeam =
-  | 'Media'
-  | 'Choir'
-  | 'Welfare'
-  | 'Academic'
-  | 'Outreach'
-  | 'Prayer'
-  | 'Ushering'
-  | 'Protocol'
-  | 'Technical'
-  | 'Finance'
-  | 'Exco'
+  | string
+  | { _ref: string; _type: 'reference' }
+  | { _id: string; name: string }
 
 export interface Worker {
   _id: string
@@ -160,5 +152,49 @@ export interface Announcement {
   content: PortableTextBlock[]
   publishDate: string // ISO date YYYY-MM-DD
   /** Controls visibility — false = draft, even if publishDate has passed */
-  isPublished: boolean
 }
+
+// ---------------------------------------------------------------------------
+// Data Intake (First-Timers, Welfare, Prayer Requests)
+// ---------------------------------------------------------------------------
+
+export interface FirstTimer {
+  _id: string
+  _type: 'firstTimer'
+  fullName: string
+  /**
+   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   */
+  phoneNumber: string
+  hall?: string
+  /**
+   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   */
+  roomNumber?: string
+  department?: string
+  level?: string
+  dateVisited: string // ISO date YYYY-MM-DD
+  createdAt?: string
+}
+
+export interface WelfareRequest {
+  _id: string
+  _type: 'welfareRequest'
+  name: string
+  /**
+   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   */
+  phoneNumber: string
+  requestDetails: string
+  status: 'Pending' | 'Resolved'
+  dateSubmitted: string // ISO date string
+}
+
+export interface PrayerRequest {
+  _id: string
+  _type: 'prayerRequest'
+  name?: string
+  request: string
+  dateSubmitted: string // ISO date string
+}
+
