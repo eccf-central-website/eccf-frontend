@@ -426,63 +426,63 @@ export default function TheLauncher() {
                     <button
                       type="button"
                       onClick={() => setView('menu')}
-                      className="flex items-center gap-1 text-xs font-bold text-slate-300 hover:text-white"
+                      className="flex items-center gap-1.5 text-sm font-bold text-slate-300 hover:text-white"
                     >
                       <ChevronLeft className="h-4 w-4" />
                       Back
                     </button>
-                    <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                    <span className="text-sm font-bold uppercase tracking-wider text-sky-400">
                       All Next Steps
                     </span>
                   </div>
 
-                  <div className="space-y-2 my-auto">
+                  <div className="space-y-3 my-auto">
                     <Link
                       href="/#visit"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5"
+                      className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <Calendar className="h-4 w-4 text-sky-400" />
-                        <span className="text-xs font-bold text-white">Plan A Campus Visit</span>
+                        <Calendar className="h-5 w-5 text-sky-400 shrink-0" />
+                        <span className="text-sm sm:text-base font-bold text-white">Plan A Campus Visit</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">Sundays 8am</span>
+                      <span className="text-xs text-slate-300 font-medium">Sundays 8am</span>
                     </Link>
 
                     <Link
                       href="/connect"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5"
+                      className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <Heart className="h-4 w-4 text-rose-400" />
-                        <span className="text-xs font-bold text-white">Prayer & Welfare Request</span>
+                        <Heart className="h-5 w-5 text-rose-400 shrink-0" />
+                        <span className="text-sm sm:text-base font-bold text-white">Prayer & Welfare Request</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">We Care</span>
+                      <span className="text-xs text-slate-300 font-medium">We Care</span>
                     </Link>
 
                     <Link
                       href="/sermons"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5"
+                      className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <Radio className="h-4 w-4 text-emerald-400" />
-                        <span className="text-xs font-bold text-white">Spotify & YouTube Podcasts</span>
+                        <Radio className="h-5 w-5 text-emerald-400 shrink-0" />
+                        <span className="text-sm sm:text-base font-bold text-white">Spotify & YouTube Podcasts</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">Audio/Video</span>
+                      <span className="text-xs text-slate-300 font-medium">Audio/Video</span>
                     </Link>
 
                     <Link
                       href="/dashboard"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5"
+                      className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <Lock className="h-4 w-4 text-amber-400" />
-                        <span className="text-xs font-bold text-white">Worker & Exco Portal</span>
+                        <Lock className="h-5 w-5 text-amber-400 shrink-0" />
+                        <span className="text-sm sm:text-base font-bold text-white">Worker & Exco Portal</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">CRM</span>
+                      <span className="text-xs text-slate-300 font-medium">CRM</span>
                     </Link>
                   </div>
                 </div>
