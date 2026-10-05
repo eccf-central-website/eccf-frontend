@@ -38,11 +38,11 @@ export default function ServiceScheduleConsole({ services }: Props) {
   const currentService = safeServices[activeTab] || safeServices[0]
 
   return (
-    <section id="services" className="w-full py-20 lg:py-28 bg-[#fafaf9] border-b border-stone-200 relative overflow-hidden">
+    <section id="services" className="w-full py-12 lg:py-16 bg-[#fafaf9] border-b border-stone-200 relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
         
         {/* Clean Editorial Section Header */}
-        <div className="text-left max-w-3xl mb-10 sm:mb-14">
+        <div className="text-left max-w-3xl mb-6 sm:mb-8">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] block mb-2.5 font-mono">
             Weekly Fellowship Schedule
           </span>
@@ -55,10 +55,10 @@ export default function ServiceScheduleConsole({ services }: Props) {
         </div>
 
         {/* Console Container: Clean, Modern Editorial Card */}
-        <div className="rounded-[28px] bg-white border border-stone-200/80 p-6 sm:p-10 lg:p-12 shadow-sm">
+        <div className="rounded-[28px] bg-white border border-stone-200/80 p-5 sm:p-8 lg:p-10 shadow-sm">
           
           {/* Day Tabs */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 border-b border-stone-100 pb-6 sm:pb-8">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pb-2">
             {safeServices.map((service, index) => {
               const isActive = activeTab === index
               return (
@@ -79,7 +79,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
           </div>
 
           {/* Active Service Content Panel */}
-          <div className="mt-8 sm:mt-12">
+          <div className="mt-4 sm:mt-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentService._id || currentService.day}
@@ -87,11 +87,11 @@ export default function ServiceScheduleConsole({ services }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
+                className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center"
               >
                 
                 {/* Left: Prominent Service Information */}
-                <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left">
+                <div className="lg:col-span-7 space-y-3 sm:space-y-4 text-left">
                   {currentService.badge && (
                     <div className="inline-flex items-center rounded-full bg-sky-50 px-4 py-1 text-xs font-bold text-[#0077cc] uppercase tracking-wider border border-sky-200/60">
                       <span>{currentService.badge}</span>
@@ -133,7 +133,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
                 {/* Right: Modern Floating Schedule Badge */}
                 <div className="lg:col-span-5">
-                  <div className="rounded-3xl bg-slate-950 text-white p-8 sm:p-10 text-center flex flex-col items-center justify-center space-y-5 shadow-xl shadow-slate-950/15">
+                  <div className="rounded-3xl bg-slate-950 text-white p-6 sm:p-8 text-center flex flex-col items-center justify-center space-y-4 shadow-xl shadow-slate-950/15">
                     <span className="text-xs font-bold tracking-widest text-sky-400 uppercase font-mono">
                       Gathering Time
                     </span>
@@ -147,7 +147,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                       <span>{currentService.location || 'NLT 5, Faculty of Law, ESUI'}</span>
                     </div>
 
-                    <div className="w-full pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-medium">
+                    <div className="w-full pt-2 flex items-center justify-between text-xs text-slate-400 font-medium">
                       <span>Venue: Law Faculty NLT 5</span>
                       <span className="text-emerald-400 font-bold">Open to All</span>
                     </div>
