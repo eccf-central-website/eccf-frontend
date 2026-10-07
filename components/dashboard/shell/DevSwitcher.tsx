@@ -1,6 +1,7 @@
 /**
  * DevSwitcher — dev-only section of the user menu for switching the mock
- * session's role and the mock data state (normal / empty / error / slow).
+ * session's role and the mock data state (normal / empty / error / slow),
+ * plus a link to the UI states gallery.
  *
  * Rendered only when the server layout sees isMockAuthEnabled(); the
  * Server Actions re-check that gate themselves, so this has no reachable
@@ -10,8 +11,9 @@
 'use client'
 
 import { useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FlaskConical, Loader2 } from 'lucide-react'
+import { FlaskConical, LayoutTemplate, Loader2 } from 'lucide-react'
 import type { WorkerRole } from '@/types'
 import { ROLE_LABELS, ROLES } from '@/lib/dashboard/rbac'
 import { DEV_MOCK_STATES, type DevMockState } from '@/lib/dashboard/shell'
@@ -19,6 +21,7 @@ import { setDevMockState, setDevRole } from '@/lib/dashboard/dev-actions'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import { TOAST_IDS, toastFromResult } from '@/lib/dashboard/toast'
 import {
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -83,6 +86,14 @@ export default function DevSwitcher({ role, mockState }: DevSwitcherProps) {
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuRadioGroup>
+
+      <DropdownMenuSeparator />
+      <DropdownMenuItem asChild className="h-10 cursor-pointer">
+        <Link href="/dashboard/dev/ui-states">
+          <LayoutTemplate aria-hidden="true" />
+          UI states gallery
+        </Link>
+      </DropdownMenuItem>
     </>
   )
 }
