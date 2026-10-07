@@ -2,11 +2,16 @@
  * SectionPlaceholder — stub body for dashboard sections whose feature
  * branch hasn't landed yet. Lets nav links resolve and direct-URL RBAC be
  * tested before the real pages exist.
+ *
+ * Stubs already fetch their section's data so the loading, empty and error
+ * states run for real; `count` reports how many records came back (only
+ * the number crosses to the browser, never the rows).
  */
 
 import { Construction } from 'lucide-react'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/dashboard/ui/card'
+import PageContainer from './PageContainer'
 import { navItemForSection } from './nav-items'
 
 interface SectionPlaceholderProps {
@@ -14,13 +19,15 @@ interface SectionPlaceholderProps {
   /** Branch that will deliver this page, e.g. `feature/dashboard-data-tables`. */
   branch: string
   description: string
+  /** Records the section's data function returned. */
+  count?: number
 }
 
-export default function SectionPlaceholder({ section, branch, description }: SectionPlaceholderProps) {
+export default function SectionPlaceholder({ section, branch, description, count }: SectionPlaceholderProps) {
   const { label, icon: Icon } = navItemForSection(section)
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:py-10">
+    <PageContainer>
       <Card>
         <CardHeader className="gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
@@ -30,6 +37,11 @@ export default function SectionPlaceholder({ section, branch, description }: Sec
             <h2>{label}</h2>
           </CardTitle>
           <CardDescription>{description}</CardDescription>
+          {count !== undefined && (
+            <p className="text-sm text-foreground">
+              {count} {count === 1 ? 'record' : 'records'} loaded and ready for this view.
+            </p>
+          )}
           <p className="flex flex-wrap items-center gap-2 pt-1 text-sm text-muted-foreground">
             <Construction aria-hidden="true" className="h-4 w-4 text-warning" />
             Coming in
@@ -37,6 +49,6 @@ export default function SectionPlaceholder({ section, branch, description }: Sec
           </p>
         </CardHeader>
       </Card>
-    </div>
+    </PageContainer>
   )
 }
