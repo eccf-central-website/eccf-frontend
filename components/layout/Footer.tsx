@@ -163,7 +163,7 @@ export default function Footer() {
               <p className="pt-2">
                 <a
                   href="mailto:edsuchristiancampusfellowship@gmail.com"
-                  className="text-base sm:text-lg font-bold text-[#0095ff] hover:underline"
+                  className="text-base sm:text-lg font-bold text-[#0095ff] hover:underline [overflow-wrap:anywhere]"
                 >
                   edsuchristiancampusfellowship@gmail.com
                 </a>
