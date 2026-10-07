@@ -19,6 +19,10 @@ import AppSidebar from '@/components/dashboard/shell/AppSidebar'
 import SkipLink from '@/components/dashboard/shell/SkipLink'
 import TopBar from '@/components/dashboard/shell/TopBar'
 
+// Per-request session for every /dashboard/* page. Without this, production
+// builds (no mock session, no auth yet) prerender pages as static redirects.
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardShellLayout({
   children,
 }: Readonly<{
