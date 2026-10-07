@@ -34,7 +34,7 @@ interface ErrorStateProps {
   backLabel?: string
   /** Move focus to the heading on mount (route error boundaries). */
   autoFocus?: boolean
-  headingLevel?: 'h2' | 'h3'
+  headingLevel?: 'h1' | 'h2' | 'h3'
   className?: string
 }
 
