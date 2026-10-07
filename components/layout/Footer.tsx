@@ -14,7 +14,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-slate-200/80 bg-white text-slate-600">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 py-14 sm:py-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 py-14 sm:py-20">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-4">
@@ -163,7 +163,7 @@ export default function Footer() {
               <p className="pt-2">
                 <a
                   href="mailto:edsuchristiancampusfellowship@gmail.com"
-                  className="text-base sm:text-lg font-bold text-[#0095ff] hover:underline [overflow-wrap:anywhere]"
+                  className="text-sm sm:text-base font-bold text-[#0095ff] hover:underline break-all block max-w-full"
                 >
                   edsuchristiancampusfellowship@gmail.com
                 </a>

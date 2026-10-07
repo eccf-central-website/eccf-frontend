@@ -47,7 +47,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
 
   return (
     <section id="teams" className="py-16 sm:py-24 bg-white relative overflow-hidden border-t border-stone-100">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         
         {/* Clean Centered Section Header */}
         <motion.div
@@ -60,7 +60,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
           <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-3 font-mono">
             FELLOWSHIP OPERATIONAL TEAMS
           </span>
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight">
+          <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight break-words">
             Find Your Place to Serve &amp; Lead
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
@@ -145,7 +145,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
         {/* Integrated Fellowship Moments Photo Stream */}
         {safeGallery.length > 0 && (
           <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-stone-100">
-            <div className="flex items-end justify-between mb-8 sm:mb-10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between mb-8 sm:mb-10 text-center sm:text-left gap-3">
               <div>
                 <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-2 font-mono">
                   FELLOWSHIP LIFE

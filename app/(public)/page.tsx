@@ -113,7 +113,7 @@ export default async function Home() {
     gallery[1]?.src
 
   return (
-    <div className="relative min-h-screen bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0077cc] selection:text-white overflow-x-hidden pt-16 sm:pt-20">
+    <div className="relative min-h-screen w-full max-w-full bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0077cc] selection:text-white overflow-x-hidden pt-16 sm:pt-20">
       {/* 1. Hero Section (Formula 4) */}
       <HeroSection settings={settings} />
 

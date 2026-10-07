@@ -39,17 +39,17 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
   return (
     <section id="services" className="w-full py-12 lg:py-16 bg-[#fafaf9] border-b border-stone-200 relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
         
         {/* Clean Editorial Section Header */}
-        <div className="text-left max-w-3xl mb-6 sm:mb-8">
+        <div className="text-center lg:text-left mx-auto lg:mx-0 max-w-3xl mb-6 sm:mb-8">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] block mb-2.5 font-mono">
             Weekly Fellowship Schedule
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-[1.15]">
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-[1.15] break-words">
             Service Times &amp; Location
           </h2>
-          <p className="mt-3.5 text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl">
+          <p className="mt-3.5 text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0">
             We gather weekly at Edo State University. Every service is uniquely structured to ignite your faith and nurture academic distinction.
           </p>
         </div>
@@ -58,7 +58,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
         <div className="rounded-[28px] bg-white border border-stone-200/80 p-5 sm:p-8 lg:p-10 shadow-sm">
           
           {/* Day Tabs */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pb-2">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3 pb-2">
             {safeServices.map((service, index) => {
               const isActive = activeTab === index
               return (
@@ -91,24 +91,24 @@ export default function ServiceScheduleConsole({ services }: Props) {
               >
                 
                 {/* Left: Prominent Service Information */}
-                <div className="lg:col-span-7 space-y-3 sm:space-y-4 text-left">
+                <div className="lg:col-span-7 space-y-3 sm:space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
                   {currentService.badge && (
                     <div className="inline-flex items-center rounded-full bg-sky-50 px-4 py-1 text-xs font-bold text-[#0077cc] uppercase tracking-wider border border-sky-200/60">
                       <span>{currentService.badge}</span>
                     </div>
                   )}
 
-                  <h3 className="font-serif font-bold text-2xl sm:text-3xl lg:text-4xl text-slate-950 tracking-tight leading-snug">
+                  <h3 className="font-serif font-bold text-2xl sm:text-3xl lg:text-4xl text-slate-950 tracking-tight leading-snug break-words">
                     {currentService.title}
                   </h3>
 
-                  <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl">
+                  <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal max-w-xl mx-auto lg:mx-0">
                     {currentService.description}
                   </p>
 
                   {/* Highlights / Tags */}
                   {currentService.tags && currentService.tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 pt-2">
+                    <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-2">
                       {currentService.tags.map((tag) => (
                         <span
                           key={tag}
@@ -120,7 +120,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                     </div>
                   )}
 
-                  <div className="pt-3">
+                  <div className="pt-3 w-full flex justify-center lg:justify-start">
                     <Link
                       href="/announcements"
                       className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"

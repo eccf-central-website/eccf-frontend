@@ -25,21 +25,21 @@ export default function LatestSermonsSection({ sermons }: Props) {
 
   return (
     <section className="py-16 sm:py-24 bg-white border-t border-stone-100">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-14 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-14 gap-4 text-center sm:text-left items-center sm:items-end">
           <div>
             <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-3 font-mono">
               SERMON VAULT &amp; PODCASTS
             </span>
-            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight">
+            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-tight break-words">
               Latest Inspired Messages
             </h2>
           </div>
           <Link
             href="/sermons"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
           >
             <span>Explore All Sermons</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

@@ -22,7 +22,7 @@ export default function PublicLayout({
         <NavigationProgressBar />
       </Suspense>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
       <Footer />
       <TheLauncher />
       <ScrollToTop />

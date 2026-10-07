@@ -125,7 +125,7 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-16 lg:py-0 lg:w-[56%] xl:w-[56%] shrink-0 text-center lg:text-left items-center lg:items-start"
+          className="flex flex-col justify-center px-5 sm:px-10 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-12 sm:py-16 lg:py-0 w-full lg:w-[56%] xl:w-[56%] text-center lg:text-left items-center lg:items-start"
         >
           {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
           <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block text-center lg:text-left">
@@ -133,9 +133,7 @@ export default function HeroSection({ settings }: Props) {
           </span>
 
           {/* Main headline — Belleza high-contrast editorial serif */}
-          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6 text-center lg:text-left text-balance"
-            style={{ fontSize: 'clamp(2.5rem, 4.5vw, 4.25rem)' }}
-          >
+          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6 text-center lg:text-left text-balance break-words text-3xl sm:text-4xl md:text-5xl lg:text-[3.75rem] xl:text-[4.25rem]">
             {headline}
           </h1>
 
@@ -155,7 +153,7 @@ export default function HeroSection({ settings }: Props) {
           <div className="w-full flex justify-center lg:justify-start">
             <Link
               href="/#visit"
-              className="inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto max-w-xs inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
               Plan A Visit
             </Link>
@@ -171,13 +169,10 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="lg:flex-1 w-full lg:w-auto"
-          style={{ minHeight: '480px' }}
+          className="lg:flex-1 w-full lg:w-auto h-[380px] sm:h-[480px] lg:h-auto min-h-[360px]"
         >
           {/* Grid: 2 sub-columns of photos, p-2 gap between, no outer padding */}
-          <div className="grid grid-cols-2 gap-2 p-2 h-full w-full"
-            style={{ minHeight: 'inherit' }}
-          >
+          <div className="grid grid-cols-2 gap-2 p-2 h-full w-full">
 
             {/* LEFT sub-column: 3 equal-height stacked photos */}
             <div className="grid grid-rows-3 gap-2 h-full">

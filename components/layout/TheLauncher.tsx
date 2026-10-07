@@ -107,7 +107,7 @@ export default function TheLauncher() {
   }
 
   return (
-    <div ref={menuRef} className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 select-none">
+    <div ref={menuRef} className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 select-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -118,7 +118,7 @@ export default function TheLauncher() {
             className={
               isExpanded
                 ? 'fixed inset-0 z-[100] w-screen h-screen rounded-none bg-[#182329] text-white flex flex-col overflow-y-auto no-scrollbar transition-all duration-300'
-                : 'fixed sm:absolute bottom-20 right-0 w-[calc(100vw-32px)] sm:w-[370px] h-[580px] max-h-[82vh] rounded-[30px] bg-[#182329] text-white border border-white/10 shadow-2xl shadow-black/70 flex flex-col overflow-hidden transition-all duration-300'
+                : 'fixed bottom-20 left-4 right-4 sm:left-auto sm:right-0 sm:absolute w-auto sm:w-[370px] h-[560px] max-h-[80vh] rounded-[28px] bg-[#182329] text-white border border-white/10 shadow-2xl shadow-black/70 flex flex-col overflow-hidden transition-all duration-300'
             }
           >
             {/* ========================================================== */}

@@ -61,14 +61,14 @@ export default function Navbar() {
           : 'bg-white/70 backdrop-blur-sm border-b border-slate-100 py-4'
       }`}
     >
-      <nav className="w-full flex items-center justify-between px-8 sm:px-12 md:px-16 lg:px-14 xl:px-20 2xl:px-28">
+      <nav className="w-full flex items-center justify-between px-4 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28">
         {/* Brand Logo & Monogram */}
         <Link
           href="/"
           onClick={() => handleLinkClick('/')}
-          className="flex items-center gap-3 group focus:outline-none"
+          className="flex items-center gap-3 group focus:outline-none min-w-0"
         >
-          <div className="relative h-10 w-10 transition-transform group-hover:scale-105">
+          <div className="relative h-10 w-10 shrink-0 transition-transform group-hover:scale-105">
             <Image
               src="/logos/ECCF LOGO.png"
               alt="ECCF Logo"
@@ -78,11 +78,11 @@ export default function Navbar() {
               priority
             />
           </div>
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center min-w-0">
             <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5">
+            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5 truncate max-w-[calc(100vw-130px)] sm:max-w-none">
               ESUI Christian Campus Fellowship
             </span>
           </div>

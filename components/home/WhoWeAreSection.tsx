@@ -45,7 +45,7 @@ export default function WhoWeAreSection({
 
   return (
     <section id="about" className="w-full bg-[#fcfbf9] border-b border-stone-200 py-12 lg:py-16 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-center">
           
           {/* ================================================================ */}
@@ -64,7 +64,7 @@ export default function WhoWeAreSection({
             </span>
 
             {/* Headline — Finer editorial serif, prominent & bold */}
-            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.16] mb-6 text-center lg:text-left text-balance">
+            <h2 className="font-serif font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] text-slate-950 tracking-tight leading-[1.16] mb-6 text-center lg:text-left text-balance break-words">
               Raised for Kingdom Impact & Academic Distinction.
             </h2>
 
