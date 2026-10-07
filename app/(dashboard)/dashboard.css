@@ -1,0 +1,62 @@
+/**
+ * Exco Dashboard theme tokens (shadcn/ui convention: HSL channels, consumed
+ * as hsl(var(--x) / <alpha>) via tailwind.config.ts).
+ *
+ * Imported only by app/(dashboard)/layout.tsx. It compiles its own Tailwind
+ * utilities from tailwind.dashboard.config.ts (dashboard files only), so the
+ * public stylesheet app/globals.css never grows with dashboard classes.
+ * Base/preflight come from globals.css, which every route already loads.
+ *
+ * Tokens sit on :root (not a
+ * wrapper class) because Radix portals — Dialog, Sheet, Select, Toaster —
+ * render directly into <body>, outside any dashboard wrapper. No public page
+ * uses these variable names, so they are inert if this sheet lingers after a
+ * client-side navigation back to the public site.
+ *
+ * Brand: sky #0095ff · navy #090d16 · gold #f59e0b.
+ * `primary` is the deeper brand blue #0077cc (already used for text accents
+ * on the public site) so white button text meets WCAG AA; sky is kept for
+ * focus rings and active indicators.
+ */
+
+@config "../../tailwind.dashboard.config.ts";
+
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 60 9% 98%; /* #fafaf9 — matches the public site canvas */
+  --foreground: 222 42% 6%; /* navy #090d16 */
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 42% 6%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 42% 6%;
+
+  --primary: 205 100% 40%; /* #0077cc */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%; /* slate-100 */
+  --secondary-foreground: 222 42% 6%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 42%; /* ≥4.5:1 on white */
+  --accent: 205 100% 96%; /* sky-50 tint for hovers */
+  --accent-foreground: 205 100% 30%;
+
+  --destructive: 0 72% 51%; /* red-600 */
+  --destructive-foreground: 0 0% 100%;
+  --success: 161 94% 30%; /* emerald-600 */
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%; /* gold #f59e0b */
+  --warning-foreground: 222 42% 6%;
+
+  --border: 214 32% 91%; /* slate-200 */
+  --input: 214 32% 91%;
+  --ring: 205 100% 50%; /* sky #0095ff */
+
+  --sidebar: 222 42% 6%; /* navy */
+  --sidebar-foreground: 213 27% 84%; /* slate-300 */
+  --sidebar-accent: 222 30% 14%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 222 25% 16%;
+  --sidebar-ring: 205 100% 50%;
+}

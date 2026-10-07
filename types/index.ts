@@ -64,8 +64,11 @@ export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber'>
 export interface ECCFSession {
   id: string
   role: WorkerRole
-  /** Operational team of the authenticated worker — always `team`, never `unit` */
-  team: FellowshipTeam
+  /**
+   * Operational team name of the authenticated worker, resolved to a plain
+   * string (teamUnit name) at sign-in — always `team`, never `unit`.
+   */
+  team: string
 }
 
 // ---------------------------------------------------------------------------
@@ -152,6 +155,7 @@ export interface Announcement {
   content: PortableTextBlock[]
   publishDate: string // ISO date YYYY-MM-DD
   /** Controls visibility — false = draft, even if publishDate has passed */
+  isPublished: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -197,4 +201,26 @@ export interface PrayerRequest {
   request: string
   dateSubmitted: string // ISO date string
 }
+
+/** Browser-safe intake types — phoneNumber and roomNumber guaranteed stripped */
+export type SafeFirstTimer = Omit<FirstTimer, 'phoneNumber' | 'roomNumber'>
+export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber'>
+
+// ---------------------------------------------------------------------------
+// Exco Dashboard view models (browser-safe — never carry phoneNumber/roomNumber)
+// ---------------------------------------------------------------------------
+
+/** Worker CRM row: SafeWorker with `team` resolved to a display name. */
+export type WorkerRow = Omit<SafeWorker, 'team' | '_type'> & {
+  /** Resolved teamUnit name (or legacy string value) — never `unit` */
+  team: string
+}
+
+/** Attendance ledger row: attendee references collapsed to a count. */
+export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees'> & {
+  attendeeCount: number
+}
+
+/** Finance ledger row as listed in the dashboard. */
+export type FinanceRow = Omit<FinanceLedger, '_type'>
 
