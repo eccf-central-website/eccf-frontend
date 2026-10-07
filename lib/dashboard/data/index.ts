@@ -30,6 +30,7 @@ import type {
   WorkerRow,
 } from '@/types'
 import { hasPermission, isHallScoped } from '../rbac'
+import { isDevMockState, type DevMockState } from '../shell'
 import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
 import {
   DASHBOARD_ATTENDANCE_QUERY,
@@ -56,7 +57,7 @@ import { stripPII } from './pii'
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
 
 type DataSource = 'mock' | 'sanity'
-type MockState = 'normal' | 'empty' | 'error' | 'slow'
+type MockState = DevMockState
 
 function dataSource(): DataSource {
   const configured = process.env.DASHBOARD_DATA_SOURCE
@@ -66,7 +67,7 @@ function dataSource(): DataSource {
 
 function mockState(): MockState {
   const value = cookies().get(DEV_MOCK_STATE_COOKIE)?.value ?? process.env.DASHBOARD_MOCK_STATE
-  return value === 'empty' || value === 'error' || value === 'slow' ? value : 'normal'
+  return isDevMockState(value) ? value : 'normal'
 }
 
 /** Resolve a mock fixture, honouring the dev mock-state switch. */
