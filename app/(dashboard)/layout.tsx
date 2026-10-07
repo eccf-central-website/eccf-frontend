@@ -24,7 +24,7 @@ export default function DashboardGroupLayout({
 }>) {
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex min-h-screen flex-1 flex-col bg-background text-foreground">{children}</div>
+      <div className="flex min-h-dvh flex-1 flex-col bg-background text-foreground">{children}</div>
       <Toaster position="top-center" richColors closeButton />
     </TooltipProvider>
   )
