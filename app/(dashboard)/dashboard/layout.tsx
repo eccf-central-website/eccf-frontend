@@ -15,6 +15,7 @@ import { SIDEBAR_COOKIE } from '@/lib/dashboard/shell'
 import { NAV_ITEMS } from '@/components/dashboard/shell/nav-items'
 import AppSidebar from '@/components/dashboard/shell/AppSidebar'
 import SkipLink from '@/components/dashboard/shell/SkipLink'
+import TopBar from '@/components/dashboard/shell/TopBar'
 
 export default async function DashboardShellLayout({
   children,
@@ -32,6 +33,7 @@ export default async function DashboardShellLayout({
       <SkipLink />
       <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar sections={sections} role={session.role} team={session.team} />
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
