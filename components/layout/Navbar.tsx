@@ -82,9 +82,8 @@ export default function Navbar() {
             <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
               ECCF
             </span>
-            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-tight sm:leading-none mt-0.5">
-              ESUI Christian Campus{' '}
-              <span className="block sm:inline">Fellowship</span>
+            <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5 truncate max-w-[calc(100vw-130px)] sm:max-w-none">
+              ESUI Christian Campus Fellowship
             </span>
           </div>
         </Link>

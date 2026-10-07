@@ -38,7 +38,6 @@ interface Props {
 export default function TeamsSection({ teams, gallery }: Props) {
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
   const [showAllGallery, setShowAllGallery] = useState(false)
-  const [showAllTeams, setShowAllTeams] = useState(false)
 
   const safeTeams = teams || []
   const safeGallery = gallery || []
@@ -49,7 +48,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
   return (
     <section id="teams" className="py-16 sm:py-24 bg-white relative overflow-hidden border-t border-stone-100">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-
+        
         {/* Clean Centered Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -65,14 +64,14 @@ export default function TeamsSection({ teams, gallery }: Props) {
             Find Your Place to Serve &amp; Lead
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-            Every university student has a God‑given gift. Connect with one of our operational teams to build lifelong leadership, ministry skills, and Christian character.
+            Every university student has a God-given gift. Connect with one of our operational teams to build lifelong leadership, ministry skills, and Christian character.
           </p>
         </motion.div>
 
-        {/* Team Cards */}
+        {/* Seamless 3-Column Team Cards */}
         {safeTeams.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {(showAllTeams ? safeTeams : safeTeams.slice(0, 6)).map((team, idx) => (
+            {safeTeams.map((team, idx) => (
               <motion.div
                 key={team._id || team.name}
                 initial={{ opacity: 0, y: 20 }}
@@ -100,7 +99,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent pointer-events-none" />
-
+                    
                     <div className="absolute top-4 left-4">
                       <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-black/50 backdrop-blur-md text-white border border-white/10">
                         {team.tag || 'MINISTRY TEAM'}
@@ -140,19 +139,6 @@ export default function TeamsSection({ teams, gallery }: Props) {
                 </div>
               </motion.div>
             ))}
-          </div>
-        )}
-
-        {/* Toggle for Teams when more than 6 */}
-        {safeTeams.length > 6 && (
-          <div className="mt-10 text-center">
-            <button
-              type="button"
-              onClick={() => setShowAllTeams(prev => !prev)}
-              className="inline-flex items-center justify-center px-7 py-3 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 hover:text-[#0077cc] transition-colors shadow-sm"
-            >
-              {showAllTeams ? 'Show Less Teams' : `View All ${safeTeams.length} Teams`}
-            </button>
           </div>
         )}
 
@@ -197,68 +183,70 @@ export default function TeamsSection({ teams, gallery }: Props) {
               ))}
             </div>
 
-            {/* Expand / Collapse Toggle for Gallery */}
+            {/* Expand / Collapse Toggle */}
             {safeGallery.length > 8 && (
               <div className="mt-10 text-center">
                 <button
                   type="button"
-                  onClick={() => setShowAllGallery(prev => !prev)}
+                  onClick={() => setShowAllGallery((prev) => !prev)}
                   className="inline-flex items-center justify-center px-7 py-3 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 hover:text-[#0077cc] transition-colors shadow-sm"
                 >
-                  {showAllGallery ? 'Show Less Highlights' : `View All ${safeGallery.length} Moments`}
+                  {showAllGallery
+                    ? 'Show Less Highlights'
+                    : `View All ${safeGallery.length} Moments`}
                 </button>
               </div>
             )}
           </div>
         )}
-
-        {/* Lightbox Modal */}
-        <AnimatePresence>
-          {selectedImage && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedImage(null)}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 sm:p-6"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative max-w-4xl w-full bg-slate-900 rounded-[28px] overflow-hidden shadow-2xl"
-              >
-                <div className="relative h-80 sm:h-[500px] w-full bg-black">
-                  <Image
-                    src={selectedImage.src}
-                    alt={selectedImage.title}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-                <div className="p-6 bg-slate-900 flex items-center justify-between border-t border-slate-800">
-                  <div>
-                    <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block">
-                      {selectedImage.category}
-                    </span>
-                    <h4 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                      {selectedImage.title}
-                    </h4>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedImage(null)}
-                    className="h-11 w-11 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 sm:p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl w-full bg-slate-900 rounded-[28px] overflow-hidden shadow-2xl"
+            >
+              <div className="relative h-80 sm:h-[500px] w-full bg-black">
+                <Image
+                  src={selectedImage.src}
+                  alt={selectedImage.title}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="p-6 bg-slate-900 flex items-center justify-between border-t border-slate-800">
+                <div>
+                  <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block">
+                    {selectedImage.category}
+                  </span>
+                  <h4 className="text-base sm:text-lg font-bold text-white mt-0.5">
+                    {selectedImage.title}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  className="h-11 w-11 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }
