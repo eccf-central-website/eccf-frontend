@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #fafaf9;
-  --foreground: #090d16;
+  --site-bg: #fafaf9;
+  --site-fg: #090d16;
   --brand-sky: #0095ff;
   --brand-sky-hover: #0080e0;
   --brand-navy: #090d16;
@@ -16,8 +16,8 @@ html {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--site-fg);
+  background: var(--site-bg);
   font-family: var(--font-work-sans), var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
