@@ -8,8 +8,8 @@
 
 import { useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { toast } from 'sonner'
 import { SECTION_PATHS, type DashboardSection } from '@/lib/dashboard/rbac'
+import { TOAST_IDS, toastError } from '@/lib/dashboard/toast'
 import { navItemForSection } from './nav-items'
 
 function isSection(value: string | null): value is DashboardSection {
@@ -29,8 +29,8 @@ export default function DeniedToast() {
     // Deferred one tick so the <Toaster/> mounted in the same commit has
     // subscribed; the cleanup also dedupes StrictMode's double effect run.
     const timer = setTimeout(() => {
-      toast.error(`You don't have access to ${label}.`, {
-        id: 'dashboard-denied',
+      toastError(`You don't have access to ${label}.`, {
+        id: TOAST_IDS.denied,
         description: 'Ask an admin if you think you should.',
       })
       router.replace(pathname, { scroll: false })

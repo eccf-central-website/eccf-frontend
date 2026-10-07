@@ -12,12 +12,12 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { FlaskConical, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 import type { WorkerRole } from '@/types'
 import { ROLE_LABELS, ROLES } from '@/lib/dashboard/rbac'
 import { DEV_MOCK_STATES, type DevMockState } from '@/lib/dashboard/shell'
 import { setDevMockState, setDevRole } from '@/lib/dashboard/dev-actions'
 import type { ActionResult } from '@/lib/dashboard/action-result'
+import { TOAST_IDS, toastFromResult } from '@/lib/dashboard/toast'
 import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -44,12 +44,8 @@ export default function DevSwitcher({ role, mockState }: DevSwitcherProps) {
   const run = (action: () => Promise<ActionResult>, success: string) => {
     startTransition(async () => {
       const result = await action()
-      if (!result.ok) {
-        toast.error(result.error)
-        return
-      }
-      toast.success(success)
-      router.refresh()
+      // One shared id: rapid switching replaces the toast instead of stacking.
+      if (toastFromResult(result, { success, id: TOAST_IDS.devSwitch })) router.refresh()
     })
   }
 
