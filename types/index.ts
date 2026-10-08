@@ -31,6 +31,7 @@ export interface Worker {
   _id: string
   _type: 'worker'
   fullName: string
+  email?: string
   /** Operational group — NEVER use `unit`, always `team` */
   team: FellowshipTeam
   hall: string
@@ -46,6 +47,10 @@ export interface Worker {
   phoneNumber?: string
   birthDate?: string // ISO date string YYYY-MM-DD
   role?: WorkerRole
+  isExcoApproved?: boolean
+  requestedRole?: WorkerRole
+  /** ⚠️ Never sent to client — server-side auth verification only */
+  passwordHash?: string
   profileImageUrl?: string
   createdAt?: string
   updatedAt?: string
@@ -53,8 +58,8 @@ export interface Worker {
   updateLog?: string[]
 }
 
-/** Safe worker type — phoneNumber and roomNumber guaranteed stripped for browser */
-export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber'>
+/** Safe worker type — phoneNumber, roomNumber, and passwordHash guaranteed stripped for browser */
+export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash'>
 
 // ---------------------------------------------------------------------------
 // JWT Session (NextAuth)

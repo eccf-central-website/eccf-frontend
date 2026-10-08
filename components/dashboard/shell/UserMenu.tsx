@@ -10,6 +10,7 @@
 'use client'
 
 import { ChevronDown, ExternalLink, LogOut, UserRound } from 'lucide-react'
+import { signOut } from 'next-auth/react'
 import type { WorkerRole } from '@/types'
 import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -61,10 +62,12 @@ export default function UserMenu({ role, team, devTools }: UserMenuProps) {
             <span className="sr-only">(opens in a new tab)</span>
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled className="h-10">
+        <DropdownMenuItem
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="h-10 cursor-pointer text-destructive focus:text-destructive"
+        >
           <LogOut aria-hidden="true" />
           Sign out
-          <span className="ml-auto text-xs text-muted-foreground">Soon</span>
         </DropdownMenuItem>
         {devTools && (
           <>

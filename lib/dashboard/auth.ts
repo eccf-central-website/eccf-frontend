@@ -15,6 +15,8 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getServerSession } from 'next-auth'
+import { authOptions } from './auth-options'
 import type { ECCFSession, WorkerRole } from '@/types'
 import {
   canAccessSection,
@@ -44,8 +46,18 @@ export async function getSession(): Promise<ECCFSession | null> {
     const cookieRole = cookies().get(DEV_ROLE_COOKIE)?.value
     return MOCK_SESSIONS[isWorkerRole(cookieRole) ? cookieRole : 'admin']
   }
-  // TODO(feature/dashboard-auth): return getServerSession(authOptions) mapped to ECCFSession.
-  return null
+
+  const session = await getServerSession(authOptions)
+  if (!session?.user) return null
+
+  const user = session.user as unknown as { id?: string; role?: WorkerRole; team?: string }
+  if (!user.id || !user.role) return null
+
+  return {
+    id: user.id,
+    role: user.role,
+    team: user.team || 'Exco',
+  }
 }
 
 /** For pages/layouts: redirect to /login when there is no session. */
