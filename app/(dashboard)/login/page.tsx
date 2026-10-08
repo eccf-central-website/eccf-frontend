@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Eye, EyeOff, Lock, AlertCircle, Clock } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Clock } from 'lucide-react'
 import { Button } from '@/components/dashboard/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboard/ui/card'
 import { Input } from '@/components/dashboard/ui/input'
@@ -63,8 +63,15 @@ function LoginForm() {
     <div className="flex flex-1 items-center justify-center px-4 py-16">
       <Card className="w-full max-w-md shadow-xl border-border bg-card">
         <CardHeader className="space-y-2 text-center pb-6">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Lock className="h-6 w-6" />
+          <div className="mx-auto mb-3 relative h-16 w-16 transition-transform hover:scale-105">
+            <Image
+              src="/logos/ECCF LOGO.png"
+              alt="ECCF Logo"
+              width={64}
+              height={64}
+              className="h-full w-full object-contain"
+              priority
+            />
           </div>
           <CardTitle className="font-serif text-2xl tracking-tight text-foreground">
             Exco Portal Sign-in
@@ -142,17 +149,17 @@ function LoginForm() {
           <div className="pt-2 border-t border-border/80 text-center space-y-2">
             <p className="text-xs text-muted-foreground">
               New worker or Exco member?{' '}
-              <Link
+              <a
                 href="/register"
                 className="font-semibold text-primary underline hover:text-primary/80"
               >
                 Register profile &amp; request Exco role
-              </Link>
+              </a>
             </p>
             <p className="text-xs text-muted-foreground">
-              <Link href="/" className="hover:underline">
+              <a href="/" className="hover:underline">
                 &larr; Return to main fellowship website
-              </Link>
+              </a>
             </p>
           </div>
         </CardContent>
