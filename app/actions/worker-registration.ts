@@ -38,6 +38,30 @@ export interface WorkerRegistrationResult {
   message?: string
 }
 
+async function resolveTeamReference(
+  teamName: string
+): Promise<{ _type: 'reference'; _ref: string }> {
+  const normalized = teamName.trim()
+  const existingTeam = await sanityWriteClient.fetch<{ _id: string; name: string }>(
+    `*[_type == "teamUnit" && (lower(name) == lower($name) || name match $name)][0]{ _id, name }`,
+    { name: normalized }
+  )
+
+  if (existingTeam?._id) {
+    return { _type: 'reference', _ref: existingTeam._id }
+  }
+
+  // Auto-create teamUnit document in Sanity if not present
+  const newTeam = await sanityWriteClient.create({
+    _type: 'teamUnit',
+    name: normalized,
+    description: `${normalized} operational team of ECCF.`,
+    order: 10,
+  })
+
+  return { _type: 'reference', _ref: newTeam._id }
+}
+
 export async function registerWorker(
   input: WorkerRegistrationInput
 ): Promise<WorkerRegistrationResult> {
@@ -82,6 +106,9 @@ export async function registerWorker(
     const cleanTeam = input.team.trim()
     const today = new Date().toISOString().split('T')[0]
 
+    // Resolve team reference to match Sanity schema ({ _type: 'reference', _ref: id })
+    const teamReference = await resolveTeamReference(cleanTeam)
+
     // 2. Process Birthday Picture via Google Apps Script bridge if provided
     let profileImageUrl: string | undefined = undefined
     const cleanFileName = `${cleanFullName.replace(/\s+/g, '_')}_${cleanTeam.replace(/\s+/g, '_')}_BirthdayPic.jpg`
@@ -121,7 +148,7 @@ export async function registerWorker(
       `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
         _id,
         fullName,
-        team,
+        "team": coalesce(team->name, team),
         hall,
         roomNumber,
         email,
@@ -169,7 +196,7 @@ export async function registerWorker(
       const patchData: Record<string, unknown> = {
         fullName: cleanFullName,
         email: input.email.trim().toLowerCase(),
-        team: cleanTeam,
+        team: teamReference,
         hall: input.hall,
         roomNumber: input.roomNumber,
         birthDate: input.birthDate,
@@ -213,7 +240,7 @@ export async function registerWorker(
         fullName: cleanFullName,
         email: input.email.trim().toLowerCase(),
         phoneNumber: cleanPhone,
-        team: cleanTeam,
+        team: teamReference,
         hall: input.hall,
         roomNumber: input.roomNumber,
         birthDate: input.birthDate,
