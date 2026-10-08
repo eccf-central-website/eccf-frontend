@@ -141,7 +141,7 @@ export function WorkerRegistrationForm() {
   }
 
   return (
-    <div className="bg-white text-slate-900 shadow-xl rounded-[28px] border border-stone-200/80 p-6 sm:p-10 w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto text-slate-900">
       {/* Success Notification */}
       {status?.ok && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-5 rounded-2xl mb-8 flex items-start gap-3">
@@ -195,7 +195,7 @@ export function WorkerRegistrationForm() {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+              className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
               placeholder="e.g. John Oluwaseun Doe"
             />
           </div>
@@ -214,7 +214,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
                 placeholder="john@example.com"
               />
             </div>
@@ -232,7 +232,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
                 placeholder="08012345678"
               />
               <span className="text-[11px] text-slate-500 mt-1 block">
@@ -254,7 +254,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={team}
                 onChange={(e) => setTeam(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
               >
                 <option value="">Select your team</option>
                 {FELLOWSHIP_TEAMS.map((t) => (
@@ -278,7 +278,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
               />
               <span className="text-[11px] text-slate-500 mt-1 block">
                 Powers the fellowship birthday calendar tracker.
@@ -299,7 +299,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={hall}
                 onChange={(e) => setHall(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
               >
                 <option value="">Select Hall</option>
                 {HALLS_OF_RESIDENCE.map((h) => (
@@ -323,7 +323,7 @@ export function WorkerRegistrationForm() {
                 required
                 value={roomNumber}
                 onChange={(e) => setRoomNumber(e.target.value)}
-                className="flex h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all"
+                className="flex h-12 w-full rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] shadow-xs transition-all"
                 placeholder="e.g. Room 204 or Block A-12"
               />
             </div>
@@ -334,7 +334,7 @@ export function WorkerRegistrationForm() {
             <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
               Birthday Picture
             </label>
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-stone-200 bg-[#fafaf9]">
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-stone-200 bg-white shadow-xs">
               {imagePreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
