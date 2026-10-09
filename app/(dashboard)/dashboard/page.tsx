@@ -15,21 +15,32 @@
 
 import { Suspense } from 'react'
 import { requireSession } from '@/lib/dashboard/auth'
-import { hasPermission, ROLE_LABELS } from '@/lib/dashboard/rbac'
+import { canAccessSection, hasPermission, ROLE_LABELS, SECTION_PATHS } from '@/lib/dashboard/rbac'
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
+import ActivityList from '@/components/dashboard/overview/ActivityList'
 import OverviewStats, { FINANCE_CARD_COUNT, PEOPLE_CARD_COUNT } from '@/components/dashboard/overview/OverviewStats'
+import RecentFirstTimers from '@/components/dashboard/overview/RecentFirstTimers'
+import RecentWelfare from '@/components/dashboard/overview/RecentWelfare'
 import BlockErrorBoundary from '@/components/dashboard/states/BlockErrorBoundary'
+import FeedSkeleton from '@/components/dashboard/states/FeedSkeleton'
 import { StatGridSkeleton } from '@/components/dashboard/states/StatCardSkeleton'
 import { Badge } from '@/components/dashboard/ui/badge'
 
 export const dynamic = 'force-dynamic'
+
+/** Body placeholder inside an ActivityList; the stats skeleton does the announcing. */
+function ActivitySkeleton() {
+  return <FeedSkeleton items={3} search={false} announce={false} className="p-4 sm:p-5" />
+}
 
 export default async function DashboardOverviewPage() {
   const session = await requireSession()
   const statCount =
     (hasPermission(session.role, 'stats:people') ? PEOPLE_CARD_COUNT : 0) +
     (hasPermission(session.role, 'stats:finance') ? FINANCE_CARD_COUNT : 0)
+  const showFirstTimers = canAccessSection(session.role, 'firstTimers')
+  const showWelfare = canAccessSection(session.role, 'welfare')
 
   return (
     <PageContainer>
@@ -48,6 +59,38 @@ export default async function DashboardOverviewPage() {
           <OverviewStats session={session} />
         </Suspense>
       </BlockErrorBoundary>
+      {(showFirstTimers || showWelfare) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {showFirstTimers && (
+            <ActivityList
+              id="recent-first-timers"
+              title="Recent first-timers"
+              viewAllHref={SECTION_PATHS.firstTimers}
+              viewAllNoun="first-timers"
+            >
+              <BlockErrorBoundary className="rounded-none border-0 py-8 sm:py-8">
+                <Suspense fallback={<ActivitySkeleton />}>
+                  <RecentFirstTimers session={session} />
+                </Suspense>
+              </BlockErrorBoundary>
+            </ActivityList>
+          )}
+          {showWelfare && (
+            <ActivityList
+              id="recent-welfare"
+              title="Recent welfare requests"
+              viewAllHref={SECTION_PATHS.welfare}
+              viewAllNoun="welfare requests"
+            >
+              <BlockErrorBoundary className="rounded-none border-0 py-8 sm:py-8">
+                <Suspense fallback={<ActivitySkeleton />}>
+                  <RecentWelfare session={session} />
+                </Suspense>
+              </BlockErrorBoundary>
+            </ActivityList>
+          )}
+        </div>
+      )}
     </PageContainer>
   )
 }
