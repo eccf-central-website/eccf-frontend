@@ -95,12 +95,12 @@ export const DASHBOARD_WELFARE_QUERY = `
 `
 
 export const DASHBOARD_PRAYER_REQUESTS_QUERY = `
-  *[_type == "prayerRequest"] | order(dateSubmitted desc) {
+  *[_type == "prayerRequest"] | order(coalesce(dateSubmitted, _createdAt) desc) {
     _id,
     _type,
     name,
     request,
-    dateSubmitted
+    "dateSubmitted": coalesce(dateSubmitted, _createdAt)
   }
 `
 
@@ -112,7 +112,7 @@ export const DASHBOARD_PRAYER_REQUESTS_QUERY = `
 export const PEOPLE_STATS_QUERY = `{
   "firstTimersThisMonth": count(*[_type == "firstTimer" && dateVisited >= $monthStart]),
   "pendingWelfare": count(*[_type == "welfareRequest" && status == "Pending"]),
-  "prayerRequestsThisWeek": count(*[_type == "prayerRequest" && dateSubmitted >= $weekStart]),
+  "prayerRequestsThisWeek": count(*[_type == "prayerRequest" && coalesce(dateSubmitted, _createdAt) >= $weekStart]),
   "workers": count(*[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)]),
   "lastService": *[_type == "attendanceLedger" && ($team == null || team->name == $team || team == $team)] | order(date desc)[0] { date, serviceType, meetingTitle, totalCount }
 }`
