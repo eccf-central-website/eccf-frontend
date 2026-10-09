@@ -26,7 +26,7 @@ interface EmptyStateProps {
   icon?: React.ReactNode
   /** CTA slot: a Link-as-Button ("Add the first entry") or a client button ("Clear filters"). */
   action?: React.ReactNode
-  headingLevel?: 'h2' | 'h3'
+  headingLevel?: 'h2' | 'h3' | 'h4'
   className?: string
 }
 
