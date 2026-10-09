@@ -373,7 +373,7 @@ export function WorkerRegistrationForm() {
                     required
                     value={hall}
                     onChange={(e) => setHall(e.target.value)}
-                    className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-5 text-lg font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   >
                     <option value="">Select Hall of Residence</option>
                     {HALLS_OF_RESIDENCE.map((h) => (
@@ -394,7 +394,7 @@ export function WorkerRegistrationForm() {
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
                     placeholder="e.g. Room 204 or Block A-12"
-                    className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
               </div>
@@ -403,7 +403,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -411,7 +411,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={!hall || !roomNumber}
                   onClick={() => setStep(3)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -442,24 +442,24 @@ export function WorkerRegistrationForm() {
                 </p>
               </div>
 
-              <div className="p-6 rounded-2xl border-2 border-dashed border-stone-200 bg-[#fafaf9] flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+              <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#0077cc] bg-white shadow-xs flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left transition-all">
                 {imagePreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={imagePreview}
                     alt="New preview"
-                    className="h-24 w-24 rounded-2xl object-cover border border-stone-200 shadow-sm shrink-0"
+                    className="h-24 w-24 rounded-2xl object-cover border-2 border-slate-200 shadow-sm shrink-0"
                   />
                 ) : existingPhotoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={existingPhotoUrl}
                     alt="Current photo"
-                    className="h-24 w-24 rounded-2xl object-cover border border-stone-200 shadow-sm shrink-0"
+                    className="h-24 w-24 rounded-2xl object-cover border-2 border-slate-200 shadow-sm shrink-0"
                   />
                 ) : (
-                  <div className="h-24 w-24 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-slate-400 shrink-0">
-                    <Upload className="h-10 w-10" />
+                  <div className="h-24 w-24 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                    <Upload className="h-10 w-10 text-slate-500" />
                   </div>
                 )}
 
@@ -474,7 +474,7 @@ export function WorkerRegistrationForm() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-200 text-slate-800 text-xs sm:text-sm font-bold hover:bg-stone-300 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-xs text-xs sm:text-sm font-bold transition-colors"
                   >
                     <Upload className="h-4 w-4" />
                     {imagePreview ? 'Change Photo' : 'Upload New Photo'}
@@ -493,14 +493,14 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(4)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
                 >
                   Review &amp; Confirm <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -530,16 +530,16 @@ export function WorkerRegistrationForm() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-stone-200 bg-[#fafaf9] p-6 space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-stone-200/60 text-sm">
+              <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">Worker:</span>
                   <span className="font-bold text-slate-900">{fullName}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-stone-200/60 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">Operational Team:</span>
                   <span className="font-bold text-slate-900">{team}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-stone-200/60 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">New Residence:</span>
                   <span className="font-bold text-[#0077cc] text-base">
                     {hall}, Room {roomNumber}
@@ -557,7 +557,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -565,7 +565,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={submitting}
                   onClick={handleFinalSubmit}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {submitting ? 'Saving Location…' : 'Confirm & Update Location 🎉'}
                 </button>
@@ -606,7 +606,7 @@ export function WorkerRegistrationForm() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. John Oluwaseun Doe"
-                  className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                 />
               </div>
 
@@ -614,7 +614,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -622,7 +622,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={fullName.trim().length < 2}
                   onClick={() => setStep(3)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -660,7 +660,7 @@ export function WorkerRegistrationForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. john@example.com"
-                  className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                 />
               </div>
 
@@ -668,7 +668,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -676,7 +676,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
                   onClick={() => setStep(4)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -716,8 +716,8 @@ export function WorkerRegistrationForm() {
                       onClick={() => setTeam(t)}
                       className={`p-4 rounded-2xl border-2 text-left font-semibold text-sm transition-all flex items-center justify-between ${
                         isSelected
-                          ? 'border-[#0077cc] bg-sky-50/70 text-[#0077cc] shadow-sm'
-                          : 'border-stone-200 bg-[#fafaf9] text-slate-700 hover:bg-stone-100'
+                          ? 'border-[#0077cc] bg-sky-50 text-[#0077cc] shadow-sm ring-2 ring-[#0077cc]/20'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-xs'
                       }`}
                     >
                       <span>{t}</span>
@@ -731,7 +731,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -739,7 +739,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={!team}
                   onClick={() => setStep(5)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -778,7 +778,7 @@ export function WorkerRegistrationForm() {
                     required
                     value={hall}
                     onChange={(e) => setHall(e.target.value)}
-                    className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-5 text-lg font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   >
                     <option value="">Select Hall</option>
                     {HALLS_OF_RESIDENCE.map((h) => (
@@ -799,7 +799,7 @@ export function WorkerRegistrationForm() {
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
                     placeholder="e.g. Room 204 or Block A-12"
-                    className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
               </div>
@@ -808,7 +808,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(4)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -816,7 +816,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={!hall || !roomNumber}
                   onClick={() => setStep(6)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -852,7 +852,7 @@ export function WorkerRegistrationForm() {
                   required
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-xl font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                 />
               </div>
 
@@ -860,7 +860,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(5)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -868,7 +868,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={!birthDate}
                   onClick={() => setStep(7)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -898,24 +898,24 @@ export function WorkerRegistrationForm() {
                 </p>
               </div>
 
-              <div className="p-8 rounded-2xl border-2 border-dashed border-stone-200 bg-[#fafaf9] text-center space-y-4">
+              <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#0077cc] bg-white text-center space-y-4 shadow-xs transition-all">
                 {imagePreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="mx-auto h-32 w-32 rounded-3xl object-cover border-2 border-white shadow-md"
+                    className="mx-auto h-32 w-32 rounded-3xl object-cover border-2 border-slate-200 shadow-md"
                   />
                 ) : (
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-100 text-slate-400">
-                    <Upload className="h-10 w-10" />
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 border border-slate-200 text-slate-400">
+                    <Upload className="h-10 w-10 text-slate-500" />
                   </div>
                 )}
                 <div>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-200 text-slate-800 text-sm font-bold hover:bg-stone-300 transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-xs text-sm font-bold transition-colors"
                   >
                     <Upload className="h-4 w-4" />
                     {imagePreview ? 'Change Photo' : 'Choose Photo (Max 5MB)'}
@@ -934,14 +934,14 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(6)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(8)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
                 >
                   Next Step <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -978,8 +978,8 @@ export function WorkerRegistrationForm() {
                   onClick={() => setIsExco(false)}
                   className={`p-6 rounded-2xl border-2 text-left space-y-2 transition-all ${
                     !isExco
-                      ? 'border-[#0077cc] bg-sky-50/70 shadow-sm'
-                      : 'border-stone-200 bg-[#fafaf9] hover:bg-stone-100'
+                      ? 'border-[#0077cc] bg-sky-50 shadow-sm ring-2 ring-[#0077cc]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 shadow-xs'
                   }`}
                 >
                   <User className={`h-8 w-8 ${!isExco ? 'text-[#0077cc]' : 'text-slate-500'}`} />
@@ -994,8 +994,8 @@ export function WorkerRegistrationForm() {
                   onClick={() => setIsExco(true)}
                   className={`p-6 rounded-2xl border-2 text-left space-y-2 transition-all ${
                     isExco
-                      ? 'border-[#0077cc] bg-sky-50/70 shadow-sm'
-                      : 'border-stone-200 bg-[#fafaf9] hover:bg-stone-100'
+                      ? 'border-[#0077cc] bg-sky-50 shadow-sm ring-2 ring-[#0077cc]/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 shadow-xs'
                   }`}
                 >
                   <ShieldCheck
@@ -1010,8 +1010,8 @@ export function WorkerRegistrationForm() {
 
               {/* Exco Credentials Sub-Card */}
               {isExco && (
-                <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-4">
-                  <div className="flex items-start gap-2.5">
+                <div className="p-6 rounded-2xl bg-sky-50/90 border-2 border-sky-200 space-y-4 shadow-xs">
+                  <div className="bg-amber-50 border-2 border-amber-300 text-amber-950 rounded-xl p-3.5 flex items-start gap-3 shadow-xs">
                     <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-amber-900 leading-relaxed font-medium">
                       <strong>Admin Approval Gate:</strong> Exco accounts require administrator
@@ -1020,23 +1020,24 @@ export function WorkerRegistrationForm() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
                       Exco Designation
                     </label>
                     <select
                       value={requestedRole}
                       onChange={(e) => setRequestedRole(e.target.value as WorkerRole)}
-                      className="flex h-14 w-full rounded-xl border border-stone-300 bg-white px-4 text-base font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
+                      className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
                     >
+                      <option value="team_lead">Team Leader / Assistant Coordinator</option>
                       <option value="hall_rep">Hall Representative (Hostels)</option>
                       <option value="finance">Finance Team (Ledgers &amp; Accounts)</option>
-                      <option value="admin">Executive Council / Administrator</option>
+                      <option value="admin">CSGB — Christian Students&apos; Governing Board (Admin)</option>
                     </select>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1">
                         Password
                       </label>
                       <div className="relative">
@@ -1045,7 +1046,7 @@ export function WorkerRegistrationForm() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min. 8 characters"
-                          className="flex h-12 w-full rounded-xl border border-stone-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
+                          className="flex h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
                         />
                         <button
                           type="button"
@@ -1062,7 +1063,7 @@ export function WorkerRegistrationForm() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1">
                         Repeat Password
                       </label>
                       <input
@@ -1070,7 +1071,7 @@ export function WorkerRegistrationForm() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm password"
-                        className="flex h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
+                        className="flex h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
                       />
                     </div>
                   </div>
@@ -1081,7 +1082,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(7)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -1089,7 +1090,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={isExco && (password.length < 8 || password !== confirmPassword)}
                   onClick={() => setStep(9)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Review &amp; Complete <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -1119,27 +1120,27 @@ export function WorkerRegistrationForm() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-stone-200 bg-[#fafaf9] p-6 space-y-3 text-sm">
-                <div className="flex justify-between py-1.5 border-b border-stone-200/60">
-                  <span className="text-slate-500">Name:</span>
+              <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-3 shadow-sm text-sm">
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Name:</span>
                   <span className="font-bold text-slate-900">{fullName}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-stone-200/60">
-                  <span className="text-slate-500">Phone:</span>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Phone:</span>
                   <span className="font-bold text-slate-900">{phoneNumber}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-stone-200/60">
-                  <span className="text-slate-500">Team:</span>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Team:</span>
                   <span className="font-bold text-slate-900">{team}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-stone-200/60">
-                  <span className="text-slate-500">Hostel / Room:</span>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Hostel / Room:</span>
                   <span className="font-bold text-slate-900">
                     {hall}, {roomNumber}
                   </span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-stone-200/60">
-                  <span className="text-slate-500">Exco Status:</span>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Exco Status:</span>
                   <span className="font-bold text-[#0077cc]">
                     {isExco ? `Yes (${requestedRole})` : 'General Worker'}
                   </span>
@@ -1153,7 +1154,7 @@ export function WorkerRegistrationForm() {
                   required
                   checked={ndprConsent}
                   onChange={(e) => setNdprConsent(e.target.checked)}
-                  className="h-5 w-5 rounded text-[#0077cc] focus:ring-[#0077cc] mt-0.5 cursor-pointer"
+                  className="h-5 w-5 rounded border-slate-300 text-[#0077cc] focus:ring-[#0077cc] mt-0.5 cursor-pointer"
                 />
                 <label
                   htmlFor="ndpr-new"
@@ -1168,7 +1169,7 @@ export function WorkerRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => setStep(8)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-stone-200 text-slate-600 hover:bg-stone-50 transition-colors shrink-0"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -1176,7 +1177,7 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={submitting || !ndprConsent}
                   onClick={handleFinalSubmit}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {submitting ? 'Submitting Registration…' : 'Complete Registration 🎉'}
                 </button>
@@ -1184,6 +1185,19 @@ export function WorkerRegistrationForm() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Exco Portal Shortcut */}
+      <div className="pt-4 text-center">
+        <p className="text-sm text-slate-600">
+          Already registered as an Exco member?{' '}
+          <Link
+            href="/login"
+            className="font-semibold text-[#0077cc] underline underline-offset-4 hover:text-[#005fa3] transition-colors"
+          >
+            Sign in to Exco Dashboard
+          </Link>
+        </p>
       </div>
     </div>
   )
