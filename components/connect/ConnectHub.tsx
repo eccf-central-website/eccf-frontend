@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import { FirstTimerForm } from '@/components/forms/FirstTimerForm'
@@ -114,6 +115,24 @@ export default function ConnectHub() {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {/* Workforce & Exco Portal Callout */}
+      <div className="mt-12 text-center p-6 rounded-2xl border border-stone-200/90 bg-white/70 backdrop-blur-sm shadow-sm space-y-2">
+        <p className="text-xs uppercase font-bold tracking-widest text-[#0077cc]">
+          FELLOWSHIP WORKFORCE &amp; EXCO
+        </p>
+        <p className="text-sm text-slate-600">
+          Serving as a volunteer worker or Exco member in ECCF?
+        </p>
+        <div>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-900 underline hover:text-[#0077cc] transition-colors"
+          >
+            Access the Worker Profile Registration Portal &rarr;
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

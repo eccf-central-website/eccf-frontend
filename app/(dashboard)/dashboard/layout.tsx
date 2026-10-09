@@ -47,7 +47,13 @@ export default async function DashboardShellLayout({
       <SkipLink />
       <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar sections={sections} role={session.role} team={session.team} devTools={devTools} />
+        <TopBar
+          sections={sections}
+          role={session.role}
+          team={session.team}
+          excoPosition={session.excoPosition}
+          devTools={devTools}
+        />
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>

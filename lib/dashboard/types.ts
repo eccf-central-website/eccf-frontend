@@ -9,9 +9,9 @@ export interface PeopleStats {
   firstTimersThisMonth: number
   pendingWelfare: number
   prayerRequestsThisWeek: number
-  /** Hall-scoped for hall_rep */
+  /** Scoped to hall for hall_rep, or team for team_lead */
   workers: number
-  lastService: Pick<AttendanceLedger, 'date' | 'serviceType' | 'totalCount'> | null
+  lastService: Pick<AttendanceLedger, 'date' | 'serviceType' | 'totalCount'> & { meetingTitle?: string } | null
 }
 
 export interface FinanceStats {

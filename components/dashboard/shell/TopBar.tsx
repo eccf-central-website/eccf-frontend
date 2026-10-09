@@ -16,17 +16,19 @@ import { SECTION_PATHS, sectionForPath, type DashboardSection } from '@/lib/dash
 import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
+import { ThemeToggle } from '@/components/dashboard/theme/ThemeToggle'
 
 interface TopBarProps {
   sections: readonly DashboardSection[]
   role: WorkerRole
   team: string
+  excoPosition?: string
   /** Right-side page/global actions, e.g. "Sync sermons" (later feature). */
   actions?: React.ReactNode
   devTools?: React.ReactNode
 }
 
-export default function TopBar({ sections, role, team, actions, devTools }: TopBarProps) {
+export default function TopBar({ sections, role, team, excoPosition, actions, devTools }: TopBarProps) {
   const pathname = usePathname()
   const section = sectionForPath(pathname) ?? 'overview'
   const title = navItemForSection(section).label
@@ -64,7 +66,8 @@ export default function TopBar({ sections, role, team, actions, devTools }: TopB
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {actions}
-        <UserMenu role={role} team={team} devTools={devTools} />
+        <ThemeToggle />
+        <UserMenu role={role} team={team} excoPosition={excoPosition} devTools={devTools} />
       </div>
     </header>
   )
