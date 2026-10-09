@@ -13,8 +13,8 @@ import { requireSection } from '@/lib/dashboard/auth'
 import { listAttendance } from '@/lib/dashboard/data'
 
 export default async function AttendancePage() {
-  await requireSection('attendance')
-  const rows = await listAttendance()
+  const session = await requireSection('attendance')
+  const rows = await listAttendance(session)
 
   if (rows.length === 0) {
     return (

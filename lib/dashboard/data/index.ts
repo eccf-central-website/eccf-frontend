@@ -29,7 +29,7 @@ import type {
   SafeWelfareRequest,
   WorkerRow,
 } from '@/types'
-import { hasPermission, isHallScoped } from '../rbac'
+import { hasPermission, isHallScoped, isTeamScoped } from '../rbac'
 import { isDevMockState, type DevMockState } from '../shell'
 import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
 import {
@@ -89,6 +89,12 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
   return hall ?? '__no-hall__'
 }
 
+/** Team used to scope team_lead reads; null means all teams. */
+function teamScope(session: ECCFSession): string | null {
+  if (!isTeamScoped(session.role)) return null
+  return session.team || '__no-team__'
+}
+
 function monthStart(now = new Date()): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().split('T')[0]
 }
@@ -104,7 +110,9 @@ function weekStart(now = new Date()): string {
 export async function getOverviewStats(session: ECCFSession): Promise<OverviewStats> {
   const showPeople = hasPermission(session.role, 'stats:people')
   const showFinance = hasPermission(session.role, 'stats:finance')
-  const params = { monthStart: monthStart(), weekStart: weekStart(), hall: await hallScope(session) }
+  const hall = await hallScope(session)
+  const team = teamScope(session)
+  const params = { monthStart: monthStart(), weekStart: weekStart(), hall, team }
 
   if (dataSource() === 'mock') {
     const [firstTimers, welfare, prayer, workers, attendance, finance] = await Promise.all([
@@ -119,14 +127,21 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
       finance
         .filter((f) => f.type === type && f.transactionDate >= params.monthStart)
         .reduce((total, f) => total + f.amount, 0)
-    const lastService = attendance[0]
+    const scopedAttendance = attendance.filter(
+      (a) => team === null || a.teamName === team || a.serviceType === 'Sunday Service'
+    )
+    const lastService = scopedAttendance[0] ?? attendance[0]
     return {
       people: showPeople
         ? {
             firstTimersThisMonth: firstTimers.filter((f) => f.dateVisited >= params.monthStart).length,
             pendingWelfare: welfare.filter((w) => w.status === 'Pending').length,
             prayerRequestsThisWeek: prayer.filter((p) => p.dateSubmitted >= params.weekStart).length,
-            workers: workers.filter((w) => params.hall === null || w.hall === params.hall).length,
+            workers: workers.filter(
+              (w) =>
+                (params.hall === null || w.hall === params.hall) &&
+                (params.team === null || w.team === params.team)
+            ).length,
             lastService: lastService
               ? { date: lastService.date, serviceType: lastService.serviceType, totalCount: lastService.totalCount }
               : null,
@@ -151,10 +166,13 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
 
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const hall = await hallScope(session)
+  const team = teamScope(session)
   const rows =
     dataSource() === 'mock'
-      ? (await fromMock(MOCK_WORKERS, [])).filter((w) => hall === null || w.hall === hall)
-      : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall })
+      ? (await fromMock(MOCK_WORKERS, [])).filter(
+          (w) => (hall === null || w.hall === hall) && (team === null || w.team === team)
+        )
+      : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
   return stripPII(rows)
 }
 
@@ -162,11 +180,14 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
 // Ledgers
 // ---------------------------------------------------------------------------
 
-export async function listAttendance(): Promise<AttendanceRow[]> {
+export async function listAttendance(session?: ECCFSession): Promise<AttendanceRow[]> {
+  const team = session ? teamScope(session) : null
   const rows =
     dataSource() === 'mock'
-      ? await fromMock(MOCK_ATTENDANCE, [])
-      : await sanityWriteClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY)
+      ? (await fromMock(MOCK_ATTENDANCE, [])).filter(
+          (a) => team === null || a.teamName === team || a.serviceType !== 'Team Meeting'
+        )
+      : await sanityWriteClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY, { team })
   return stripPII(rows)
 }
 

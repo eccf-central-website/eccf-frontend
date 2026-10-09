@@ -32,9 +32,10 @@ export const DEV_ROLE_COOKIE = 'eccf-dev-role'
 
 /** Mock identities — ids match workers in lib/dashboard/mock/data.ts. */
 const MOCK_SESSIONS: Record<WorkerRole, ECCFSession> = {
-  admin: { id: 'mock-worker-admin', role: 'admin', team: 'Exco' },
+  admin: { id: 'mock-worker-admin', role: 'admin', team: 'Exco', excoPosition: 'President' },
+  team_lead: { id: 'mock-worker-teamlead', role: 'team_lead', team: 'Media', excoPosition: 'Media Coordinator' },
   hall_rep: { id: 'mock-worker-hallrep', role: 'hall_rep', team: 'Welfare' },
-  finance: { id: 'mock-worker-finance', role: 'finance', team: 'Finance' },
+  finance: { id: 'mock-worker-finance', role: 'finance', team: 'Finance', excoPosition: 'Financial Secretary' },
 }
 
 export function isMockAuthEnabled(): boolean {
@@ -50,13 +51,14 @@ export async function getSession(): Promise<ECCFSession | null> {
   const session = await getServerSession(authOptions)
   if (!session?.user) return null
 
-  const user = session.user as unknown as { id?: string; role?: WorkerRole; team?: string }
+  const user = session.user as unknown as { id?: string; role?: WorkerRole; team?: string; excoPosition?: string }
   if (!user.id || !user.role) return null
 
   return {
     id: user.id,
     role: user.role,
     team: user.team || 'Exco',
+    excoPosition: user.excoPosition,
   }
 }
 

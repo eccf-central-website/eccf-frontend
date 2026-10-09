@@ -19,7 +19,32 @@
 // ---------------------------------------------------------------------------
 
 /** Valid RBAC roles. Must stay in sync with eccf-backend worker schema. */
-export type WorkerRole = 'admin' | 'hall_rep' | 'finance'
+export type WorkerRole = 'admin' | 'team_lead' | 'finance' | 'hall_rep'
+
+export type ExcoPosition =
+  | 'President'
+  | "Vice President - Admin / Brothers' Coordinator"
+  | "Vice President - Evangelism / Sisters' Coordinator"
+  | 'General Secretary'
+  | 'Financial Secretary'
+  | 'Academic Coordinator'
+  | 'Choir Director'
+  | 'Music Director / Head of Instrumentalists'
+  | 'Decoration Director'
+  | 'Drama Director'
+  | 'Colporteur'
+  | 'Librarian'
+  | 'Media Coordinator'
+  | 'Assist. Media Coordinator'
+  | 'Welfare & Medical Coordinator'
+  | 'Outreach Coordinator'
+  | 'Prayer Coordinator'
+  | 'Head of Protocol Team'
+  | 'Editorial Publication Head'
+  | 'Publicity / Social Media Head'
+  | 'Technical Coordinator'
+  | 'Assist. Technical Coordinator'
+  | 'Head Usher'
 
 /** Valid fellowship teams. Must stay in sync with eccf-backend worker schema. */
 export type FellowshipTeam =
@@ -47,6 +72,7 @@ export interface Worker {
   phoneNumber?: string
   birthDate?: string // ISO date string YYYY-MM-DD
   role?: WorkerRole
+  excoPosition?: ExcoPosition
   isExcoApproved?: boolean
   requestedRole?: WorkerRole
   /** ⚠️ Never sent to client — server-side auth verification only */
@@ -74,6 +100,7 @@ export interface ECCFSession {
    * string (teamUnit name) at sign-in — always `team`, never `unit`.
    */
   team: string
+  excoPosition?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +117,8 @@ export interface AttendanceLedger {
     | 'Team Meeting'
     | 'Exco Meeting'
     | 'Special Programme'
+  meetingTitle?: string
+  team?: FellowshipTeam
   totalCount: number
   attendees?: Pick<Worker, '_id' | 'fullName' | 'team'>[]
   loggedBy: Pick<Worker, '_id' | 'fullName'>
@@ -222,8 +251,9 @@ export type WorkerRow = Omit<SafeWorker, 'team' | '_type'> & {
 }
 
 /** Attendance ledger row: attendee references collapsed to a count. */
-export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees'> & {
+export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees' | 'team'> & {
   attendeeCount: number
+  teamName?: string
 }
 
 /** Finance ledger row as listed in the dashboard. */

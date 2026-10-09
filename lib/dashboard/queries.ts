@@ -14,14 +14,15 @@
 // Worker CRM
 // ---------------------------------------------------------------------------
 
-/** $hall: null for all halls, or a hall name for hall_rep scoping */
+/** $hall: null for all halls; $team: null for all teams */
 export const DASHBOARD_WORKERS_QUERY = `
-  *[_type == "worker" && ($hall == null || hall == $hall)] | order(fullName asc) {
+  *[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)] | order(fullName asc) {
     _id,
     fullName,
     "team": coalesce(team->name, team),
     hall,
     role,
+    excoPosition,
     birthDate,
     profileImageUrl,
     createdAt,
@@ -40,10 +41,12 @@ export const WORKER_HALL_BY_ID_QUERY = `
 // ---------------------------------------------------------------------------
 
 export const DASHBOARD_ATTENDANCE_QUERY = `
-  *[_type == "attendanceLedger"] | order(date desc) {
+  *[_type == "attendanceLedger" && ($team == null || team->name == $team || team == $team)] | order(date desc) {
     _id,
     date,
     serviceType,
+    meetingTitle,
+    "teamName": coalesce(team->name, team),
     totalCount,
     "attendeeCount": count(coalesce(attendees, [])),
     "loggedBy": loggedBy->{ _id, fullName }
@@ -109,8 +112,8 @@ export const PEOPLE_STATS_QUERY = `{
   "firstTimersThisMonth": count(*[_type == "firstTimer" && dateVisited >= $monthStart]),
   "pendingWelfare": count(*[_type == "welfareRequest" && status == "Pending"]),
   "prayerRequestsThisWeek": count(*[_type == "prayerRequest" && dateSubmitted >= $weekStart]),
-  "workers": count(*[_type == "worker" && ($hall == null || hall == $hall)]),
-  "lastService": *[_type == "attendanceLedger"] | order(date desc)[0] { date, serviceType, totalCount }
+  "workers": count(*[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)]),
+  "lastService": *[_type == "attendanceLedger" && ($team == null || team->name == $team || team == $team)] | order(date desc)[0] { date, serviceType, meetingTitle, totalCount }
 }`
 
 export const FINANCE_STATS_QUERY = `{

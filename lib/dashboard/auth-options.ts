@@ -43,6 +43,7 @@ export const authOptions: NextAuthOptions = {
           phoneNumber?: string
           role?: WorkerRole
           requestedRole?: WorkerRole
+          excoPosition?: string
           isExcoApproved?: boolean
           passwordHash?: string
           team?: string | { name?: string }
@@ -54,6 +55,7 @@ export const authOptions: NextAuthOptions = {
             phoneNumber,
             role,
             requestedRole,
+            excoPosition,
             isExcoApproved,
             passwordHash,
             team
@@ -97,6 +99,7 @@ export const authOptions: NextAuthOptions = {
           email: worker.email || '',
           role: effectiveRole,
           team: resolvedTeam,
+          excoPosition: worker.excoPosition || '',
         }
       },
     }),
@@ -107,6 +110,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = (user as unknown as { role: WorkerRole }).role
         token.team = (user as unknown as { team: string }).team
+        token.excoPosition = (user as unknown as { excoPosition?: string }).excoPosition
       }
       return token
     },
@@ -115,6 +119,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as unknown as { id: string }).id = token.id as string
         ;(session.user as unknown as { role: WorkerRole }).role = token.role as WorkerRole
         ;(session.user as unknown as { team: string }).team = token.team as string
+        ;(session.user as unknown as { excoPosition?: string }).excoPosition = token.excoPosition as string
       }
       return session
     },

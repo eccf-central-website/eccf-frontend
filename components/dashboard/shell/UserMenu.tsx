@@ -28,10 +28,11 @@ import {
 interface UserMenuProps {
   role: WorkerRole
   team: string
+  excoPosition?: string
   devTools?: React.ReactNode
 }
 
-export default function UserMenu({ role, team, devTools }: UserMenuProps) {
+export default function UserMenu({ role, team, excoPosition, devTools }: UserMenuProps) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -41,12 +42,12 @@ export default function UserMenu({ role, team, devTools }: UserMenuProps) {
         <Button
           variant="ghost"
           className="h-10 gap-2 px-2 focus-visible:ring-2 sm:px-3"
-          aria-label={`Account menu, signed in as ${ROLE_LABELS[role]}`}
+          aria-label={`Account menu, signed in as ${excoPosition || ROLE_LABELS[role]}`}
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground">
             <UserRound aria-hidden="true" />
           </span>
-          <span className="hidden text-sm font-medium sm:inline">{ROLE_LABELS[role]}</span>
+          <span className="hidden text-sm font-medium sm:inline">{excoPosition || ROLE_LABELS[role]}</span>
           <ChevronDown aria-hidden="true" className="hidden text-muted-foreground sm:block" />
         </Button>
       </DropdownMenuTrigger>
@@ -55,8 +56,13 @@ export default function UserMenu({ role, team, devTools }: UserMenuProps) {
           <span className="text-xs text-muted-foreground">Signed in as</span>
           <span className="flex items-center gap-2">
             <Badge>{ROLE_LABELS[role]}</Badge>
-            <span className="truncate text-sm text-foreground">{team} team</span>
+            <span className="truncate text-sm font-medium text-foreground">
+              {excoPosition || `${team} team`}
+            </span>
           </span>
+          {excoPosition && (
+            <span className="text-xs text-muted-foreground">{team} team</span>
+          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={toggleTheme} className="h-10 cursor-pointer">
