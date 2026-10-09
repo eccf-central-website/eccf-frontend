@@ -29,7 +29,7 @@ const workSans = Work_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ECCF — Edo State University Christian Campus Fellowship",
+  title: "ESUI Christian Campus Fellowship: Raising Spiritual Dynamites and Academic Giants",
   description:
     "Official Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
   icons: {
