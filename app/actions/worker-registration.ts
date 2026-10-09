@@ -159,24 +159,71 @@ export async function registerWorker(
       return { ok: false, error: 'You must consent to data processing per NDPR guidelines.' }
     }
 
-    if (input.isExco) {
-      if (!input.requestedRole || !['admin', 'hall_rep', 'finance'].includes(input.requestedRole)) {
-        return { ok: false, error: 'Please select your Exco designation.' }
-      }
-      if (!input.password || input.password.length < 8) {
-        return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
-      }
-    }
-
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
     const cleanFullName = input.fullName.trim()
     const cleanTeam = input.team.trim()
     const today = new Date().toISOString().split('T')[0]
 
+    // 2. Check if worker already exists (Deduplication / Upsert check)
+    const existing = await sanityWriteClient.fetch<{
+      _id: string
+      fullName?: string
+      team?: string
+      hall?: string
+      roomNumber?: string
+      email?: string
+      birthDate?: string
+      role?: WorkerRole
+      requestedRole?: WorkerRole
+      isExcoApproved?: boolean
+      passwordHash?: string
+      updateLog?: string[]
+    }>(
+      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+        _id,
+        fullName,
+        "team": coalesce(team->name, team),
+        hall,
+        roomNumber,
+        email,
+        birthDate,
+        role,
+        requestedRole,
+        isExcoApproved,
+        passwordHash,
+        updateLog
+      }`,
+      { phoneNumber: cleanPhone }
+    )
+
+    // Password validation logic:
+    if (!existing) {
+      // For a brand-new worker requesting an Exco role, password is required
+      if (input.isExco) {
+        if (!input.requestedRole || !['admin', 'team_lead', 'hall_rep', 'finance'].includes(input.requestedRole)) {
+          return { ok: false, error: 'Please select your Exco designation.' }
+        }
+        if (!input.password || input.password.length < 8) {
+          return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
+        }
+      }
+    } else {
+      // Existing worker updating location / profile
+      if (input.password && input.password.length < 8) {
+        return { ok: false, error: 'Password must be at least 8 characters long.' }
+      }
+      // If a previously general worker (no passwordHash) requests Exco designation for the first time
+      if (input.isExco && !existing.passwordHash && !existing.role) {
+        if (!input.password || input.password.length < 8) {
+          return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
+        }
+      }
+    }
+
     // Resolve team reference to match Sanity schema ({ _type: 'reference', _ref: id })
     const teamReference = await resolveTeamReference(cleanTeam)
 
-    // 2. Process Birthday Picture via Google Apps Script bridge if provided
+    // 3. Process Birthday Picture via Google Apps Script bridge if provided
     let profileImageUrl: string | undefined = undefined
     const cleanFileName = `${cleanFullName.replace(/\s+/g, '_')}_${cleanTeam.replace(/\s+/g, '_')}_BirthdayPic.jpg`
 
@@ -201,32 +248,8 @@ export async function registerWorker(
       }
     }
 
-    // 3. Upsert Lookup by phoneNumber (SDD §6.4)
-    const existing = await sanityWriteClient.fetch<{
-      _id: string
-      fullName?: string
-      team?: string
-      hall?: string
-      roomNumber?: string
-      email?: string
-      birthDate?: string
-      updateLog?: string[]
-    }>(
-      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
-        _id,
-        fullName,
-        "team": coalesce(team->name, team),
-        hall,
-        roomNumber,
-        email,
-        birthDate,
-        updateLog
-      }`,
-      { phoneNumber: cleanPhone }
-    )
-
     let passwordHash: string | undefined = undefined
-    if (input.isExco && input.password) {
+    if (input.password && input.password.length >= 8) {
       passwordHash = await bcrypt.hash(input.password, 10)
     }
 
@@ -288,12 +311,13 @@ export async function registerWorker(
 
       revalidatePath('/dashboard/workers')
 
+      const isNewlyRequestingExco = Boolean(input.isExco && passwordHash && !existing.isExcoApproved && !existing.role)
       return {
         ok: true,
-        isExco: input.isExco,
-        message: input.isExco
+        isExco: Boolean(existing.role || input.isExco),
+        message: isNewlyRequestingExco
           ? 'Profile updated successfully! Your Exco dashboard request has been submitted for administrator approval.'
-          : 'Profile updated successfully! Your worker details have been refreshed.',
+          : 'Profile and location updated successfully! Your fellowship records have been refreshed.',
       }
     } else {
       // 4b. New Worker -> Create document with initial updateLog

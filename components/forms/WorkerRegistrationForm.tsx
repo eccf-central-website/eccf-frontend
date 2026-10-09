@@ -123,10 +123,13 @@ export function WorkerRegistrationForm() {
         if (res.worker.role) {
           setIsExco(true)
           setRequestedRole(res.worker.role)
+        } else {
+          setIsExco(false)
         }
         setStep(2)
       } else {
         setIsReturning(false)
+        setIsExco(false)
         setStep(2)
       }
     } catch {
@@ -298,7 +301,7 @@ export function WorkerRegistrationForm() {
                     autoFocus
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="e.g. 0816 873 0661"
+                    placeholder="e.g. 0801 234 5678"
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
