@@ -49,7 +49,8 @@ export const DASHBOARD_ATTENDANCE_QUERY = `
     "teamName": coalesce(team->name, team),
     totalCount,
     "attendeeCount": count(coalesce(attendees, [])),
-    "loggedBy": loggedBy->{ _id, fullName }
+    "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team) },
+    "loggedBy": loggedBy->{ _id, fullName, excoPosition, role }
   }
 `
 

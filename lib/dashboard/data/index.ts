@@ -176,6 +176,28 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   return stripPII(rows)
 }
 
+export async function fetchWorkersForAttendance(
+  session: ECCFSession,
+  targetTeam?: string
+): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'hall'>[]> {
+  const team = session.role === 'team_lead' ? session.team : (targetTeam || null)
+  if (dataSource() === 'mock') {
+    const all = await fromMock(MOCK_WORKERS, [])
+    return all
+      .filter((w) => team === null || w.team === team)
+      .map(({ _id, fullName, team, hall }) => ({ _id, fullName, team, hall }))
+  }
+
+  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team)] | order(fullName asc) {
+    _id,
+    fullName,
+    "team": coalesce(team->name, team),
+    hall
+  }`
+  const rows = await sanityWriteClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'hall'>[]>(query, { team })
+  return stripPII(rows)
+}
+
 // ---------------------------------------------------------------------------
 // Ledgers
 // ---------------------------------------------------------------------------

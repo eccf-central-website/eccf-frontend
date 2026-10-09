@@ -250,10 +250,17 @@ export type WorkerRow = Omit<SafeWorker, 'team' | '_type'> & {
   team: string
 }
 
-/** Attendance ledger row: attendee references collapsed to a count. */
+export interface AttendanceAttendee {
+  _id: string
+  fullName: string
+  team?: string
+}
+
+/** Attendance ledger row: attendee references collapsed to a count, with optional attendee details. */
 export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees' | 'team'> & {
   attendeeCount: number
   teamName?: string
+  attendees?: AttendanceAttendee[]
 }
 
 /** Finance ledger row as listed in the dashboard. */
