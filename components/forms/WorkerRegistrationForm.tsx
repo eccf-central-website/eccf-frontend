@@ -11,32 +11,15 @@ import {
   Upload,
   UserCheck,
   ShieldCheck,
-  Sparkles,
   Eye,
   EyeOff,
-  Building,
-  Calendar,
-  Mail,
   User,
   ShieldAlert,
   RotateCcw,
 } from 'lucide-react'
 import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
+import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import type { WorkerRole } from '@/types'
-
-const FELLOWSHIP_TEAMS = [
-  'Choir (Voice of Grace)',
-  'Media & Technical',
-  'Ushering & Protocol',
-  'Welfare',
-  'Academic',
-  'Prayer & Intercession',
-  'Organizing & Logistics',
-  'Bible Study',
-  'Evangelism & Follow-up',
-  'Drama',
-  'Publicity & Design',
-]
 
 const HALLS_OF_RESIDENCE = [
   'Hall 1',
@@ -68,7 +51,7 @@ export function WorkerRegistrationForm() {
 
   // Exco Fields
   const [isExco, setIsExco] = useState(false)
-  const [requestedRole, setRequestedRole] = useState<WorkerRole>('hall_rep')
+  const [requestedRole, setRequestedRole] = useState<WorkerRole>('team_lead')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -196,8 +179,8 @@ export function WorkerRegistrationForm() {
   // Render Success Screen
   if (successResult?.ok) {
     return (
-      <div className="bg-white text-slate-900 shadow-2xl rounded-[32px] border border-stone-200/90 p-8 sm:p-14 w-full max-w-xl mx-auto text-center space-y-6">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600">
+      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-4">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 border-2 border-emerald-300 shadow-sm">
           <CheckCircle2 className="h-10 w-10" />
         </div>
         <div className="space-y-2">
@@ -210,7 +193,7 @@ export function WorkerRegistrationForm() {
         </div>
 
         {successResult.isExco && (
-          <div className="p-5 rounded-2xl bg-sky-50 border border-sky-200/80 text-left space-y-2">
+          <div className="p-5 rounded-2xl bg-sky-50/90 border-2 border-sky-200 text-left space-y-2 shadow-xs">
             <div className="flex items-center gap-2 font-bold text-sky-950 text-sm">
               <ShieldCheck className="h-5 w-5 text-sky-600" />
               <span>Exco Dashboard Access</span>
@@ -229,7 +212,7 @@ export function WorkerRegistrationForm() {
         <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"
-            className="flex h-14 items-center justify-center rounded-full bg-slate-900 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
+            className="flex h-14 items-center justify-center rounded-xl bg-slate-900 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
           >
             Return to Homepage
           </Link>
@@ -241,7 +224,7 @@ export function WorkerRegistrationForm() {
               setPhoneNumber('')
               setIsReturning(false)
             }}
-            className="flex h-14 items-center justify-center rounded-full border border-stone-300 px-6 text-sm font-semibold text-slate-700 hover:bg-stone-50 transition-all"
+            className="flex h-14 items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
           >
             <RotateCcw className="h-4 w-4 mr-2" /> Register Another Member
           </button>
@@ -251,18 +234,18 @@ export function WorkerRegistrationForm() {
   }
 
   return (
-    <div className="bg-white text-slate-900 shadow-2xl rounded-[32px] border border-stone-200/90 w-full max-w-2xl mx-auto overflow-hidden">
+    <div className="w-full max-w-2xl mx-auto space-y-8">
       {/* Visual Progress Bar Header */}
-      <div className="border-b border-stone-100 bg-[#fafaf9] px-6 py-4 sm:px-8">
-        <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-500 mb-2">
-          <span>{isReturning ? 'Returning Worker Refresh' : 'New Worker Intake'}</span>
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-600 font-mono">
+          <span className="text-[#0077cc]">{isReturning ? 'Returning Worker Refresh' : 'New Worker Intake'}</span>
           <span>
             Step {step} of {totalSteps}
           </span>
         </div>
-        <div className="h-2 w-full rounded-full bg-stone-200 overflow-hidden">
+        <div className="h-2.5 w-full rounded-full bg-slate-200 overflow-hidden shadow-inner">
           <motion.div
-            className="h-full bg-[#0077cc] rounded-full"
+            className="h-full bg-gradient-to-r from-[#0077cc] to-[#0095ff] rounded-full"
             initial={false}
             animate={{ width: `${(step / totalSteps) * 100}%` }}
             transition={{ duration: 0.35, ease: 'easeInOut' }}
@@ -271,10 +254,10 @@ export function WorkerRegistrationForm() {
       </div>
 
       {/* Main Interactive Container */}
-      <div className="p-6 sm:p-10 md:p-12">
+      <div className="space-y-6">
         {/* Error Notification */}
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-start gap-3">
+          <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 text-sm font-semibold flex items-start gap-3 shadow-xs">
             <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
             <span>{error}</span>
           </div>
@@ -316,14 +299,14 @@ export function WorkerRegistrationForm() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="e.g. 0816 873 0661"
-                    className="flex h-16 w-full rounded-2xl border-2 border-stone-200 bg-[#fafaf9] px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all shadow-inner"
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={checkingPhone || phoneNumber.trim().length < 8}
-                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-[#0077cc] px-8 text-base sm:text-lg font-bold text-white transition-all hover:bg-sky-600 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                 >
                   {checkingPhone ? (
                     <span className="inline-flex items-center gap-2">
