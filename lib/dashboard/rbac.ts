@@ -34,12 +34,13 @@ export type DashboardPermission =
   /** Overview cards about people (first-timers, welfare, workers) */
   | 'stats:people'
 
-export const ROLES: readonly WorkerRole[] = ['admin', 'hall_rep', 'finance']
+export const ROLES: readonly WorkerRole[] = ['admin', 'team_lead', 'finance', 'hall_rep']
 
 export const ROLE_LABELS: Record<WorkerRole, string> = {
-  admin: 'Admin',
-  hall_rep: 'Hall Rep',
+  admin: 'CSGB Admin',
+  team_lead: 'Team Leader',
   finance: 'Finance',
+  hall_rep: 'Hall Rep',
 }
 
 /** URL path for each section. Intake paths match revalidatePath() calls in app/actions/intake-actions.ts. */
@@ -54,23 +55,23 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
 }
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
-  overview: ['admin', 'hall_rep', 'finance'],
-  workers: ['admin', 'hall_rep'],
-  attendance: ['admin', 'hall_rep'],
+  overview: ['admin', 'team_lead', 'finance', 'hall_rep'],
+  workers: ['admin', 'team_lead', 'hall_rep'],
+  attendance: ['admin', 'team_lead', 'hall_rep'],
   finance: ['admin', 'finance'],
   firstTimers: ['admin', 'hall_rep'],
-  welfare: ['admin', 'hall_rep'],
-  prayerRequests: ['admin', 'hall_rep'],
+  welfare: ['admin', 'team_lead', 'hall_rep'],
+  prayerRequests: ['admin', 'team_lead', 'hall_rep'],
 }
 
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
-  'attendance:create': ['admin', 'hall_rep'],
+  'attendance:create': ['admin', 'team_lead', 'hall_rep'],
   'finance:create': ['admin', 'finance'],
-  'welfare:resolve': ['admin', 'hall_rep'],
-  // ADR-002 §5.2.1: manual sync is admin or hall_rep
-  'sermons:sync': ['admin', 'hall_rep'],
+  'welfare:resolve': ['admin', 'team_lead', 'hall_rep'],
+  // ADR-002 §5.2.1: manual sync is admin, media team_lead, or hall_rep
+  'sermons:sync': ['admin', 'team_lead', 'hall_rep'],
   'stats:finance': ['admin', 'finance'],
-  'stats:people': ['admin', 'hall_rep'],
+  'stats:people': ['admin', 'team_lead', 'hall_rep'],
 }
 
 export function canAccessSection(role: WorkerRole, section: DashboardSection): boolean {
@@ -84,6 +85,11 @@ export function hasPermission(role: WorkerRole, permission: DashboardPermission)
 /** hall_rep sees only workers from their own hall; other roles see all. */
 export function isHallScoped(role: WorkerRole): boolean {
   return role === 'hall_rep'
+}
+
+/** team_lead sees workers and attendance scoped to their operational team. */
+export function isTeamScoped(role: WorkerRole): boolean {
+  return role === 'team_lead'
 }
 
 /**

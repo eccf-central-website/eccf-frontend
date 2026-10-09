@@ -67,14 +67,15 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
 }
 
 const sessionWorkers: WorkerRow[] = [
-  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', team: 'Exco', hall: 'Hall A', role: 'admin' }),
-  makeWorker(1, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', team: 'Welfare', hall: 'Hall B', role: 'hall_rep' }),
-  makeWorker(2, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', team: 'Finance', hall: 'Hall C', role: 'finance' }),
+  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President' }),
+  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', team: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator' }),
+  makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', team: 'Welfare', hall: 'Hall B', role: 'hall_rep' }),
+  makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary' }),
 ]
 
 export const MOCK_WORKERS: WorkerRow[] = [
   ...sessionWorkers,
-  ...Array.from({ length: 27 }, (_, i) => makeWorker(i + 3)),
+  ...Array.from({ length: 27 }, (_, i) => makeWorker(i + 4)),
 ]
 
 /** Hall of a worker by id — mirrors WORKER_HALL_BY_ID_QUERY */
@@ -114,13 +115,17 @@ const SERVICE_ROTATION: AttendanceRow['serviceType'][] = ['Sunday Service', 'Wed
 export const MOCK_ATTENDANCE: AttendanceRow[] = Array.from({ length: 14 }, (_, i) => {
   const serviceType = SERVICE_ROTATION[i % SERVICE_ROTATION.length]
   const base = serviceType === 'Sunday Service' ? 310 : serviceType === 'Wednesday Bible Study' ? 140 : serviceType === 'Team Meeting' ? 35 : 14
+  const teamName = serviceType === 'Team Meeting' ? TEAMS[i % TEAMS.length] : undefined
+  const meetingTitle = serviceType === 'Team Meeting' ? `${teamName} Weekly Rehearsal & Review` : undefined
   return {
     _id: `mock-att-${String(i + 1).padStart(2, '0')}`,
     date: isoDate(i * 3 + 1),
     serviceType,
+    meetingTitle,
+    teamName,
     totalCount: base + ((i * 17) % 40),
-    attendeeCount: serviceType === 'Exco Meeting' ? base : 0,
-    loggedBy: { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe' },
+    attendeeCount: serviceType === 'Exco Meeting' || serviceType === 'Team Meeting' ? base : 0,
+    loggedBy: { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo' },
   }
 })
 
