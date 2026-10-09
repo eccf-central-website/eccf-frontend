@@ -62,6 +62,73 @@ async function resolveTeamReference(
   return { _type: 'reference', _ref: newTeam._id }
 }
 
+export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
+  found: boolean
+  worker?: {
+    fullName: string
+    team: string
+    hall?: string
+    roomNumber?: string
+    email?: string
+    birthDate?: string
+    profileImageUrl?: string
+    role?: WorkerRole
+    isExcoApproved?: boolean
+  }
+}> {
+  try {
+    const cleanPhone = phoneNumber.trim().replace(/\s+/g, '')
+    if (cleanPhone.length < 8) return { found: false }
+
+    const existing = await sanityWriteClient.fetch<{
+      fullName?: string
+      team?: string
+      hall?: string
+      roomNumber?: string
+      email?: string
+      birthDate?: string
+      profileImageUrl?: string
+      role?: WorkerRole
+      isExcoApproved?: boolean
+    }>(
+      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+        fullName,
+        "team": coalesce(team->name, team),
+        hall,
+        roomNumber,
+        email,
+        birthDate,
+        profileImageUrl,
+        role,
+        isExcoApproved
+      }`,
+      { phoneNumber: cleanPhone }
+    )
+
+    if (!existing || !existing.fullName) {
+      return { found: false }
+    }
+
+    return {
+      found: true,
+      worker: {
+        fullName: existing.fullName,
+        team: existing.team || 'General',
+        hall: existing.hall,
+        roomNumber: existing.roomNumber,
+        email: existing.email,
+        birthDate: existing.birthDate,
+        profileImageUrl: existing.profileImageUrl,
+        role: existing.role,
+        isExcoApproved: existing.isExcoApproved,
+      },
+    }
+  } catch (err) {
+    console.error('[lookupWorkerByPhone] Error:', err)
+    return { found: false }
+  }
+}
+
 export async function registerWorker(
   input: WorkerRegistrationInput
 ): Promise<WorkerRegistrationResult> {
