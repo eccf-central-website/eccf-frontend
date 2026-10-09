@@ -53,6 +53,7 @@ import {
   mockHallForWorker,
 } from '../mock/data'
 import { stripPII } from './pii'
+import { lagosDaysAgo, lagosMonthStart } from '../dates'
 
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
 
@@ -95,12 +96,14 @@ function teamScope(session: ECCFSession): string | null {
   return session.team || '__no-team__'
 }
 
+/** Boundaries follow the fellowship's calendar (Africa/Lagos), not UTC; see ../dates. */
 function monthStart(now = new Date()): string {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().split('T')[0]
+  return lagosMonthStart(now)
 }
 
+/** Start of the rolling 7-day window (today and the 6 days before), Lagos calendar. */
 function weekStart(now = new Date()): string {
-  return new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  return lagosDaysAgo(6, now)
 }
 
 // ---------------------------------------------------------------------------

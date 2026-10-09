@@ -13,6 +13,8 @@ interface FeedSkeletonProps {
   items?: number
   /** Status tabs above the feed (welfare). */
   tabs?: boolean
+  /** Search box above the feed; off for compact lists (overview activity). */
+  search?: boolean
   label?: string
   announce?: boolean
   className?: string
@@ -23,6 +25,7 @@ const TITLE_WIDTHS = ['w-40', 'w-32', 'w-48', 'w-36']
 export default function FeedSkeleton({
   items = 4,
   tabs = false,
+  search = true,
   label = 'Loading feed…',
   announce = true,
   className,
@@ -35,7 +38,7 @@ export default function FeedSkeleton({
           <Skeleton className="h-10 w-24" />
         </div>
       )}
-      <Skeleton className="h-10 w-full sm:max-w-xs" />
+      {search && <Skeleton className="h-10 w-full sm:max-w-xs" />}
 
       <ul className="space-y-3">
         {Array.from({ length: items }, (_, i) => (

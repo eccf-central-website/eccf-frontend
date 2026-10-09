@@ -11,8 +11,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import { CalendarCheck, HeartHandshake, Plus, Scale, TrendingUp, UserPlus } from 'lucide-react'
 import { isMockAuthEnabled } from '@/lib/dashboard/auth'
+import { formatNaira } from '@/lib/dashboard/format'
+import ActivityList, { ActivityItem, RelativeTime } from '@/components/dashboard/overview/ActivityList'
+import StatCard from '@/components/dashboard/overview/StatCard'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import EmptyState from '@/components/dashboard/states/EmptyState'
 import ErrorState from '@/components/dashboard/states/ErrorState'
@@ -55,6 +58,49 @@ export default function UiStatesGalleryPage() {
       <GallerySection title="Page header + stat grid" note="1 column, 2 from sm, 4 from xl.">
         <PageHeaderSkeleton action announce={false} />
         <StatGridSkeleton />
+      </GallerySection>
+
+      <GallerySection
+        title="Stat cards"
+        note="Every tone, linked and unlinked. Tone colours the icon chip only; the caption carries the meaning."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard id="g-primary" label="First-timers this month" icon={<UserPlus />} value="12" rawValue={12} caption="Since 1 October" tone="primary" href="/dashboard/first-timers" linkLabel="View first-timers" />
+          <StatCard id="g-warning" label="Pending welfare requests" icon={<HeartHandshake />} value="3" rawValue={3} caption="Needs follow-up" tone="warning" href="/dashboard/welfare" linkLabel="View welfare" />
+          <StatCard id="g-success" label="Income this month" icon={<TrendingUp />} value={formatNaira(143500)} rawValue={143500} caption="Since 1 October" tone="success" />
+          <StatCard id="g-destructive" label="Net this month" icon={<Scale />} value={formatNaira(-4000)} rawValue={-4000} caption="Deficit" tone="destructive" />
+          <StatCard id="g-muted" label="Last service attendance" icon={<CalendarCheck />} value="—" caption="No services recorded yet" tone="muted" />
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Recent activity" note="List, empty and inline block error. Stacked below lg.">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ActivityList id="g-activity" title="Recent first-timers" viewAllHref="/dashboard/first-timers" viewAllNoun="first-timers">
+            <ul className="divide-y">
+              <ActivityItem aside={<RelativeTime value="2026-10-08" title="8 Oct 2026" label="yesterday" />}>
+                <p className="truncate text-sm font-medium text-foreground">Sample Person</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">Economics · 100 level · Hall A</p>
+              </ActivityItem>
+            </ul>
+          </ActivityList>
+          <ActivityList id="g-activity-empty" title="Recent welfare requests" viewAllHref="/dashboard/welfare" viewAllNoun="welfare requests">
+            <EmptyState
+              headingLevel="h4"
+              icon={<HeartHandshake />}
+              title="No welfare requests yet"
+              description="Requests submitted through the Connect form will show up here."
+              className="rounded-none border-0 bg-transparent py-10 sm:py-10"
+            />
+          </ActivityList>
+        </div>
+        <ErrorState
+          headingLevel="h3"
+          title="This section couldn't load"
+          description="Something went wrong while fetching it. The rest of the page is unaffected."
+          digest="1234567890"
+          backHref={null}
+          className="py-8 sm:py-10"
+        />
       </GallerySection>
 
       <GallerySection title="Table" note="Table from md; stacked cards below md.">
