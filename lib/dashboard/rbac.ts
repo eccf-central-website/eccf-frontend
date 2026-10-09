@@ -37,7 +37,7 @@ export type DashboardPermission =
 export const ROLES: readonly WorkerRole[] = ['admin', 'team_lead', 'finance', 'hall_rep']
 
 export const ROLE_LABELS: Record<WorkerRole, string> = {
-  admin: 'Admin',
+  admin: 'CSGB Admin',
   team_lead: 'Team Leader',
   finance: 'Finance',
   hall_rep: 'Hall Rep',

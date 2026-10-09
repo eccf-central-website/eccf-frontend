@@ -385,7 +385,7 @@ export function WorkerRegistrationForm() {
                 <span>Are you an Exco member?</span>
               </label>
               <p className="text-xs text-slate-600 mt-0.5">
-                Check this if you serve on the fellowship Executive Council.
+                Check this if you serve on the fellowship Executive Committee or CSGB.
               </p>
             </div>
             <input
@@ -423,7 +423,7 @@ export function WorkerRegistrationForm() {
                 >
                   <option value="hall_rep">Hall Representative (Hostel Oversight)</option>
                   <option value="finance">Finance Team (Ledgers & Accounts)</option>
-                  <option value="admin">Executive Council / Administrator</option>
+                  <option value="admin">CSGB — Christian Students&apos; Governing Board (Admin)</option>
                 </select>
               </div>
 
