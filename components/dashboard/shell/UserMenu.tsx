@@ -9,12 +9,13 @@
 
 'use client'
 
-import { ChevronDown, ExternalLink, LogOut, UserRound } from 'lucide-react'
+import { ChevronDown, ExternalLink, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import type { WorkerRole } from '@/types'
 import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
+import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,9 @@ interface UserMenuProps {
 }
 
 export default function UserMenu({ role, team, devTools }: UserMenuProps) {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -55,6 +59,19 @@ export default function UserMenu({ role, team, devTools }: UserMenuProps) {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={toggleTheme} className="h-10 cursor-pointer">
+          {isDark ? (
+            <>
+              <Sun aria-hidden="true" className="text-amber-400" />
+              Switch to light theme
+            </>
+          ) : (
+            <>
+              <Moon aria-hidden="true" className="text-muted-foreground" />
+              Switch to dark theme
+            </>
+          )}
+        </DropdownMenuItem>
         <DropdownMenuItem asChild className="h-10 cursor-pointer">
           <a href="/" target="_blank" rel="noopener noreferrer">
             <ExternalLink aria-hidden="true" />

@@ -16,6 +16,7 @@ import { SECTION_PATHS, sectionForPath, type DashboardSection } from '@/lib/dash
 import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
+import { ThemeToggle } from '@/components/dashboard/theme/ThemeToggle'
 
 interface TopBarProps {
   sections: readonly DashboardSection[]
@@ -64,6 +65,7 @@ export default function TopBar({ sections, role, team, actions, devTools }: TopB
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {actions}
+        <ThemeToggle />
         <UserMenu role={role} team={team} devTools={devTools} />
       </div>
     </header>

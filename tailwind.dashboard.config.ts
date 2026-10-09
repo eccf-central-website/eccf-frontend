@@ -10,6 +10,7 @@ import tailwindcssAnimate from "tailwindcss-animate";
  * (loaded on every route) already ships it.
  */
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/[(]dashboard[)]/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/dashboard/**/*.{js,ts,jsx,tsx,mdx}",
