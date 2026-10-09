@@ -16,6 +16,7 @@ import {
   User,
   ShieldAlert,
   RotateCcw,
+  Loader2,
 } from 'lucide-react'
 import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
@@ -26,8 +27,10 @@ const HALLS_OF_RESIDENCE = [
   'Hall 2',
   'Hall 3',
   'Hall 4',
-  'Postgraduate Hall',
-  'Off-Campus',
+  'Hall 5',
+  'Hall 6',
+  'Hall 7',
+  'Hall 8',
 ]
 
 export function WorkerRegistrationForm() {
@@ -287,10 +290,6 @@ export function WorkerRegistrationForm() {
                 <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
                   What is your phone number?
                 </h2>
-                <p className="text-sm sm:text-base text-slate-600">
-                  We use this as your unique fellowship ID to recognize existing workers and prevent
-                  duplicates.
-                </p>
               </div>
 
               <form onSubmit={handlePhoneSubmit} className="space-y-6">
@@ -309,12 +308,12 @@ export function WorkerRegistrationForm() {
                 <button
                   type="submit"
                   disabled={checkingPhone || phoneNumber.trim().length < 8}
-                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                 >
                   {checkingPhone ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Checking Fellowship Records…
+                    <span className="inline-flex items-center justify-center gap-2.5">
+                      <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
+                      <span>Checking Fellowship Records…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
@@ -396,7 +395,7 @@ export function WorkerRegistrationForm() {
                     required
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
-                    placeholder="e.g. Room 204 or Block A-12"
+                    placeholder="e.g. AG 01"
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -568,9 +567,16 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={submitting}
                   onClick={handleFinalSubmit}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  {submitting ? 'Saving Location…' : 'Confirm & Update Location 🎉'}
+                  {submitting ? (
+                    <span className="inline-flex items-center justify-center gap-2.5">
+                      <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
+                      <span>Saving Location…</span>
+                    </span>
+                  ) : (
+                    'Confirm & Update Location 🎉'
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -801,7 +807,7 @@ export function WorkerRegistrationForm() {
                     required
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
-                    placeholder="e.g. Room 204 or Block A-12"
+                    placeholder="e.g. AG 01"
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -1180,9 +1186,16 @@ export function WorkerRegistrationForm() {
                   type="button"
                   disabled={submitting || !ndprConsent}
                   onClick={handleFinalSubmit}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  {submitting ? 'Submitting Registration…' : 'Complete Registration 🎉'}
+                  {submitting ? (
+                    <span className="inline-flex items-center justify-center gap-2.5">
+                      <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
+                      <span>Submitting Registration…</span>
+                    </span>
+                  ) : (
+                    'Complete Registration 🎉'
+                  )}
                 </button>
               </div>
             </motion.div>
