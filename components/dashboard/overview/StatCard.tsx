@@ -42,6 +42,8 @@ export interface StatCardProps {
   /** Section link; omit when the role can't access the section. */
   href?: string
   linkLabel?: string
+  /** h4 when the card sits under a group heading. */
+  headingLevel?: 'h3' | 'h4'
   className?: string
 }
 
@@ -55,6 +57,7 @@ export default function StatCard({
   tone = 'primary',
   href,
   linkLabel,
+  headingLevel: Heading = 'h3',
   className,
 }: StatCardProps) {
   const labelId = `${id}-label`
@@ -69,9 +72,9 @@ export default function StatCard({
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        <h3 id={labelId} className="text-sm font-medium text-muted-foreground">
+        <Heading id={labelId} className="text-sm font-medium text-muted-foreground">
           {label}
-        </h3>
+        </Heading>
         <div
           aria-hidden="true"
           className={cn(
