@@ -4,9 +4,9 @@
  * instead of the whole page falling through to dashboard/error.tsx.
  *
  * Wrap it around a <Suspense> boundary. An error thrown by the async Server
- * Component inside is caught here and shown as an inline ErrorState; Retry
- * refreshes Server Component data and clears the boundary in one
- * transition (see ErrorState). Like ErrorState it never renders
+ * Component inside is caught here and shown as an inline ErrorState. Retry
+ * refreshes Server Component data; the boundary clears itself when the
+ * fresh payload arrives (see componentDidUpdate). Like ErrorState it never renders
  * error.message, only the digest. Next's redirect()/notFound() signals are
  * rethrown so the router still handles them.
  */
@@ -46,6 +46,13 @@ export default class BlockErrorBoundary extends Component<BlockErrorBoundaryProp
   componentDidCatch(error: BoundaryError) {
     // Dev visibility only; the UI never shows error.message.
     console.error(error)
+  }
+
+  componentDidUpdate(prevProps: BlockErrorBoundaryProps) {
+    // New children mean a fresh RSC payload arrived (Retry's refresh, or any
+    // router.refresh()). Try again with it: reset() alone re-renders the
+    // stale payload, which throws again before the refresh lands.
+    if (this.state.error && prevProps.children !== this.props.children) this.reset()
   }
 
   reset = () => this.setState({ error: null })

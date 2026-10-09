@@ -19,12 +19,11 @@ import { canAccessSection, hasPermission, ROLE_LABELS, SECTION_PATHS } from '@/l
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import ActivityList from '@/components/dashboard/overview/ActivityList'
-import OverviewStats, { FINANCE_CARD_COUNT, PEOPLE_CARD_COUNT } from '@/components/dashboard/overview/OverviewStats'
+import OverviewStats, { OverviewStatsSkeleton } from '@/components/dashboard/overview/OverviewStats'
 import RecentFirstTimers from '@/components/dashboard/overview/RecentFirstTimers'
 import RecentWelfare from '@/components/dashboard/overview/RecentWelfare'
 import BlockErrorBoundary from '@/components/dashboard/states/BlockErrorBoundary'
 import FeedSkeleton from '@/components/dashboard/states/FeedSkeleton'
-import { StatGridSkeleton } from '@/components/dashboard/states/StatCardSkeleton'
 import { Badge } from '@/components/dashboard/ui/badge'
 
 export const dynamic = 'force-dynamic'
@@ -36,9 +35,8 @@ function ActivitySkeleton() {
 
 export default async function DashboardOverviewPage() {
   const session = await requireSession()
-  const statCount =
-    (hasPermission(session.role, 'stats:people') ? PEOPLE_CARD_COUNT : 0) +
-    (hasPermission(session.role, 'stats:finance') ? FINANCE_CARD_COUNT : 0)
+  const showPeople = hasPermission(session.role, 'stats:people')
+  const showFinance = hasPermission(session.role, 'stats:finance')
   const showFirstTimers = canAccessSection(session.role, 'firstTimers')
   const showWelfare = canAccessSection(session.role, 'welfare')
 
@@ -55,7 +53,7 @@ export default async function DashboardOverviewPage() {
         <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across the fellowship.</p>
       </div>
       <BlockErrorBoundary title="Statistics couldn't load">
-        <Suspense fallback={<StatGridSkeleton count={statCount} label="Loading statistics…" />}>
+        <Suspense fallback={<OverviewStatsSkeleton people={showPeople} finance={showFinance} />}>
           <OverviewStats session={session} />
         </Suspense>
       </BlockErrorBoundary>
@@ -68,7 +66,7 @@ export default async function DashboardOverviewPage() {
               viewAllHref={SECTION_PATHS.firstTimers}
               viewAllNoun="first-timers"
             >
-              <BlockErrorBoundary className="rounded-none border-0 py-8 sm:py-8">
+              <BlockErrorBoundary title="Recent first-timers couldn't load" className="rounded-none border-0 py-8 sm:py-8">
                 <Suspense fallback={<ActivitySkeleton />}>
                   <RecentFirstTimers session={session} />
                 </Suspense>
@@ -82,7 +80,7 @@ export default async function DashboardOverviewPage() {
               viewAllHref={SECTION_PATHS.welfare}
               viewAllNoun="welfare requests"
             >
-              <BlockErrorBoundary className="rounded-none border-0 py-8 sm:py-8">
+              <BlockErrorBoundary title="Recent welfare requests couldn't load" className="rounded-none border-0 py-8 sm:py-8">
                 <Suspense fallback={<ActivitySkeleton />}>
                   <RecentWelfare session={session} />
                 </Suspense>

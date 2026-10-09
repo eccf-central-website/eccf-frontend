@@ -33,6 +33,8 @@ import type {
   PeopleStats,
 } from '@/lib/dashboard/types'
 import EmptyState from '@/components/dashboard/states/EmptyState'
+import { StatGridSkeleton } from '@/components/dashboard/states/StatCardSkeleton'
+import { Skeleton } from '@/components/dashboard/ui/skeleton'
 import StatCard from './StatCard'
 
 /** True when the role's visible stats have nothing to show yet. */
@@ -224,6 +226,25 @@ export default async function OverviewStats({ session }: { session: ECCFSession 
     <div className="space-y-6">
       {stats.people && <PeopleCards stats={stats.people} role={session.role} />}
       {stats.finance && <FinanceCards stats={stats.finance} role={session.role} />}
+    </div>
+  )
+}
+
+/**
+ * Fallback for OverviewStats: the same groups (heading + grid) the role
+ * will see, so nothing jumps when the cards stream in. Only the first
+ * grid announces "Loading statistics…".
+ */
+export function OverviewStatsSkeleton({ people, finance }: { people: boolean; finance: boolean }) {
+  const groups = [...(people ? [PEOPLE_CARD_COUNT] : []), ...(finance ? [FINANCE_CARD_COUNT] : [])]
+  return (
+    <div className="space-y-6">
+      {groups.map((count, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton aria-hidden="true" className="h-3 w-16" />
+          <StatGridSkeleton count={count} label="Loading statistics…" announce={i === 0} />
+        </div>
+      ))}
     </div>
   )
 }
