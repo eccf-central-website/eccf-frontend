@@ -29,6 +29,7 @@ import AboutPillars from '@/components/about/AboutPillars'
 import AboutLeadership, { ExcoMember } from '@/components/about/AboutLeadership'
 import AboutTeams from '@/components/about/AboutTeams'
 import AboutCTA from '@/components/about/AboutCTA'
+import AboutScrollThemeWrapper from '@/components/about/AboutScrollThemeWrapper'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -210,45 +211,49 @@ export default async function AboutPage() {
         milestones={aboutData?.milestones}
       />
 
-      {/* 3. Core Pillars (Spiritual Dynamites, Academic Giants, Kingdom Community) */}
-      <AboutPillars
-        headline={aboutData?.pillarsHeadline}
-        lead={aboutData?.pillarsLead}
-        pillar1={{
-          title: aboutData?.pillar1Title,
-          subtitle: aboutData?.pillar1Subtitle,
-          scripture: aboutData?.pillar1Scripture,
-          desc: aboutData?.pillar1Desc,
-          points: aboutData?.pillar1Points,
-        }}
-        pillar2={{
-          title: aboutData?.pillar2Title,
-          subtitle: aboutData?.pillar2Subtitle,
-          scripture: aboutData?.pillar2Scripture,
-          desc: aboutData?.pillar2Desc,
-          points: aboutData?.pillar2Points,
-        }}
-        pillar3={{
-          title: aboutData?.pillar3Title,
-          subtitle: aboutData?.pillar3Subtitle,
-          scripture: aboutData?.pillar3Scripture,
-          desc: aboutData?.pillar3Desc,
-          points: aboutData?.pillar3Points,
-        }}
-      />
-
-      {/* 4. Our Team — Executive Leadership (CSGB & Ministry Directors) */}
-      <AboutLeadership
-        headline={aboutData?.leadershipHeadline}
-        lead={aboutData?.leadershipLead}
-        excos={excos}
-      />
-
-      {/* 5. Fellowship Operational Teams (All 14 Units) */}
-      <AboutTeams
-        headline={aboutData?.teamsHeadline}
-        lead={aboutData?.teamsLead}
-        teams={teams}
+      {/* 3, 4, 5. Dynamic Scroll-Driven Theme Transition: Pillars -> Leadership -> Teams */}
+      <AboutScrollThemeWrapper
+        pillars={
+          <AboutPillars
+            headline={aboutData?.pillarsHeadline}
+            lead={aboutData?.pillarsLead}
+            pillar1={{
+              title: aboutData?.pillar1Title,
+              subtitle: aboutData?.pillar1Subtitle,
+              scripture: aboutData?.pillar1Scripture,
+              desc: aboutData?.pillar1Desc,
+              points: aboutData?.pillar1Points,
+            }}
+            pillar2={{
+              title: aboutData?.pillar2Title,
+              subtitle: aboutData?.pillar2Subtitle,
+              scripture: aboutData?.pillar2Scripture,
+              desc: aboutData?.pillar2Desc,
+              points: aboutData?.pillar2Points,
+            }}
+            pillar3={{
+              title: aboutData?.pillar3Title,
+              subtitle: aboutData?.pillar3Subtitle,
+              scripture: aboutData?.pillar3Scripture,
+              desc: aboutData?.pillar3Desc,
+              points: aboutData?.pillar3Points,
+            }}
+          />
+        }
+        leadership={
+          <AboutLeadership
+            headline={aboutData?.leadershipHeadline}
+            lead={aboutData?.leadershipLead}
+            excos={excos}
+          />
+        }
+        teams={
+          <AboutTeams
+            headline={aboutData?.teamsHeadline}
+            lead={aboutData?.teamsLead}
+            teams={teams}
+          />
+        }
       />
 
       {/* 6. High-Impact Action CTA */}

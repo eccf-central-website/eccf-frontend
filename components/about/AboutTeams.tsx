@@ -212,7 +212,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
   }, [allTeams, activeCategory, searchQuery])
 
   return (
-    <section id="teams" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden border-b border-stone-200">
+    <section id="teams" className="py-16 sm:py-24 bg-transparent relative overflow-hidden border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         
         {/* Section Header */}

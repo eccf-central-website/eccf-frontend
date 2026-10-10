@@ -495,23 +495,8 @@ export default function AboutLeadership({
   return (
     <section
       id="leadership"
-      className="pt-24 sm:pt-36 pb-16 sm:pb-24 bg-[#0d1117] text-white relative overflow-hidden"
+      className="py-16 sm:py-24 bg-transparent text-white relative overflow-hidden"
     >
-      {/* ================================================================ */}
-      {/* GRADUAL SCROLL TRANSITION: Light (#fafaf9) smoothly dissolves   */}
-      {/* into midnight dark (#0d1117) with zero harsh line               */}
-      {/* ================================================================ */}
-      <div
-        aria-hidden="true"
-        className="absolute top-0 left-0 right-0 h-44 sm:h-64 bg-gradient-to-b from-[#fafaf9] via-[#0f172a] via-50% to-[#0d1117] pointer-events-none -mt-px z-0"
-      />
-
-      {/* Bottom gradual transition back into Teams section (#fafaf9) */}
-      <div
-        aria-hidden="true"
-        className="absolute bottom-0 left-0 right-0 h-36 sm:h-52 bg-gradient-to-b from-transparent via-[#0d1117]/80 to-[#fafaf9] pointer-events-none -mb-px z-0"
-      />
-
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-[#0095ff]/10 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
