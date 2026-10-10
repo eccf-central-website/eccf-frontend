@@ -25,7 +25,6 @@ export interface OperationalTeam {
   description: string
   imageUrl?: string
   category: 'spiritual' | 'music_arts' | 'logistics' | 'media_academic'
-  meetingTime?: string
 }
 
 interface AboutTeamsProps {
@@ -49,7 +48,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Anchors weekly word exposition, outlines interactive Bible study modules, and equips students with sound scriptural foundations to defend their Christian faith.',
     imageUrl: '/gallery/gallery-4.jpg',
-    meetingTime: 'Tuesdays 5:30 PM',
   },
   {
     name: 'Prayer Team',
@@ -59,7 +57,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Maintains round-the-clock spiritual fire on campus through intercessory watches, midnight vigils, praying through fellowship services, and spiritual shielding.',
     imageUrl: '/gallery/gallery-2.jpg',
-    meetingTime: 'Mondays & Fridays 6:00 PM',
   },
   {
     name: 'Protocol Team',
@@ -69,7 +66,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Ensures divine order, ministerial hospitality, guest reception, pulpit coordination, and seamless logistics during central services and campus conferences.',
     imageUrl: '/gallery/gallery-5.jpg',
-    meetingTime: 'Saturdays 4:00 PM',
   },
   {
     name: 'Financial Team',
@@ -79,7 +75,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Stewards fellowship resources with impeccable integrity, managing accounting ledgers, project disbursements, sacrificial giving records, and financial audits.',
     imageUrl: '/gallery/gallery-6.jpg',
-    meetingTime: 'Sundays Post-Service',
   },
   {
     name: 'Choir Team',
@@ -89,7 +84,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Leads the campus congregation into the manifest presence of God through anointed choral anthems, contemporary gospel praise, and passionate worship.',
     imageUrl: '/gallery/gallery-1.jpg',
-    meetingTime: 'Thursdays 5:00 PM & Saturdays 3:00 PM',
   },
   {
     name: 'Ushering Team',
@@ -99,7 +93,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Welcomes students with radiant Christian love, manages auditorium seating, coordinates tithe and offering collections, and maintains sanctuary decorum.',
     imageUrl: '/gallery/gallery-7.jpg',
-    meetingTime: 'Sundays 7:00 AM & Wednesdays 5:00 PM',
   },
   {
     name: 'Drama/Creative Media Team',
@@ -109,7 +102,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Preaches Christ through anointed theatrical plays, dramatic monologues, spoken word poetry, and creative storytelling that bring the Gospel to life.',
     imageUrl: '/gallery/gallery-8.jpg',
-    meetingTime: 'Saturdays 2:00 PM',
   },
   {
     name: 'Outreach Team',
@@ -119,7 +111,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Spearheads aggressive hostel-to-hostel evangelism campaigns, campus gospel invasions, rural missionary trips, and fresher evangelism outreaches.',
     imageUrl: '/gallery/gallery-9.jpg',
-    meetingTime: 'Saturdays 10:00 AM',
   },
   {
     name: 'Welfare/Medical Team',
@@ -129,7 +120,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'The compassionate heartbeat of ECCF on campus, providing food support, emergency financial aid, hospital visits, and health guidance to students in need.',
     imageUrl: '/gallery/gallery-10.jpg',
-    meetingTime: 'Sundays Post-Service',
   },
   {
     name: 'Academic Team',
@@ -139,7 +129,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Drives peer tutorial groups, organizes pre-exam bootcamps, provides study materials, and mentors undergraduates to attain First Class academic distinction.',
     imageUrl: '/gallery/gallery-11.jpg',
-    meetingTime: 'Fridays 4:00 PM',
   },
   {
     name: 'Colporteur/Library Team',
@@ -149,7 +138,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Curates the fellowship lending library, disseminates Christian books, Bibles, and spiritually enriching literature to foster deep intellectual devotion.',
     imageUrl: '/gallery/gallery-12.jpg',
-    meetingTime: 'Sundays Pre-Service',
   },
   {
     name: 'Technical Team',
@@ -159,7 +147,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Manages high-fidelity live sound consoles, stage microphones, electrical power distribution, and stage equipment to deliver crisp acoustic experiences.',
     imageUrl: '/gallery/gallery-13.jpg',
-    meetingTime: 'Saturdays 4:30 PM',
   },
   {
     name: 'Media Team',
@@ -169,7 +156,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Broadcasts services live to the world, captures high-definition photography, edits video recaps, and produces digital flyers to saturate social media with Christ.',
     imageUrl: '/gallery/gallery-14.jpg',
-    meetingTime: 'Wednesdays & Saturdays',
   },
   {
     name: 'Decoration Team',
@@ -179,7 +165,6 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
     description:
       'Transforms fellowship auditoriums and conference venues into breathtaking atmospheres of worship that reflect the beauty, majesty, and order of God.',
     imageUrl: '/gallery/gallery-15.jpg',
-    meetingTime: 'Saturdays 1:00 PM',
   },
 ]
 
@@ -346,16 +331,9 @@ export default function AboutTeams({ teams }: AboutTeamsProps) {
 
                   {/* Body & Description */}
                   <div className="p-6">
-                    <p className="text-sm text-slate-700 leading-relaxed font-normal mb-4">
+                    <p className="text-sm text-slate-700 leading-relaxed font-normal">
                       {team.description}
                     </p>
-
-                    {team.meetingTime && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
-                        <span className="font-bold text-slate-700">Weekly Meeting:</span>
-                        <span>{team.meetingTime}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
