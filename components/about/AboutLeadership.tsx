@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Sparkles, User } from 'lucide-react'
+import { Shield, Sparkles } from 'lucide-react'
 
 export interface ExcoMember {
   _id?: string

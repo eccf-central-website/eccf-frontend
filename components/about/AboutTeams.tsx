@@ -221,7 +221,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto mb-12 sm:mb-16"
+          className="text-left md:text-center max-w-3xl md:mx-auto mb-10 sm:mb-16"
         >
           <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
             <Users className="h-4 w-4" />
