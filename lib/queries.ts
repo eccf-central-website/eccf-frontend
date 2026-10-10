@@ -106,7 +106,7 @@ export const GALLERY_QUERY = `
 `
 
 // ---------------------------------------------------------------------------
-// Operational Teams
+// Operational Teams & Leadership
 // ---------------------------------------------------------------------------
 
 /** Fetch all operational team units */
@@ -120,6 +120,21 @@ export const TEAMS_QUERY = `
     order,
     image,
     "imageUrl": image.asset->url
+  }
+`
+
+/** Fetch executive officers and leadership for About page */
+export const EXCOS_QUERY = `
+  *[_type == "worker" && (defined(excoPosition) || role == "admin")] | order(excoPosition asc, fullName asc) {
+    _id,
+    fullName,
+    excoPosition,
+    role,
+    team->{
+      name
+    },
+    profileImageUrl,
+    hall
   }
 `
 

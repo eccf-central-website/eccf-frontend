@@ -11,14 +11,13 @@ import { sanityClient, urlForImage } from '@/lib/sanity'
 import {
   SITE_SETTINGS_QUERY,
   SERVICES_QUERY,
-  TEAMS_QUERY,
   GALLERY_QUERY,
   LATEST_SERMONS_QUERY,
 } from '@/lib/queries'
 import HeroSection, { SiteSettingsData } from '@/components/home/HeroSection'
 import WhoWeAreSection from '@/components/home/WhoWeAreSection'
 import ServiceScheduleConsole, { ServiceItem } from '@/components/home/ServiceScheduleConsole'
-import TeamsSection, { TeamItem, GalleryItem } from '@/components/home/TeamsSection'
+import FellowshipMomentsSection, { GalleryItem } from '@/components/home/FellowshipMomentsSection'
 import LatestSermonsSection from '@/components/home/LatestSermonsSection'
 import GivingHubSection from '@/components/home/GivingHubSection'
 import PlanAVisitSection from '@/components/home/PlanAVisitSection'
@@ -26,17 +25,6 @@ import { SermonItem } from '@/components/sermons/SermonsFeed'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-
-interface RawSanityTeam {
-  _id: string
-  name: string
-  tag?: string
-  leadName?: string
-  description: string
-  order?: number
-  image?: unknown
-  imageUrl?: string
-}
 
 interface RawSanityGallery {
   _id: string
@@ -47,18 +35,14 @@ interface RawSanityGallery {
 }
 
 export default async function Home() {
-  // Concurrently fetch all live data from Sanity on the server
-  const [settings, services, rawTeams, rawGallery, latestSermons] = await Promise.all([
+  // Concurrently fetch live data from Sanity on the server
+  const [settings, services, rawGallery, latestSermons] = await Promise.all([
     sanityClient.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch siteSettings:', err)
       return null
     }),
     sanityClient.fetch<ServiceItem[]>(SERVICES_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch services:', err)
-      return []
-    }),
-    sanityClient.fetch<RawSanityTeam[]>(TEAMS_QUERY).catch((err) => {
-      console.error('[Home] Failed to fetch teams:', err)
       return []
     }),
     sanityClient.fetch<RawSanityGallery[]>(GALLERY_QUERY).catch((err) => {
@@ -70,16 +54,6 @@ export default async function Home() {
       return []
     }),
   ])
-
-  // Map teams to component format with crop and hotspot support
-  const teams: TeamItem[] = (rawTeams || []).map((t) => ({
-    _id: t._id,
-    name: t.name,
-    role: t.leadName,
-    description: t.description,
-    imageUrl: urlForImage(t.image) || t.imageUrl,
-    tag: t.tag,
-  }))
 
   // Map gallery to component format with crop and hotspot support
   const gallery: GalleryItem[] = (rawGallery || []).map((g) => ({
@@ -117,8 +91,6 @@ export default async function Home() {
       {/* 1. Hero Section (Formula 4) */}
       <HeroSection settings={settings} />
 
-
-
       {/* 2. Who We Are */}
       <WhoWeAreSection
         photo1={ministerPhoto}
@@ -131,8 +103,8 @@ export default async function Home() {
       {/* 4. Sermon Vault & Podcasts Section (Latest Messages) */}
       <LatestSermonsSection sermons={latestSermons || []} />
 
-      {/* 5. Teams & Fellowship Life Section */}
-      <TeamsSection teams={teams || []} gallery={gallery || []} />
+      {/* 5. Fellowship Life & Moments Section */}
+      <FellowshipMomentsSection gallery={gallery || []} />
 
       {/* 6. Giving Hub Section */}
       <GivingHubSection />
