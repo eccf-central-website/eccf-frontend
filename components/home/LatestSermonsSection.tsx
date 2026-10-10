@@ -28,7 +28,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
       <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-14 gap-4 text-center sm:text-left items-center sm:items-end">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-14 gap-4 text-left items-start sm:items-end">
           <div>
             <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase block mb-3 font-mono">
               SERMON VAULT &amp; PODCASTS
