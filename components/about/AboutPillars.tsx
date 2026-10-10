@@ -12,7 +12,23 @@
 import { motion } from 'framer-motion'
 import { Sparkles, Flame, GraduationCap, HeartHandshake, Check } from 'lucide-react'
 
-const PILLARS = [
+export interface PillarOverride {
+  title?: string
+  subtitle?: string
+  scripture?: string
+  desc?: string
+  points?: string[] | null
+}
+
+export interface AboutPillarsProps {
+  headline?: string
+  lead?: string
+  pillar1?: PillarOverride | null
+  pillar2?: PillarOverride | null
+  pillar3?: PillarOverride | null
+}
+
+const DEFAULT_PILLARS = [
   {
     num: '01',
     title: 'Spiritual Dynamites',
@@ -63,7 +79,49 @@ const PILLARS = [
   },
 ]
 
-export default function AboutPillars() {
+export default function AboutPillars({
+  headline,
+  lead,
+  pillar1,
+  pillar2,
+  pillar3,
+}: AboutPillarsProps) {
+  const pillars = [
+    {
+      ...DEFAULT_PILLARS[0],
+      title: pillar1?.title || DEFAULT_PILLARS[0].title,
+      subtitle: pillar1?.subtitle || DEFAULT_PILLARS[0].subtitle,
+      scripture: pillar1?.scripture || DEFAULT_PILLARS[0].scripture,
+      desc: pillar1?.desc || DEFAULT_PILLARS[0].desc,
+      bulletPoints:
+        pillar1?.points && pillar1.points.length > 0
+          ? pillar1.points
+          : DEFAULT_PILLARS[0].bulletPoints,
+    },
+    {
+      ...DEFAULT_PILLARS[1],
+      title: pillar2?.title || DEFAULT_PILLARS[1].title,
+      subtitle: pillar2?.subtitle || DEFAULT_PILLARS[1].subtitle,
+      scripture: pillar2?.scripture || DEFAULT_PILLARS[1].scripture,
+      desc: pillar2?.desc || DEFAULT_PILLARS[1].desc,
+      bulletPoints:
+        pillar2?.points && pillar2.points.length > 0
+          ? pillar2.points
+          : DEFAULT_PILLARS[1].bulletPoints,
+    },
+    {
+      ...DEFAULT_PILLARS[2],
+      title: pillar3?.title || DEFAULT_PILLARS[2].title,
+      subtitle: pillar3?.subtitle || DEFAULT_PILLARS[2].subtitle,
+      scripture: pillar3?.scripture || DEFAULT_PILLARS[2].scripture,
+      desc: pillar3?.desc || DEFAULT_PILLARS[2].desc,
+      bulletPoints:
+        pillar3?.points && pillar3.points.length > 0
+          ? pillar3.points
+          : DEFAULT_PILLARS[2].bulletPoints,
+    },
+  ]
+
   return (
     <section id="pillars" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
@@ -81,16 +139,17 @@ export default function AboutPillars() {
             CORE PILLARS &amp; MANDATE
           </span>
           <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
-            The Three Pillars That Define Us.
+            {headline || 'The Three Pillars That Define Us.'}
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-            Everything we do in ECCF is anchored on these three pillars. They guide our Sunday services, weekly Bible studies, residence hall meetings, and daily campus living.
+            {lead ||
+              'Everything we do in ECCF is anchored on these three pillars. They guide our Sunday services, weekly Bible studies, residence hall meetings, and daily campus living.'}
           </p>
         </motion.div>
 
         {/* 3-Column Editorial Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {PILLARS.map((pillar, idx) => {
+          {pillars.map((pillar, idx) => {
             const Icon = pillar.icon
             return (
               <motion.div

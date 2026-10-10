@@ -14,13 +14,23 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowDown, Flame, Compass } from 'lucide-react'
 
-interface AboutHeroProps {
+export interface AboutHeroProps {
+  badge?: string
+  subheading?: string
+  headline?: string
+  subtitle?: string
+  missionCreed?: string
+  heroImage?: string | null
   stats?: {
+    operationalTeams?: string | null
+    residenceHalls?: string | null
+    weeklyEncounters?: string | number | null
+    studentImpact?: string | null
+    // Fallback props
     activeMembers?: string | number | null
     weeklyServices?: string | number | null
     campusLegacy?: string | number | null
   } | null
-  heroImage?: string | null
 }
 
 const NAV_ANCHORS = [
@@ -31,7 +41,15 @@ const NAV_ANCHORS = [
   { label: 'Get Involved', href: '#get-involved' },
 ]
 
-export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
+export default function AboutHero({
+  badge,
+  subheading,
+  headline,
+  subtitle,
+  missionCreed,
+  heroImage,
+  stats,
+}: AboutHeroProps) {
   const primaryPhoto = heroImage || '/gallery/gallery-1.jpg'
 
   return (
@@ -50,10 +68,10 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
         >
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-xs font-bold uppercase tracking-widest text-[#0077cc]">
             <Flame className="w-3.5 h-3.5 text-[#0095ff]" />
-            About ECCF
+            {badge || 'About ECCF'}
           </span>
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest hidden sm:inline-block">
-            Edo State University Iyamho
+            {subheading || 'Edo State University Iyamho'}
           </span>
         </motion.div>
 
@@ -68,11 +86,18 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
             className="lg:col-span-7 space-y-5 sm:space-y-6 text-left"
           >
             <h1 className="font-serif font-black text-3xl sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] text-slate-950 tracking-tight leading-[1.08] text-balance">
-              Raising <span className="text-[#0077cc] underline decoration-sky-300 decoration-wavy decoration-2 underline-offset-4">Spiritual Dynamites</span> &amp; Academic Giants.
+              {headline ? (
+                <span>{headline}</span>
+              ) : (
+                <>
+                  Raising <span className="text-[#0077cc]">Spiritual Dynamites</span> &amp; Academic Giants.
+                </>
+              )}
             </h1>
 
             <p className="text-base sm:text-xl text-slate-700 leading-relaxed font-normal max-w-2xl">
-              We are the non-denominational student family on the campus of Edo State University (EDSU/ESUI), dedicated to eliminating the false compromise between spiritual power and first-class scholarship.
+              {subtitle ||
+                'We are the non-denominational student family on the campus of Edo State University (EDSU/ESUI), dedicated to eliminating the false compromise between spiritual power and first-class scholarship.'}
             </p>
 
             {/* Mission Manifesto Card (TPUSA Style) */}
@@ -82,7 +107,8 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
                 OUR CORE CREED &amp; MISSION
               </span>
               <blockquote className="text-sm sm:text-base font-serif italic text-slate-900 leading-snug">
-                &ldquo;To empower university students to walk in the fullness of the Holy Spirit, demonstrate Christ-like character in every residence hall, and graduate with unmatched intellectual excellence.&rdquo;
+                &ldquo;{missionCreed ||
+                  'To empower university students to walk in the fullness of the Holy Spirit, demonstrate Christ-like character in every residence hall, and graduate with unmatched intellectual excellence.'}&rdquo;
               </blockquote>
             </div>
           </motion.div>
@@ -127,7 +153,7 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
         >
           <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left">
             <span className="text-2xl sm:text-4xl font-black text-slate-950 font-serif block">
-              14
+              {stats?.operationalTeams || '14'}
             </span>
             <span className="text-xs sm:text-sm font-bold text-[#0077cc] uppercase tracking-wider block mt-0.5">
               Operational Teams
@@ -139,7 +165,7 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
 
           <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left">
             <span className="text-2xl sm:text-4xl font-black text-slate-950 font-serif block">
-              8
+              {stats?.residenceHalls || '8'}
             </span>
             <span className="text-xs sm:text-sm font-bold text-[#0077cc] uppercase tracking-wider block mt-0.5">
               Residence Halls
@@ -151,7 +177,7 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
 
           <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left">
             <span className="text-2xl sm:text-4xl font-black text-slate-950 font-serif block">
-              {stats?.weeklyServices || 3}
+              {stats?.weeklyEncounters || stats?.weeklyServices || '3'}
             </span>
             <span className="text-xs sm:text-sm font-bold text-[#0077cc] uppercase tracking-wider block mt-0.5">
               Weekly Encounters
@@ -163,7 +189,7 @@ export default function AboutHero({ stats, heroImage }: AboutHeroProps) {
 
           <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left">
             <span className="text-2xl sm:text-4xl font-black text-slate-950 font-serif block">
-              100%
+              {stats?.studentImpact || '100%'}
             </span>
             <span className="text-xs sm:text-sm font-bold text-[#0077cc] uppercase tracking-wider block mt-0.5">
               Student-Led Impact

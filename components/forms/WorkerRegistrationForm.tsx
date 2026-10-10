@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
+  Check,
   CheckCircle2,
   AlertCircle,
   Upload,
@@ -44,7 +45,14 @@ export function WorkerRegistrationForm() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
-  const [team, setTeam] = useState('')
+  const [teams, setTeams] = useState<string[]>([])
+
+  const toggleTeam = (t: string) => {
+    setTeams((prev) =>
+      prev.includes(t) ? prev.filter((item) => item !== t) : [...prev, t]
+    )
+  }
+
   const [hall, setHall] = useState('')
   const [roomNumber, setRoomNumber] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -118,7 +126,13 @@ export function WorkerRegistrationForm() {
         setIsReturning(true)
         setFullName(res.worker.fullName || '')
         setEmail(res.worker.email || '')
-        setTeam(res.worker.team || '')
+        if (res.worker.teams && res.worker.teams.length > 0) {
+          setTeams(res.worker.teams)
+        } else if (res.worker.team) {
+          setTeams(res.worker.team.split(',').map((t) => t.trim()).filter(Boolean))
+        } else {
+          setTeams([])
+        }
         setHall(res.worker.hall || '')
         setRoomNumber(res.worker.roomNumber || '')
         setBirthDate(res.worker.birthDate || '')
@@ -133,6 +147,7 @@ export function WorkerRegistrationForm() {
       } else {
         setIsReturning(false)
         setIsExco(false)
+        setTeams([])
         setStep(2)
       }
     } catch {
@@ -152,7 +167,8 @@ export function WorkerRegistrationForm() {
         fullName,
         email,
         phoneNumber,
-        team,
+        team: teams[0] || '',
+        teams,
         hall,
         roomNumber,
         birthDate,
@@ -346,7 +362,8 @@ export function WorkerRegistrationForm() {
                     Welcome back, {fullName}! 👋
                   </h4>
                   <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">
-                    Operational Team: <strong>{team}</strong> · Previous record:{' '}
+                    Operational Team{teams.length > 1 ? 's' : ''}:{' '}
+                    <strong>{teams.join(', ') || 'Unassigned'}</strong> · Previous record:{' '}
                     <strong>
                       {hall || 'Unassigned'}, Room {roomNumber || '—'}
                     </strong>
@@ -362,7 +379,7 @@ export function WorkerRegistrationForm() {
                   Where are you staying this session?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Update your hostel and room allocation for the current academic session.
+                  Update your hostel, room allocation, and operational teams for the current session.
                 </p>
               </div>
 
@@ -399,6 +416,50 @@ export function WorkerRegistrationForm() {
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-lg font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
+
+                <div className="pt-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Operational Team(s) <span className="text-red-500">*</span>
+                    </label>
+                    {teams.length > 0 && (
+                      <span className="text-xs font-semibold text-[#0077cc] bg-sky-100 px-2.5 py-0.5 rounded-full">
+                        {teams.length} team{teams.length > 1 ? 's' : ''} selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Select all teams you belong to for this session. A worker can serve in multiple teams.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                    {FELLOWSHIP_TEAMS.map((t) => {
+                      const isSelected = teams.includes(t)
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => toggleTeam(t)}
+                          className={`p-3 rounded-xl border-2 text-left font-semibold text-xs sm:text-sm transition-all flex items-center justify-between ${
+                            isSelected
+                              ? 'border-[#0077cc] bg-sky-50 text-[#0077cc] ring-2 ring-[#0077cc]/20 shadow-xs'
+                              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={`flex h-4 w-4 items-center justify-center rounded border text-white transition-all ${
+                                isSelected ? 'bg-[#0077cc] border-[#0077cc]' : 'border-slate-300 bg-white'
+                              }`}
+                            >
+                              {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                            </span>
+                            <span>{t}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -411,7 +472,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={!hall || !roomNumber}
+                  disabled={!hall || !roomNumber || teams.length === 0}
                   onClick={() => setStep(3)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -538,8 +599,8 @@ export function WorkerRegistrationForm() {
                   <span className="font-bold text-slate-900">{fullName}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
-                  <span className="text-slate-500 font-medium">Operational Team:</span>
-                  <span className="font-bold text-slate-900">{team}</span>
+                  <span className="text-slate-500 font-medium">Operational Team{teams.length > 1 ? 's' : ''}:</span>
+                  <span className="font-bold text-slate-900">{teams.join(', ')}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">New Residence:</span>
@@ -704,33 +765,53 @@ export function WorkerRegistrationForm() {
               className="space-y-6"
             >
               <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Step 4 of {totalSteps}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
+                    Step 4 of {totalSteps}
+                  </span>
+                  {teams.length > 0 && (
+                    <span className="text-xs font-semibold text-[#0077cc] bg-sky-100 px-2.5 py-0.5 rounded-full">
+                      {teams.length} team{teams.length > 1 ? 's' : ''} selected
+                    </span>
+                  )}
+                </div>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Which team do you serve in?
+                  Which teams do you serve in?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Select your primary fellowship operational unit.
+                  Select all operational teams you belong to. A worker can serve in more than one team.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
                 {FELLOWSHIP_TEAMS.map((t) => {
-                  const isSelected = team === t
+                  const isSelected = teams.includes(t)
                   return (
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setTeam(t)}
+                      onClick={() => toggleTeam(t)}
                       className={`p-4 rounded-2xl border-2 text-left font-semibold text-sm transition-all flex items-center justify-between ${
                         isSelected
                           ? 'border-[#0077cc] bg-sky-50 text-[#0077cc] shadow-sm ring-2 ring-[#0077cc]/20'
                           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-xs'
                       }`}
                     >
-                      <span>{t}</span>
-                      {isSelected && <CheckCircle2 className="h-5 w-5 text-[#0077cc] shrink-0" />}
+                      <span className="flex items-center gap-2.5">
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded-md border text-white transition-all ${
+                            isSelected ? 'bg-[#0077cc] border-[#0077cc]' : 'border-slate-300 bg-white'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </span>
+                        <span>{t}</span>
+                      </span>
+                      {isSelected && (
+                        <span className="text-xs font-medium text-sky-600 bg-sky-100/60 px-2 py-0.5 rounded-md">
+                          Selected
+                        </span>
+                      )}
                     </button>
                   )
                 })}
@@ -746,7 +827,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={!team}
+                  disabled={teams.length === 0}
                   onClick={() => setStep(5)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -1139,8 +1220,8 @@ export function WorkerRegistrationForm() {
                   <span className="font-bold text-slate-900">{phoneNumber}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">Team:</span>
-                  <span className="font-bold text-slate-900">{team}</span>
+                  <span className="text-slate-500 font-medium">Operational Team{teams.length > 1 ? 's' : ''}:</span>
+                  <span className="font-bold text-slate-900">{teams.join(', ')}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Hostel / Room:</span>

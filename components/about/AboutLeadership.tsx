@@ -1,11 +1,12 @@
 /**
  * AboutLeadership — "Our Team" / Executive Leadership (CSGB & Ministry Directors)
  *
- * Implements:
- * - TPUSA-style bold executive leadership showcase
- * - Dual council segmentation: Central Student Governing Board (CSGB) and Ministry Directors
- * - Live Sanity integration with canonical portfolio fallbacks for immediate richness
- * - Filter toggle between "All Leadership", "CSGB Executives", and "Ministry Directors"
+ * Inspired by Justice Nsima Akpabio Chambers (jnac.com.ng/leadership):
+ * - Grand 3:4 portrait cards with full-bleed photography
+ * - Featured President executive card commanding presence and vision
+ * - High-contrast Playfair serif typography, gold/sky blue insignia badges
+ * - Fully mobile-first: readable text sizes, smooth tap targets, zero eye strain
+ * - Live Sanity integration with canonical portfolio fallbacks
  */
 
 'use client'
@@ -13,7 +14,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Users } from 'lucide-react'
+import { Shield, Sparkles, User } from 'lucide-react'
 
 export interface ExcoMember {
   _id?: string
@@ -29,6 +30,8 @@ export interface ExcoMember {
 
 interface AboutLeadershipProps {
   excos?: ExcoMember[] | null
+  headline?: string
+  lead?: string
 }
 
 // Canonical fellowship leadership roster (CSGB & Key Directors)
@@ -36,17 +39,17 @@ const CANONICAL_EXCOS: ExcoMember[] = [
   {
     _id: 'csgb-1',
     fullName: 'Fellowship President',
-    excoPosition: 'President',
+    excoPosition: 'President & Executive Shepherd',
     role: 'admin',
-    teamName: 'CSGB Executive Council',
+    teamName: "Christian Students' Governing Board",
     hall: 'Hall 4',
-    bio: 'Oversees the spiritual vision, pastoral direction, and central governance of the fellowship at Edo State University.',
+    bio: 'Oversees the apostolic vision, pastoral direction, constitutional integrity, and central campus governance of ECCF at Edo State University.',
     category: 'csgb',
   },
   {
     _id: 'csgb-2',
-    fullName: "Vice President (Admin)",
-    excoPosition: "Vice President - Admin / Brothers' Coordinator",
+    fullName: 'Vice President (Admin)',
+    excoPosition: "VP - Admin / Brothers' Coordinator",
     role: 'admin',
     teamName: 'Executive Administration',
     hall: 'Hall 2',
@@ -55,8 +58,8 @@ const CANONICAL_EXCOS: ExcoMember[] = [
   },
   {
     _id: 'csgb-3',
-    fullName: "Vice President (Evangelism)",
-    excoPosition: "Vice President - Evangelism / Sisters' Coordinator",
+    fullName: 'Vice President (Evangelism)',
+    excoPosition: "VP - Evangelism / Sisters' Coordinator",
     role: 'admin',
     teamName: 'Campus Evangelism',
     hall: 'Hall 1',
@@ -98,7 +101,7 @@ const CANONICAL_EXCOS: ExcoMember[] = [
     fullName: 'Academic Coordinator',
     excoPosition: 'Academic Coordinator',
     role: 'team_lead',
-    teamName: 'Academic Team',
+    teamName: 'Academic Directorate',
     hall: 'Hall 7',
     bio: 'Drives peer tutorial groups, CGPA clinics, exam revision bootcamps, and academic scholarship across faculties.',
     category: 'director',
@@ -106,7 +109,7 @@ const CANONICAL_EXCOS: ExcoMember[] = [
   {
     _id: 'dir-2',
     fullName: 'Choir & Music Director',
-    excoPosition: 'Music Director / Head of Instrumentalists',
+    excoPosition: 'Music Director & Head of Psalmists',
     role: 'team_lead',
     teamName: 'Choir & Music Ministry',
     hall: 'Hall 4',
@@ -118,7 +121,7 @@ const CANONICAL_EXCOS: ExcoMember[] = [
     fullName: 'Outreach Coordinator',
     excoPosition: 'Outreach Coordinator',
     role: 'team_lead',
-    teamName: 'Outreach Team',
+    teamName: 'Evangelism & Missions Wing',
     hall: 'Hall 2',
     bio: 'Organizes campus-wide soul-winning drives, rural gospel missions, and medical outreaches to surrounding communities.',
     category: 'director',
@@ -128,17 +131,17 @@ const CANONICAL_EXCOS: ExcoMember[] = [
     fullName: 'Welfare & Medical Coordinator',
     excoPosition: 'Welfare & Medical Coordinator',
     role: 'team_lead',
-    teamName: 'Welfare/Medical Team',
+    teamName: 'Student Welfare Directorate',
     hall: 'Hall 8',
     bio: 'Supervises emergency student financial aid, food support, sick-bay visitations, and compassionate student welfare.',
     category: 'director',
   },
   {
     _id: 'dir-5',
-    fullName: 'Media & Communications Head',
-    excoPosition: 'Media Coordinator',
+    fullName: 'Media Coordinator',
+    excoPosition: 'Media & Digital Outreach Head',
     role: 'team_lead',
-    teamName: 'Media Team',
+    teamName: 'Digital Media Directorate',
     hall: 'Hall 3',
     bio: 'Directs digital livestream broadcasting, high-definition photography, social media evangelism, and design.',
     category: 'director',
@@ -146,16 +149,20 @@ const CANONICAL_EXCOS: ExcoMember[] = [
   {
     _id: 'dir-6',
     fullName: 'Head of Protocol Team',
-    excoPosition: 'Head of Protocol Team',
+    excoPosition: 'Protocol Coordinator',
     role: 'team_lead',
-    teamName: 'Protocol Team',
+    teamName: 'Ministerial Protocol Wing',
     hall: 'Hall 5',
     bio: 'Ensures ministerial order, guest reception, speaker logistics, and platform management during all conferences.',
     category: 'director',
   },
 ]
 
-export default function AboutLeadership({ excos }: AboutLeadershipProps) {
+export default function AboutLeadership({
+  excos,
+  headline,
+  lead,
+}: AboutLeadershipProps) {
   const [filter, setFilter] = useState<'all' | 'csgb' | 'directors'>('all')
 
   // Merge live Sanity data if present with canonical roster
@@ -166,7 +173,13 @@ export default function AboutLeadership({ excos }: AboutLeadershipProps) {
           category:
             e.role === 'admin' ||
             (e.excoPosition &&
-              ['President', 'Vice President', 'General Secretary', 'Prayer Coordinator', 'Financial Secretary'].some((pos) =>
+              [
+                'President',
+                'Vice President',
+                'General Secretary',
+                'Prayer Coordinator',
+                'Financial Secretary',
+              ].some((pos) =>
                 e.excoPosition?.toLowerCase().includes(pos.toLowerCase())
               ))
               ? 'csgb'
@@ -174,18 +187,45 @@ export default function AboutLeadership({ excos }: AboutLeadershipProps) {
         }))
       : CANONICAL_EXCOS
 
-  const filteredExcos = activeList.filter((item) => {
-    if (filter === 'csgb') return item.category === 'csgb'
-    if (filter === 'directors') return item.category === 'director'
-    return true
-  })
+  // Find President / Lead Officer for the featured card
+  const president =
+    activeList.find((e) =>
+      e.excoPosition?.toLowerCase().includes('president')
+    ) || activeList[0]
+
+  // President initials for monogram fallback
+  const presidentInitials = president.fullName
+    ? president.fullName
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'FP'
+
+  // Remaining officers
+  const remainingOfficers = activeList.filter((e) => e !== president)
+
+  const filteredOfficers =
+    filter === 'all'
+      ? remainingOfficers
+      : remainingOfficers.filter((e) =>
+          filter === 'csgb' ? e.category === 'csgb' : e.category === 'director'
+        )
 
   return (
-    <section id="leadership" className="py-16 sm:py-24 bg-white relative overflow-hidden border-b border-stone-200">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+    <section id="leadership" className="py-14 sm:py-24 bg-[#0d1117] text-white relative overflow-hidden border-b border-slate-800">
+      {/* Background ambient lighting */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#0095ff]/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
         
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
+        {/* ================================================================ */}
+        {/* SECTION HEADER — Grand & Authoritative                           */}
+        {/* ================================================================ */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-16 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -193,49 +233,50 @@ export default function AboutLeadership({ excos }: AboutLeadershipProps) {
             transition={{ duration: 0.5 }}
             className="text-left max-w-2xl"
           >
-            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
+            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-sky-400 uppercase font-mono mb-3">
               <Shield className="h-4 w-4" />
-              OUR TEAM &amp; EXECUTIVE LEADERSHIP
+              OUR TEAM &amp; EXECUTIVE COUNCIL
             </span>
-            <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
-              Stewards of the Vision &amp; Altar.
+            <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+              {headline || 'Stewards of the Vision & Altar.'}
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-              Meet the servant leaders of the Central Student Governing Body (CSGB) and Ministry Directors who guide our prayer life, administration, and campus operations.
+            <p className="mt-4 text-base sm:text-xl text-slate-300 leading-relaxed font-normal">
+              {lead ||
+                'Meet the servant leaders of the Central Student Governing Body (CSGB) and Ministry Directors who steward our spiritual life, administration, and campus operations.'}
             </p>
           </motion.div>
 
-          {/* TPUSA-Style Filter Segmented Control */}
-          <div className="inline-flex items-center p-1.5 rounded-full bg-stone-100 border border-stone-200/80 self-start md:self-end">
+          {/* Segmented Category Filter (Mobile-first horizontal scroll) */}
+          <div className="inline-flex items-center p-1 sm:p-1.5 rounded-full bg-slate-900 border border-slate-800 self-start md:self-end max-w-full overflow-x-auto scrollbar-none">
             <button
               type="button"
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
                 filter === 'all'
-                  ? 'bg-slate-950 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#0095ff] text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              All Leadership ({activeList.length})
+              All Council ({activeList.length})
             </button>
             <button
               type="button"
               onClick={() => setFilter('csgb')}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
                 filter === 'csgb'
-                  ? 'bg-[#0095ff] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#0095ff] text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              CSGB Council
+              CSGB Executives
             </button>
             <button
               type="button"
               onClick={() => setFilter('directors')}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
                 filter === 'directors'
-                  ? 'bg-slate-950 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#0095ff] text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Ministry Leads
@@ -243,14 +284,93 @@ export default function AboutLeadership({ excos }: AboutLeadershipProps) {
           </div>
         </div>
 
-        {/* Executive Cards Grid */}
+        {/* ================================================================ */}
+        {/* FEATURED PRESIDENT CARD (Inspired by JNAC's Featured AG Card)    */}
+        {/* ================================================================ */}
+        {(filter === 'all' || filter === 'csgb') && president && (
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.55 }}
+            className="mb-8 sm:mb-14 overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 border border-sky-500/30 shadow-2xl relative group"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+              {/* President Portrait */}
+              <div className="lg:col-span-5 relative aspect-[4/5] lg:aspect-auto lg:h-[460px] w-full bg-slate-950 overflow-hidden">
+                {president.profileImageUrl ? (
+                  <Image
+                    src={president.profileImageUrl}
+                    alt={president.fullName}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-slate-500 p-6 text-center">
+                    <span className="font-serif text-5xl sm:text-7xl font-bold text-sky-400/80 tracking-wider">
+                      {presidentInitials}
+                    </span>
+                    <span className="font-mono text-xs uppercase tracking-widest text-sky-300/60">
+                      {president.hall || 'ECCF Presidency'}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent lg:hidden" />
+              </div>
+
+              {/* President Bio & Mandate */}
+              <div className="lg:col-span-7 p-5 sm:p-10 lg:p-12 space-y-4 sm:space-y-6 text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-mono font-bold uppercase tracking-wider">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  <span>EXECUTIVE HEAD &bull; CSGB PRESIDENCY</span>
+                </div>
+
+                <div>
+                  <h3 className="font-serif font-black text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+                    {president.fullName}
+                  </h3>
+                  <span className="text-sm sm:text-base font-semibold text-sky-400 block mt-1.5 uppercase tracking-wide">
+                    {president.excoPosition || 'Fellowship President'}
+                  </span>
+                </div>
+
+                <p className="text-sm sm:text-lg text-slate-300 leading-relaxed font-normal">
+                  {president.bio ||
+                    'Stewards the overall apostolic vision, pastoral direction, and central governance of the fellowship on the campus of Edo State University.'}
+                </p>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs sm:text-sm text-slate-400 font-mono">
+                  <span>{president.teamName || "Christian Students' Governing Board"}</span>
+                  <span className="text-amber-300 font-bold">{president.hall || 'Hall 4'}</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ================================================================ */}
+        {/* JNAC-STYLE 3:4 PORTRAIT GRID FOR REMAINING EXCOS                 */}
+        {/* 2-columns on mobile, matching JNAC's mobile leadership layout   */}
+        {/* ================================================================ */}
         <AnimatePresence mode="popLayout">
           <motion.div
             layout
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
           >
-            {filteredExcos.map((exco, idx) => {
+            {filteredOfficers.map((exco, idx) => {
               const isCsgb = exco.category === 'csgb'
+              const initials = exco.fullName
+                ? exco.fullName
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase()
+                : 'EX'
+
               return (
                 <motion.div
                   layout
@@ -258,75 +378,56 @@ export default function AboutLeadership({ excos }: AboutLeadershipProps) {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.35, delay: idx * 0.04 }}
+                  transition={{ duration: 0.35, delay: idx * 0.03 }}
                   whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                  className={`group relative flex flex-col justify-between rounded-3xl overflow-hidden bg-[#fafaf9] border ${
-                    isCsgb
-                      ? 'border-sky-200/80 shadow-xs hover:border-[#0077cc]'
-                      : 'border-stone-200 hover:border-slate-400'
-                  } transition-all shadow-sm hover:shadow-xl`}
+                  className="group relative aspect-[3/4] w-full overflow-hidden rounded-xl sm:rounded-3xl bg-slate-900 border border-slate-800 hover:border-sky-400/50 shadow-md hover:shadow-2xl transition-all cursor-pointer"
                 >
-                  {/* Photo / Avatar Placeholder Header */}
-                  <div className="relative h-56 sm:h-64 w-full bg-slate-900 overflow-hidden flex items-center justify-center">
-                    {exco.profileImageUrl ? (
-                      <Image
-                        src={exco.profileImageUrl}
-                        alt={exco.fullName}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                        <Users className="h-16 w-16 text-slate-600" />
-                        <span className="text-xs font-mono uppercase tracking-widest text-slate-400">
-                          {exco.hall || 'ECCF Exco'}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent pointer-events-none" />
-
-                    {/* Exco Position Pill */}
-                    <div className="absolute top-4 left-4">
-                      <span
-                        className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                          isCsgb
-                            ? 'bg-[#0095ff] text-white shadow-sm'
-                            : 'bg-black/60 backdrop-blur-md text-white border border-white/20'
-                        }`}
-                      >
-                        {isCsgb ? 'CSGB EXECUTIVE' : 'MINISTRY DIRECTOR'}
+                  {/* Photo or Grand Monogram Fallback */}
+                  {exco.profileImageUrl ? (
+                    <Image
+                      src={exco.profileImageUrl}
+                      alt={exco.fullName}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-slate-400 p-3 text-center">
+                      <span className="font-serif text-3xl sm:text-5xl font-bold text-sky-400/70 tracking-wider">
+                        {initials}
+                      </span>
+                      <span className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-slate-500">
+                        {exco.hall || 'Leadership'}
                       </span>
                     </div>
+                  )}
 
-                    {/* Bottom overlay text */}
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <span className="text-xs font-semibold text-sky-300 uppercase tracking-wider block">
-                        {exco.excoPosition || 'Executive Officer'}
-                      </span>
-                      <h3 className="font-serif font-bold text-xl text-white leading-tight">
-                        {exco.fullName}
-                      </h3>
-                    </div>
+                  {/* Top Office Badge */}
+                  <div className="absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 z-20">
+                    <span
+                      className={`text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ${
+                        isCsgb
+                          ? 'bg-[#0095ff] text-white shadow-sm'
+                          : 'bg-black/60 backdrop-blur-md text-slate-200 border border-white/10'
+                      }`}
+                    >
+                      {isCsgb ? 'CSGB' : 'DIRECTOR'}
+                    </span>
                   </div>
 
-                  {/* Body & Bio */}
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-2">
-                        <span className="font-semibold text-slate-700">{exco.teamName}</span>
-                        {exco.hall && <span>{exco.hall}</span>}
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                        {exco.bio ||
-                          'Dedicated servant leader committed to spiritual excellence and student community care at EDSU.'}
-                      </p>
-                    </div>
+                  {/* Gradient Overlay (JNAC Signature Style) */}
+                  <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent flex flex-col justify-end p-3 sm:p-5 text-left">
+                    <span className="text-[10px] sm:text-xs font-semibold text-sky-300 uppercase tracking-wider block mb-0.5 sm:mb-1 truncate">
+                      {exco.excoPosition || 'Executive Officer'}
+                    </span>
 
-                    <div className="mt-4 pt-3 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-mono">Central Leadership</span>
-                      <span className="text-[#0077cc] font-bold">EDSU Iyamho</span>
+                    <h4 className="font-serif font-bold text-sm sm:text-lg text-white leading-tight mb-1 line-clamp-2">
+                      {exco.fullName}
+                    </h4>
+
+                    <div className="flex items-center justify-between text-[9px] sm:text-[11px] text-slate-400 font-mono mt-0.5 pt-1.5 sm:mt-1 sm:pt-2 border-t border-white/10">
+                      <span className="truncate max-w-[85px] sm:max-w-[130px]">{exco.teamName}</span>
+                      {exco.hall && <span className="text-sky-400 font-bold shrink-0">{exco.hall}</span>}
                     </div>
                   </div>
                 </motion.div>

@@ -49,6 +49,17 @@ export default async function DashboardOverviewPage() {
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-serif text-2xl text-foreground">Welcome back</h2>
           <Badge>{ROLE_LABELS[session.role]}</Badge>
+          {session.teams && session.teams.length > 0 ? (
+            session.teams.map((t) => (
+              <Badge key={t} variant="outline" className="text-xs">
+                {t}
+              </Badge>
+            ))
+          ) : session.team ? (
+            <Badge variant="outline" className="text-xs">
+              {session.team}
+            </Badge>
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across the fellowship.</p>
       </div>
