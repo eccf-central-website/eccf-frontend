@@ -123,8 +123,14 @@ export default function AboutPillars({
   ]
 
   return (
-    <section id="pillars" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden border-b border-stone-200">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+    <section id="pillars" className="py-16 sm:py-24 bg-[#fafaf9] relative overflow-hidden">
+      {/* Seamless transition wash leading down toward the dark leadership section */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 right-0 h-28 sm:h-40 bg-gradient-to-b from-transparent via-[#fafaf9]/80 to-[#0d1117]/15 pointer-events-none z-0"
+      />
+
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
         
         {/* Section Header */}
         <motion.div

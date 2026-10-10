@@ -239,8 +239,8 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
         {/* TPUSA-Style Filter & Search Bar */}
         <div className="mb-10 sm:mb-12 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           
-          {/* Category Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+          {/* Category Pills — Wrap cleanly, zero scrollbars on mobile and desktop */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {[
               { id: 'all', label: `All Units (${allTeams.length})` },
               { id: 'spiritual', label: 'Spiritual & Prayer' },
@@ -252,9 +252,9 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold tracking-wide transition-all ${
                   activeCategory === cat.id
-                    ? 'bg-slate-950 text-white shadow-sm'
+                    ? 'bg-slate-950 text-white shadow-sm font-bold'
                     : 'bg-white border border-stone-200 text-slate-600 hover:text-slate-900 hover:bg-stone-50'
                 }`}
               >

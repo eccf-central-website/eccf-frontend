@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Sparkles, UserPlus, HeartHandshake, MapPin } from 'lucide-react'
+import { Sparkles, UserPlus, HeartHandshake, MapPin, ArrowRight } from 'lucide-react'
 
 export interface AboutCTAProps {
   tag?: string
@@ -20,6 +20,10 @@ export interface AboutCTAProps {
 }
 
 export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
+  const cleanHeadline = headline
+    ? headline.replace(/at Edo State University/gi, 'at ECCF')
+    : 'Step Into Your God-Given Purpose at ECCF.'
+
   return (
     <section id="get-involved" className="py-16 sm:py-24 bg-slate-950 text-white relative overflow-hidden">
       {/* Background radial glow */}
@@ -47,7 +51,7 @@ export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="font-serif font-black text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.1] max-w-4xl mx-auto text-balance"
         >
-          {headline || 'Step Into Your God-Given Purpose at Edo State University.'}
+          {cleanHeadline}
         </motion.h2>
 
         {/* Subtitle */}
@@ -62,35 +66,36 @@ export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
             'Whether you want to join an operational team, need academic guidance and student welfare, or are planning your very first visit — we are ready to welcome you home.'}
         </motion.p>
 
-        {/* Action Button Grid */}
+        {/* Action Button Grid — Redesigned for crisp typography, aligned icons & zero awkward wrapping */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto"
+          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 max-w-4xl mx-auto w-full"
         >
           <Link
             href="/register"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-sky-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] hover:from-[#0066b3] hover:to-[#0080e0] text-white font-bold text-sm sm:text-base shadow-lg shadow-sky-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
           >
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className="h-5 w-5 text-sky-100 shrink-0" />
             <span>Join an Operational Team</span>
+            <ArrowRight className="h-4 w-4 text-sky-200 transition-transform duration-200 group-hover:translate-x-1 shrink-0 ml-0.5" />
           </Link>
 
           <Link
             href="/connect"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm uppercase tracking-wider border border-white/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-100 font-semibold text-sm sm:text-base border border-slate-700/80 hover:border-slate-600 shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
           >
-            <HeartHandshake className="h-4 w-4" />
+            <HeartHandshake className="h-5 w-5 text-sky-400 shrink-0" />
             <span>Connect &amp; Welfare Care</span>
           </Link>
 
           <Link
             href="/#visit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-sm uppercase tracking-wider border border-slate-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-slate-900/50 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold text-sm sm:text-base border border-slate-800 hover:border-slate-700 transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
           >
-            <MapPin className="h-4 w-4" />
+            <MapPin className="h-5 w-5 text-amber-400 shrink-0" />
             <span>Plan a Visit</span>
           </Link>
         </motion.div>
