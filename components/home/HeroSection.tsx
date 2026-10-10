@@ -113,10 +113,8 @@ export default function HeroSection({ settings }: Props) {
      *   - Left: ~38% width, padded, vertically centered text
      *   - Right: ~62% width, zero padding, collage fills 100% height flush
      */
-    <section className="relative w-full bg-[#f9f8f5] overflow-hidden border-b border-stone-200"
-      style={{ minHeight: 'calc(100vh - 76px)' }}
-    >
-      <div className="flex flex-col lg:flex-row w-full h-full" style={{ minHeight: 'calc(100vh - 76px)' }}>
+    <section className="relative w-full bg-[#f9f8f5] overflow-hidden border-b border-stone-200 lg:min-h-[calc(100vh-76px)]">
+      <div className="flex flex-col lg:flex-row w-full h-full lg:min-h-[calc(100vh-76px)]">
 
         {/* ================================================================ */}
         {/* LEFT PANEL — text is the FOCUS, bold & authoritative like FBNO   */}
@@ -125,35 +123,35 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-5 sm:px-10 md:px-16 lg:px-14 xl:px-20 2xl:px-28 py-12 sm:py-16 lg:py-0 w-full lg:w-[56%] xl:w-[56%] text-center lg:text-left items-center lg:items-start"
+          className="flex flex-col justify-center px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 pt-8 pb-6 sm:py-16 lg:py-0 w-full lg:w-[54%] xl:w-[54%] text-left items-start"
         >
-          {/* Top Label (FBNO: "WORSHIP ON SUNDAYS AT 9:30 AM" — uppercase with wide tracking) */}
-          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-slate-800 mb-3 block text-center lg:text-left">
+          {/* Top Label (FBNO: uppercase with wide tracking) */}
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[#0077cc] mb-3 sm:mb-4 block text-left">
             {topLabel}
           </span>
 
           {/* Main headline — Belleza high-contrast editorial serif */}
-          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.12] mb-6 text-center lg:text-left text-balance break-words text-3xl sm:text-4xl md:text-5xl lg:text-[3.75rem] xl:text-[4.25rem]">
+          <h1 className="font-serif tracking-tight text-slate-950 leading-[1.08] mb-4 sm:mb-6 text-left text-balance break-words text-[2.5rem] sm:text-[3.25rem] md:text-5xl lg:text-[3.75rem] xl:text-[4.25rem]">
             {headline}
           </h1>
 
           {/* Credo (only if set in CMS) */}
           {settings?.heroCredo && (
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-4 font-mono text-center lg:text-left">
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] mb-3 sm:mb-4 font-mono text-left">
               {settings.heroCredo}
             </p>
           )}
 
           {/* Body — clear, readable Work Sans text */}
-          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-9 text-center lg:text-left mx-auto lg:mx-0">
+          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-md mb-6 sm:mb-8 text-left mx-0">
             {bodyText}
           </p>
 
-          {/* CTA — FBNO bold standalone pill button */}
-          <div className="w-full flex justify-center lg:justify-start">
+          {/* CTA — bold standalone pill button, left-aligned */}
+          <div className="w-full sm:w-auto flex justify-start mb-4 lg:mb-0">
             <Link
               href="/#visit"
-              className="w-full sm:w-auto max-w-xs inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-9 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-8 py-3.5 text-base tracking-wide shadow-md shadow-sky-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
               Plan A Visit
             </Link>
@@ -169,10 +167,10 @@ export default function HeroSection({ settings }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="lg:flex-1 w-full lg:w-auto h-[380px] sm:h-[480px] lg:h-auto min-h-[360px]"
+          className="lg:flex-1 w-full lg:w-auto h-[320px] sm:h-[420px] lg:h-auto min-h-[280px] lg:min-h-full"
         >
-          {/* Grid: 2 sub-columns of photos, p-2 gap between, no outer padding */}
-          <div className="grid grid-cols-2 gap-2 p-2 h-full w-full">
+          {/* Grid: 2 sub-columns of photos */}
+          <div className="grid grid-cols-2 gap-2 p-3 sm:p-4 lg:p-2 h-full w-full">
 
             {/* LEFT sub-column: 3 equal-height stacked photos */}
             <div className="grid grid-rows-3 gap-2 h-full">
