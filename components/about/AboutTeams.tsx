@@ -36,6 +36,8 @@ interface AboutTeamsProps {
     description: string
     imageUrl?: string
   }[] | null
+  headline?: string
+  lead?: string
 }
 
 // Canonical 14 Fellowship Operational Teams with rich details and categories
@@ -168,7 +170,7 @@ const CANONICAL_14_TEAMS: OperationalTeam[] = [
   },
 ]
 
-export default function AboutTeams({ teams }: AboutTeamsProps) {
+export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
@@ -219,17 +221,18 @@ export default function AboutTeams({ teams }: AboutTeamsProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto mb-12 sm:mb-16"
+          className="text-left md:text-center max-w-3xl md:mx-auto mb-10 sm:mb-16"
         >
           <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
             <Users className="h-4 w-4" />
             OPERATIONAL UNITS &amp; WORKFORCE
           </span>
           <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
-            Find Your Place to Serve &amp; Lead.
+            {headline || 'Find Your Place to Serve & Lead.'}
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-            Every university student has a God-given gift. Discover where your passion intersects with kingdom impact across our 14 specialized operational teams.
+            {lead ||
+              'Every university student has a God-given gift. Discover where your passion intersects with kingdom impact across our 14 specialized operational teams.'}
           </p>
         </motion.div>
 

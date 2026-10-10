@@ -138,6 +138,63 @@ export const EXCOS_QUERY = `
   }
 `
 
+/** Fetch dedicated About page document */
+export const ABOUT_PAGE_QUERY = `
+  *[_type == "aboutPage"][0] {
+    _id,
+    heroBadge,
+    heroSubheading,
+    heroHeadline,
+    heroSubtitle,
+    missionCreed,
+    heroPhoto,
+    "heroPhotoUrl": heroPhoto.asset->url,
+    metricOperationalTeams,
+    metricResidenceHalls,
+    metricWeeklyEncounters,
+    metricStudentImpact,
+    storyHeadline,
+    storyLead,
+    storyParagraphs,
+    storyQuote,
+    storyPhoto1,
+    "storyPhoto1Url": storyPhoto1.asset->url,
+    storyPhoto2,
+    "storyPhoto2Url": storyPhoto2.asset->url,
+    milestones[] {
+      _key,
+      year,
+      badge,
+      title,
+      desc
+    },
+    pillarsHeadline,
+    pillarsLead,
+    pillar1Title,
+    pillar1Subtitle,
+    pillar1Scripture,
+    pillar1Desc,
+    pillar1Points,
+    pillar2Title,
+    pillar2Subtitle,
+    pillar2Scripture,
+    pillar2Desc,
+    pillar2Points,
+    pillar3Title,
+    pillar3Subtitle,
+    pillar3Scripture,
+    pillar3Desc,
+    pillar3Points,
+    leadershipHeadline,
+    leadershipLead,
+    teamsHeadline,
+    teamsLead,
+    ctaTag,
+    ctaHeadline,
+    ctaSubtitle
+  }
+`
+
 // ---------------------------------------------------------------------------
 // Service Schedule
 // ---------------------------------------------------------------------------

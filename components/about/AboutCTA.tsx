@@ -13,7 +13,13 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, UserPlus, HeartHandshake, MapPin } from 'lucide-react'
 
-export default function AboutCTA() {
+export interface AboutCTAProps {
+  tag?: string
+  headline?: string
+  subtitle?: string
+}
+
+export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
   return (
     <section id="get-involved" className="py-16 sm:py-24 bg-slate-950 text-white relative overflow-hidden">
       {/* Background radial glow */}
@@ -30,7 +36,7 @@ export default function AboutCTA() {
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-mono font-bold uppercase tracking-widest text-sky-400 mb-6"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>JOIN THE MOVEMENT ON CAMPUS</span>
+          <span>{tag || 'JOIN THE MOVEMENT ON CAMPUS'}</span>
         </motion.div>
 
         {/* Big Authoritative Headline */}
@@ -41,7 +47,7 @@ export default function AboutCTA() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="font-serif font-black text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.1] max-w-4xl mx-auto text-balance"
         >
-          Step Into Your God-Given Purpose at Edo State University.
+          {headline || 'Step Into Your God-Given Purpose at Edo State University.'}
         </motion.h2>
 
         {/* Subtitle */}
@@ -52,7 +58,8 @@ export default function AboutCTA() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-6 text-base sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal"
         >
-          Whether you want to join an operational team, need academic guidance and student welfare, or are planning your very first visit &mdash; we are ready to welcome you home.
+          {subtitle ||
+            'Whether you want to join an operational team, need academic guidance and student welfare, or are planning your very first visit — we are ready to welcome you home.'}
         </motion.p>
 
         {/* Action Button Grid */}
