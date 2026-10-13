@@ -52,6 +52,7 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
   const teams = secondTeam ? [team, secondTeam] : [team]
   const created = 200 - i * 6
   const updated = Math.max(1, created - 40 - (i % 9) * 3)
+  const verificationStatus = i === 1 || i % 6 === 0 ? 'pending' : 'verified'
   return {
     _id: `mock-worker-${String(i + 1).padStart(3, '0')}`,
     fullName,
@@ -59,6 +60,7 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
     teams,
     hall: MOCK_HALLS[i % MOCK_HALLS.length],
     birthDate: `${2001 + (i % 6)}-${String((i % 12) + 1).padStart(2, '0')}-${String(((i * 5) % 27) + 1).padStart(2, '0')}`,
+    verificationStatus,
     createdAt: isoDateTime(created),
     updatedAt: isoDateTime(updated),
     updateLog:
@@ -70,10 +72,10 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
 }
 
 const sessionWorkers: WorkerRow[] = [
-  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President' }),
-  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', team: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator' }),
-  makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', team: 'Welfare', hall: 'Hall B', role: 'hall_rep' }),
-  makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary' }),
+  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', team: 'Media', leadingTeam: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', team: 'Welfare', hall: 'Hall B', role: 'hall_rep', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary', isExcoApproved: true, verificationStatus: 'verified' }),
 ]
 
 export const MOCK_WORKERS: WorkerRow[] = [

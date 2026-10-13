@@ -77,6 +77,12 @@ export interface Worker {
   excoPosition?: ExcoPosition
   isExcoApproved?: boolean
   requestedRole?: WorkerRole
+  /** Workforce verification by Team Leader: 'pending' | 'verified' | 'rejected' */
+  verificationStatus?: 'pending' | 'verified' | 'rejected'
+  verifiedAt?: string
+  verifiedBy?: string
+  /** Operational team this worker leads/heads (if Team Lead or Assistant) */
+  leadingTeam?: FellowshipTeam
   /** ⚠️ Never sent to client — server-side auth verification only */
   passwordHash?: string
   profileImageUrl?: string
@@ -249,11 +255,13 @@ export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber'>
 // ---------------------------------------------------------------------------
 
 /** Worker CRM row: SafeWorker with `team` resolved to a display name. */
-export type WorkerRow = Omit<SafeWorker, 'team' | 'teams' | '_type'> & {
+export type WorkerRow = Omit<SafeWorker, 'team' | 'teams' | 'leadingTeam' | '_type'> & {
   /** Resolved teamUnit name (or legacy string value) — never `unit` */
   team: string
   /** All resolved teams if worker belongs to multiple teams */
   teams?: string[]
+  /** Resolved operational team this worker heads/leads (if applicable) */
+  leadingTeam?: string
 }
 
 export interface AttendanceAttendee {

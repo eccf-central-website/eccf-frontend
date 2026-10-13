@@ -231,6 +231,18 @@ export function WorkerRegistrationForm() {
           </div>
         )}
 
+        {!isReturning && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1.5 shadow-xs">
+            <div className="flex items-center gap-2 font-bold text-amber-950 text-sm">
+              <UserCheck className="h-4 w-4 text-amber-600" />
+              <span>Team Leader Verification Queued</span>
+            </div>
+            <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
+              Your department head has been notified to verify your workforce membership. You will appear on the active roster once confirmed.
+            </p>
+          </div>
+        )}
+
         <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"

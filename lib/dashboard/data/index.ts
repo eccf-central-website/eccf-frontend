@@ -189,11 +189,11 @@ export async function fetchWorkersForAttendance(
   if (dataSource() === 'mock') {
     const all = await fromMock(MOCK_WORKERS, [])
     return all
-      .filter((w) => team === null || w.team === team || (w.teams && w.teams.includes(team)))
+      .filter((w) => (team === null || w.team === team || (w.teams && w.teams.includes(team))) && w.verificationStatus !== 'rejected')
       .map(({ _id, fullName, team, teams, hall }) => ({ _id, fullName, team, teams, hall }))
   }
 
-  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams)] | order(fullName asc) {
+  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams) && coalesce(verificationStatus, 'verified') != 'rejected'] | order(fullName asc) {
     _id,
     fullName,
     "team": coalesce(team->name, team),

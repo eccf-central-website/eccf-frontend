@@ -367,6 +367,7 @@ export async function registerWorker(
         hall: input.hall,
         roomNumber: input.roomNumber,
         birthDate: input.birthDate,
+        verificationStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         updateLog: initialLogs,
@@ -388,10 +389,10 @@ export async function registerWorker(
 
       return {
         ok: true,
-        isExco: input.isExco,
+        isExco: Boolean(input.isExco),
         message: input.isExco
-          ? 'Worker registration successful! Your Exco dashboard account has been created and is pending administrator approval.'
-          : 'Worker registration successful! Welcome to the fellowship workforce.',
+          ? `Welcome to ECCF, ${cleanFullName}! Your registration has been submitted to your Team Leader for verification, and your Exco dashboard request is pending CSGB approval.`
+          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Leader for membership approval.`,
       }
     }
   } catch (err) {
