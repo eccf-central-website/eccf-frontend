@@ -48,12 +48,15 @@ const LAST_NAMES = [
 function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
   const fullName = `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[(i * 7) % LAST_NAMES.length]}`
   const team = TEAMS[i % TEAMS.length]
+  const secondTeam = i % 3 === 0 ? TEAMS[(i + 4) % TEAMS.length] : undefined
+  const teams = secondTeam ? [team, secondTeam] : [team]
   const created = 200 - i * 6
   const updated = Math.max(1, created - 40 - (i % 9) * 3)
   return {
     _id: `mock-worker-${String(i + 1).padStart(3, '0')}`,
     fullName,
     team,
+    teams,
     hall: MOCK_HALLS[i % MOCK_HALLS.length],
     birthDate: `${2001 + (i % 6)}-${String((i % 12) + 1).padStart(2, '0')}-${String(((i * 5) % 27) + 1).padStart(2, '0')}`,
     createdAt: isoDateTime(created),

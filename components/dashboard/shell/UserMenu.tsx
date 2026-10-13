@@ -28,13 +28,15 @@ import {
 interface UserMenuProps {
   role: WorkerRole
   team: string
+  teams?: string[]
   excoPosition?: string
   devTools?: React.ReactNode
 }
 
-export default function UserMenu({ role, team, excoPosition, devTools }: UserMenuProps) {
+export default function UserMenu({ role, team, teams, excoPosition, devTools }: UserMenuProps) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
+  const displayTeam = teams && teams.length > 0 ? teams.join(', ') : team
 
   return (
     <DropdownMenu>
@@ -57,11 +59,23 @@ export default function UserMenu({ role, team, excoPosition, devTools }: UserMen
           <span className="flex items-center gap-2">
             <Badge>{ROLE_LABELS[role]}</Badge>
             <span className="truncate text-sm font-medium text-foreground">
-              {excoPosition || `${team} team`}
+              {excoPosition || `${displayTeam} team`}
             </span>
           </span>
           {excoPosition && (
-            <span className="text-xs text-muted-foreground">{team} team</span>
+            <span className="text-xs text-muted-foreground">{displayTeam} team</span>
+          )}
+          {teams && teams.length > 1 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {teams.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center rounded-md bg-secondary/80 px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

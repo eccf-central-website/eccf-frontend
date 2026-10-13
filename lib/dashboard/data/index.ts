@@ -173,7 +173,9 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const rows =
     dataSource() === 'mock'
       ? (await fromMock(MOCK_WORKERS, [])).filter(
-          (w) => (hall === null || w.hall === hall) && (team === null || w.team === team)
+          (w) =>
+            (hall === null || w.hall === hall) &&
+            (team === null || w.team === team || (w.teams && w.teams.includes(team)))
         )
       : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
   return stripPII(rows)
@@ -182,22 +184,23 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
 export async function fetchWorkersForAttendance(
   session: ECCFSession,
   targetTeam?: string
-): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'hall'>[]> {
+): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]> {
   const team = session.role === 'team_lead' ? session.team : (targetTeam || null)
   if (dataSource() === 'mock') {
     const all = await fromMock(MOCK_WORKERS, [])
     return all
-      .filter((w) => team === null || w.team === team)
-      .map(({ _id, fullName, team, hall }) => ({ _id, fullName, team, hall }))
+      .filter((w) => team === null || w.team === team || (w.teams && w.teams.includes(team)))
+      .map(({ _id, fullName, team, teams, hall }) => ({ _id, fullName, team, teams, hall }))
   }
 
-  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team)] | order(fullName asc) {
+  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams)] | order(fullName asc) {
     _id,
     fullName,
     "team": coalesce(team->name, team),
+    "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall
   }`
-  const rows = await sanityWriteClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'hall'>[]>(query, { team })
+  const rows = await sanityWriteClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
   return stripPII(rows)
 }
 

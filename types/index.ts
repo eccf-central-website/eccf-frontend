@@ -59,6 +59,8 @@ export interface Worker {
   email?: string
   /** Operational group — NEVER use `unit`, always `team` */
   team: FellowshipTeam
+  /** Multiple operational teams if worker is assigned to multiple */
+  teams?: FellowshipTeam[]
   hall: string
   /**
    * ⚠️ ENCRYPTED — stripped before any client-facing response.
@@ -100,6 +102,8 @@ export interface ECCFSession {
    * string (teamUnit name) at sign-in — always `team`, never `unit`.
    */
   team: string
+  /** All operational teams this worker belongs to */
+  teams?: string[]
   excoPosition?: string
 }
 
@@ -245,15 +249,18 @@ export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber'>
 // ---------------------------------------------------------------------------
 
 /** Worker CRM row: SafeWorker with `team` resolved to a display name. */
-export type WorkerRow = Omit<SafeWorker, 'team' | '_type'> & {
+export type WorkerRow = Omit<SafeWorker, 'team' | 'teams' | '_type'> & {
   /** Resolved teamUnit name (or legacy string value) — never `unit` */
   team: string
+  /** All resolved teams if worker belongs to multiple teams */
+  teams?: string[]
 }
 
 export interface AttendanceAttendee {
   _id: string
   fullName: string
   team?: string
+  teams?: string[]
 }
 
 /** Attendance ledger row: attendee references collapsed to a count, with optional attendee details. */

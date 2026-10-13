@@ -51,6 +51,7 @@ export default async function DashboardShellLayout({
           sections={sections}
           role={session.role}
           team={session.team}
+          teams={session.teams}
           excoPosition={session.excoPosition}
           devTools={devTools}
         />
