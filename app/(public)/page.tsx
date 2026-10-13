@@ -20,6 +20,7 @@ import ServiceScheduleConsole, { ServiceItem } from '@/components/home/ServiceSc
 import FellowshipMomentsSection, { GalleryItem } from '@/components/home/FellowshipMomentsSection'
 import LatestSermonsSection from '@/components/home/LatestSermonsSection'
 import GivingHubSection from '@/components/home/GivingHubSection'
+import SocialMediaBanner from '@/components/home/SocialMediaBanner'
 import PlanAVisitSection from '@/components/home/PlanAVisitSection'
 import { SermonItem } from '@/components/sermons/SermonsFeed'
 
@@ -109,7 +110,17 @@ export default async function Home() {
       {/* 6. Giving Hub Section */}
       <GivingHubSection />
 
-      {/* 7. Plan a Visit Section */}
+      {/* 7. High-Impact Social Media Banner (Follow Us for Exclusive Content) */}
+      <SocialMediaBanner
+        youtubeUrl={settings?.socialYouTube}
+        instagramUrl={settings?.socialInstagram}
+        xUrl={settings?.socialX}
+        facebookUrl={settings?.socialFacebook}
+        tiktokUrl={settings?.socialTikTok}
+        telegramUrl={settings?.socialTelegram}
+      />
+
+      {/* 8. Plan a Visit Section */}
       <PlanAVisitSection
         contactPerson={settings?.visitContactPerson || undefined}
         whatsAppNumber={settings?.visitWhatsAppNumber || undefined}

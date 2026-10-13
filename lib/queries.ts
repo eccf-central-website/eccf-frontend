@@ -240,6 +240,12 @@ export const SITE_SETTINGS_QUERY = `
     visitContactPerson,
     visitWhatsAppNumber,
     fellowshipEmail,
+    socialYouTube,
+    socialInstagram,
+    socialX,
+    socialFacebook,
+    socialTikTok,
+    socialTelegram,
     heroTopPill,
     heroCollagePhotos[] {
       _key,
