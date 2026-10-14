@@ -13,7 +13,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, Smartphone, Monitor, Share, Plus, X, CheckCircle2 } from 'lucide-react'
+import { Download, Smartphone, Share, Plus, X } from 'lucide-react'
 import { Button } from '@/components/dashboard/ui/button'
 
 interface BeforeInstallPromptEvent extends Event {
