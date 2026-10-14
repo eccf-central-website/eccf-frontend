@@ -14,6 +14,7 @@
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
+import { encrypt, decrypt, createBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export interface WorkerRegistrationInput {
@@ -79,6 +80,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
   try {
     const cleanPhone = phoneNumber.trim().replace(/\s+/g, '')
     if (cleanPhone.length < 8) return { found: false }
+    const phoneBlindIndex = createBlindIndex(cleanPhone)
 
     const existing = await sanityWriteClient.fetch<{
       fullName?: string
@@ -91,7 +93,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       role?: WorkerRole
       isExcoApproved?: boolean
     }>(
-      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
         fullName,
         "team": coalesce(team->name, team),
         hall,
@@ -102,7 +104,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
         role,
         isExcoApproved
       }`,
-      { phoneNumber: cleanPhone }
+      { phoneNumber: cleanPhone, phoneBlindIndex }
     )
 
     if (!existing || !existing.fullName) {
@@ -115,7 +117,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
         fullName: existing.fullName,
         team: existing.team || 'General',
         hall: existing.hall,
-        roomNumber: existing.roomNumber,
+        roomNumber: decrypt(existing.roomNumber),
         email: existing.email,
         birthDate: existing.birthDate,
         profileImageUrl: existing.profileImageUrl,
@@ -160,6 +162,7 @@ export async function registerWorker(
     }
 
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
+    const phoneBlindIndex = createBlindIndex(cleanPhone)
     const cleanFullName = input.fullName.trim()
     const cleanTeam = input.team.trim()
     const today = new Date().toISOString().split('T')[0]
@@ -179,7 +182,7 @@ export async function registerWorker(
       passwordHash?: string
       updateLog?: string[]
     }>(
-      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
         _id,
         fullName,
         "team": coalesce(team->name, team),
@@ -193,7 +196,7 @@ export async function registerWorker(
         passwordHash,
         updateLog
       }`,
-      { phoneNumber: cleanPhone }
+      { phoneNumber: cleanPhone, phoneBlindIndex }
     )
 
     // Password validation logic:
@@ -250,12 +253,15 @@ export async function registerWorker(
 
     let passwordHash: string | undefined = undefined
     if (input.password && input.password.length >= 8) {
-      passwordHash = await bcrypt.hash(input.password, 10)
+      const rawHash = await bcrypt.hash(input.password, 10)
+      // Double layer protection: Encrypt the bcrypt hash with AES-256-GCM before storing in Sanity
+      passwordHash = encrypt(rawHash)
     }
 
     if (existing) {
       // 4a. Worker Exists -> Compute Delta Log and Patch
       const deltaLogs: string[] = []
+      const currentRoom = decrypt(existing.roomNumber)
 
       if (existing.team && existing.team !== cleanTeam) {
         deltaLogs.push(`Changed Team from ${existing.team} to ${cleanTeam} on ${today}`)
@@ -263,8 +269,8 @@ export async function registerWorker(
       if (existing.hall && existing.hall !== input.hall) {
         deltaLogs.push(`Changed Hall from ${existing.hall} to ${input.hall} on ${today}`)
       }
-      if (existing.roomNumber && existing.roomNumber !== input.roomNumber) {
-        deltaLogs.push(`Changed Room from ${existing.roomNumber} to ${input.roomNumber} on ${today}`)
+      if (currentRoom && currentRoom !== input.roomNumber) {
+        deltaLogs.push(`Changed Room from ${currentRoom} to ${input.roomNumber} on ${today}`)
       }
       if (existing.email && existing.email !== input.email) {
         deltaLogs.push(`Updated Email on ${today}`)
@@ -286,9 +292,11 @@ export async function registerWorker(
       const patchData: Record<string, unknown> = {
         fullName: cleanFullName,
         email: input.email.trim().toLowerCase(),
+        phoneNumber: encrypt(cleanPhone),
+        phoneBlindIndex,
         team: teamReference,
         hall: input.hall,
-        roomNumber: input.roomNumber,
+        roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: input.birthDate,
         updatedAt: new Date().toISOString(),
       }
@@ -330,10 +338,11 @@ export async function registerWorker(
         _type: 'worker',
         fullName: cleanFullName,
         email: input.email.trim().toLowerCase(),
-        phoneNumber: cleanPhone,
+        phoneNumber: encrypt(cleanPhone),
+        phoneBlindIndex,
         team: teamReference,
         hall: input.hall,
-        roomNumber: input.roomNumber,
+        roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: input.birthDate,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

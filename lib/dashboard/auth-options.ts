@@ -11,6 +11,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { sanityWriteClient } from '@/lib/sanity'
+import { decrypt, createBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export const authOptions: NextAuthOptions = {
@@ -34,8 +35,9 @@ export const authOptions: NextAuthOptions = {
         const rawIdentifier = credentials.identifier.trim()
         const cleanEmail = rawIdentifier.toLowerCase()
         const cleanPhone = rawIdentifier.replace(/\s+/g, '')
+        const phoneBlindIndex = createBlindIndex(cleanPhone)
 
-        // Look up Worker in Sanity by email or phoneNumber
+        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex
         const worker = await sanityWriteClient.fetch<{
           _id: string
           fullName: string
@@ -48,7 +50,7 @@ export const authOptions: NextAuthOptions = {
           passwordHash?: string
           team?: string | { name?: string }
         }>(
-          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone)][0]{
+          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
             _id,
             fullName,
             email,
@@ -60,7 +62,7 @@ export const authOptions: NextAuthOptions = {
             passwordHash,
             team
           }`,
-          { cleanEmail, cleanPhone }
+          { cleanEmail, cleanPhone, phoneBlindIndex }
         )
 
         if (!worker) {
@@ -71,7 +73,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('This account does not have a dashboard password set up.')
         }
 
-        const isValid = await bcrypt.compare(credentials.password, worker.passwordHash)
+        const storedHash = decrypt(worker.passwordHash)
+        const isValid = await bcrypt.compare(credentials.password, storedHash)
         if (!isValid) {
           throw new Error('Incorrect password. Please try again.')
         }

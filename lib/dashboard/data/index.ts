@@ -54,6 +54,7 @@ import {
 } from '../mock/data'
 import { stripPII } from './pii'
 import { lagosDaysAgo, lagosMonthStart } from '../dates'
+import { decrypt } from '@/lib/encryption'
 
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
 
@@ -241,7 +242,10 @@ export async function listWelfare(): Promise<SafeWelfareRequest[]> {
     dataSource() === 'mock'
       ? await fromMock(MOCK_WELFARE, [])
       : await sanityWriteClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
-  return stripPII(rows)
+  return stripPII(rows).map((row) => ({
+    ...row,
+    requestDetails: decrypt(row.requestDetails),
+  }))
 }
 
 export async function listPrayerRequests(): Promise<PrayerRequest[]> {
@@ -249,5 +253,8 @@ export async function listPrayerRequests(): Promise<PrayerRequest[]> {
     dataSource() === 'mock'
       ? await fromMock(MOCK_PRAYER_REQUESTS, [])
       : await sanityWriteClient.fetch<PrayerRequest[]>(DASHBOARD_PRAYER_REQUESTS_QUERY)
-  return stripPII(rows)
+  return stripPII(rows).map((row) => ({
+    ...row,
+    request: decrypt(row.request),
+  }))
 }
