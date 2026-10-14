@@ -1,32 +1,32 @@
 /**
- * PlanAVisitSection — Interactive Experience & VIP Campus Pass
+ * PlanAVisitSection — Let Us Know When You're Coming
  *
- * Redesigned for Maximum Engagement & Minimal Dense Text:
- * - Interactive Service Selector (Sunday, Wednesday, Friday) with dynamic time & badge updates
- * - Interactive Campus Origin Guide (Hall 1-3, Hall 4-6, Hall 7-8, Off-Campus) with instant walk-time estimates
- * - 1-Click WhatsApp VIP RSVP with dynamically pre-filled greeting message
- * - 1-Click Copy Venue Address with visual feedback
- * - 3 Glanceable Experience Pillars (Come As You Are, VIP Reception, Escort Guides)
- * - Clean, spacious max-w-7xl layout aligning with the rest of the website
+ * Grounded & Student-Friendly Visit Experience:
+ * - Direct, honest copy: "Let us know when you're coming."
+ * - No fake VIP cards or campus pass gimmicks.
+ * - Un-numbered questions: Service selection, Calendar date picker, Hostel origin.
+ * - Integrated Service Date Picker: automatically calculates upcoming service dates for Sunday, Wednesday, or Friday.
+ * - Clear, practical campus walking directions to NLT 5 (Faculty of Law).
+ * - 1-Click WhatsApp Direct Connect with prefilled message to assist with directions.
+ * - Strict adherence to the 3-font system: Belleza (headings), Work Sans (body), Geist Mono (styling).
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin,
   Mail,
   Copy,
   Check,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Sparkles,
   ArrowRight,
   Navigation,
-  Coffee,
-  HeartHandshake,
   Compass,
+  Smile,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -38,7 +38,7 @@ interface Props {
 
 interface ServiceOption {
   id: string
-  day: string
+  day: 'Sunday' | 'Wednesday' | 'Friday'
   time: string
   title: string
   badge: string
@@ -64,7 +64,7 @@ const SERVICES: ServiceOption[] = [
     day: 'Friday',
     time: '04:50 PM',
     title: 'Academic & Wonder Service',
-    badge: 'Prayer & Study Mastery',
+    badge: 'Prayer & Academic Mastery',
   },
 ]
 
@@ -72,7 +72,7 @@ interface OriginOption {
   id: string
   label: string
   walkTime: string
-  tip: string
+  directions: string
 }
 
 const ORIGINS: OriginOption[] = [
@@ -80,25 +80,25 @@ const ORIGINS: OriginOption[] = [
     id: 'halls-1-3',
     label: 'Hall 1 – 3',
     walkTime: '3–5 mins walk',
-    tip: 'Direct pathway past the administrative complex.',
+    directions: 'Take the direct pathway past the Administrative complex towards the Law Faculty quadrangle. NLT 5 is on the ground floor.',
   },
   {
     id: 'halls-4-6',
     label: 'Hall 4 – 6',
     walkTime: '5–7 mins walk',
-    tip: 'Law Quadrangle steps; protocol team stationed by the entrance.',
+    directions: 'Follow the central academic walkway straight towards the Law Faculty. Enter the main foyer; NLT 5 is on the ground floor to your left.',
   },
   {
     id: 'halls-7-8',
     label: 'Hall 7 – 8',
     walkTime: '8–10 mins walk',
-    tip: 'Walking groups meet at hostel foyers 20 mins before service.',
+    directions: 'Take the main campus route towards the Law Faculty quadrangle. Look out for our welcome banner at NLT 5 entrance.',
   },
   {
     id: 'off-campus',
     label: 'Off-Campus',
-    walkTime: 'Gate ➔ NLT 5',
-    tip: 'Drop off at the Law Faculty roundabout; parking available.',
+    walkTime: 'Gate ➔ Law Faculty',
+    directions: 'Enter via Main Campus Gate to the Law Faculty roundabout. Walk into the ground floor foyer of the Law Faculty building to find NLT 5.',
   },
 ]
 
@@ -106,19 +106,55 @@ const PERKS = [
   {
     icon: Sparkles,
     title: 'Come As You Are',
-    desc: 'No rigid dress codes. Modest, student-friendly.',
+    desc: 'No rigid dress codes. Modest, comfortable, and student-friendly.',
   },
   {
-    icon: Coffee,
-    title: 'VIP First-Timer Care',
-    desc: 'Warm reception, snacks, and personal prayer.',
+    icon: Smile,
+    title: 'Warm Welcome',
+    desc: 'Friendly student community, uplifting worship, and sincere prayer.',
   },
   {
     icon: Compass,
-    title: 'Hostel Escorts Ready',
-    desc: 'First time locating Law NLT 5? We will walk with you.',
+    title: 'Need Directions?',
+    desc: 'First time locating Law NLT 5? Connect on WhatsApp and we will guide you.',
   },
 ]
+
+// Helper to compute next 4 upcoming dates for a specific day of the week
+function getUpcomingDates(dayName: 'Sunday' | 'Wednesday' | 'Friday', count = 4) {
+  const dayMap = { Sunday: 0, Wednesday: 3, Friday: 5 }
+  const targetDay = dayMap[dayName]
+  const dates: { id: string; label: string; full: string; dayNum: number; month: string; weekday: string }[] = []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // Find next occurrence
+  const current = new Date(today)
+  const diff = (targetDay - current.getDay() + 7) % 7
+  current.setDate(current.getDate() + diff)
+
+  for (let i = 0; i < count; i++) {
+    const d = new Date(current)
+    d.setDate(current.getDate() + i * 7)
+
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' })
+    const month = d.toLocaleDateString('en-US', { month: 'short' })
+    const dayNum = d.getDate()
+    const year = d.getFullYear()
+
+    dates.push({
+      id: d.toISOString().split('T')[0],
+      label: `${weekday}, ${month} ${dayNum}`,
+      full: `${weekday}, ${month} ${dayNum}, ${year}`,
+      dayNum,
+      month,
+      weekday,
+    })
+  }
+
+  return dates
+}
 
 export default function PlanAVisitSection({
   contactPerson,
@@ -133,12 +169,26 @@ export default function PlanAVisitSection({
   const [selectedOrigin, setSelectedOrigin] = useState<OriginOption>(ORIGINS[0])
   const [copied, setCopied] = useState(false)
 
+  // Dynamically compute upcoming dates for the selected service
+  const upcomingDates = useMemo(
+    () => getUpcomingDates(selectedService.day, 4),
+    [selectedService.day]
+  )
+
+  const [selectedDate, setSelectedDate] = useState<string>(upcomingDates[0]?.full || '')
+
+  // Reset selected date whenever service changes if current date doesn't match
+  const activeDate = useMemo(() => {
+    const exists = upcomingDates.find((d) => d.full === selectedDate)
+    return exists ? selectedDate : upcomingDates[0]?.full || ''
+  }, [selectedDate, upcomingDates])
+
   // Strip non-digit characters for WhatsApp
   const cleanPhone = String(safePhone).replace(/[^0-9]/g, '')
   const venueAddress = 'NLT 5, Faculty of Law, Edo State University Iyamho'
 
   const waMessage = encodeURIComponent(
-    `Hello ${safeContact}! I am planning my visit to ECCF for the ${selectedService.title} (${selectedService.day} @ ${selectedService.time}) coming from ${selectedOrigin.label}. Please save me a seat!`
+    `Hello ${safeContact}! I am planning to come for ${selectedService.title} on ${activeDate} from ${selectedOrigin.label}. Could you please guide me on how to locate NLT 5?`
   )
   const waUrl = `https://wa.me/${cleanPhone}?text=${waMessage}`
 
@@ -153,67 +203,71 @@ export default function PlanAVisitSection({
   return (
     <section
       id="visit"
-      className="py-16 sm:py-24 lg:py-28 bg-[#fafaf9] border-t border-stone-200/90 scroll-mt-16 sm:scroll-mt-20 relative overflow-hidden"
+      className="py-16 sm:py-20 lg:py-24 bg-[#fafaf9] border-t border-stone-200/90 scroll-mt-16 sm:scroll-mt-20 relative overflow-hidden"
     >
       {/* Ambient Radial Highlights */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-sky-100/60 rounded-full blur-3xl pointer-events-none -z-0" />
-      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-emerald-50/60 rounded-full blur-3xl pointer-events-none -z-0" />
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-sky-100/50 rounded-full blur-3xl pointer-events-none -z-0" />
+      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-emerald-50/50 rounded-full blur-3xl pointer-events-none -z-0" />
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[#0077cc] block mb-2.5 font-mono">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[#0077cc] block mb-2 font-mono">
             JOIN OUR CAMPUS FAMILY
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl xl:text-6xl text-slate-950 tracking-tight leading-[1.12]">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl xl:text-6xl text-slate-950 tracking-tight leading-[1.12]">
             We Saved You a Seat.
           </h2>
-          <p className="mt-3.5 text-base sm:text-lg lg:text-xl text-slate-600 leading-relaxed font-normal">
-            No confusion, no awkwardness. Choose your service, tell us where you&apos;re coming from, and let our team welcome you like royalty.
+          <p className="mt-2 text-base sm:text-lg text-slate-600 font-normal">
+            Let us know when you&apos;re coming.
           </p>
         </div>
 
-        {/* Massive Interactive Visit Console */}
-        <div className="w-full rounded-[32px] sm:rounded-[40px] bg-white border border-stone-200/90 p-6 sm:p-10 lg:p-14 shadow-sm hover:shadow-md transition-shadow">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+        {/* Clean Interactive Visit Console */}
+        <div className="w-full rounded-3xl sm:rounded-[36px] bg-white border border-stone-200/90 p-5 sm:p-8 lg:p-12 shadow-sm hover:shadow-md transition-shadow">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
             
-            {/* Left Column: Interactive Preferences (Low text, high clickability) */}
-            <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
+            {/* Left Column: Interactive Preference Choices */}
+            <div className="lg:col-span-7 flex flex-col justify-between space-y-7">
               
-              {/* Step 1: Choose Your Service */}
+              {/* Question 1: Service Selection */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">
-                    1. When are you joining us?
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 font-mono">
+                    When are you joining us?
                   </span>
-                  <span className="text-xs font-semibold text-[#0077cc] flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
+                  <span className="text-xs font-semibold text-[#0077cc] flex items-center gap-1 font-mono">
+                    <Clock className="h-3.5 w-3.5" />
                     <span>Select Service</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {SERVICES.map((s) => {
                     const isSelected = selectedService.id === s.id
                     return (
                       <button
                         key={s.id}
                         type="button"
-                        onClick={() => setSelectedService(s)}
-                        className={`relative rounded-2xl p-4 text-left transition-all border ${
+                        onClick={() => {
+                          setSelectedService(s)
+                          const nextDates = getUpcomingDates(s.day, 4)
+                          if (nextDates[0]) setSelectedDate(nextDates[0].full)
+                        }}
+                        className={`relative rounded-2xl p-3.5 text-left transition-all border ${
                           isSelected
-                            ? 'bg-slate-950 text-white border-slate-950 shadow-md shadow-slate-950/15'
+                            ? 'bg-slate-950 text-white border-slate-950 shadow-sm shadow-slate-950/15'
                             : 'bg-stone-50 hover:bg-stone-100 text-slate-800 border-stone-200/80'
                         }`}
                       >
                         <span
-                          className={`text-xs font-bold uppercase tracking-wider block mb-1 ${
+                          className={`text-[11px] font-bold uppercase tracking-wider block mb-1 font-mono ${
                             isSelected ? 'text-sky-400' : 'text-[#0077cc]'
                           }`}
                         >
                           {s.day}
                         </span>
-                        <span className="font-serif text-lg font-bold block leading-tight">
+                        <span className="font-heading text-lg font-bold block leading-tight">
                           {s.time}
                         </span>
                         <span
@@ -229,19 +283,69 @@ export default function PlanAVisitSection({
                 </div>
               </div>
 
-              {/* Step 2: Where are you coming from? */}
+              {/* Question 2: Calendar Date Selection */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">
-                    2. Where are you coming from on campus?
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 font-mono">
+                    Select a date
                   </span>
-                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 font-mono">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    <span>Upcoming {selectedService.day}s</span>
+                  </span>
+                </div>
+
+                {/* Date Pills — Clean, glanceable calendar choices */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {upcomingDates.map((dateObj) => {
+                    const isSelected = activeDate === dateObj.full
+                    return (
+                      <button
+                        key={dateObj.id}
+                        type="button"
+                        onClick={() => setSelectedDate(dateObj.full)}
+                        className={`rounded-xl p-2.5 text-center transition-all border flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-[#0077cc] text-white border-[#0077cc] shadow-sm'
+                            : 'bg-stone-50 hover:bg-stone-100 text-slate-800 border-stone-200/80'
+                        }`}
+                      >
+                        <span
+                          className={`text-[10px] uppercase font-bold tracking-wider font-mono ${
+                            isSelected ? 'text-sky-200' : 'text-slate-500'
+                          }`}
+                        >
+                          {dateObj.month}
+                        </span>
+                        <span className="text-lg font-bold leading-none my-1 font-sans">
+                          {dateObj.dayNum}
+                        </span>
+                        <span
+                          className={`text-[11px] font-medium leading-none ${
+                            isSelected ? 'text-white' : 'text-slate-600'
+                          }`}
+                        >
+                          {dateObj.weekday}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Question 3: Hostel of Origin Selection */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 font-mono">
+                    Where are you coming from on campus?
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 font-mono">
                     <Navigation className="h-3.5 w-3.5" />
                     <span>{selectedOrigin.walkTime}</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {ORIGINS.map((o) => {
                     const isSelected = selectedOrigin.id === o.id
                     return (
@@ -252,7 +356,7 @@ export default function PlanAVisitSection({
                         className={`rounded-xl px-3 py-2.5 text-center text-xs font-bold transition-all border ${
                           isSelected
                             ? 'bg-[#0077cc] text-white border-[#0077cc] shadow-sm'
-                            : 'bg-stone-50 hover:bg-stone-100 text-slate-700 border-stone-200/70'
+                            : 'bg-stone-50 hover:bg-stone-100 text-slate-700 border-stone-200/80'
                         }`}
                       >
                         {o.label}
@@ -261,27 +365,30 @@ export default function PlanAVisitSection({
                   })}
                 </div>
 
-                {/* Dynamic Campus Path Tip */}
-                <div className="mt-3 rounded-xl bg-sky-50/80 border border-sky-100 px-3.5 py-2 text-xs text-slate-700 flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-[#0077cc] shrink-0" />
-                  <span>
-                    <strong>From {selectedOrigin.label}:</strong> {selectedOrigin.tip}
-                  </span>
+                {/* Practical Campus Walking Guide */}
+                <div className="mt-3 rounded-xl bg-sky-50/80 border border-sky-100 px-3.5 py-2.5 text-xs text-slate-700 flex items-start gap-2.5">
+                  <MapPin className="h-4 w-4 text-[#0077cc] shrink-0 mt-0.5" />
+                  <div className="leading-snug">
+                    <strong className="text-slate-900 font-bold block mb-0.5">
+                      Directions from {selectedOrigin.label} ({selectedOrigin.walkTime}):
+                    </strong>
+                    <span>{selectedOrigin.directions}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Step 3: Quick Perks (Glanceable, no fluff) */}
+              {/* Friendly Student Expectations */}
               <div className="pt-2 border-t border-stone-100">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {PERKS.map((p) => {
                     const Icon = p.icon
                     return (
                       <div
                         key={p.title}
-                        className="rounded-xl bg-stone-50/80 border border-stone-100 p-3 text-left"
+                        className="rounded-xl bg-stone-50/70 border border-stone-100 p-2.5 text-left"
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Icon className="h-4 w-4 text-[#0077cc] shrink-0" />
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Icon className="h-3.5 w-3.5 text-[#0077cc] shrink-0" />
                           <h4 className="text-xs font-bold text-slate-900 leading-tight">
                             {p.title}
                           </h4>
@@ -297,60 +404,55 @@ export default function PlanAVisitSection({
 
             </div>
 
-            {/* Right Column: High-Impact VIP Pass & 1-Tap Connect */}
+            {/* Right Column: Location Summary & Direct WhatsApp Connect */}
             <div className="lg:col-span-5 flex flex-col justify-between">
-              <div className="h-full rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-7 sm:p-9 flex flex-col justify-between shadow-xl shadow-slate-950/20 border border-slate-800 relative overflow-hidden">
-                {/* Ambient Decorative Light */}
-                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-44 h-44 bg-sky-500/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="h-full rounded-2xl sm:rounded-3xl bg-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between shadow-xl shadow-slate-950/15 border border-slate-800 relative overflow-hidden">
+                {/* Subtle Ambient Light */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-40 h-40 bg-sky-500/15 rounded-full blur-2xl pointer-events-none" />
 
-                {/* Top Ticket Header */}
+                {/* Card Top: Location Details */}
                 <div>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-xs font-bold uppercase tracking-widest text-sky-400 font-mono">
-                        VIP Campus Pass
-                      </span>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                      Reserved For You
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                    <span className="text-xs font-bold uppercase tracking-widest text-sky-400 font-mono">
+                      Meeting Location
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-400 font-mono">
+                      Faculty of Law
                     </span>
                   </div>
 
-                  {/* Dynamic Ticket Preview */}
+                  {/* Dynamic Summary Preview */}
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={selectedService.id + selectedOrigin.id}
-                      initial={{ opacity: 0, y: 10 }}
+                      key={selectedService.id + selectedOrigin.id + activeDate}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.25 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
                       className="space-y-4"
                     >
                       <div>
-                        <span className="text-xs text-slate-400 uppercase font-mono block">
-                          Service Encounter
+                        <span className="text-[11px] text-slate-400 uppercase font-mono block">
+                          Service & Date
                         </span>
-                        <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-0.5">
+                        <h3 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-0.5">
                           {selectedService.title}
                         </h3>
-                        <div className="inline-flex items-center gap-2 mt-1.5 text-xs text-sky-300 font-semibold">
+                        <div className="inline-flex items-center gap-2 mt-1 text-xs text-sky-300 font-semibold font-mono">
+                          <CalendarIcon className="h-3.5 w-3.5" />
+                          <span>{activeDate}</span>
+                          <span>&bull;</span>
                           <Clock className="h-3.5 w-3.5" />
-                          <span>
-                            {selectedService.day}s at {selectedService.time}
-                          </span>
+                          <span>{selectedService.time}</span>
                         </div>
                       </div>
 
                       {/* Location Box */}
-                      <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-1.5 text-left">
+                      <div className="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-1.5 text-left">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
-                            <MapPin className="h-3.5 w-3.5 text-[#0095ff]" />
-                            <span>Meeting Venue</span>
+                            <MapPin className="h-3.5 w-3.5 text-sky-400" />
+                            <span>Venue</span>
                           </span>
                           <button
                             type="button"
@@ -370,19 +472,25 @@ export default function PlanAVisitSection({
                             )}
                           </button>
                         </div>
-                        <p className="font-serif font-bold text-base sm:text-lg text-white">
+                        <p className="font-heading font-bold text-base sm:text-lg text-white">
                           NLT 5, Faculty of Law, ESUI
                         </p>
                         <p className="text-xs text-slate-300">
-                          Law Faculty Lecture Theatre 5 &bull; Ground Floor
+                          Law Lecture Theatre 5 &bull; Ground Floor
                         </p>
+                      </div>
+
+                      {/* Hostel Origin Pill */}
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs text-slate-300 flex items-center justify-between">
+                        <span>Coming from:</span>
+                        <strong className="text-white font-mono">{selectedOrigin.label}</strong>
                       </div>
                     </motion.div>
                   </AnimatePresence>
                 </div>
 
-                {/* Bottom Action Area */}
-                <div className="pt-6 mt-6 border-t border-slate-800 space-y-3">
+                {/* Bottom WhatsApp Connect Action */}
+                <div className="pt-5 mt-5 border-t border-slate-800 space-y-3">
                   <a
                     href={waUrl}
                     target="_blank"
@@ -392,7 +500,7 @@ export default function PlanAVisitSection({
                     <svg className="h-4 w-4 fill-slate-950 shrink-0" viewBox="0 0 24 24">
                       <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.586 1.861.947 3.013.947 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.768-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.782 0-3.454-.471-4.908-1.292l-5.092 1.354 1.38-5.041c-.911-1.507-1.428-3.266-1.428-5.021 0-5.514 4.486-10 10-10s10 4.486 10 10z" />
                     </svg>
-                    <span>Reserve My Seat via WhatsApp</span>
+                    <span>Connect on WhatsApp for Directions</span>
                   </a>
 
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
@@ -400,7 +508,6 @@ export default function PlanAVisitSection({
                       href="/connect"
                       className="inline-flex items-center gap-1.5 hover:text-white transition-colors group"
                     >
-                      <HeartHandshake className="h-3.5 w-3.5 text-sky-400" />
                       <span>Prefer a form? Fill Connect Card</span>
                       <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                     </Link>
