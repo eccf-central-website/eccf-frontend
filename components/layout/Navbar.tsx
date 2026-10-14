@@ -16,7 +16,7 @@ import { Menu, X, Loader2 } from 'lucide-react'
 const navLinks = [
   { label: 'Sermons', href: '/sermons' },
   { label: 'Giving', href: '/#giving' },
-  { label: 'About', href: '/#about' },
+  { label: 'About', href: '/about' },
   { label: 'Announcements', href: '/announcements' },
   { label: 'Connect', href: '/connect' },
 ]
