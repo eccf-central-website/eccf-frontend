@@ -74,7 +74,32 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
 }
 
-export function canAccessSection(role: WorkerRole, section: DashboardSection): boolean {
+export function isOutreachLeader(session?: { team?: string; excoPosition?: string } | null): boolean {
+  if (!session) return false
+  const team = (session.team || '').toLowerCase()
+  const position = (session.excoPosition || '').toLowerCase()
+  return (
+    team.includes('outreach') ||
+    team.includes('evangelism') ||
+    team.includes('follow') ||
+    position.includes('outreach') ||
+    position.includes('evangelism') ||
+    position.includes('follow')
+  )
+}
+
+export function canAccessSection(
+  role: WorkerRole,
+  section: DashboardSection,
+  session?: { team?: string; excoPosition?: string } | null
+): boolean {
+  if (section === 'firstTimers') {
+    if (role === 'admin' || role === 'hall_rep') return true
+    if (role === 'team_lead') {
+      return session ? isOutreachLeader(session) : false
+    }
+    return false
+  }
   return SECTION_ACCESS[section].includes(role)
 }
 

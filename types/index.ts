@@ -103,6 +103,7 @@ export interface ECCFSession {
    */
   team: string
   excoPosition?: string
+  hall?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -280,4 +281,18 @@ export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees' | 'team
 
 /** Finance ledger row as listed in the dashboard. */
 export type FinanceRow = Omit<FinanceLedger, '_type'>
+
+/** First-timer intake row as listed in the dashboard for follow-up coordination. */
+export interface FirstTimerRow {
+  _id: string
+  _type?: 'firstTimer'
+  fullName: string
+  phoneNumber?: string
+  hall?: string
+  roomNumber?: string
+  department?: string
+  level?: string
+  dateVisited: string
+  createdAt?: string
+}
 

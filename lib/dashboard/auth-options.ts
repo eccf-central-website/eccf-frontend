@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
           isExcoApproved?: boolean
           passwordHash?: string
           team?: string | { name?: string }
+          hall?: string
         }>(
           `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
             _id,
@@ -60,7 +61,8 @@ export const authOptions: NextAuthOptions = {
             excoPosition,
             isExcoApproved,
             passwordHash,
-            team
+            team,
+            hall
           }`,
           { cleanEmail, cleanPhone, phoneBlindIndex }
         )
@@ -103,6 +105,7 @@ export const authOptions: NextAuthOptions = {
           role: effectiveRole,
           team: resolvedTeam,
           excoPosition: worker.excoPosition || '',
+          hall: worker.hall || '',
         }
       },
     }),
@@ -114,6 +117,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as unknown as { role: WorkerRole }).role
         token.team = (user as unknown as { team: string }).team
         token.excoPosition = (user as unknown as { excoPosition?: string }).excoPosition
+        token.hall = (user as unknown as { hall?: string }).hall
       }
       return token
     },
@@ -123,6 +127,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as unknown as { role: WorkerRole }).role = token.role as WorkerRole
         ;(session.user as unknown as { team: string }).team = token.team as string
         ;(session.user as unknown as { excoPosition?: string }).excoPosition = token.excoPosition as string
+        ;(session.user as unknown as { hall?: string }).hall = token.hall as string
       }
       return session
     },

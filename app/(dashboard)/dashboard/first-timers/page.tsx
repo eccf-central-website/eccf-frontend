@@ -1,37 +1,51 @@
 /**
- * First-Timers — /dashboard/first-timers
+ * First-Timers & Connect Intake — /dashboard/first-timers
  *
- * Stub until feature/dashboard-data-tables:
- * guards direct-URL access with requireSection() and
- * already fetches the section's data, so the dev switcher's slow / empty /
- * error states exercise loading.tsx, SectionEmpty and error.tsx here.
+ * Scoped by role:
+ * - Hall Reps: see only visitors residing in their assigned hall
+ * - Outreach Team Leader / Follow-up Coordinator: see all campus visitors for follow-up coordination
+ * - Admins: global overview across all halls
  */
 
-import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
-import SectionPlaceholder from '@/components/dashboard/shell/SectionPlaceholder'
+import PageContainer from '@/components/dashboard/shell/PageContainer'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listFirstTimers } from '@/lib/dashboard/data'
+import { isHallScoped, isOutreachLeader } from '@/lib/dashboard/rbac'
+import FirstTimersTable from '@/components/dashboard/first-timers/FirstTimersTable'
+
+export const dynamic = 'force-dynamic'
 
 export default async function FirstTimersPage() {
-  await requireSection('firstTimers')
-  const rows = await listFirstTimers()
+  const session = await requireSection('firstTimers')
+  const rows = await listFirstTimers(session)
 
-  if (rows.length === 0) {
-    return (
-      <SectionEmpty
-        section="firstTimers"
-        title="No first-timers yet"
-        description="First-timer forms submitted on the Connect page will appear here."
-      />
-    )
-  }
+  const isHallRep = isHallScoped(session.role)
+  const isOutreach = isOutreachLeader(session)
+
+  const pageTitle = isHallRep
+    ? `${session.hall || 'Hall'} First-Timers`
+    : isOutreach
+      ? 'Outreach & Follow-Up Portal'
+      : 'First-Timers & Connect Intake'
+
+  const pageDescription = isHallRep
+    ? `Visitors who connected with ECCF living in ${session.hall || 'your hall'}. Reach out to welcome them and check on their welfare.`
+    : isOutreach
+      ? 'All first-time visitors and connect submissions across campus for coordinated pastoral follow-up.'
+      : 'Connect form submissions from campus services and outreach events.'
 
   return (
-    <SectionPlaceholder
-      section="firstTimers"
-      branch="feature/dashboard-data-tables"
-      description="Feed of first-timer intake forms from the Connect page."
-      count={rows.length}
-    />
+    <PageContainer>
+      {/* Header */}
+      <div className="flex flex-col gap-2 border-b pb-5">
+        <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          {pageTitle}
+        </h2>
+        <p className="text-sm text-muted-foreground">{pageDescription}</p>
+      </div>
+
+      {/* Main Roster & Follow-Up Table */}
+      <FirstTimersTable rows={rows} session={session} />
+    </PageContainer>
   )
 }

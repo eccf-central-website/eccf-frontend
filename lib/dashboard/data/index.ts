@@ -24,6 +24,7 @@ import type {
   AttendanceRow,
   ECCFSession,
   FinanceRow,
+  FirstTimerRow,
   PrayerRequest,
   SafeFirstTimer,
   SafeWelfareRequest,
@@ -83,6 +84,7 @@ async function fromMock<T>(rows: T, empty: T): Promise<T> {
 /** Hall used to scope hall_rep reads; null means all halls. */
 async function hallScope(session: ECCFSession): Promise<string | null> {
   if (!isHallScoped(session.role)) return null
+  if (session.hall) return session.hall
   const hall =
     dataSource() === 'mock'
       ? mockHallForWorker(session.id)
@@ -138,7 +140,11 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
     return {
       people: showPeople
         ? {
-            firstTimersThisMonth: firstTimers.filter((f) => f.dateVisited >= params.monthStart).length,
+            firstTimersThisMonth: firstTimers.filter(
+              (f) =>
+                (params.hall === null || f.hall?.toLowerCase() === params.hall.toLowerCase()) &&
+                f.dateVisited >= params.monthStart
+            ).length,
             pendingWelfare: welfare.filter((w) => w.status === 'Pending').length,
             prayerRequestsThisWeek: prayer.filter((p) => p.dateSubmitted >= params.weekStart).length,
             workers: workers.filter(
@@ -229,12 +235,25 @@ export async function listFinance(): Promise<FinanceRow[]> {
 // Intake feeds
 // ---------------------------------------------------------------------------
 
-export async function listFirstTimers(): Promise<SafeFirstTimer[]> {
-  const rows =
-    dataSource() === 'mock'
-      ? await fromMock(MOCK_FIRST_TIMERS, [])
-      : await sanityWriteClient.fetch<SafeFirstTimer[]>(DASHBOARD_FIRST_TIMERS_QUERY)
-  return stripPII(rows)
+export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimerRow[]> {
+  const hall = session ? await hallScope(session) : null
+  if (dataSource() === 'mock') {
+    const raw = await fromMock(MOCK_FIRST_TIMERS, [])
+    if (hall && hall !== '__no-hall__') {
+      return raw.filter((r) => r.hall?.toLowerCase() === hall.toLowerCase())
+    }
+    return raw
+  }
+
+  const rows = await sanityWriteClient.fetch<FirstTimerRow[]>(DASHBOARD_FIRST_TIMERS_QUERY, {
+    hall: hall && hall !== '__no-hall__' ? hall : null,
+  })
+
+  return rows.map((row) => ({
+    ...row,
+    phoneNumber: row.phoneNumber ? decrypt(row.phoneNumber) : undefined,
+    roomNumber: row.roomNumber ? decrypt(row.roomNumber) : undefined,
+  }))
 }
 
 export async function listWelfare(): Promise<SafeWelfareRequest[]> {

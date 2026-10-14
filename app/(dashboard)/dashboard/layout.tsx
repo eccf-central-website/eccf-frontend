@@ -29,7 +29,7 @@ export default async function DashboardShellLayout({
   children: React.ReactNode
 }>) {
   const session = await requireSession()
-  const sections = NAV_ITEMS.filter((item) => canAccessSection(session.role, item.section)).map(
+  const sections = NAV_ITEMS.filter((item) => canAccessSection(session.role, item.section, session)).map(
     (item) => item.section
   )
   const cookieStore = cookies()
