@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
@@ -17,6 +18,8 @@ import {
   ShieldAlert,
   RotateCcw,
   Loader2,
+  Lock,
+  KeyRound,
 } from 'lucide-react'
 import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
@@ -33,7 +36,57 @@ const HALLS_OF_RESIDENCE = [
   'Hall 8',
 ]
 
+const VALID_WORKFORCE_CODES = [
+  'ECCFWORKERS',
+  'ECCFWORKERS2026',
+  'ECCF2026',
+  'WORKFORCE',
+  'ECCF-WORKFORCE',
+  (process.env.NEXT_PUBLIC_WORKER_ACCESS_CODE || '').toUpperCase().trim(),
+].filter(Boolean)
+
 export function WorkerRegistrationForm() {
+  const searchParams = useSearchParams()
+  const codeParam = searchParams.get('code') || searchParams.get('passcode') || searchParams.get('key') || ''
+
+  // Access Gate Security
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [enteredCode, setEnteredCode] = useState('')
+  const [gateError, setGateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // 1. Auto-unlock if code provided via URL (e.g. from WhatsApp group link)
+    if (codeParam && VALID_WORKFORCE_CODES.includes(codeParam.toUpperCase())) {
+      setIsUnlocked(true)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('eccf_worker_passcode', codeParam.toUpperCase())
+      }
+      return
+    }
+
+    // 2. Check stored passcode in localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('eccf_worker_passcode')
+      if (stored && VALID_WORKFORCE_CODES.includes(stored.toUpperCase())) {
+        setIsUnlocked(true)
+      }
+    }
+  }, [codeParam])
+
+  function handleUnlock(e: React.FormEvent) {
+    e.preventDefault()
+    const clean = enteredCode.trim().toUpperCase()
+    if (VALID_WORKFORCE_CODES.includes(clean)) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('eccf_worker_passcode', clean)
+      }
+      setIsUnlocked(true)
+      setGateError(null)
+    } else {
+      setGateError('Incorrect workforce passcode. Please confirm the key shared on the WhatsApp group.')
+    }
+  }
+
   // Step & Flow State
   const [step, setStep] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
@@ -239,8 +292,92 @@ export function WorkerRegistrationForm() {
     )
   }
 
+  // Access Gate: Require workforce passcode if not unlocked
+  if (!isUnlocked) {
+    return (
+      <div className="w-full max-w-md mx-auto rounded-3xl bg-white border border-stone-200/90 p-7 sm:p-9 shadow-sm text-center space-y-6">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 text-[#0077cc] border border-sky-100 shadow-2xs">
+          <Lock className="h-8 w-8 text-[#0095ff]" />
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc] font-mono block">
+            RESTRICTED PORTAL
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+            Workforce Passkey Required
+          </h2>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            This registration portal is reserved exclusively for inducted volunteer workers and leaders of ECCF.
+          </p>
+        </div>
+
+        <form onSubmit={handleUnlock} className="space-y-4 text-left">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 font-mono mb-1.5">
+              Enter Workforce Passcode
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={enteredCode}
+                onChange={(e) => {
+                  setEnteredCode(e.target.value)
+                  setGateError(null)
+                }}
+                placeholder="e.g. ECCFWORKERS"
+                className="w-full h-12 rounded-xl border border-stone-300 pl-4 pr-10 text-sm font-mono tracking-wider uppercase focus:border-[#0077cc] focus:outline-none focus:ring-2 focus:ring-sky-100 transition-all"
+                autoFocus
+              />
+              <KeyRound className="h-4 w-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            {gateError && (
+              <p className="text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>{gateError}</span>
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="w-full h-12 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-sm uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
+          >
+            Unlock Registration Form
+          </button>
+        </form>
+
+        <div className="pt-2 border-t border-stone-100 text-xs text-slate-500 leading-relaxed">
+          <p>
+            Are you an ECCF worker? The access passkey is available in the pinned message of the official <strong>ECCF Workforce WhatsApp Group</strong>.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
+      {/* Workforce Security Badge */}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-900 shadow-2xs">
+        <span className="flex items-center gap-2 font-bold font-mono">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>VERIFIED WORKFORCE LINK &bull; AUTHORIZED SESSION</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('eccf_worker_passcode')
+            }
+            setIsUnlocked(false)
+          }}
+          className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-950 underline transition-colors"
+        >
+          Lock
+        </button>
+      </div>
+
       {/* Visual Progress Bar Header */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-600 font-mono">
