@@ -32,8 +32,8 @@ export default function Footer() {
                 <span className="text-2xl sm:text-3xl font-black text-[#0095ff] tracking-tight block">
                   ECCF
                 </span>
-                <span className="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider block mt-0.5">
-                  Edo State University Christian Campus Fellowship
+                <span className="text-xs sm:text-sm font-bold text-slate-600 tracking-normal block mt-0.5">
+                  ESUI Christian Campus Fellowship
                 </span>
               </div>
             </div>
