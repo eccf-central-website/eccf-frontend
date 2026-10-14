@@ -17,6 +17,7 @@ import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
 import { ThemeToggle } from '@/components/dashboard/theme/ThemeToggle'
+import InstallPwaButton from '@/components/dashboard/pwa/InstallPwaButton'
 
 interface TopBarProps {
   sections: readonly DashboardSection[]
@@ -67,6 +68,7 @@ export default function TopBar({ sections, role, team, teams, excoPosition, acti
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {actions}
+        <InstallPwaButton />
         <ThemeToggle />
         <UserMenu role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
       </div>

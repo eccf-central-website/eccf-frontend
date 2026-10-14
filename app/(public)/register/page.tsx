@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { WorkerRegistrationForm } from '@/components/forms/WorkerRegistrationForm'
 import type { Metadata } from 'next'
 
@@ -5,6 +6,10 @@ export const metadata: Metadata = {
   title: 'Worker Registration & CRM — ECCF',
   description:
     'Official workforce profile registration and update portal for Edo State University Christian Campus Fellowship.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function RegisterPage() {
@@ -25,8 +30,10 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Worker Form */}
-        <WorkerRegistrationForm />
+        {/* Worker Form wrapped in Suspense for search params */}
+        <Suspense fallback={<div className="h-96 w-full max-w-2xl mx-auto animate-pulse bg-white rounded-3xl" />}>
+          <WorkerRegistrationForm />
+        </Suspense>
       </div>
     </div>
   )

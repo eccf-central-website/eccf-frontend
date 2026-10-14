@@ -122,6 +122,7 @@ export default async function Home() {
 
       {/* 8. Plan a Visit Section */}
       <PlanAVisitSection
+        services={services || []}
         contactPerson={settings?.visitContactPerson || undefined}
         whatsAppNumber={settings?.visitWhatsAppNumber || undefined}
         email={settings?.fellowshipEmail || undefined}

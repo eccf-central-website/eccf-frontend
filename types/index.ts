@@ -72,6 +72,8 @@ export interface Worker {
    * This is the unique identifier used for upsert deduplication.
    */
   phoneNumber?: string
+  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  phoneBlindIndex?: string
   birthDate?: string // ISO date string YYYY-MM-DD
   role?: WorkerRole
   excoPosition?: ExcoPosition
@@ -92,8 +94,8 @@ export interface Worker {
   updateLog?: string[]
 }
 
-/** Safe worker type — phoneNumber, roomNumber, and passwordHash guaranteed stripped for browser */
-export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash'>
+/** Safe worker type — phoneNumber, roomNumber, passwordHash, and phoneBlindIndex guaranteed stripped for browser */
+export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash' | 'phoneBlindIndex'>
 
 // ---------------------------------------------------------------------------
 // JWT Session (NextAuth)
@@ -111,6 +113,7 @@ export interface ECCFSession {
   /** All operational teams this worker belongs to */
   teams?: string[]
   excoPosition?: string
+  hall?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +217,8 @@ export interface FirstTimer {
    * ⚠️ ENCRYPTED — stripped before any client-facing response.
    */
   phoneNumber: string
+  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  phoneBlindIndex?: string
   hall?: string
   /**
    * ⚠️ ENCRYPTED — stripped before any client-facing response.
@@ -233,6 +238,8 @@ export interface WelfareRequest {
    * ⚠️ ENCRYPTED — stripped before any client-facing response.
    */
   phoneNumber: string
+  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  phoneBlindIndex?: string
   requestDetails: string
   status: 'Pending' | 'Resolved'
   dateSubmitted: string // ISO date string
@@ -255,9 +262,9 @@ export interface Subscriber {
   isActive: boolean
 }
 
-/** Browser-safe intake types — phoneNumber and roomNumber guaranteed stripped */
-export type SafeFirstTimer = Omit<FirstTimer, 'phoneNumber' | 'roomNumber'>
-export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber'>
+/** Browser-safe intake types — phoneNumber, roomNumber, and phoneBlindIndex guaranteed stripped */
+export type SafeFirstTimer = Omit<FirstTimer, 'phoneNumber' | 'roomNumber' | 'phoneBlindIndex'>
+export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber' | 'phoneBlindIndex'>
 
 // ---------------------------------------------------------------------------
 // Exco Dashboard view models (browser-safe — never carry phoneNumber/roomNumber)
@@ -289,4 +296,18 @@ export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees' | 'team
 
 /** Finance ledger row as listed in the dashboard. */
 export type FinanceRow = Omit<FinanceLedger, '_type'>
+
+/** First-timer intake row as listed in the dashboard for follow-up coordination. */
+export interface FirstTimerRow {
+  _id: string
+  _type?: 'firstTimer'
+  fullName: string
+  phoneNumber?: string
+  hall?: string
+  roomNumber?: string
+  department?: string
+  level?: string
+  dateVisited: string
+  createdAt?: string
+}
 

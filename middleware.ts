@@ -47,7 +47,7 @@ export async function middleware(req: NextRequest) {
 
     // Check RBAC section boundary
     const section = sectionForPath(pathname)
-    if (section && !canAccessSection(role, section)) {
+    if (section && !canAccessSection(role, section, { team: token.team as string, excoPosition: token.excoPosition as string })) {
       const deniedUrl = new URL(SECTION_PATHS.overview, req.url)
       deniedUrl.searchParams.set('denied', section)
       return NextResponse.redirect(deniedUrl)

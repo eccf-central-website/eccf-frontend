@@ -39,7 +39,7 @@ export default function Footer() {
             </div>
 
             <p className="text-base sm:text-lg text-slate-600 max-w-sm leading-relaxed">
-              Edo State University Christian Campus Fellowship. Raising spiritual dynamites and academic giants for God&apos;s kingdom.
+              ESUI Christian Campus Fellowship. Raising spiritual dynamites and academic giants for God&apos;s kingdom.
             </p>
 
             {/* Social Media Links with Official Vector Paths */}
@@ -174,7 +174,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 sm:mt-14 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-          <p>&copy; {currentYear} ECCF &mdash; Edo State University Christian Campus Fellowship. All rights reserved.</p>
+          <p>&copy; {currentYear} ECCF &mdash; ESUI Christian Campus Fellowship. All rights reserved.</p>
           <Link
             href="/dashboard"
             className="flex items-center gap-1.5 text-slate-700 hover:text-[#0095ff] font-bold transition-colors"

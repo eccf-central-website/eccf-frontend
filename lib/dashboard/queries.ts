@@ -78,11 +78,13 @@ export const DASHBOARD_FINANCE_QUERY = `
 // ---------------------------------------------------------------------------
 
 export const DASHBOARD_FIRST_TIMERS_QUERY = `
-  *[_type == "firstTimer"] | order(dateVisited desc, _createdAt desc) {
+  *[_type == "firstTimer" && ($hall == null || hall == $hall)] | order(dateVisited desc, _createdAt desc) {
     _id,
     _type,
     fullName,
+    phoneNumber,
     hall,
+    roomNumber,
     department,
     level,
     dateVisited,
@@ -117,7 +119,7 @@ export const DASHBOARD_PRAYER_REQUESTS_QUERY = `
 // ---------------------------------------------------------------------------
 
 export const PEOPLE_STATS_QUERY = `{
-  "firstTimersThisMonth": count(*[_type == "firstTimer" && dateVisited >= $monthStart]),
+  "firstTimersThisMonth": count(*[_type == "firstTimer" && ($hall == null || hall == $hall) && dateVisited >= $monthStart]),
   "pendingWelfare": count(*[_type == "welfareRequest" && status == "Pending"]),
   "prayerRequestsThisWeek": count(*[_type == "prayerRequest" && coalesce(dateSubmitted, _createdAt) >= $weekStart]),
   "workers": count(*[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)]),

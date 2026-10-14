@@ -16,12 +16,13 @@ import {createImageUrlBuilder} from '@sanity/image-url'
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
-/** Public read-only client — safe for React Server Components */
+/** Server-side read client — authenticated with SANITY_READ_TOKEN or fallback to WRITE_TOKEN */
 export const sanityClient = createClient({
   projectId,
   dataset,
   apiVersion: '2024-01-01',
   useCdn: false, // Set false for immediate live preview of Sanity Studio edits
+  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
 })
 
 /** Image URL builder with automatic hotspot and crop support */

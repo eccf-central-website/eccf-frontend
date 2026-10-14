@@ -11,6 +11,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { sanityWriteClient } from '@/lib/sanity'
+import { decrypt, createBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export const authOptions: NextAuthOptions = {
@@ -34,8 +35,9 @@ export const authOptions: NextAuthOptions = {
         const rawIdentifier = credentials.identifier.trim()
         const cleanEmail = rawIdentifier.toLowerCase()
         const cleanPhone = rawIdentifier.replace(/\s+/g, '')
+        const phoneBlindIndex = createBlindIndex(cleanPhone)
 
-        // Look up Worker in Sanity by email or phoneNumber
+        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex
         const worker = await sanityWriteClient.fetch<{
           _id: string
           fullName: string
@@ -47,9 +49,10 @@ export const authOptions: NextAuthOptions = {
           isExcoApproved?: boolean
           passwordHash?: string
           team?: string | { name?: string }
+          hall?: string
           teams?: (string | { name?: string })[]
         }>(
-          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone)][0]{
+          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
             _id,
             fullName,
             email,
@@ -60,9 +63,10 @@ export const authOptions: NextAuthOptions = {
             isExcoApproved,
             passwordHash,
             team,
+            hall,
             "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
           }`,
-          { cleanEmail, cleanPhone }
+          { cleanEmail, cleanPhone, phoneBlindIndex }
         )
 
         if (!worker) {
@@ -73,7 +77,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('This account does not have a dashboard password set up.')
         }
 
-        const isValid = await bcrypt.compare(credentials.password, worker.passwordHash)
+        const storedHash = decrypt(worker.passwordHash)
+        const isValid = await bcrypt.compare(credentials.password, storedHash)
         if (!isValid) {
           throw new Error('Incorrect password. Please try again.')
         }
@@ -111,6 +116,7 @@ export const authOptions: NextAuthOptions = {
           team: resolvedTeam,
           teams: finalTeams,
           excoPosition: worker.excoPosition || '',
+          hall: worker.hall || '',
         }
       },
     }),
@@ -123,6 +129,7 @@ export const authOptions: NextAuthOptions = {
         token.team = (user as unknown as { team: string }).team
         token.teams = (user as unknown as { teams?: string[] }).teams
         token.excoPosition = (user as unknown as { excoPosition?: string }).excoPosition
+        token.hall = (user as unknown as { hall?: string }).hall
       }
       return token
     },
@@ -133,6 +140,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as unknown as { team: string }).team = token.team as string
         ;(session.user as unknown as { teams?: string[] }).teams = token.teams as string[] | undefined
         ;(session.user as unknown as { excoPosition?: string }).excoPosition = token.excoPosition as string
+        ;(session.user as unknown as { hall?: string }).hall = token.hall as string
       }
       return session
     },

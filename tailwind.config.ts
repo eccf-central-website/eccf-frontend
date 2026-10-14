@@ -19,7 +19,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-work-sans)", "sans-serif"],
+        sans: ["var(--font-work-sans)", "var(--font-geist-sans)", "sans-serif"],
         heading: ["var(--font-belleza)", "sans-serif"],
         display: ["var(--font-belleza)", "sans-serif"],
         serif: ["var(--font-belleza)", "sans-serif"],
