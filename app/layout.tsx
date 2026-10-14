@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Belleza, Work_Sans } from "next/font/google";
+import { Belleza, Work_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -15,10 +15,16 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 const belleza = Belleza({
   weight: "400",
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-belleza",
   display: "swap",
 });
 
@@ -50,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${belleza.variable} ${workSans.variable} antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${belleza.variable} ${workSans.variable} antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans`}
       >
         {children}
       </body>

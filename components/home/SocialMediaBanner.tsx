@@ -3,9 +3,10 @@
  *
  * Implements:
  * - Crisp, clean editorial white canvas directly after the Giving/Donation section.
- * - Bold editorial serif typography ("FOLLOW US FOR EXCLUSIVE CONTENT").
+ * - Bold editorial serif typography ("FOLLOW US FOR EXCLUSIVE CONTENT") with Playfair Display.
  * - High-contrast circular icon buttons matching the TPUSA aesthetic.
- * - Flawless mobile-first responsiveness: wraps cleanly without awkward overflows or scrollbars.
+ * - Flawless mobile-first responsiveness: guarantees all 6 buttons stay in a single unified
+ *   row on mobile viewports (via CSS Grid 6-columns) without awkward 5+1 wrapping.
  * - External deep links to official ECCF social channels (YouTube, Instagram, X, Facebook, TikTok, Telegram).
  */
 
@@ -134,9 +135,9 @@ export default function SocialMediaBanner({
     <section
       id="social-media"
       aria-label="Social Media Channels"
-      className="w-full bg-white text-slate-950 py-14 sm:py-20 md:py-28 lg:py-32 border-y border-stone-200/90 relative overflow-hidden"
+      className="w-full bg-white text-slate-950 py-12 sm:py-16 md:py-24 lg:py-28 border-y border-stone-200/90 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-16">
           
           {/* ================================================================ */}
@@ -155,7 +156,7 @@ export default function SocialMediaBanner({
             </span>
 
             {/* Massive Serif Headline */}
-            <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-slate-950 tracking-tight leading-[1] sm:leading-[0.95] uppercase select-none">
+            <h2 className="font-serif font-bold text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-slate-950 tracking-tight leading-[1.12] sm:leading-[1.06] lg:leading-[1.02] uppercase select-none">
               <span className="block">{headlineLine1}</span>
               <span className="block">{headlineLine2}</span>
               <span className="block">{headlineLine3}</span>
@@ -165,12 +166,14 @@ export default function SocialMediaBanner({
           {/* ================================================================ */}
           {/* RIGHT: Circular Social Media Icon Pills                           */}
           {/* ================================================================ */}
+          {/* Uses CSS Grid on mobile so all 6 icons are guaranteed to stay in */}
+          {/* a single, balanced row without accidental 5+1 line breaking.     */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="flex flex-wrap sm:flex-nowrap items-center justify-start md:justify-end gap-2.5 min-[375px]:gap-3 sm:gap-4 lg:gap-5 self-start md:self-center"
+            className="grid grid-cols-6 gap-2 sm:gap-3.5 md:flex md:items-center md:justify-end md:gap-4 lg:gap-5 w-full max-w-[340px] sm:max-w-[420px] md:max-w-none self-start md:self-center"
           >
             {socialPlatforms.map((platform, idx) => (
               <motion.a
@@ -186,7 +189,7 @@ export default function SocialMediaBanner({
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
                 whileHover={{ scale: 1.1, y: -4, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.94 }}
-                className="group relative flex h-10 w-10 min-[375px]:h-11 min-[375px]:w-11 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-[72px] lg:w-[72px] shrink-0 items-center justify-center rounded-full bg-[#0077cc] text-white shadow-md shadow-sky-600/20 hover:bg-[#005fa3] hover:shadow-xl hover:shadow-sky-500/35 transition-all focus:outline-none focus:ring-4 focus:ring-sky-400/40"
+                className="group relative flex aspect-square w-full max-w-[46px] sm:max-w-[54px] md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] md:max-w-none shrink-0 items-center justify-center rounded-full bg-[#0077cc] text-white shadow-md shadow-sky-600/20 hover:bg-[#005fa3] hover:shadow-xl hover:shadow-sky-500/35 transition-all focus:outline-none focus:ring-4 focus:ring-sky-400/40 mx-auto md:mx-0"
               >
                 {/* Glow ring on hover */}
                 <span
@@ -195,7 +198,7 @@ export default function SocialMediaBanner({
                 />
                 
                 {/* Brand Vector Icon */}
-                <div className="relative z-10 transition-transform duration-200 group-hover:scale-105">
+                <div className="relative z-10 transition-transform duration-200 group-hover:scale-105 flex items-center justify-center">
                   {platform.icon}
                 </div>
               </motion.a>
