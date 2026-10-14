@@ -3,10 +3,10 @@ import type { Config } from "tailwindcss";
 /**
  * Public site Tailwind config — feeds app/globals.css, which every page loads.
  *
- * Content deliberately excludes the Exco Dashboard (app/(dashboard) and
- * components/dashboard): the dashboard compiles its own utilities via
- * tailwind.dashboard.config.ts (see app/(dashboard)/dashboard.css), so its
- * classes add no weight to public pages (SDD §7.5, 3G performance target).
+ * 3-Font System Architecture:
+ * 1. Headings: Belleza (Humanist display) -> font-heading, font-display, font-serif
+ * 2. Body: Work Sans (Grotesque body) -> font-sans
+ * 3. Styling / Accents: Geist Mono (Pills, badges, code, tags) -> font-mono
  */
 const config: Config = {
   content: [
@@ -19,9 +19,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-work-sans)", "var(--font-geist-sans)", "sans-serif"],
-        serif: ["var(--font-serif)", "serif"],
-        display: ["var(--font-serif)", "serif"],
+        sans: ["var(--font-work-sans)", "sans-serif"],
+        heading: ["var(--font-belleza)", "sans-serif"],
+        display: ["var(--font-belleza)", "sans-serif"],
+        serif: ["var(--font-belleza)", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
     },

@@ -73,9 +73,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-work-sans)", "var(--font-geist-sans)", "sans-serif"],
-        serif: ["var(--font-serif)", "serif"],
-        display: ["var(--font-serif)", "serif"],
+        sans: ["var(--font-work-sans)", "sans-serif"],
+        heading: ["var(--font-belleza)", "sans-serif"],
+        display: ["var(--font-belleza)", "sans-serif"],
+        serif: ["var(--font-belleza)", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
     },

@@ -150,13 +150,13 @@ export default function SocialMediaBanner({
             transition={{ duration: 0.6 }}
             className="text-left max-w-2xl"
           >
-            {/* Overline Label */}
-            <span className="block text-xs sm:text-sm font-bold tracking-[0.25em] text-slate-900 uppercase font-sans mb-3 sm:mb-4">
+            {/* Overline Label — Styling font: Geist Mono */}
+            <span className="block text-xs sm:text-sm font-mono font-bold tracking-[0.25em] text-slate-900 uppercase mb-3 sm:mb-4">
               {label}
             </span>
 
-            {/* Massive Serif Headline */}
-            <h2 className="font-serif font-bold text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-slate-950 tracking-tight leading-[1.12] sm:leading-[1.06] lg:leading-[1.02] uppercase select-none">
+            {/* Massive Headline — Headings font: Belleza */}
+            <h2 className="font-heading text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] text-slate-950 tracking-normal leading-[1.14] sm:leading-[1.08] lg:leading-[1.02] uppercase select-none">
               <span className="block">{headlineLine1}</span>
               <span className="block">{headlineLine2}</span>
               <span className="block">{headlineLine3}</span>
