@@ -9,6 +9,7 @@
 import { sanityClient } from '@/lib/sanity'
 import { ANNOUNCEMENTS_QUERY } from '@/lib/queries'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
+import AnnouncementsSubscriptionCard from '@/components/announcements/AnnouncementsSubscriptionCard'
 import type { PortableTextBlock } from '@portabletext/types'
 import { toPlainText } from '@portabletext/react'
 
@@ -107,6 +108,9 @@ export default async function AnnouncementsPage() {
 
         {/* Client component handles search, filter & rendering */}
         <AnnouncementsFeed announcements={announcements} />
+
+        {/* Newsletter & Bulletins Subscription Card */}
+        <AnnouncementsSubscriptionCard />
 
       </div>
     </div>

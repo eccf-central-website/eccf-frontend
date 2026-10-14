@@ -246,6 +246,15 @@ export interface PrayerRequest {
   dateSubmitted: string // ISO date string
 }
 
+export interface Subscriber {
+  _id: string
+  _type: 'subscriber'
+  email: string
+  name?: string
+  subscribedAt: string // ISO datetime
+  isActive: boolean
+}
+
 /** Browser-safe intake types — phoneNumber and roomNumber guaranteed stripped */
 export type SafeFirstTimer = Omit<FirstTimer, 'phoneNumber' | 'roomNumber'>
 export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber'>
