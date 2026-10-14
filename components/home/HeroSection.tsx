@@ -43,6 +43,12 @@ export interface SiteSettingsData {
   visitContactPerson?: string
   visitWhatsAppNumber?: string
   fellowshipEmail?: string
+  socialYouTube?: string
+  socialInstagram?: string
+  socialX?: string
+  socialFacebook?: string
+  socialTikTok?: string
+  socialTelegram?: string
 }
 
 interface Props {
