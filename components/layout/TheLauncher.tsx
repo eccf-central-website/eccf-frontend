@@ -185,12 +185,12 @@ export default function TheLauncher() {
                         className="object-contain"
                       />
                     </div>
-                    <h3 className={`font-serif font-bold tracking-tight text-white leading-snug mx-auto ${
+                    <h3 className={`font-heading font-bold tracking-tight text-white leading-snug mx-auto ${
                       isExpanded
                         ? 'text-2xl sm:text-3xl lg:text-4xl max-w-xl'
                         : 'text-lg sm:text-xl max-w-[300px]'
                     }`}>
-                      Edo State University Christian Campus Fellowship
+                      ESUI Christian Campus Fellowship
                     </h3>
                     <p className={`font-black uppercase tracking-wider text-sky-400 mt-2 ${
                       isExpanded ? 'text-sm sm:text-base' : 'text-xs'
