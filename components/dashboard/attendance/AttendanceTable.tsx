@@ -304,11 +304,15 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
                     {activeAttendeeRecord.attendees.map((worker, i) => (
                       <div key={worker._id || i} className="flex items-center justify-between p-2.5 text-xs">
                         <span className="font-medium text-foreground">{worker.fullName}</span>
-                        {worker.team && (
+                        {worker.teams && worker.teams.length > 0 ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {worker.teams.join(', ')}
+                          </Badge>
+                        ) : worker.team ? (
                           <Badge variant="secondary" className="text-[10px]">
                             {worker.team}
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
                     ))}
                   </div>

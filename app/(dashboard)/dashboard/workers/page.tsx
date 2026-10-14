@@ -8,7 +8,7 @@
  */
 
 import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
-import SectionPlaceholder from '@/components/dashboard/shell/SectionPlaceholder'
+import WorkersClient from '@/components/dashboard/workers/WorkersClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listWorkers } from '@/lib/dashboard/data'
 
@@ -20,18 +20,11 @@ export default async function WorkersPage() {
     return (
       <SectionEmpty
         section="workers"
-        title="No workers yet"
-        description="Workers added in the Studio will show up here, filtered to your hall where that applies."
+        title="No workers registered yet"
+        description="Workers who register on the fellowship portal will appear here for Team Lead review and verification."
       />
     )
   }
 
-  return (
-    <SectionPlaceholder
-      section="workers"
-      branch="feature/dashboard-data-tables"
-      description="Searchable, sortable Worker CRM with team, hall and role filters."
-      count={rows.length}
-    />
-  )
+  return <WorkersClient rows={rows} session={session} />
 }

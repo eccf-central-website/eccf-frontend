@@ -33,6 +33,7 @@ export interface AttendanceWorkerItem {
   _id: string
   fullName: string
   team: string
+  teams?: string[]
   hall: string
 }
 
@@ -58,7 +59,7 @@ export default function RecordAttendanceModal({
   )
   const [meetingTitle, setMeetingTitle] = useState('')
   const [selectedTeam, setSelectedTeam] = useState<string>(
-    session.role === 'team_lead' ? session.team : ''
+    session.role === 'team_lead' ? (session.teams?.[0] || session.team) : ''
   )
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set())
   const [extraCount, setExtraCount] = useState<number>(0)
@@ -67,12 +68,14 @@ export default function RecordAttendanceModal({
   // Filter workers by selected team (if admin chose a team, or auto-scoped for team_lead)
   const filteredTeamWorkers = useMemo(() => {
     return availableWorkers.filter((w) => {
+      const workerTeams = (w.teams && w.teams.length > 0 ? w.teams : [w.team]).map((t) => t.toLowerCase())
       if (session.role === 'team_lead') {
-        return w.team.toLowerCase() === session.team.toLowerCase()
+        const leadTarget = (selectedTeam || session.team).toLowerCase()
+        return workerTeams.some((wt) => wt.includes(leadTarget) || leadTarget.includes(wt))
       }
       if (selectedTeam && selectedTeam !== 'all') {
-        return w.team.toLowerCase().includes(selectedTeam.toLowerCase()) ||
-               selectedTeam.toLowerCase().includes(w.team.toLowerCase())
+        const target = selectedTeam.toLowerCase()
+        return workerTeams.some((wt) => wt.includes(target) || target.includes(wt))
       }
       return true
     })
@@ -207,7 +210,7 @@ export default function RecordAttendanceModal({
 
             <div className="space-y-1.5">
               <Label>Assigned Team</Label>
-              {session.role === 'team_lead' ? (
+              {session.role === 'team_lead' && (!session.teams || session.teams.length <= 1) ? (
                 <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
                   <Badge variant="secondary" className="mr-2">
                     {session.team}
@@ -223,8 +226,11 @@ export default function RecordAttendanceModal({
                     <SelectValue placeholder="Select Team (or General)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">General / All Fellowship</SelectItem>
-                    {FELLOWSHIP_TEAMS.map((t) => (
+                    {session.role !== 'team_lead' && <SelectItem value="all">General / All Fellowship</SelectItem>}
+                    {(session.role === 'team_lead' && session.teams && session.teams.length > 0
+                      ? session.teams
+                      : FELLOWSHIP_TEAMS
+                    ).map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>
@@ -313,7 +319,7 @@ export default function RecordAttendanceModal({
                             {worker.fullName}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {worker.team} · {worker.hall}
+                            {worker.teams && worker.teams.length > 0 ? worker.teams.join(', ') : worker.team} · {worker.hall}
                           </p>
                         </div>
                       </div>

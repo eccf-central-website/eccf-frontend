@@ -105,7 +105,7 @@ export default function WhoWeAreSection({
 
             <div className="pt-3 w-full flex justify-start">
               <Link
-                href="/#teams"
+                href="/about#teams"
                 className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
               >
                 <span>Explore Our Ministry Teams</span>

@@ -21,7 +21,8 @@ export interface WorkerRegistrationInput {
   fullName: string
   email: string
   phoneNumber: string
-  team: string
+  team?: string
+  teams?: string[]
   hall: string
   roomNumber: string
   birthDate: string
@@ -68,6 +69,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
   worker?: {
     fullName: string
     team: string
+    teams?: string[]
     hall?: string
     roomNumber?: string
     email?: string
@@ -85,6 +87,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
     const existing = await sanityWriteClient.fetch<{
       fullName?: string
       team?: string
+      teams?: string[]
       hall?: string
       roomNumber?: string
       email?: string
@@ -96,6 +99,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
         fullName,
         "team": coalesce(team->name, team),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         hall,
         roomNumber,
         email,
@@ -111,11 +115,18 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       return { found: false }
     }
 
+    const resolvedTeams = (
+      existing.teams && existing.teams.length > 0
+        ? existing.teams
+        : [existing.team || 'General']
+    ).filter(Boolean)
+
     return {
       found: true,
       worker: {
         fullName: existing.fullName,
-        team: existing.team || 'General',
+        team: existing.team || resolvedTeams[0] || 'General',
+        teams: resolvedTeams,
         hall: existing.hall,
         roomNumber: decrypt(existing.roomNumber),
         email: existing.email,
@@ -145,8 +156,18 @@ export async function registerWorker(
     if (!input.phoneNumber || input.phoneNumber.trim().length < 8) {
       return { ok: false, error: 'Please enter a valid phone number.' }
     }
-    if (!input.team || input.team.trim().length === 0) {
-      return { ok: false, error: 'Please select your operational team.' }
+    const selectedTeams: string[] = (
+      input.teams && input.teams.length > 0
+        ? input.teams
+        : input.team
+          ? [input.team]
+          : []
+    )
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+
+    if (selectedTeams.length === 0) {
+      return { ok: false, error: 'Please select at least one operational team.' }
     }
     if (!input.hall || input.hall.trim().length === 0) {
       return { ok: false, error: 'Please select your hall of residence.' }
@@ -164,7 +185,8 @@ export async function registerWorker(
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
     const phoneBlindIndex = createBlindIndex(cleanPhone)
     const cleanFullName = input.fullName.trim()
-    const cleanTeam = input.team.trim()
+    const cleanTeams = Array.from(new Set(selectedTeams))
+    const cleanTeam = cleanTeams[0] || 'General'
     const today = new Date().toISOString().split('T')[0]
 
     // 2. Check if worker already exists (Deduplication / Upsert check)
@@ -172,6 +194,7 @@ export async function registerWorker(
       _id: string
       fullName?: string
       team?: string
+      teams?: string[]
       hall?: string
       roomNumber?: string
       email?: string
@@ -186,6 +209,7 @@ export async function registerWorker(
         _id,
         fullName,
         "team": coalesce(team->name, team),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         hall,
         roomNumber,
         email,
@@ -223,8 +247,9 @@ export async function registerWorker(
       }
     }
 
-    // Resolve team reference to match Sanity schema ({ _type: 'reference', _ref: id })
-    const teamReference = await resolveTeamReference(cleanTeam)
+    // Resolve team references to match Sanity schema
+    const teamReferences = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
+    const primaryTeamReference = teamReferences[0]
 
     // 3. Process Birthday Picture via Google Apps Script bridge if provided
     let profileImageUrl: string | undefined = undefined
@@ -263,8 +288,13 @@ export async function registerWorker(
       const deltaLogs: string[] = []
       const currentRoom = decrypt(existing.roomNumber)
 
-      if (existing.team && existing.team !== cleanTeam) {
-        deltaLogs.push(`Changed Team from ${existing.team} to ${cleanTeam} on ${today}`)
+      const prevTeams = (existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team || 'General'])
+        .filter(Boolean)
+        .sort()
+        .join(', ')
+      const newTeamsStr = cleanTeams.slice().sort().join(', ')
+      if (prevTeams !== newTeamsStr) {
+        deltaLogs.push(`Updated Teams from [${prevTeams}] to [${newTeamsStr}] on ${today}`)
       }
       if (existing.hall && existing.hall !== input.hall) {
         deltaLogs.push(`Changed Hall from ${existing.hall} to ${input.hall} on ${today}`)
@@ -294,7 +324,8 @@ export async function registerWorker(
         email: input.email.trim().toLowerCase(),
         phoneNumber: encrypt(cleanPhone),
         phoneBlindIndex,
-        team: teamReference,
+        team: primaryTeamReference,
+        teams: teamReferences,
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: input.birthDate,
@@ -340,10 +371,12 @@ export async function registerWorker(
         email: input.email.trim().toLowerCase(),
         phoneNumber: encrypt(cleanPhone),
         phoneBlindIndex,
-        team: teamReference,
+        team: primaryTeamReference,
+        teams: teamReferences,
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: input.birthDate,
+        verificationStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         updateLog: initialLogs,
@@ -365,10 +398,10 @@ export async function registerWorker(
 
       return {
         ok: true,
-        isExco: input.isExco,
+        isExco: Boolean(input.isExco),
         message: input.isExco
-          ? 'Worker registration successful! Your Exco dashboard account has been created and is pending administrator approval.'
-          : 'Worker registration successful! Welcome to the fellowship workforce.',
+          ? `Welcome to ECCF, ${cleanFullName}! Your registration has been submitted to your Team Leader for verification, and your Exco dashboard request is pending CSGB approval.`
+          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Leader for membership approval.`,
       }
     }
   } catch (err) {

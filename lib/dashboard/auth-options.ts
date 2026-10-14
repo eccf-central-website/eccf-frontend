@@ -50,6 +50,7 @@ export const authOptions: NextAuthOptions = {
           passwordHash?: string
           team?: string | { name?: string }
           hall?: string
+          teams?: (string | { name?: string })[]
         }>(
           `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
             _id,
@@ -62,7 +63,8 @@ export const authOptions: NextAuthOptions = {
             isExcoApproved,
             passwordHash,
             team,
-            hall
+            hall,
+            "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
           }`,
           { cleanEmail, cleanPhone, phoneBlindIndex }
         )
@@ -91,12 +93,20 @@ export const authOptions: NextAuthOptions = {
           throw new Error('This account does not have active Exco dashboard privileges.')
         }
 
-        const resolvedTeam =
+        const rawTeams = Array.isArray(worker.teams) ? worker.teams : []
+        const resolvedTeams: string[] = rawTeams
+          .map((t) => (typeof t === 'object' && t !== null && 'name' in t ? (t as { name: string }).name : String(t)))
+          .filter(Boolean)
+
+        const singleTeam =
           typeof worker.team === 'object' && worker.team !== null && 'name' in worker.team
-            ? worker.team.name || 'General'
+            ? worker.team.name || ''
             : typeof worker.team === 'string'
               ? worker.team
-              : 'General'
+              : ''
+
+        const finalTeams = resolvedTeams.length > 0 ? resolvedTeams : (singleTeam ? [singleTeam] : ['General'])
+        const resolvedTeam = finalTeams.join(', ')
 
         return {
           id: worker._id,
@@ -104,6 +114,7 @@ export const authOptions: NextAuthOptions = {
           email: worker.email || '',
           role: effectiveRole,
           team: resolvedTeam,
+          teams: finalTeams,
           excoPosition: worker.excoPosition || '',
           hall: worker.hall || '',
         }
@@ -116,6 +127,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = (user as unknown as { role: WorkerRole }).role
         token.team = (user as unknown as { team: string }).team
+        token.teams = (user as unknown as { teams?: string[] }).teams
         token.excoPosition = (user as unknown as { excoPosition?: string }).excoPosition
         token.hall = (user as unknown as { hall?: string }).hall
       }
@@ -126,6 +138,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as unknown as { id: string }).id = token.id as string
         ;(session.user as unknown as { role: WorkerRole }).role = token.role as WorkerRole
         ;(session.user as unknown as { team: string }).team = token.team as string
+        ;(session.user as unknown as { teams?: string[] }).teams = token.teams as string[] | undefined
         ;(session.user as unknown as { excoPosition?: string }).excoPosition = token.excoPosition as string
         ;(session.user as unknown as { hall?: string }).hall = token.hall as string
       }
