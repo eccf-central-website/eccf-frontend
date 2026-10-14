@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Belleza, Work_Sans } from "next/font/google";
 import "./globals.css";
@@ -28,17 +28,37 @@ const workSans = Work_Sans({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0077cc",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "ESUI Christian Campus Fellowship: Raising Spiritual Dynamites and Academic Giants",
   description:
     "Official Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
+  applicationName: "ECCF Portal",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ECCF Portal",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: "/logos/ECCF LOGO.png", type: "image/png" },
       { url: "/icon.png", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     shortcut: "/logos/ECCF LOGO.png",
-    apple: "/logos/ECCF LOGO.png",
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/logos/ECCF LOGO.png" },
+    ],
   },
 };
 
