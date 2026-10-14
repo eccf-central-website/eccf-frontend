@@ -16,13 +16,20 @@
 
 /** $hall: null for all halls; $team: null for all teams */
 export const DASHBOARD_WORKERS_QUERY = `
-  *[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)] | order(fullName asc) {
+  *[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams)] | order(fullName asc) {
     _id,
     fullName,
     "team": coalesce(team->name, team),
+    "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall,
     role,
     excoPosition,
+    isExcoApproved,
+    requestedRole,
+    "verificationStatus": coalesce(verificationStatus, "verified"),
+    verifiedAt,
+    verifiedBy,
+    "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
     birthDate,
     profileImageUrl,
     createdAt,
@@ -49,7 +56,7 @@ export const DASHBOARD_ATTENDANCE_QUERY = `
     "teamName": coalesce(team->name, team),
     totalCount,
     "attendeeCount": count(coalesce(attendees, [])),
-    "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team) },
+    "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]) },
     "loggedBy": loggedBy->{ _id, fullName, excoPosition, role }
   }
 `

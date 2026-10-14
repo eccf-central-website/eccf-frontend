@@ -31,12 +31,12 @@ export default async function AttendancePage() {
         <div>
           <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {session.role === 'team_lead'
-              ? `${session.team} Attendance Ledger`
+              ? `${session.teams && session.teams.length > 0 ? session.teams.join(' & ') : session.team} Attendance Ledger`
               : 'Attendance & Meeting Ledger'}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {session.role === 'team_lead'
-              ? `Manage meeting rosters, tick off registered ${session.team} crew, and view attendance logs.`
+              ? `Manage meeting rosters, tick off registered ${session.teams && session.teams.length > 0 ? session.teams.join(' & ') : session.team} crew, and view attendance logs.`
               : 'Global fellowship attendance files, team meeting records, and worker attendee rosters.'}
           </p>
         </div>

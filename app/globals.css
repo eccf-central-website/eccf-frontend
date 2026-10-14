@@ -29,9 +29,10 @@ body {
   position: relative;
 }
 
-/* Custom smooth modern scrollbar */
+/* Custom smooth modern scrollbar (vertical only) */
 ::-webkit-scrollbar {
   width: 7px;
+  height: 0px;
 }
 
 ::-webkit-scrollbar-track {
@@ -45,6 +46,20 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #0095ff;
+}
+
+/* Hide scrollbars for pill bars & rails */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Hide default number input up/down spin buttons across Chrome, Safari, Edge, Firefox */

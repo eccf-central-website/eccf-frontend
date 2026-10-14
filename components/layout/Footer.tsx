@@ -135,7 +135,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#about" className="font-semibold text-slate-700 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                <Link href="/about" className="font-semibold text-slate-700 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                   About
                 </Link>
               </li>
