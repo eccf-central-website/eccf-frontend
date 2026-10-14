@@ -11,7 +11,6 @@ import type {
   FinanceRow,
   FirstTimerRow,
   PrayerRequest,
-  SafeFirstTimer,
   SafeWelfareRequest,
   WorkerRow,
 } from '@/types'
