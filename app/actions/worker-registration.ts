@@ -14,17 +14,23 @@
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
+import { encrypt, decrypt, createBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export interface WorkerRegistrationInput {
   fullName: string
+  firstName?: string
+  middleName?: string
+  lastName?: string
   email: string
   phoneNumber: string
   team?: string
   teams?: string[]
   hall: string
   roomNumber: string
-  birthDate: string
+  birthDate?: string
+  birthMonth?: string | number
+  birthDay?: string | number
   birthdayPictureBase64?: string
   isExco: boolean
   requestedRole?: WorkerRole
@@ -67,12 +73,17 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
   found: boolean
   worker?: {
     fullName: string
+    firstName?: string
+    middleName?: string
+    lastName?: string
     team: string
     teams?: string[]
     hall?: string
     roomNumber?: string
     email?: string
     birthDate?: string
+    birthMonth?: number
+    birthDay?: number
     profileImageUrl?: string
     role?: WorkerRole
     isExcoApproved?: boolean
@@ -81,32 +92,43 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
   try {
     const cleanPhone = phoneNumber.trim().replace(/\s+/g, '')
     if (cleanPhone.length < 8) return { found: false }
+    const phoneBlindIndex = createBlindIndex(cleanPhone)
 
     const existing = await sanityWriteClient.fetch<{
       fullName?: string
+      firstName?: string
+      middleName?: string
+      lastName?: string
       team?: string
       teams?: string[]
       hall?: string
       roomNumber?: string
       email?: string
       birthDate?: string
+      birthMonth?: number
+      birthDay?: number
       profileImageUrl?: string
       role?: WorkerRole
       isExcoApproved?: boolean
     }>(
-      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
         fullName,
+        firstName,
+        middleName,
+        lastName,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         hall,
         roomNumber,
         email,
         birthDate,
+        birthMonth,
+        birthDay,
         profileImageUrl,
         role,
         isExcoApproved
       }`,
-      { phoneNumber: cleanPhone }
+      { phoneNumber: cleanPhone, phoneBlindIndex }
     )
 
     if (!existing || !existing.fullName) {
@@ -123,12 +145,17 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       found: true,
       worker: {
         fullName: existing.fullName,
+        firstName: existing.firstName,
+        middleName: existing.middleName,
+        lastName: existing.lastName,
         team: existing.team || resolvedTeams[0] || 'General',
         teams: resolvedTeams,
         hall: existing.hall,
-        roomNumber: existing.roomNumber,
+        roomNumber: decrypt(existing.roomNumber),
         email: existing.email,
         birthDate: existing.birthDate,
+        birthMonth: existing.birthMonth,
+        birthDay: existing.birthDay,
         profileImageUrl: existing.profileImageUrl,
         role: existing.role,
         isExcoApproved: existing.isExcoApproved,
@@ -145,9 +172,22 @@ export async function registerWorker(
 ): Promise<WorkerRegistrationResult> {
   try {
     // 1. Validation
-    if (!input.fullName || input.fullName.trim().length < 2) {
-      return { ok: false, error: 'Please enter your full legal name.' }
+    const cleanFirstName = input.firstName?.trim()
+    const cleanMiddleName = input.middleName?.trim()
+    const cleanLastName = input.lastName?.trim()
+
+    let cleanFullName = input.fullName?.trim() || ''
+    if (cleanFirstName || cleanLastName) {
+      if (!cleanFirstName || cleanFirstName.length < 2 || !cleanLastName || cleanLastName.length < 2) {
+        return { ok: false, error: 'Both First Name and Last Name are required (minimum 2 characters each).' }
+      }
+      cleanFullName = [cleanFirstName, cleanMiddleName, cleanLastName].filter(Boolean).join(' ')
+    } else {
+      if (!cleanFullName || cleanFullName.length < 2) {
+        return { ok: false, error: 'Please enter your full legal name.' }
+      }
     }
+
     if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
       return { ok: false, error: 'Please enter a valid email address.' }
     }
@@ -173,15 +213,31 @@ export async function registerWorker(
     if (!input.roomNumber || input.roomNumber.trim().length === 0) {
       return { ok: false, error: 'Please enter your room number.' }
     }
-    if (!input.birthDate) {
-      return { ok: false, error: 'Please enter your birth date for the birthday tracker.' }
+
+    let cleanBirthDate = input.birthDate?.trim() || ''
+    const cleanBirthMonth: number | undefined = input.birthMonth ? Number(input.birthMonth) : undefined
+    const cleanBirthDay: number | undefined = input.birthDay ? Number(input.birthDay) : undefined
+
+    if (cleanBirthMonth && cleanBirthDay) {
+      const m = String(cleanBirthMonth).padStart(2, '0')
+      const d = String(cleanBirthDay).padStart(2, '0')
+      cleanBirthDate = `2000-${m}-${d}`
+    } else if (cleanBirthDate) {
+      const bParts = cleanBirthDate.split('-')
+      if (bParts.length === 3) {
+        cleanBirthDate = `2000-${bParts[1]}-${bParts[2]}`
+      }
+    }
+
+    if (!cleanBirthDate) {
+      return { ok: false, error: 'Please enter your birthday (month and day).' }
     }
     if (!input.ndprConsent) {
       return { ok: false, error: 'You must consent to data processing per NDPR guidelines.' }
     }
 
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
-    const cleanFullName = input.fullName.trim()
+    const phoneBlindIndex = createBlindIndex(cleanPhone)
     const cleanTeams = Array.from(new Set(selectedTeams))
     const cleanTeam = cleanTeams[0] || 'General'
     const today = new Date().toISOString().split('T')[0]
@@ -202,7 +258,7 @@ export async function registerWorker(
       passwordHash?: string
       updateLog?: string[]
     }>(
-      `*[_type == "worker" && phoneNumber == $phoneNumber][0]{
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
         _id,
         fullName,
         "team": coalesce(team->name, team),
@@ -217,7 +273,7 @@ export async function registerWorker(
         passwordHash,
         updateLog
       }`,
-      { phoneNumber: cleanPhone }
+      { phoneNumber: cleanPhone, phoneBlindIndex }
     )
 
     // Password validation logic:
@@ -275,12 +331,15 @@ export async function registerWorker(
 
     let passwordHash: string | undefined = undefined
     if (input.password && input.password.length >= 8) {
-      passwordHash = await bcrypt.hash(input.password, 10)
+      const rawHash = await bcrypt.hash(input.password, 10)
+      // Double layer protection: Encrypt the bcrypt hash with AES-256-GCM before storing in Sanity
+      passwordHash = encrypt(rawHash)
     }
 
     if (existing) {
       // 4a. Worker Exists -> Compute Delta Log and Patch
       const deltaLogs: string[] = []
+      const currentRoom = decrypt(existing.roomNumber)
 
       const prevTeams = (existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team || 'General'])
         .filter(Boolean)
@@ -293,13 +352,13 @@ export async function registerWorker(
       if (existing.hall && existing.hall !== input.hall) {
         deltaLogs.push(`Changed Hall from ${existing.hall} to ${input.hall} on ${today}`)
       }
-      if (existing.roomNumber && existing.roomNumber !== input.roomNumber) {
-        deltaLogs.push(`Changed Room from ${existing.roomNumber} to ${input.roomNumber} on ${today}`)
+      if (currentRoom && currentRoom !== input.roomNumber) {
+        deltaLogs.push(`Changed Room from ${currentRoom} to ${input.roomNumber} on ${today}`)
       }
       if (existing.email && existing.email !== input.email) {
         deltaLogs.push(`Updated Email on ${today}`)
       }
-      if (existing.birthDate && existing.birthDate !== input.birthDate) {
+      if (existing.birthDate && existing.birthDate !== cleanBirthDate) {
         deltaLogs.push(`Updated Birth Date on ${today}`)
       }
       if (profileImageUrl) {
@@ -315,12 +374,19 @@ export async function registerWorker(
 
       const patchData: Record<string, unknown> = {
         fullName: cleanFullName,
+        ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
+        ...(cleanMiddleName !== undefined ? { middleName: cleanMiddleName } : {}),
+        ...(cleanLastName ? { lastName: cleanLastName } : {}),
         email: input.email.trim().toLowerCase(),
+        phoneNumber: encrypt(cleanPhone),
+        phoneBlindIndex,
         team: primaryTeamReference,
         teams: teamReferences,
         hall: input.hall,
-        roomNumber: input.roomNumber,
-        birthDate: input.birthDate,
+        roomNumber: encrypt(input.roomNumber.trim()),
+        birthDate: cleanBirthDate,
+        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
+        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
         updatedAt: new Date().toISOString(),
       }
 
@@ -360,13 +426,19 @@ export async function registerWorker(
       const newDoc: { _type: 'worker'; [key: string]: unknown } = {
         _type: 'worker',
         fullName: cleanFullName,
+        ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
+        ...(cleanMiddleName ? { middleName: cleanMiddleName } : {}),
+        ...(cleanLastName ? { lastName: cleanLastName } : {}),
         email: input.email.trim().toLowerCase(),
-        phoneNumber: cleanPhone,
+        phoneNumber: encrypt(cleanPhone),
+        phoneBlindIndex,
         team: primaryTeamReference,
         teams: teamReferences,
         hall: input.hall,
-        roomNumber: input.roomNumber,
-        birthDate: input.birthDate,
+        roomNumber: encrypt(input.roomNumber.trim()),
+        birthDate: cleanBirthDate,
+        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
+        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
         verificationStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

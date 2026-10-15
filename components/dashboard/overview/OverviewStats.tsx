@@ -65,8 +65,8 @@ function workersCaption(role: WorkerRole): string {
   return isHallScoped(role) ? 'In your hall' : 'Across all halls'
 }
 
-function linkFor(role: WorkerRole, section: DashboardSection) {
-  return canAccessSection(role, section) ? SECTION_PATHS[section] : undefined
+function linkFor(role: WorkerRole, section: DashboardSection, session?: ECCFSession) {
+  return canAccessSection(role, section, session) ? SECTION_PATHS[section] : undefined
 }
 
 function StatGroup({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -80,8 +80,9 @@ function StatGroup({ id, title, children }: { id: string; title: string; childre
   )
 }
 
-function PeopleCards({ stats, role }: { stats: PeopleStats; role: WorkerRole }) {
+function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: WorkerRole; session: ECCFSession }) {
   const since = `Since 1 ${lagosMonthLabel()}`
+  const firstTimersCaption = isHallScoped(role) ? `In your hall · ${since}` : since
   const { lastService } = stats
 
   return (
@@ -93,9 +94,9 @@ function PeopleCards({ stats, role }: { stats: PeopleStats; role: WorkerRole }) 
         icon={<UserPlus />}
         value={formatCount(stats.firstTimersThisMonth)}
         rawValue={stats.firstTimersThisMonth}
-        caption={since}
+        caption={firstTimersCaption}
         tone="primary"
-        href={linkFor(role, 'firstTimers')}
+        href={linkFor(role, 'firstTimers', session)}
         linkLabel="View first-timers"
       />
       <StatCard
@@ -224,7 +225,7 @@ export default async function OverviewStats({ session }: { session: ECCFSession 
 
   return (
     <div className="space-y-6">
-      {stats.people && <PeopleCards stats={stats.people} role={session.role} />}
+      {stats.people && <PeopleCards stats={stats.people} role={session.role} session={session} />}
       {stats.finance && <FinanceCards stats={stats.finance} role={session.role} />}
     </div>
   )

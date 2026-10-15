@@ -18,7 +18,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Shield, Sparkles, BookOpen, Users, Church, Compass, Award } from 'lucide-react'
@@ -82,7 +82,7 @@ const RESIDENT_PASTOR: LeaderCard = {
 const CSGB_LIST: LeaderCard[] = [
   {
     _id: 'csgb-1',
-    fullName: 'Fellowship President',
+    fullName: 'Bro. Emmanuel Okafor',
     excoPosition: 'President & Executive Shepherd',
     teamName: "Christian Students' Governing Board",
     bio: 'Oversees the apostolic vision, pastoral direction, constitutional integrity, and central campus governance of ECCF at Edo State University.',
@@ -90,7 +90,7 @@ const CSGB_LIST: LeaderCard[] = [
   },
   {
     _id: 'csgb-2',
-    fullName: 'Vice President (Admin)',
+    fullName: 'Bro. Samuel Adeyemi',
     excoPosition: "VP - Admin / Brothers' Coordinator",
     teamName: 'Executive Administration',
     bio: "Coordinates administrative operations, inter-departmental logistics, and men's fellowship discipleship across male hostels.",
@@ -98,7 +98,7 @@ const CSGB_LIST: LeaderCard[] = [
   },
   {
     _id: 'csgb-3',
-    fullName: 'Vice President (Evangelism)',
+    fullName: 'Sis. Blessing Ehigiator',
     excoPosition: "VP - Evangelism / Sisters' Coordinator",
     teamName: 'Campus Evangelism',
     bio: "Spearheads campus soul-winning initiatives, hostel outreaches, and women's discipleship across female hostels.",
@@ -106,7 +106,7 @@ const CSGB_LIST: LeaderCard[] = [
   },
   {
     _id: 'csgb-4',
-    fullName: 'General Secretary',
+    fullName: 'Sis. Chidinma Osagie',
     excoPosition: 'General Secretary',
     teamName: 'Secretariat & Records',
     bio: 'Custody of fellowship records, constitutional adherence, executive minutes, official correspondence, and registry.',
@@ -114,7 +114,7 @@ const CSGB_LIST: LeaderCard[] = [
   },
   {
     _id: 'csgb-5',
-    fullName: 'Prayer Coordinator',
+    fullName: 'Bro. Daniel Idahosa',
     excoPosition: 'Prayer Coordinator',
     teamName: 'Prayer & Intercession',
     bio: 'Kindles continuous corporate intercessory fire, midnight prayer vigils, fasting programmes, and service coverage.',
@@ -122,7 +122,7 @@ const CSGB_LIST: LeaderCard[] = [
   },
   {
     _id: 'csgb-6',
-    fullName: 'Financial Secretary',
+    fullName: 'Bro. Efosa Uwaifo',
     excoPosition: 'Financial Secretary',
     teamName: 'Finance & Treasury',
     bio: 'Directs financial stewardship, ledger reconciliation, budget allocations, and sacrificial giving accountability.',
@@ -136,56 +136,56 @@ const CSGB_LIST: LeaderCard[] = [
 const HALL_PASTORS: LeaderCard[] = [
   {
     _id: 'hp-1',
-    fullName: 'Hall 1 Pastor',
+    fullName: 'Bro. Joshua Balogun',
     excoPosition: 'Pastoral Shepherd — Hall 1',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 1',
   },
   {
     _id: 'hp-2',
-    fullName: 'Hall 2 Pastor',
+    fullName: 'Sis. Grace Omoregie',
     excoPosition: 'Pastoral Shepherd — Hall 2',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 2',
   },
   {
     _id: 'hp-3',
-    fullName: 'Hall 3 Pastor',
+    fullName: 'Bro. Tunde Aigbe',
     excoPosition: 'Pastoral Shepherd — Hall 3',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 3',
   },
   {
     _id: 'hp-4',
-    fullName: 'Hall 4 Pastor',
+    fullName: 'Sis. Ruth Eguavoen',
     excoPosition: 'Pastoral Shepherd — Hall 4',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 4',
   },
   {
     _id: 'hp-5',
-    fullName: 'Hall 5 Pastor',
+    fullName: 'Bro. Kelechi Nwosu',
     excoPosition: 'Pastoral Shepherd — Hall 5',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 5',
   },
   {
     _id: 'hp-6',
-    fullName: 'Hall 6 Pastor',
+    fullName: 'Sis. Funmi Obaseki',
     excoPosition: 'Pastoral Shepherd — Hall 6',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 6',
   },
   {
     _id: 'hp-7',
-    fullName: 'Hall 7 Pastor',
+    fullName: 'Bro. Emeka Eze',
     excoPosition: 'Pastoral Shepherd — Hall 7',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 7',
   },
   {
     _id: 'hp-8',
-    fullName: 'Hall 8 Pastor',
+    fullName: 'Sis. Precious Igbinedion',
     excoPosition: 'Pastoral Shepherd — Hall 8',
     teamName: 'Residence Hall Pastoral Wing',
     badgeLabel: 'HALL 8',
@@ -198,98 +198,98 @@ const HALL_PASTORS: LeaderCard[] = [
 const TEAM_LEADERS: LeaderCard[] = [
   {
     _id: 'tl-1',
-    fullName: 'Bible Study Team Lead',
+    fullName: 'Bro. Osas Igbinosa',
     excoPosition: 'Discipleship & Bible Study Lead',
     teamName: 'Bible Study / Sunday School Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-2',
-    fullName: 'Prayer Team Lead',
+    fullName: 'Bro. Victor Ojo',
     excoPosition: 'Head Intercessor & Altar Lead',
     teamName: 'Prayer Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-3',
-    fullName: 'Choir & Music Director',
+    fullName: 'Sis. Favour Ehigiator',
     excoPosition: 'Head of Psalmists & Music Ministry',
     teamName: 'Choir Team',
     badgeLabel: 'DIRECTOR',
   },
   {
     _id: 'tl-4',
-    fullName: 'Protocol Team Lead',
+    fullName: 'Bro. David Okoh',
     excoPosition: 'Ministerial Protocol Coordinator',
     teamName: 'Protocol Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-5',
-    fullName: 'Ushering Team Lead',
+    fullName: 'Sis. Esther Edeki',
     excoPosition: 'Sanctuary Hospitality Head',
     teamName: 'Ushering Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-6',
-    fullName: 'Drama & Creative Media Lead',
+    fullName: 'Bro. Israel Osayande',
     excoPosition: 'Theatrical Evangelism Director',
     teamName: 'Drama / Creative Media Team',
     badgeLabel: 'DIRECTOR',
   },
   {
     _id: 'tl-7',
-    fullName: 'Outreach Team Lead',
+    fullName: 'Bro. Emmanuel Bello',
     excoPosition: 'Campus Soul-Winning Coordinator',
     teamName: 'Outreach Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-8',
-    fullName: 'Welfare & Medical Lead',
+    fullName: 'Sis. Rejoice Momoh',
     excoPosition: 'Student Welfare & Benevolence Head',
     teamName: 'Welfare / Medical Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-9',
-    fullName: 'Academic Team Lead',
+    fullName: 'Bro. Caleb Akhigbe',
     excoPosition: 'Academic Mentorship & Tutorial Director',
     teamName: 'Academic Team',
     badgeLabel: 'DIRECTOR',
   },
   {
     _id: 'tl-10',
-    fullName: 'Colporteur & Library Lead',
+    fullName: 'Bro. Gideon Umoru',
     excoPosition: 'Christian Literature & Library Head',
     teamName: 'Colporteur / Library Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-11',
-    fullName: 'Technical Team Lead',
+    fullName: 'Bro. Elijah Obasohan',
     excoPosition: 'Sound & Acoustic Systems Head',
     teamName: 'Technical Team',
     badgeLabel: 'DIRECTOR',
   },
   {
     _id: 'tl-12',
-    fullName: 'Media Team Lead',
+    fullName: 'Bro. Paul Ilevbare',
     excoPosition: 'Digital Broadcast & Media Head',
     teamName: 'Media Team',
     badgeLabel: 'DIRECTOR',
   },
   {
     _id: 'tl-13',
-    fullName: 'Decoration Team Lead',
+    fullName: 'Sis. Praise Omokaro',
     excoPosition: 'Sanctuary Aesthetics & Ambience Head',
     teamName: 'Decoration Team',
     badgeLabel: 'TEAM LEAD',
   },
   {
     _id: 'tl-14',
-    fullName: 'Financial Team Lead',
+    fullName: 'Sis. Victoria Aliu',
     excoPosition: 'Treasury & Ledger Audit Lead',
     teamName: 'Financial Team',
     badgeLabel: 'TEAM LEAD',
@@ -302,98 +302,98 @@ const TEAM_LEADERS: LeaderCard[] = [
 const ASSISTANT_TEAM_LEADERS: LeaderCard[] = [
   {
     _id: 'atl-1',
-    fullName: 'Assistant Bible Study Lead',
+    fullName: 'Sis. Deborah Agbonlahor',
     excoPosition: 'Assistant Bible Study Coordinator',
     teamName: 'Bible Study / Sunday School Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-2',
-    fullName: 'Assistant Prayer Lead',
+    fullName: 'Sis. Peace Okhomina',
     excoPosition: 'Assistant Intercessory Lead',
     teamName: 'Prayer Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-3',
-    fullName: 'Assistant Choir Director',
+    fullName: 'Bro. Michael Ighodaro',
     excoPosition: 'Assistant Music Director',
     teamName: 'Choir Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-4',
-    fullName: 'Assistant Protocol Lead',
+    fullName: 'Sis. Joy Osahon',
     excoPosition: 'Assistant Protocol Coordinator',
     teamName: 'Protocol Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-5',
-    fullName: 'Assistant Ushering Lead',
+    fullName: 'Bro. Philip Enabulele',
     excoPosition: 'Assistant Ushering Head',
     teamName: 'Ushering Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-6',
-    fullName: 'Assistant Drama Lead',
+    fullName: 'Sis. Mercy Itua',
     excoPosition: 'Assistant Drama Director',
     teamName: 'Drama / Creative Media Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-7',
-    fullName: 'Assistant Outreach Lead',
+    fullName: 'Sis. Dorcas Imasuen',
     excoPosition: 'Assistant Evangelism Coordinator',
     teamName: 'Outreach Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-8',
-    fullName: 'Assistant Welfare Lead',
+    fullName: 'Bro. Stephen Oshomah',
     excoPosition: 'Assistant Student Welfare Head',
     teamName: 'Welfare / Medical Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-9',
-    fullName: 'Assistant Academic Lead',
+    fullName: 'Sis. Elizabeth Oshodin',
     excoPosition: 'Assistant Academic Tutorial Director',
     teamName: 'Academic Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-10',
-    fullName: 'Assistant Colporteur Lead',
+    fullName: 'Sis. Mary Odion',
     excoPosition: 'Assistant Literature Head',
     teamName: 'Colporteur / Library Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-11',
-    fullName: 'Assistant Technical Lead',
+    fullName: 'Bro. Timothy Omo-Ojo',
     excoPosition: 'Assistant Audio Engineering Lead',
     teamName: 'Technical Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-12',
-    fullName: 'Assistant Media Lead',
+    fullName: 'Sis. Abigail Oshiomhole',
     excoPosition: 'Assistant Digital Media Coordinator',
     teamName: 'Media Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-13',
-    fullName: 'Assistant Decoration Lead',
+    fullName: 'Sis. Grace Akhator',
     excoPosition: 'Assistant Sanctuary Aesthetics Lead',
     teamName: 'Decoration Team',
     badgeLabel: 'ASSISTANT LEAD',
   },
   {
     _id: 'atl-14',
-    fullName: 'Assistant Financial Lead',
+    fullName: 'Bro. Josiah Eromosele',
     excoPosition: 'Assistant Treasury Administrator',
     teamName: 'Financial Team',
     badgeLabel: 'ASSISTANT LEAD',
@@ -410,24 +410,69 @@ type LeaderTier =
   | 'assistant_leaders'
 
 export default function AboutLeadership({
+  excos,
   headline,
   lead,
 }: AboutLeadershipProps) {
   const [activeTier, setActiveTier] = useState<LeaderTier>('all')
 
+  // Partition Sanity excos if available
+  const csgbList = useMemo(() => {
+    if (!excos || excos.length === 0) return CSGB_LIST
+    const matched = excos.filter(
+      (e) =>
+        e.role === 'admin' ||
+        (e.excoPosition &&
+          ['President', 'Vice President', 'General Secretary', 'Prayer Coordinator', 'Financial Secretary'].some(
+            (p) => e.excoPosition?.toLowerCase().includes(p.toLowerCase())
+          ))
+    )
+    return matched.length > 0 ? matched : CSGB_LIST
+  }, [excos])
+
+  const hallPastorsList = useMemo(() => {
+    if (!excos || excos.length === 0) return HALL_PASTORS
+    const matched = excos.filter(
+      (e) =>
+        e.role === 'hall_rep' ||
+        (e.excoPosition && e.excoPosition.toLowerCase().includes('hall'))
+    )
+    return matched.length > 0 ? matched : HALL_PASTORS
+  }, [excos])
+
+  const teamLeadersList = useMemo(() => {
+    if (!excos || excos.length === 0) return TEAM_LEADERS
+    const matched = excos.filter(
+      (e) =>
+        e.role === 'team_lead' &&
+        (!e.excoPosition || !e.excoPosition.toLowerCase().includes('assist'))
+    )
+    return matched.length > 0 ? matched : TEAM_LEADERS
+  }, [excos])
+
+  const assistantLeadersList = useMemo(() => {
+    if (!excos || excos.length === 0) return ASSISTANT_TEAM_LEADERS
+    const matched = excos.filter(
+      (e) => e.excoPosition && e.excoPosition.toLowerCase().includes('assist')
+    )
+    return matched.length > 0 ? matched : ASSISTANT_TEAM_LEADERS
+  }, [excos])
+
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .filter((w) => !['Dr.', 'Pastor', '&', 'and'].includes(w))
-      .filter(Boolean)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase() || 'LD'
+    return (
+      name
+        .split(' ')
+        .filter((w) => !['Dr.', 'Pastor', 'Bro.', 'Sis.', 'Brother', 'Sister', '&', 'and'].includes(w))
+        .filter(Boolean)
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase() || 'LD'
+    )
   }
 
-  // Render helper for single 3:4 portrait card
-  const renderCard = (leader: LeaderCard, idx: number, badgeAccent?: string) => {
+  // Render helper for single 3:4 portrait card (clean headshot + leader name)
+  const renderCard = (leader: LeaderCard, idx: number) => {
     const initials = getInitials(leader.fullName)
 
     return (
@@ -461,32 +506,11 @@ export default function AboutLeadership({
           </div>
         )}
 
-        {/* Top Office Badge */}
-        <div className="absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 z-20">
-          <span
-            className={`text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ${
-              badgeAccent
-                ? badgeAccent
-                : 'bg-black/60 backdrop-blur-md text-slate-200 border border-white/10'
-            }`}
-          >
-            {leader.badgeLabel || 'EXECUTIVE'}
-          </span>
-        </div>
-
-        {/* Gradient Overlay (JNAC Signature Style) */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent flex flex-col justify-end p-3 sm:p-5 text-left">
-          <span className="text-[10px] sm:text-xs font-semibold text-sky-300 uppercase tracking-wider block mb-0.5 sm:mb-1 truncate">
-            {leader.excoPosition || 'Ministerial Leader'}
-          </span>
-
-          <h4 className="font-serif font-bold text-sm sm:text-lg text-white leading-tight mb-1 line-clamp-2">
+        {/* Gradient Overlay with Name Only (No oval badge, no blue position, no bottom team name) */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-transparent flex flex-col justify-end p-3.5 sm:p-5 text-left pointer-events-none">
+          <h4 className="font-serif font-bold text-sm sm:text-lg text-white leading-tight line-clamp-2">
             {leader.fullName}
           </h4>
-
-          <div className="text-[9px] sm:text-[11px] text-slate-400 font-mono mt-0.5 pt-1.5 sm:mt-1 sm:pt-2 border-t border-white/10 truncate">
-            <span>{leader.teamName}</span>
-          </div>
         </div>
       </motion.div>
     )
@@ -702,9 +726,7 @@ export default function AboutLeadership({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-6">
-              {CSGB_LIST.map((officer, idx) =>
-                renderCard(officer, idx, 'bg-[#0095ff] text-white shadow-sm')
-              )}
+              {csgbList.map((officer, idx) => renderCard(officer, idx))}
             </div>
           </div>
         )}
@@ -725,9 +747,7 @@ export default function AboutLeadership({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {HALL_PASTORS.map((hp, idx) =>
-                renderCard(hp, idx, 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30')
-              )}
+              {hallPastorsList.map((hp, idx) => renderCard(hp, idx))}
             </div>
           </div>
         )}
@@ -748,9 +768,7 @@ export default function AboutLeadership({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {TEAM_LEADERS.map((tl, idx) =>
-                renderCard(tl, idx, 'bg-slate-800 text-sky-300 border border-sky-400/20')
-              )}
+              {teamLeadersList.map((tl, idx) => renderCard(tl, idx))}
             </div>
           </div>
         )}
@@ -771,9 +789,7 @@ export default function AboutLeadership({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {ASSISTANT_TEAM_LEADERS.map((atl, idx) =>
-                renderCard(atl, idx, 'bg-purple-500/20 text-purple-300 border border-purple-500/30')
-              )}
+              {assistantLeadersList.map((atl, idx) => renderCard(atl, idx))}
             </div>
           </div>
         )}

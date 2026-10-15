@@ -24,8 +24,8 @@ export type RecentWelfareRequest = Pick<SafeWelfareRequest, '_id' | 'name' | 'st
 
 /** Latest first-timers, newest first; null when the role can't open the feed. */
 export async function getRecentFirstTimers(session: ECCFSession): Promise<RecentFirstTimer[] | null> {
-  if (!canAccessSection(session.role, 'firstTimers')) return null
-  const rows = await listFirstTimers()
+  if (!canAccessSection(session.role, 'firstTimers', session)) return null
+  const rows = await listFirstTimers(session)
   return rows
     .slice(0, RECENT_LIMIT)
     .map(({ _id, fullName, hall, department, level, dateVisited }) => ({ _id, fullName, hall, department, level, dateVisited }))

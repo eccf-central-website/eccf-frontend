@@ -37,8 +37,8 @@ export default async function DashboardOverviewPage() {
   const session = await requireSession()
   const showPeople = hasPermission(session.role, 'stats:people')
   const showFinance = hasPermission(session.role, 'stats:finance')
-  const showFirstTimers = canAccessSection(session.role, 'firstTimers')
-  const showWelfare = canAccessSection(session.role, 'welfare')
+  const showFirstTimers = canAccessSection(session.role, 'firstTimers', session)
+  const showWelfare = canAccessSection(session.role, 'welfare', session)
 
   return (
     <PageContainer>

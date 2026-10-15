@@ -59,6 +59,11 @@ interface RawSanityExco {
   team?: {
     name?: string
   }
+  leadingTeam?: {
+    name?: string
+  }
+  headshot?: unknown
+  headshotUrl?: string
   profileImageUrl?: string
   hall?: string
 }
@@ -154,8 +159,11 @@ export default async function AboutPage() {
     fullName: e.fullName,
     excoPosition: e.excoPosition,
     role: e.role,
-    teamName: e.team?.name || 'Executive Council',
-    profileImageUrl: e.profileImageUrl,
+    teamName: e.leadingTeam?.name || e.team?.name || 'Executive Council',
+    profileImageUrl:
+      urlForImage(e.headshot) ||
+      e.headshotUrl ||
+      e.profileImageUrl,
     hall: e.hall,
   }))
 

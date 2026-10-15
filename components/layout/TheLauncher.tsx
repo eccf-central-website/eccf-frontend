@@ -334,12 +334,19 @@ export default function TheLauncher() {
                         </div>
                       )}
 
-                      <div>
+                      <div className="grid grid-cols-2 gap-2">
                         <input
-                          name="fullName"
+                          name="firstName"
                           type="text"
                           required
-                          placeholder="Your Full Name *"
+                          placeholder="First Name *"
+                          className="w-full rounded-xl bg-[#233138] border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400"
+                        />
+                        <input
+                          name="lastName"
+                          type="text"
+                          required
+                          placeholder="Last Name *"
                           className="w-full rounded-xl bg-[#233138] border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400"
                         />
                       </div>

@@ -3,6 +3,7 @@
 import { sanityClient, sanityWriteClient } from '@/lib/sanity'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
+import { encrypt, createBlindIndex } from '@/lib/encryption'
 
 // Initialize Resend with the API key from environment variables
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -22,35 +23,63 @@ function escapeHtml(str: string): string {
 
 export async function submitFirstTimer(formData: FormData) {
   try {
-    const data = {
+    const rawFirstName = (formData.get('firstName') as string)?.trim()
+    const rawLastName = (formData.get('lastName') as string)?.trim()
+    const rawFullNameInput = (formData.get('fullName') as string)?.trim()
+
+    let rawFullName = ''
+    if (rawFirstName || rawLastName) {
+      if (!rawFirstName || !rawLastName) {
+        return { success: false, error: 'Both First Name and Last Name are required.' }
+      }
+      rawFullName = `${rawFirstName} ${rawLastName}`
+    } else if (rawFullNameInput) {
+      const parts = rawFullNameInput.split(/\s+/).filter(Boolean)
+      if (parts.length < 2) {
+        return { success: false, error: 'Please enter both your First Name and Last Name.' }
+      }
+      rawFullName = rawFullNameInput
+    }
+
+    const rawPhone = (formData.get('phoneNumber') as string)?.trim()
+    const rawHall = (formData.get('hall') as string)?.trim()
+    const rawRoom = (formData.get('roomNumber') as string)?.trim()
+    const rawDept = (formData.get('department') as string)?.trim()
+    const rawLevel = (formData.get('level') as string)?.trim()
+
+    if (!rawFullName || !rawPhone) {
+      return { success: false, error: 'First Name, Last Name, and Phone Number are required.' }
+    }
+
+    const data: { _type: 'firstTimer'; [key: string]: unknown } = {
       _type: 'firstTimer',
-      fullName: formData.get('fullName') as string,
-      phoneNumber: formData.get('phoneNumber') as string,
-      hall: formData.get('hall') as string,
-      roomNumber: formData.get('roomNumber') as string,
-      department: formData.get('department') as string,
-      level: formData.get('level') as string,
+      fullName: rawFullName,
+      phoneNumber: encrypt(rawPhone),
+      phoneBlindIndex: createBlindIndex(rawPhone),
+      hall: rawHall || '',
+      roomNumber: rawRoom ? encrypt(rawRoom) : '',
+      department: rawDept || '',
+      level: rawLevel || '',
       dateVisited: new Date().toISOString().split('T')[0], // YYYY-MM-DD
     }
 
-    if (!data.fullName || !data.phoneNumber) {
-      return { success: false, error: 'Name and Phone Number are required.' }
-    }
+    if (rawFirstName) data.firstName = rawFirstName
+    if (rawLastName) data.lastName = rawLastName
 
     await sanityWriteClient.create(data)
 
-    // Send Email Notification
+    // Send Email Notification with plain readable details for follow-up
     if (resend) {
       await resend.emails.send({
         from: 'ECCF Connect <onboarding@resend.dev>',
         to: NOTIFY_EMAIL,
-        subject: `New First Timer: ${data.fullName}`,
+        subject: `New First Timer: ${rawFullName}`,
         html: `
           <h2>New First Timer Connection!</h2>
-          <p><strong>Name:</strong> ${data.fullName}</p>
-          <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
-          <p><strong>Hall:</strong> ${data.hall || 'N/A'} (Room: ${data.roomNumber || 'N/A'})</p>
-          <p><strong>Department:</strong> ${data.department || 'N/A'} (${data.level || 'N/A'})</p>
+          <p><strong>Name:</strong> ${escapeHtml(rawFullName)}</p>
+          <p><strong>Phone Number:</strong> ${escapeHtml(rawPhone)}</p>
+          <p><strong>Hall:</strong> ${escapeHtml(rawHall || 'N/A')} (Room: ${escapeHtml(rawRoom || 'N/A')})</p>
+          <p><strong>Department:</strong> ${escapeHtml(rawDept || 'N/A')} (${escapeHtml(rawLevel || 'N/A')})</p>
           <br/>
           <p><em>Please ensure the follow-up team reaches out to them!</em></p>
         `,
@@ -67,34 +96,39 @@ export async function submitFirstTimer(formData: FormData) {
 
 export async function submitWelfareRequest(formData: FormData) {
   try {
+    const rawName = (formData.get('name') as string)?.trim()
+    const rawPhone = (formData.get('phoneNumber') as string)?.trim()
+    const rawDetails = (formData.get('requestDetails') as string)?.trim()
+
+    if (!rawName || !rawPhone || !rawDetails) {
+      return { success: false, error: 'All fields are required.' }
+    }
+
     const data = {
       _type: 'welfareRequest',
-      name: formData.get('name') as string,
-      phoneNumber: formData.get('phoneNumber') as string,
-      requestDetails: formData.get('requestDetails') as string,
+      name: rawName,
+      phoneNumber: encrypt(rawPhone),
+      phoneBlindIndex: createBlindIndex(rawPhone),
+      requestDetails: encrypt(rawDetails),
       status: 'Pending',
       dateSubmitted: new Date().toISOString(),
     }
 
-    if (!data.name || !data.phoneNumber || !data.requestDetails) {
-      return { success: false, error: 'All fields are required.' }
-    }
-
     await sanityWriteClient.create(data)
 
-    // Send Email Notification
+    // Send Email Notification with plain details for follow-up
     if (resend) {
       await resend.emails.send({
         from: 'ECCF Welfare <onboarding@resend.dev>',
         to: NOTIFY_EMAIL,
-        subject: `Urgent: New Welfare Request from ${data.name}`,
+        subject: `Urgent: New Welfare Request from ${rawName}`,
         html: `
           <h2>New Welfare Request</h2>
-          <p><strong>Name:</strong> ${data.name}</p>
-          <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
+          <p><strong>Name:</strong> ${escapeHtml(rawName)}</p>
+          <p><strong>Phone Number:</strong> ${escapeHtml(rawPhone)}</p>
           <p><strong>Request Details:</strong></p>
           <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">
-            ${data.requestDetails}
+            ${escapeHtml(rawDetails)}
           </blockquote>
           <br/>
           <p><em>Please review this in the Exco dashboard and follow up.</em></p>
@@ -114,16 +148,16 @@ export async function submitPrayerRequest(formData: FormData) {
   try {
     const rawName = (formData.get('name') as string)?.trim()
     const name = rawName || 'Anonymous'
-    const request = (formData.get('request') as string)?.trim()
+    const rawRequest = (formData.get('request') as string)?.trim()
 
-    if (!request) {
+    if (!rawRequest) {
       return { success: false, error: 'Prayer request is required.' }
     }
 
     const data = {
       _type: 'prayerRequest',
       name,
-      request,
+      request: encrypt(rawRequest),
       dateSubmitted: new Date().toISOString(),
     }
 
@@ -197,7 +231,7 @@ export async function submitPrayerRequest(formData: FormData) {
             Prayer Request:
           </p>
           <blockquote style="margin: 0 0 24px 0; padding: 16px 18px; background-color: #f0f9ff; border-left: 4px solid #0095ff; border-radius: 4px; font-size: 15px; line-height: 1.6; color: #0f172a; white-space: pre-wrap;">
-${escapeHtml(data.request)}
+${escapeHtml(rawRequest)}
           </blockquote>
 
           <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 13px; color: #64748b; line-height: 1.5;">
