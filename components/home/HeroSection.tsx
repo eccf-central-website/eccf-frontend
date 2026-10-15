@@ -24,6 +24,7 @@ export interface CollagePhotoItem {
 }
 
 export interface SiteSettingsData {
+  heroHeadline?: string
   heroHeadlineStart?: string
   heroAccentWord?: string
   heroHeadlineEnd?: string
@@ -82,9 +83,10 @@ export default function HeroSection({ settings }: Props) {
   const topLabel = settings?.heroTopPill || 'Join us this week'
 
   const headline =
-    settings?.heroHeadlineStart && settings?.heroHeadlineEnd
+    settings?.heroHeadline ||
+    (settings?.heroHeadlineStart && settings?.heroHeadlineEnd
       ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
-      : 'An Assembly of Spiritual Dynamites & Academic Giants'
+      : 'An Assembly of Spiritual Dynamites & Academic Giants')
 
   const bodyText =
     settings?.heroParagraph ||
