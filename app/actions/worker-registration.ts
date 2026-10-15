@@ -150,6 +150,9 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       if (bParts.length === 3) {
         resolvedMonth = parseInt(bParts[1], 10)
         resolvedDay = parseInt(bParts[2], 10)
+      } else if (bParts.length === 2) {
+        resolvedMonth = parseInt(bParts[0], 10)
+        resolvedDay = parseInt(bParts[1], 10)
       }
     }
 
@@ -233,11 +236,13 @@ export async function registerWorker(
     if (cleanBirthMonth && cleanBirthDay) {
       const m = String(cleanBirthMonth).padStart(2, '0')
       const d = String(cleanBirthDay).padStart(2, '0')
-      cleanBirthDate = `2000-${m}-${d}`
+      cleanBirthDate = `${m}-${d}`
     } else if (cleanBirthDate) {
       const bParts = cleanBirthDate.split('-')
       if (bParts.length === 3) {
-        cleanBirthDate = `2000-${bParts[1]}-${bParts[2]}`
+        cleanBirthDate = `${bParts[1].padStart(2, '0')}-${bParts[2].padStart(2, '0')}`
+      } else if (bParts.length === 2) {
+        cleanBirthDate = `${bParts[0].padStart(2, '0')}-${bParts[1].padStart(2, '0')}`
       }
     }
 

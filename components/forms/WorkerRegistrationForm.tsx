@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import { compressImage } from '@/lib/image-compression'
 import type { WorkerRole } from '@/types'
 
 const HALLS_OF_RESIDENCE = [
@@ -137,7 +138,7 @@ export function WorkerRegistrationForm() {
   const [birthDate, setBirthDate] = useState('')
   const effectiveBirthDate =
     birthMonth && birthDay
-      ? `2000-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+      ? `${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
       : birthDate
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -166,7 +167,7 @@ export function WorkerRegistrationForm() {
   // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Exco) -> Step 9 (Review)
   const totalSteps = isReturning ? 4 : 9
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -175,20 +176,27 @@ export function WorkerRegistrationForm() {
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Please select a photo smaller than 5MB.')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = () => {
-      const res = reader.result as string
-      setImagePreview(res)
-      const rawBase64 = res.split(',')[1] || res
-      setBase64Image(rawBase64)
+    try {
+      const compressed = await compressImage(
+        file,
+        { maxWidth: 1200, maxHeight: 1200, quality: 0.82 },
+        { fullName, team: teams[0] || 'General' }
+      )
+      setImagePreview(compressed.dataUrl)
+      setBase64Image(compressed.base64)
       setError(null)
+    } catch {
+      // Fallback to FileReader if Canvas compression fails
+      const reader = new FileReader()
+      reader.onload = () => {
+        const res = reader.result as string
+        setImagePreview(res)
+        const rawBase64 = res.split(',')[1] || res
+        setBase64Image(rawBase64)
+        setError(null)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   // Gateway: Phone Check (Step 1)
@@ -254,6 +262,9 @@ export function WorkerRegistrationForm() {
           if (bParts.length === 3) {
             setBirthMonth(bParts[1])
             setBirthDay(bParts[2])
+          } else if (bParts.length === 2) {
+            setBirthMonth(bParts[0])
+            setBirthDay(bParts[1])
           }
         }
         setExistingPhotoUrl(res.worker.profileImageUrl || null)
@@ -283,6 +294,30 @@ export function WorkerRegistrationForm() {
     setSubmitting(true)
 
     try {
+      let uploadedProfileImageUrl = existingPhotoUrl || undefined
+
+      if (base64Image) {
+        try {
+          const uploadRes = await fetch('/api/upload-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              base64: base64Image,
+              fullName,
+              team: teams[0] || 'General',
+            }),
+          })
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json()
+            if (uploadData.fileUrl) {
+              uploadedProfileImageUrl = uploadData.fileUrl
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('[upload-drive] Drive upload skipped, falling back to server action:', uploadErr)
+        }
+      }
+
       const res = await registerWorker({
         fullName,
         firstName,
@@ -297,7 +332,8 @@ export function WorkerRegistrationForm() {
         birthDate: effectiveBirthDate,
         birthMonth,
         birthDay,
-        birthdayPictureBase64: base64Image || undefined,
+        profileImageUrl: uploadedProfileImageUrl,
+        birthdayPictureBase64: uploadedProfileImageUrl ? undefined : (base64Image || undefined),
         isExco,
         requestedRole: isExco ? requestedRole : undefined,
         password: isExco && password ? password : undefined,

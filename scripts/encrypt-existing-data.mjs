@@ -190,26 +190,36 @@ async function run() {
       changed = true
       console.log(`[Worker] Encrypting room for: ${w.fullName}`)
     }
-    // Remove exposed passwordHash completely for safety
-    if (w.passwordHash) {
-      patch.unset.push('passwordHash')
+    // Ensure passwordHash is AES-256-GCM encrypted (never unset!)
+    if (w.passwordHash && !isEncrypted(w.passwordHash)) {
+      patch.set.passwordHash = encrypt(w.passwordHash)
       changed = true
-      console.log(`[Worker] Unsetting exposed passwordHash for: ${w.fullName}`)
+      console.log(`[Worker] Encrypting plain passwordHash for: ${w.fullName}`)
     }
-    // Encrypt birthDate and create birthdayBlindIndex
+    // Encrypt birthDate as MM-DD and create birthdayBlindIndex
     if (w.birthDate) {
       let rawDate = w.birthDate
       if (isEncrypted(w.birthDate)) {
         rawDate = decrypt(w.birthDate)
-      } else {
-        patch.set.birthDate = encrypt(w.birthDate)
-        changed = true
-        console.log(`[Worker] Encrypting birthDate for: ${w.fullName}`)
       }
-      if (!w.birthdayBlindIndex && rawDate) {
-        patch.set.birthdayBlindIndex = createBirthdayBlindIndex(rawDate)
+      if (rawDate && rawDate.includes('-')) {
+        const parts = rawDate.split('-')
+        if (parts.length === 3) {
+          rawDate = `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+          patch.set.birthDate = encrypt(rawDate)
+          changed = true
+          console.log(`[Worker] Standardized birthDate to MM-DD (${rawDate}) for: ${w.fullName}`)
+        } else if (!isEncrypted(w.birthDate)) {
+          patch.set.birthDate = encrypt(rawDate)
+          changed = true
+          console.log(`[Worker] Encrypted birthDate for: ${w.fullName}`)
+        }
+      }
+      const expectedBidx = createBirthdayBlindIndex(rawDate)
+      if (w.birthdayBlindIndex !== expectedBidx && rawDate) {
+        patch.set.birthdayBlindIndex = expectedBidx
         changed = true
-        console.log(`[Worker] Generating birthdayBlindIndex for: ${w.fullName}`)
+        console.log(`[Worker] Updated birthdayBlindIndex for: ${w.fullName}`)
       }
     }
     // Unset plain birthMonth and birthDay

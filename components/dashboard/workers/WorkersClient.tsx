@@ -76,6 +76,12 @@ function formatBirthday(dateStr?: string, monthNum?: number, dayNum?: number): s
     if (!isNaN(m) && !isNaN(d) && m >= 1 && m <= 12) {
       return `${MONTH_NAMES[m - 1]} ${d}`
     }
+  } else if (parts.length === 2) {
+    const m = parseInt(parts[0], 10)
+    const d = parseInt(parts[1], 10)
+    if (!isNaN(m) && !isNaN(d) && m >= 1 && m <= 12) {
+      return `${MONTH_NAMES[m - 1]} ${d}`
+    }
   }
   return dateStr
 }

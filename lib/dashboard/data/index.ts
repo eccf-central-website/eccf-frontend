@@ -221,6 +221,13 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
           birthMonth = m
           birthDay = d
         }
+      } else if (parts.length === 2) {
+        const m = parseInt(parts[0], 10)
+        const d = parseInt(parts[1], 10)
+        if (!isNaN(m) && !isNaN(d)) {
+          birthMonth = m
+          birthDay = d
+        }
       }
     }
     return {

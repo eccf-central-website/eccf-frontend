@@ -11,7 +11,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { sanityWriteClient } from '@/lib/sanity'
-import { decrypt, createBlindIndex } from '@/lib/encryption'
+import { decrypt, createBlindIndex, getCandidateBlindIndexes } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export const authOptions: NextAuthOptions = {
@@ -35,9 +35,12 @@ export const authOptions: NextAuthOptions = {
         const rawIdentifier = credentials.identifier.trim()
         const cleanEmail = rawIdentifier.toLowerCase()
         const cleanPhone = rawIdentifier.replace(/\s+/g, '')
-        const phoneBlindIndex = createBlindIndex(cleanPhone)
+        const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
+        const primaryBlindIndex = createBlindIndex(cleanPhone)
+        const allBlindIndexes = Array.from(new Set([primaryBlindIndex, ...candidateBlindIndexes]))
 
-        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex
+        // Look up Worker in Sanity by email, phoneNumber, or candidate phoneBlindIndexes
+        // Order by defined(passwordHash) desc, _updatedAt desc so populated credentials take priority
         const worker = await sanityWriteClient.fetch<{
           _id: string
           fullName: string
@@ -52,7 +55,11 @@ export const authOptions: NextAuthOptions = {
           hall?: string
           teams?: (string | { name?: string })[]
         }>(
-          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
+          `*[_type == "worker" && (
+            lower(email) == $cleanEmail ||
+            phoneNumber == $cleanPhone ||
+            phoneBlindIndex in $allBlindIndexes
+          )] | order(defined(passwordHash) desc, _updatedAt desc)[0]{
             _id,
             fullName,
             email,
@@ -66,7 +73,7 @@ export const authOptions: NextAuthOptions = {
             hall,
             "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
           }`,
-          { cleanEmail, cleanPhone, phoneBlindIndex }
+          { cleanEmail, cleanPhone, allBlindIndexes }
         )
 
         if (!worker) {
