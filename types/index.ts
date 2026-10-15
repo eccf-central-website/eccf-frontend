@@ -78,6 +78,8 @@ export interface Worker {
   /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
   phoneBlindIndex?: string
   birthDate?: string // ISO date string YYYY-MM-DD
+  /** ⚠️ One-way HMAC-SHA256 blind index for birthday matching/tracking */
+  birthdayBlindIndex?: string
   birthMonth?: number
   birthDay?: number
   role?: WorkerRole
@@ -99,8 +101,8 @@ export interface Worker {
   updateLog?: string[]
 }
 
-/** Safe worker type — phoneNumber, roomNumber, passwordHash, and phoneBlindIndex guaranteed stripped for browser */
-export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash' | 'phoneBlindIndex'>
+/** Safe worker type — phoneNumber, roomNumber, passwordHash, phoneBlindIndex, and birthdayBlindIndex guaranteed stripped for browser */
+export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash' | 'phoneBlindIndex' | 'birthdayBlindIndex'>
 
 // ---------------------------------------------------------------------------
 // JWT Session (NextAuth)

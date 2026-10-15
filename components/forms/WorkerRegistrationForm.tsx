@@ -208,10 +208,18 @@ export function WorkerRegistrationForm() {
       const res = await lookupWorkerByPhone(clean)
       if (res.found && res.worker) {
         setIsReturning(true)
-        if (res.worker.firstName) {
-          setFirstName(res.worker.firstName)
-          setMiddleName(res.worker.middleName || '')
-          setLastName(res.worker.lastName || '')
+        const returnedWorker = res.worker as {
+          firstName?: string
+          middleName?: string
+          lastName?: string
+          birthMonth?: number | string
+          birthDay?: number | string
+        } & typeof res.worker
+
+        if (returnedWorker.firstName) {
+          setFirstName(returnedWorker.firstName)
+          setMiddleName(returnedWorker.middleName || '')
+          setLastName(returnedWorker.lastName || '')
         } else if (res.worker.fullName) {
           const parts = res.worker.fullName.trim().split(/\s+/)
           if (parts.length === 1) {
@@ -239,9 +247,9 @@ export function WorkerRegistrationForm() {
         setHall(res.worker.hall || '')
         setRoomNumber(res.worker.roomNumber || '')
         setBirthDate(res.worker.birthDate || '')
-        if (res.worker.birthMonth && res.worker.birthDay) {
-          setBirthMonth(String(res.worker.birthMonth).padStart(2, '0'))
-          setBirthDay(String(res.worker.birthDay).padStart(2, '0'))
+        if (returnedWorker.birthMonth && returnedWorker.birthDay) {
+          setBirthMonth(String(returnedWorker.birthMonth).padStart(2, '0'))
+          setBirthDay(String(returnedWorker.birthDay).padStart(2, '0'))
         } else if (res.worker.birthDate) {
           const bParts = res.worker.birthDate.split('-')
           if (bParts.length === 3) {

@@ -31,6 +31,8 @@ export const DASHBOARD_WORKERS_QUERY = `
     verifiedBy,
     "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
     birthDate,
+    birthMonth,
+    birthDay,
     profileImageUrl,
     createdAt,
     updatedAt,
