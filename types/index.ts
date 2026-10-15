@@ -56,6 +56,9 @@ export interface Worker {
   _id: string
   _type: 'worker'
   fullName: string
+  firstName?: string
+  middleName?: string
+  lastName?: string
   email?: string
   /** Operational group — NEVER use `unit`, always `team` */
   team: FellowshipTeam
@@ -75,6 +78,8 @@ export interface Worker {
   /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
   phoneBlindIndex?: string
   birthDate?: string // ISO date string YYYY-MM-DD
+  birthMonth?: number
+  birthDay?: number
   role?: WorkerRole
   excoPosition?: ExcoPosition
   isExcoApproved?: boolean
@@ -213,6 +218,8 @@ export interface FirstTimer {
   _id: string
   _type: 'firstTimer'
   fullName: string
+  firstName?: string
+  lastName?: string
   /**
    * ⚠️ ENCRYPTED — stripped before any client-facing response.
    */
@@ -302,6 +309,8 @@ export interface FirstTimerRow {
   _id: string
   _type?: 'firstTimer'
   fullName: string
+  firstName?: string
+  lastName?: string
   phoneNumber?: string
   hall?: string
   roomNumber?: string

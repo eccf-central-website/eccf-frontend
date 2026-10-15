@@ -23,7 +23,24 @@ function escapeHtml(str: string): string {
 
 export async function submitFirstTimer(formData: FormData) {
   try {
-    const rawFullName = (formData.get('fullName') as string)?.trim()
+    const rawFirstName = (formData.get('firstName') as string)?.trim()
+    const rawLastName = (formData.get('lastName') as string)?.trim()
+    const rawFullNameInput = (formData.get('fullName') as string)?.trim()
+
+    let rawFullName = ''
+    if (rawFirstName || rawLastName) {
+      if (!rawFirstName || !rawLastName) {
+        return { success: false, error: 'Both First Name and Last Name are required.' }
+      }
+      rawFullName = `${rawFirstName} ${rawLastName}`
+    } else if (rawFullNameInput) {
+      const parts = rawFullNameInput.split(/\s+/).filter(Boolean)
+      if (parts.length < 2) {
+        return { success: false, error: 'Please enter both your First Name and Last Name.' }
+      }
+      rawFullName = rawFullNameInput
+    }
+
     const rawPhone = (formData.get('phoneNumber') as string)?.trim()
     const rawHall = (formData.get('hall') as string)?.trim()
     const rawRoom = (formData.get('roomNumber') as string)?.trim()
@@ -31,10 +48,10 @@ export async function submitFirstTimer(formData: FormData) {
     const rawLevel = (formData.get('level') as string)?.trim()
 
     if (!rawFullName || !rawPhone) {
-      return { success: false, error: 'Name and Phone Number are required.' }
+      return { success: false, error: 'First Name, Last Name, and Phone Number are required.' }
     }
 
-    const data = {
+    const data: { _type: 'firstTimer'; [key: string]: unknown } = {
       _type: 'firstTimer',
       fullName: rawFullName,
       phoneNumber: encrypt(rawPhone),
@@ -45,6 +62,9 @@ export async function submitFirstTimer(formData: FormData) {
       level: rawLevel || '',
       dateVisited: new Date().toISOString().split('T')[0], // YYYY-MM-DD
     }
+
+    if (rawFirstName) data.firstName = rawFirstName
+    if (rawLastName) data.lastName = rawLastName
 
     await sanityWriteClient.create(data)
 

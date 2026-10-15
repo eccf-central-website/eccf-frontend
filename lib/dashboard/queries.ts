@@ -82,6 +82,8 @@ export const DASHBOARD_FIRST_TIMERS_QUERY = `
     _id,
     _type,
     fullName,
+    firstName,
+    lastName,
     phoneNumber,
     hall,
     roomNumber,

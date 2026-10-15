@@ -40,18 +40,33 @@ export function FirstTimerForm() {
       )}
 
       <form id="first-timer-form" action={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="fullName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
-            Full Name
-          </label>
-          <input
-            id="fullName"
-            name="fullName"
-            type="text"
-            required
-            className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-            placeholder="Michael Christopher Akan"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label htmlFor="firstName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
+              First Name *
+            </label>
+            <input
+              id="firstName"
+              name="firstName"
+              type="text"
+              required
+              className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
+              placeholder="Michael"
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
+              Last Name *
+            </label>
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              required
+              className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
+              placeholder="Akan"
+            />
+          </div>
         </div>
 
         <div>
