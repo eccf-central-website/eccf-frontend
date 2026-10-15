@@ -20,6 +20,7 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { sanityWriteClient } from '@/lib/sanity'
+import { decrypt } from '@/lib/encryption'
 import type {
   AttendanceRow,
   ECCFSession,
@@ -54,7 +55,6 @@ import {
 } from '../mock/data'
 import { stripPII } from './pii'
 import { lagosDaysAgo, lagosMonthStart } from '../dates'
-import { decrypt } from '@/lib/encryption'
 
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
 
@@ -94,7 +94,7 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
 
 /** Team used to scope team_lead reads; null means all teams. */
 function teamScope(session: ECCFSession): string | null {
-  if (!isTeamScoped(session.role)) return null
+  if (!isTeamScoped(session.role, session)) return null
   return session.team || '__no-team__'
 }
 
@@ -170,20 +170,67 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
 }
 
 // ---------------------------------------------------------------------------
-// Worker CRM
-// ---------------------------------------------------------------------------
+function matchesHall(workerHall: string | undefined, targetHall: string | null): boolean {
+  if (targetHall === null) return true
+  if (!workerHall) return false
+  return workerHall.toLowerCase().trim() === targetHall.toLowerCase().trim()
+}
+
+function matchesTeam(
+  workerTeam: string | undefined,
+  workerTeams: string[] | undefined,
+  targetTeam: string | null
+): boolean {
+  if (targetTeam === null) return true
+  const normTarget = targetTeam.toLowerCase().trim()
+  const cleanTarget = normTarget.replace(/\s+team$/, '')
+
+  const allWorkerTeams = [workerTeam, ...(workerTeams || [])].filter(Boolean) as string[]
+  return allWorkerTeams.some((wt) => {
+    const normWt = wt.toLowerCase().trim()
+    const cleanWt = normWt.replace(/\s+team$/, '')
+    return (
+      normWt === normTarget ||
+      cleanWt === cleanTarget ||
+      normWt.includes(cleanTarget) ||
+      cleanTarget.includes(cleanWt)
+    )
+  })
+}
 
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const hall = await hallScope(session)
   const team = teamScope(session)
-  const rows =
+  const rawRows =
     dataSource() === 'mock'
       ? (await fromMock(MOCK_WORKERS, [])).filter(
-          (w) =>
-            (hall === null || w.hall === hall) &&
-            (team === null || w.team === team || (w.teams && w.teams.includes(team)))
+          (w) => matchesHall(w.hall, hall) && matchesTeam(w.team, w.teams, team)
         )
       : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
+
+  const rows = rawRows.map((w) => {
+    const decryptedBirthDate = decrypt(w.birthDate)
+    let birthMonth = w.birthMonth
+    let birthDay = w.birthDay
+    if ((!birthMonth || !birthDay) && decryptedBirthDate && decryptedBirthDate.includes('-')) {
+      const parts = decryptedBirthDate.split('-')
+      if (parts.length === 3) {
+        const m = parseInt(parts[1], 10)
+        const d = parseInt(parts[2], 10)
+        if (!isNaN(m) && !isNaN(d)) {
+          birthMonth = m
+          birthDay = d
+        }
+      }
+    }
+    return {
+      ...w,
+      birthDate: decryptedBirthDate,
+      birthMonth,
+      birthDay,
+    }
+  })
+
   return stripPII(rows)
 }
 

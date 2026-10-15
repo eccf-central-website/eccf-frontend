@@ -14,7 +14,7 @@
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
-import { encrypt, decrypt, createBlindIndex } from '@/lib/encryption'
+import { encrypt, decrypt, createBlindIndex, createBirthdayBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export interface WorkerRegistrationInput {
@@ -32,6 +32,7 @@ export interface WorkerRegistrationInput {
   birthMonth?: string | number
   birthDay?: string | number
   birthdayPictureBase64?: string
+  profileImageUrl?: string
   isExco: boolean
   requestedRole?: WorkerRole
   password?: string
@@ -141,6 +142,17 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
         : [existing.team || 'General']
     ).filter(Boolean)
 
+    const decryptedBirthDate = decrypt(existing.birthDate)
+    let resolvedMonth = existing.birthMonth
+    let resolvedDay = existing.birthDay
+    if ((!resolvedMonth || !resolvedDay) && decryptedBirthDate && decryptedBirthDate.includes('-')) {
+      const bParts = decryptedBirthDate.split('-')
+      if (bParts.length === 3) {
+        resolvedMonth = parseInt(bParts[1], 10)
+        resolvedDay = parseInt(bParts[2], 10)
+      }
+    }
+
     return {
       found: true,
       worker: {
@@ -153,9 +165,9 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
         hall: existing.hall,
         roomNumber: decrypt(existing.roomNumber),
         email: existing.email,
-        birthDate: existing.birthDate,
-        birthMonth: existing.birthMonth,
-        birthDay: existing.birthDay,
+        birthDate: decryptedBirthDate,
+        birthMonth: resolvedMonth,
+        birthDay: resolvedDay,
         profileImageUrl: existing.profileImageUrl,
         role: existing.role,
         isExcoApproved: existing.isExcoApproved,
@@ -305,10 +317,11 @@ export async function registerWorker(
     const primaryTeamReference = teamReferences[0]
 
     // 3. Process Birthday Picture via Google Apps Script bridge if provided
-    let profileImageUrl: string | undefined = undefined
+    // 3. Process Birthday Picture via Google Apps Script bridge if provided
+    let profileImageUrl: string | undefined = input.profileImageUrl || undefined
     const cleanFileName = `${cleanFullName.replace(/\s+/g, '_')}_${cleanTeam.replace(/\s+/g, '_')}_BirthdayPic.jpg`
 
-    if (input.birthdayPictureBase64 && process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL) {
+    if (!profileImageUrl && input.birthdayPictureBase64 && process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL) {
       try {
         const gasRes = await fetch(process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL, {
           method: 'POST',
@@ -336,10 +349,14 @@ export async function registerWorker(
       passwordHash = encrypt(rawHash)
     }
 
+    const encryptedBirthDate = encrypt(cleanBirthDate)
+    const birthdayBlindIndex = createBirthdayBlindIndex(cleanBirthDate)
+
     if (existing) {
       // 4a. Worker Exists -> Compute Delta Log and Patch
       const deltaLogs: string[] = []
       const currentRoom = decrypt(existing.roomNumber)
+      const currentBirthDate = decrypt(existing.birthDate)
 
       const prevTeams = (existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team || 'General'])
         .filter(Boolean)
@@ -358,8 +375,8 @@ export async function registerWorker(
       if (existing.email && existing.email !== input.email) {
         deltaLogs.push(`Updated Email on ${today}`)
       }
-      if (existing.birthDate && existing.birthDate !== cleanBirthDate) {
-        deltaLogs.push(`Updated Birth Date on ${today}`)
+      if (currentBirthDate && currentBirthDate !== cleanBirthDate) {
+        deltaLogs.push(`Updated Birthday on ${today}`)
       }
       if (profileImageUrl) {
         deltaLogs.push(`Updated Birthday Picture on ${today}`)
@@ -384,9 +401,8 @@ export async function registerWorker(
         teams: teamReferences,
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
-        birthDate: cleanBirthDate,
-        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
-        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
+        birthDate: encryptedBirthDate,
+        birthdayBlindIndex,
         updatedAt: new Date().toISOString(),
       }
 
@@ -403,6 +419,7 @@ export async function registerWorker(
       await sanityWriteClient
         .patch(existing._id)
         .set(patchData)
+        .unset(['birthMonth', 'birthDay'])
         .append('updateLog', deltaLogs)
         .commit()
 
@@ -436,9 +453,8 @@ export async function registerWorker(
         teams: teamReferences,
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
-        birthDate: cleanBirthDate,
-        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
-        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
+        birthDate: encryptedBirthDate,
+        birthdayBlindIndex,
         verificationStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

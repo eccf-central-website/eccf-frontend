@@ -365,13 +365,13 @@ export default function TheLauncher() {
                         <input
                           name="department"
                           type="text"
-                          placeholder="Department (e.g. Med)"
+                          placeholder="Department"
                           className="w-full rounded-xl bg-[#233138] border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400"
                         />
                         <input
                           name="level"
                           type="text"
-                          placeholder="Level (e.g. 100L)"
+                          placeholder="Level"
                           className="w-full rounded-xl bg-[#233138] border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400"
                         />
                       </div>

@@ -202,7 +202,7 @@ export default function RecordAttendanceModal({
               <Label htmlFor="att-title">Meeting Title / Topic (Optional)</Label>
               <Input
                 id="att-title"
-                placeholder="e.g. Weekly Rehearsal, Media Workshop"
+                placeholder="Weekly Rehearsal, Media Workshop"
                 value={meetingTitle}
                 onChange={(e) => setMeetingTitle(e.target.value)}
               />

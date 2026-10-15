@@ -6,7 +6,7 @@
  * each Server Action (`requirePermission`), and — once auth lands —
  * middleware.ts (route-level guard). Pure data, safe to import anywhere.
  *
- * Matrix approved 2026-10-05 (pending Ransom's confirmation):
+ * Matrix approved 2026-10-05 (pending administrator's confirmation):
  *   admin    — everything
  *   hall_rep — overview (people cards), workers (own hall only), attendance,
  *              first-timers, welfare, prayer requests
@@ -112,9 +112,45 @@ export function isHallScoped(role: WorkerRole): boolean {
   return role === 'hall_rep'
 }
 
-/** team_lead sees workers and attendance scoped to their operational team. */
-export function isTeamScoped(role: WorkerRole): boolean {
-  return role === 'team_lead'
+export function isMediaTeam(
+  session?: {
+    team?: string
+    teams?: string[]
+    excoPosition?: string
+    leadingTeam?: string
+  } | null
+): boolean {
+  if (!session) return false
+  const team = (session.team || '').toLowerCase()
+  const position = (session.excoPosition || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const hasMediaInTeams = session.teams?.some((t) => t.toLowerCase().includes('media')) ?? false
+  return (
+    team.includes('media') ||
+    team.includes('publicity') ||
+    position.includes('media') ||
+    position.includes('publicity') ||
+    leadingTeam.includes('media') ||
+    hasMediaInTeams
+  )
+}
+
+/**
+ * team_lead sees workers scoped to their operational team, UNLESS they are
+ * the Media Team (which requires fellowship-wide worker visibility to design birthday flyers).
+ */
+export function isTeamScoped(
+  role: WorkerRole,
+  session?: {
+    team?: string
+    teams?: string[]
+    excoPosition?: string
+    leadingTeam?: string
+  } | null
+): boolean {
+  if (role !== 'team_lead') return false
+  if (session && isMediaTeam(session)) return false
+  return true
 }
 
 /**
