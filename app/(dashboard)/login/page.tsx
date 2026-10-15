@@ -111,7 +111,7 @@ function LoginForm() {
               autoComplete="username"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. john@example.com or 08012345678"
+              placeholder="michael.akan@example.com or 08012345678"
               className="h-12 rounded-xl border border-slate-300 dark:border-stone-700 bg-slate-50/60 hover:bg-slate-50/90 focus-visible:bg-white dark:bg-stone-900 px-3.5 text-foreground placeholder:text-slate-400 shadow-xs focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
             />
           </div>

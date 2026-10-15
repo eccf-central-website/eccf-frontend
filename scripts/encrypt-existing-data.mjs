@@ -89,6 +89,44 @@ function createBlindIndex(phone) {
   return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
 }
 
+function decrypt(cipherText) {
+  if (!cipherText || typeof cipherText !== 'string') return ''
+  if (!isEncrypted(cipherText)) return cipherText
+  try {
+    const withoutPrefix = cipherText.slice(PREFIX.length)
+    const [ivHex, tagHex, encryptedHex] = withoutPrefix.split(':')
+    if (!ivHex || !tagHex || !encryptedHex) return cipherText
+    const key = getEncryptionKey()
+    const iv = Buffer.from(ivHex, 'hex')
+    const tag = Buffer.from(tagHex, 'hex')
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(tag)
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch (err) {
+    console.error('Decryption failed:', err)
+    return cipherText
+  }
+}
+
+function createBirthdayBlindIndex(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return ''
+  const trimmed = dateStr.trim()
+  let mmdd = ''
+  const parts = trimmed.split('-')
+  if (parts.length === 3) {
+    mmdd = `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+  } else if (parts.length === 2) {
+    mmdd = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+  } else {
+    mmdd = trimmed
+  }
+  const hmac = crypto.createHmac('sha256', getHmacKey())
+  hmac.update(`birthday:${mmdd}`)
+  return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
+}
+
 // 3. Query Sanity API
 async function sanityQuery(query, params = {}) {
   const url = new URL(`https://${PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${DATASET}`)
@@ -133,7 +171,9 @@ async function run() {
   const mutations = []
 
   // A. Workers
-  const workers = await sanityQuery(`*[_type == "worker"]{ _id, fullName, phoneNumber, roomNumber, passwordHash }`)
+  const workers = await sanityQuery(
+    `*[_type == "worker"]{ _id, fullName, phoneNumber, roomNumber, passwordHash, birthDate, birthdayBlindIndex, birthMonth, birthDay }`
+  )
   console.log(`Found ${workers.length} workers.`)
   for (const w of workers) {
     const patch = { id: w._id, set: {}, unset: [] }
@@ -155,6 +195,28 @@ async function run() {
       patch.unset.push('passwordHash')
       changed = true
       console.log(`[Worker] Unsetting exposed passwordHash for: ${w.fullName}`)
+    }
+    // Encrypt birthDate and create birthdayBlindIndex
+    if (w.birthDate) {
+      let rawDate = w.birthDate
+      if (isEncrypted(w.birthDate)) {
+        rawDate = decrypt(w.birthDate)
+      } else {
+        patch.set.birthDate = encrypt(w.birthDate)
+        changed = true
+        console.log(`[Worker] Encrypting birthDate for: ${w.fullName}`)
+      }
+      if (!w.birthdayBlindIndex && rawDate) {
+        patch.set.birthdayBlindIndex = createBirthdayBlindIndex(rawDate)
+        changed = true
+        console.log(`[Worker] Generating birthdayBlindIndex for: ${w.fullName}`)
+      }
+    }
+    // Unset plain birthMonth and birthDay
+    if (w.birthMonth !== undefined || w.birthDay !== undefined) {
+      patch.unset.push('birthMonth', 'birthDay')
+      changed = true
+      console.log(`[Worker] Unsetting plain birthMonth & birthDay for: ${w.fullName}`)
     }
 
     if (changed) {

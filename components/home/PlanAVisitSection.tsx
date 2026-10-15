@@ -169,7 +169,7 @@ export default function PlanAVisitSection({
   whatsAppNumber,
   email,
 }: Props) {
-  const safeContact = contactPerson || 'Ransom'
+  const safeContact = contactPerson || 'ECCF Team'
   const safePhone = whatsAppNumber || '+2348100000000'
   const safeEmail = email || 'edsuchristiancampusfellowship@gmail.com'
 
@@ -399,7 +399,7 @@ export default function PlanAVisitSection({
                           required
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          placeholder="e.g. Ransom"
+                          placeholder="Michael"
                           className="w-full px-4 py-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc] text-base transition-all font-sans"
                         />
                       </div>
@@ -416,7 +416,7 @@ export default function PlanAVisitSection({
                           type="text"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          placeholder="e.g. Akpan"
+                          placeholder="Akan"
                           className="w-full px-4 py-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc] text-base transition-all font-sans"
                         />
                       </div>

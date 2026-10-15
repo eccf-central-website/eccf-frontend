@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   AlertCircle,
   Upload,
   UserCheck,
@@ -327,14 +326,14 @@ export function WorkerRegistrationForm() {
   // Render Success Screen
   if (successResult?.ok) {
     return (
-      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-4">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 border-2 border-emerald-300 shadow-sm">
-          <CheckCircle2 className="h-10 w-10" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
-            {isReturning ? 'Location Updated! 🎉' : 'Welcome to the Workforce! 🎉'}
-          </h2>
+      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-6">
+        <div className="space-y-2.5">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] font-mono block">
+            REGISTRATION CONFIRMED
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
+            {isReturning ? 'Location Updated!' : 'Welcome to the Workforce!'}
+          </h1>
           <p className="text-base sm:text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
             {successResult.message}
           </p>
@@ -403,11 +402,11 @@ export function WorkerRegistrationForm() {
 
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc] font-mono block">
-            RESTRICTED PORTAL
+            FELLOWSHIP WORKFORCE &amp; EXCO
           </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
-            Workforce Passkey Required
-          </h2>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+            Worker Registration
+          </h1>
           <p className="text-sm text-slate-600 leading-relaxed">
             This registration portal is reserved exclusively for inducted volunteer workers and leaders of ECCF.
           </p>
@@ -426,7 +425,7 @@ export function WorkerRegistrationForm() {
                   setEnteredCode(e.target.value)
                   setGateError(null)
                 }}
-                placeholder="e.g. ECCFWORKERS"
+                placeholder="ECCFWORKERS"
                 className="w-full h-12 rounded-xl border border-stone-300 pl-4 pr-10 text-sm font-mono tracking-wider uppercase focus:border-[#0077cc] focus:outline-none focus:ring-2 focus:ring-sky-100 transition-all"
                 autoFocus
               />
@@ -858,7 +857,7 @@ export function WorkerRegistrationForm() {
                       <span>Saving Location…</span>
                     </span>
                   ) : (
-                    'Confirm & Update Location 🎉'
+                    'Confirm & Update Location'
                   )}
                 </button>
               </div>
@@ -901,7 +900,7 @@ export function WorkerRegistrationForm() {
                     autoFocus
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="e.g. Ransom"
+                    placeholder="Michael"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -914,7 +913,7 @@ export function WorkerRegistrationForm() {
                     type="text"
                     value={middleName}
                     onChange={(e) => setMiddleName(e.target.value)}
-                    placeholder="e.g. Samuel"
+                    placeholder="Christopher"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -928,7 +927,7 @@ export function WorkerRegistrationForm() {
                     required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="e.g. Akpan"
+                    placeholder="Akan"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -1579,7 +1578,7 @@ export function WorkerRegistrationForm() {
                       <span>Submitting Registration…</span>
                     </span>
                   ) : (
-                    'Complete Registration 🎉'
+                    'Complete Registration'
                   )}
                 </button>
               </div>
