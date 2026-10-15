@@ -14,7 +14,7 @@
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
-import { encrypt, decrypt, createBlindIndex, createBirthdayBlindIndex } from '@/lib/encryption'
+import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export interface WorkerRegistrationInput {
@@ -93,7 +93,9 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
   try {
     const cleanPhone = phoneNumber.trim().replace(/\s+/g, '')
     if (cleanPhone.length < 8) return { found: false }
+    const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
     const phoneBlindIndex = createBlindIndex(cleanPhone)
+    const allBlindIndexes = Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
 
     const existing = await sanityWriteClient.fetch<{
       fullName?: string
@@ -112,7 +114,10 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
       role?: WorkerRole
       isExcoApproved?: boolean
     }>(
-      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
+      `*[_type == "worker" && (
+        phoneBlindIndex in $allBlindIndexes ||
+        phoneNumber == $phoneNumber
+      )] | order(defined(passwordHash) desc, _updatedAt desc)[0]{
         fullName,
         firstName,
         middleName,
@@ -129,7 +134,7 @@ export async function lookupWorkerByPhone(phoneNumber: string): Promise<{
         role,
         isExcoApproved
       }`,
-      { phoneNumber: cleanPhone, phoneBlindIndex }
+      { phoneNumber: cleanPhone, allBlindIndexes }
     )
 
     if (!existing || !existing.fullName) {
@@ -254,12 +259,16 @@ export async function registerWorker(
     }
 
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
+    const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
     const phoneBlindIndex = createBlindIndex(cleanPhone)
+    const allBlindIndexes = Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
+    const cleanEmail = input.email.trim().toLowerCase()
     const cleanTeams = Array.from(new Set(selectedTeams))
     const cleanTeam = cleanTeams[0] || 'General'
     const today = new Date().toISOString().split('T')[0]
 
     // 2. Check if worker already exists (Deduplication / Upsert check)
+    // Matches by candidate blind indexes, phone number, or email
     const existing = await sanityWriteClient.fetch<{
       _id: string
       fullName?: string
@@ -275,7 +284,11 @@ export async function registerWorker(
       passwordHash?: string
       updateLog?: string[]
     }>(
-      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
+      `*[_type == "worker" && (
+        phoneBlindIndex in $allBlindIndexes ||
+        phoneNumber == $phoneNumber ||
+        lower(email) == $cleanEmail
+      )] | order(defined(passwordHash) desc, _updatedAt desc)[0]{
         _id,
         fullName,
         "team": coalesce(team->name, team),
@@ -290,7 +303,7 @@ export async function registerWorker(
         passwordHash,
         updateLog
       }`,
-      { phoneNumber: cleanPhone, phoneBlindIndex }
+      { phoneNumber: cleanPhone, allBlindIndexes, cleanEmail }
     )
 
     // Password validation logic:
