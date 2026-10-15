@@ -509,3 +509,78 @@ export async function registerWorker(
     }
   }
 }
+
+/**
+ * Setup or reset an Exco member's dashboard password.
+ * Allows verified Excos (or workers establishing dashboard access) to set or refresh their password.
+ */
+export async function setupExcoPassword(input: {
+  identifier: string
+  newPassword: string
+}): Promise<{ ok: boolean; message?: string; error?: string }> {
+  try {
+    const rawId = input.identifier?.trim() || ''
+    const password = input.newPassword?.trim() || ''
+
+    if (!rawId || password.length < 8) {
+      return { ok: false, error: 'Please enter your registered email/phone and a password of at least 8 characters.' }
+    }
+
+    const cleanEmail = rawId.toLowerCase()
+    const cleanPhone = rawId.replace(/\s+/g, '')
+    const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
+    const phoneBlindIndex = createBlindIndex(cleanPhone)
+    const allBlindIndexes = Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
+
+    // Find the worker by email or candidate phone blind indexes
+    const worker = await sanityWriteClient.fetch<{
+      _id: string
+      fullName: string
+      role?: string
+      requestedRole?: string
+      isExcoApproved?: boolean
+    }>(
+      `*[_type == "worker" && (
+        lower(email) == $cleanEmail ||
+        phoneNumber == $cleanPhone ||
+        phoneBlindIndex in $allBlindIndexes
+      )] | order(defined(role) desc, _updatedAt desc)[0]{
+        _id,
+        fullName,
+        role,
+        requestedRole,
+        isExcoApproved
+      }`,
+      { cleanEmail, cleanPhone, allBlindIndexes }
+    )
+
+    if (!worker) {
+      return { ok: false, error: 'No registered worker found with that email or phone number.' }
+    }
+
+    const rawHash = await bcrypt.hash(password, 10)
+    const encryptedHash = encrypt(rawHash)
+
+    const today = new Date().toISOString().split('T')[0]
+    await sanityWriteClient
+      .patch(worker._id)
+      .set({
+        passwordHash: encryptedHash,
+        updatedAt: new Date().toISOString(),
+      })
+      .append('updateLog', [`Dashboard password configured on ${today}`])
+      .commit()
+
+    revalidatePath('/dashboard')
+    revalidatePath('/login')
+
+    return {
+      ok: true,
+      message: `Password set successfully for ${worker.fullName}! You can now sign in.`,
+    }
+  } catch (err) {
+    console.error('[setupExcoPassword] Error:', err)
+    return { ok: false, error: 'Failed to update password. Please try again.' }
+  }
+}
+

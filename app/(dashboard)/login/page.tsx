@@ -4,10 +4,18 @@ import { useState, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Eye, EyeOff, AlertCircle, Clock } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Clock, KeyRound, CheckCircle2, Lock } from 'lucide-react'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/dashboard/ui/dialog'
+import { setupExcoPassword } from '@/app/actions/worker-registration'
 
 function LoginForm() {
   const router = useRouter()
@@ -23,6 +31,15 @@ function LoginForm() {
     initialError === 'CredentialsSignin' ? 'Invalid credentials. Please check your details.' : null
   )
   const [isPendingApproval, setIsPendingApproval] = useState(false)
+
+  // Reset / Set Password Modal State
+  const [isResetOpen, setIsResetOpen] = useState(false)
+  const [resetIdentifier, setResetIdentifier] = useState('')
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null)
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -58,6 +75,54 @@ function LoginForm() {
     }
   }
 
+  async function handleSetupPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setResetError(null)
+    setResetSuccess(null)
+
+    if (!resetIdentifier.trim()) {
+      setResetError('Please enter your registered email or phone number.')
+      return
+    }
+    if (resetPassword.length < 8) {
+      setResetError('Password must be at least 8 characters long.')
+      return
+    }
+    if (resetPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.')
+      return
+    }
+
+    setResetLoading(true)
+    try {
+      const result = await setupExcoPassword({
+        identifier: resetIdentifier.trim(),
+        newPassword: resetPassword,
+      })
+
+      if (result.ok) {
+        setResetSuccess(result.message || 'Password set successfully!')
+        setIdentifier(resetIdentifier.trim())
+        setPassword(resetPassword)
+        setErrorMessage(null)
+        setTimeout(() => {
+          setIsResetOpen(false)
+          setResetSuccess(null)
+          setResetPassword('')
+          setResetConfirmPassword('')
+        }, 1500)
+      } else {
+        setResetError(result.error || 'Failed to update password. Please check your credentials.')
+      }
+    } catch {
+      setResetError('An unexpected network error occurred. Please try again.')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  const isMissingPasswordError = errorMessage?.toLowerCase().includes('password set up')
+
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-16 sm:py-24">
       <div className="w-full max-w-sm sm:max-w-md space-y-6">
@@ -84,18 +149,38 @@ function LoginForm() {
         {/* Error / Alert banner */}
         {errorMessage && (
           <div
-            className={`p-4 rounded-xl text-sm flex items-start gap-3 shadow-xs ${
+            className={`p-4 rounded-xl text-sm flex flex-col gap-2 shadow-xs ${
               isPendingApproval
                 ? 'bg-amber-50 text-amber-900 border border-amber-200'
                 : 'bg-destructive/10 text-destructive border border-destructive/20'
             }`}
           >
-            {isPendingApproval ? (
-              <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3">
+              {isPendingApproval ? (
+                <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              )}
+              <p className="font-medium leading-relaxed">{errorMessage}</p>
+            </div>
+
+            {isMissingPasswordError && (
+              <div className="mt-1 pt-2 border-t border-destructive/20 pl-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetIdentifier(identifier)
+                    setResetError(null)
+                    setResetSuccess(null)
+                    setIsResetOpen(true)
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-destructive hover:underline cursor-pointer"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Set up your dashboard password now &rarr;
+                </button>
+              </div>
             )}
-            <p className="font-medium leading-relaxed">{errorMessage}</p>
           </div>
         )}
 
@@ -121,6 +206,18 @@ function LoginForm() {
               <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
                 Password
               </Label>
+              <button
+                type="button"
+                onClick={() => {
+                  setResetIdentifier(identifier)
+                  setResetError(null)
+                  setResetSuccess(null)
+                  setIsResetOpen(true)
+                }}
+                className="text-[11px] font-semibold text-primary hover:underline"
+              >
+                Set or reset password?
+              </button>
             </div>
             <div className="relative">
               <Input
@@ -168,6 +265,100 @@ function LoginForm() {
           </p>
         </div>
       </div>
+
+      {/* Set / Reset Password Modal */}
+      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+        <DialogContent className="max-w-md rounded-2xl bg-white dark:bg-stone-950 p-6 shadow-2xl">
+          <DialogHeader className="space-y-1.5 text-left">
+            <div className="flex items-center gap-2 text-primary font-bold">
+              <Lock className="h-5 w-5 text-primary" />
+              <DialogTitle className="text-lg font-bold">Configure Exco Password</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Establish or update your dashboard credentials for your registered Exco profile.
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetError && (
+            <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium flex items-center gap-2 border border-destructive/20">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{resetError}</span>
+            </div>
+          )}
+
+          {resetSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-medium flex items-center gap-2 border border-emerald-200">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>{resetSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSetupPassword} className="space-y-3.5 mt-2">
+            <div className="space-y-1">
+              <Label htmlFor="reset-id" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                Registered Email or Phone Number
+              </Label>
+              <Input
+                id="reset-id"
+                type="text"
+                required
+                value={resetIdentifier}
+                onChange={(e) => setResetIdentifier(e.target.value)}
+                placeholder="e.g. 08168730661 or name@example.com"
+                className="h-11 rounded-xl text-sm"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="reset-pw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                New Password (Min. 8 characters)
+              </Label>
+              <Input
+                id="reset-pw"
+                type="password"
+                required
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                placeholder="Enter new secure password"
+                className="h-11 rounded-xl text-sm"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="reset-cpw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                Confirm New Password
+              </Label>
+              <Input
+                id="reset-cpw"
+                type="password"
+                required
+                value={resetConfirmPassword}
+                onChange={(e) => setResetConfirmPassword(e.target.value)}
+                placeholder="Re-enter password"
+                className="h-11 rounded-xl text-sm"
+              />
+            </div>
+
+            <div className="pt-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsResetOpen(false)}
+                className="flex-1 h-11 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={resetLoading}
+                className="flex-1 h-11 rounded-xl text-xs font-semibold"
+              >
+                {resetLoading ? 'Saving…' : 'Save Password'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
