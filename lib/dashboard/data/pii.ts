@@ -4,7 +4,7 @@
  * is edited carelessly. Runs on every row returned by lib/dashboard/data.
  */
 
-const PII_FIELDS = ['phoneNumber', 'roomNumber', 'passwordHash', 'phoneBlindIndex'] as const
+const PII_FIELDS = ['phoneNumber', 'roomNumber', 'passwordHash', 'phoneBlindIndex', 'birthdayBlindIndex'] as const
 
 type WithoutPII<T> = T extends object ? Omit<T, (typeof PII_FIELDS)[number]> : T
 

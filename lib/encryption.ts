@@ -101,3 +101,27 @@ export function createBlindIndex(phone?: string | null): string {
   hmac.update(normalized)
   return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
 }
+
+/**
+ * Create a one-way HMAC-SHA256 blind index for birthdays.
+ * Normalizes to MM-DD (month and day) so workers with the same birthday
+ * can be matched for birthday announcements without revealing the date or birth year.
+ */
+export function createBirthdayBlindIndex(dateStr?: string | null): string {
+  if (!dateStr || typeof dateStr !== 'string') return ''
+  const trimmed = dateStr.trim()
+  let mmdd = ''
+  const parts = trimmed.split('-')
+  if (parts.length === 3) {
+    // YYYY-MM-DD -> MM-DD
+    mmdd = `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+  } else if (parts.length === 2) {
+    // MM-DD
+    mmdd = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+  } else {
+    mmdd = trimmed
+  }
+  const hmac = crypto.createHmac('sha256', getHmacKey())
+  hmac.update(`birthday:${mmdd}`)
+  return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
+}

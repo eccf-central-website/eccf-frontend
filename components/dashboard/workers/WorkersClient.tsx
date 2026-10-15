@@ -15,6 +15,8 @@ import {
   Users,
   Building,
   Loader2,
+  Calendar,
+  Download,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -45,6 +47,37 @@ import {
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { verifyWorkerMembership, toggleExcoApproval } from '@/app/actions/worker-actions'
 import { toastSuccess, toastError } from '@/lib/dashboard/toast'
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
+function formatBirthday(dateStr?: string, monthNum?: number, dayNum?: number): string {
+  if (monthNum && dayNum) {
+    return `${MONTH_NAMES[monthNum - 1] || 'Month ' + monthNum} ${dayNum}`
+  }
+  if (!dateStr) return 'Not set'
+  const parts = dateStr.split('-')
+  if (parts.length === 3) {
+    const m = parseInt(parts[1], 10)
+    const d = parseInt(parts[2], 10)
+    if (!isNaN(m) && !isNaN(d) && m >= 1 && m <= 12) {
+      return `${MONTH_NAMES[m - 1]} ${d}`
+    }
+  }
+  return dateStr
+}
 
 interface WorkersClientProps {
   rows: WorkerRow[]
@@ -443,7 +476,16 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-serif font-bold text-sm overflow-hidden">
-                          {worker.fullName.slice(0, 2).toUpperCase()}
+                          {worker.profileImageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={worker.profileImageUrl}
+                              alt={worker.fullName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            worker.fullName.slice(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -454,9 +496,17 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                               </Badge>
                             )}
                           </div>
-                          {worker.excoPosition && (
-                            <p className="text-xs font-semibold text-[#0077cc]">{worker.excoPosition}</p>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {worker.excoPosition && (
+                              <span className="text-xs font-semibold text-[#0077cc]">{worker.excoPosition}</span>
+                            )}
+                            {worker.birthDate && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                <Calendar className="h-3 w-3 text-sky-600" />
+                                {formatBirthday(worker.birthDate, worker.birthMonth, worker.birthDay)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -587,15 +637,65 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           {activeWorkerDetail && (
             <div className="space-y-4 pt-2">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-[#0077cc] font-serif font-black text-base">
-                  {activeWorkerDetail.fullName.slice(0, 2).toUpperCase()}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-[#0077cc] font-serif font-black text-base overflow-hidden border border-slate-200">
+                  {activeWorkerDetail.profileImageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={activeWorkerDetail.profileImageUrl}
+                      alt={activeWorkerDetail.fullName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    activeWorkerDetail.fullName.slice(0, 2).toUpperCase()
+                  )}
                 </div>
-                <div>
-                  <h4 className="font-bold text-base text-slate-950">{activeWorkerDetail.fullName}</h4>
-                  <p className="text-xs text-slate-500">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-base text-slate-950 truncate">{activeWorkerDetail.fullName}</h4>
+                  <p className="text-xs text-slate-500 truncate">
                     {activeWorkerDetail.hall || 'No Hall'} • {activeWorkerDetail.team}
                   </p>
                 </div>
+              </div>
+
+              {/* Birthday Banner & Media Flyer Download */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-sky-50 to-blue-50/50 border border-sky-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-700">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-sky-700 block">
+                        Birthday (For Media &amp; Welfare)
+                      </span>
+                      <span className="text-sm font-bold text-slate-950">
+                        {formatBirthday(activeWorkerDetail.birthDate, activeWorkerDetail.birthMonth, activeWorkerDetail.birthDay)}
+                      </span>
+                    </div>
+                  </div>
+                  {activeWorkerDetail.profileImageUrl && (
+                    <a
+                      href={activeWorkerDetail.profileImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0077cc] hover:bg-[#0066b3] text-white text-xs font-bold shadow-xs transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download Picture
+                    </a>
+                  )}
+                </div>
+
+                {activeWorkerDetail.profileImageUrl && (
+                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-slate-950 border border-sky-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={activeWorkerDetail.profileImageUrl}
+                      alt={`${activeWorkerDetail.fullName} Celebratory Birthday Photo`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
