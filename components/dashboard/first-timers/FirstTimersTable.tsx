@@ -116,7 +116,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
   const buildWhatsAppLink = (visitor: FirstTimerRow) => {
     const phone = cleanNigerianPhone(visitor.phoneNumber)
     if (!phone) return '#'
-    const firstName = visitor.fullName.split(' ')[0] || visitor.fullName
+    const firstName = visitor.firstName?.trim() || visitor.fullName.split(' ')[0] || visitor.fullName
     const senderIdentity = isHallRep
       ? `your ${session.hall || 'hall'} representative`
       : 'the Outreach & Follow-up Team'

@@ -116,6 +116,8 @@ export const TEAMS_QUERY = `
     name,
     tag,
     leadName,
+    leadPhoto,
+    "leadPhotoUrl": leadPhoto.asset->url,
     description,
     order,
     image,
@@ -125,7 +127,7 @@ export const TEAMS_QUERY = `
 
 /** Fetch executive officers and leadership for About page */
 export const EXCOS_QUERY = `
-  *[_type == "worker" && (defined(excoPosition) || role == "admin")] | order(excoPosition asc, fullName asc) {
+  *[_type == "worker" && (defined(excoPosition) || role in ["admin", "team_lead", "hall_rep", "finance"])] | order(excoPosition asc, fullName asc) {
     _id,
     fullName,
     excoPosition,
@@ -133,6 +135,11 @@ export const EXCOS_QUERY = `
     team->{
       name
     },
+    leadingTeam->{
+      name
+    },
+    headshot,
+    "headshotUrl": headshot.asset->url,
     profileImageUrl,
     hall
   }
