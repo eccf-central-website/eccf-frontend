@@ -37,6 +37,28 @@ const HALLS_OF_RESIDENCE = [
   'Hall 8',
 ]
 
+const MONTHS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+]
+
+function getDaysInMonth(monthStr: string): number {
+  const month = parseInt(monthStr, 10)
+  if ([4, 6, 9, 11].includes(month)) return 30
+  if (month === 2) return 29 // Support leap-year Feb 29
+  return 31
+}
+
 const VALID_WORKFORCE_CODES = [
   'ECCFWORKERS',
   'ECCFWORKERS2026',
@@ -96,7 +118,10 @@ export function WorkerRegistrationForm() {
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [middleName, setMiddleName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const fullName = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ')
   const [email, setEmail] = useState('')
   const [teams, setTeams] = useState<string[]>([])
 
@@ -108,7 +133,13 @@ export function WorkerRegistrationForm() {
 
   const [hall, setHall] = useState('')
   const [roomNumber, setRoomNumber] = useState('')
+  const [birthMonth, setBirthMonth] = useState('')
+  const [birthDay, setBirthDay] = useState('')
   const [birthDate, setBirthDate] = useState('')
+  const effectiveBirthDate =
+    birthMonth && birthDay
+      ? `2000-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+      : birthDate
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
@@ -177,7 +208,26 @@ export function WorkerRegistrationForm() {
       const res = await lookupWorkerByPhone(clean)
       if (res.found && res.worker) {
         setIsReturning(true)
-        setFullName(res.worker.fullName || '')
+        if (res.worker.firstName) {
+          setFirstName(res.worker.firstName)
+          setMiddleName(res.worker.middleName || '')
+          setLastName(res.worker.lastName || '')
+        } else if (res.worker.fullName) {
+          const parts = res.worker.fullName.trim().split(/\s+/)
+          if (parts.length === 1) {
+            setFirstName(parts[0])
+            setMiddleName('')
+            setLastName('')
+          } else if (parts.length === 2) {
+            setFirstName(parts[0])
+            setMiddleName('')
+            setLastName(parts[1])
+          } else {
+            setFirstName(parts[0])
+            setMiddleName(parts.slice(1, -1).join(' '))
+            setLastName(parts[parts.length - 1])
+          }
+        }
         setEmail(res.worker.email || '')
         if (res.worker.teams && res.worker.teams.length > 0) {
           setTeams(res.worker.teams)
@@ -189,6 +239,16 @@ export function WorkerRegistrationForm() {
         setHall(res.worker.hall || '')
         setRoomNumber(res.worker.roomNumber || '')
         setBirthDate(res.worker.birthDate || '')
+        if (res.worker.birthMonth && res.worker.birthDay) {
+          setBirthMonth(String(res.worker.birthMonth).padStart(2, '0'))
+          setBirthDay(String(res.worker.birthDay).padStart(2, '0'))
+        } else if (res.worker.birthDate) {
+          const bParts = res.worker.birthDate.split('-')
+          if (bParts.length === 3) {
+            setBirthMonth(bParts[1])
+            setBirthDay(bParts[2])
+          }
+        }
         setExistingPhotoUrl(res.worker.profileImageUrl || null)
         if (res.worker.role) {
           setIsExco(true)
@@ -218,13 +278,18 @@ export function WorkerRegistrationForm() {
     try {
       const res = await registerWorker({
         fullName,
+        firstName,
+        middleName,
+        lastName,
         email,
         phoneNumber,
         team: teams[0] || '',
         teams,
         hall,
         roomNumber,
-        birthDate,
+        birthDate: effectiveBirthDate,
+        birthMonth,
+        birthDay,
         birthdayPictureBase64: base64Image || undefined,
         isExco,
         requestedRole: isExco ? requestedRole : undefined,
@@ -817,16 +882,48 @@ export function WorkerRegistrationForm() {
                 </p>
               </div>
 
-              <div>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Michael Christopher Akan"
-                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="e.g. Ransom"
+                    className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Middle Name <span className="text-slate-400 font-normal normal-case">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                    placeholder="e.g. Samuel"
+                    className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="e.g. Akpan"
+                    className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -839,7 +936,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={fullName.trim().length < 2}
+                  disabled={firstName.trim().length < 2 || lastName.trim().length < 2}
                   onClick={() => setStep(3)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -1081,18 +1178,60 @@ export function WorkerRegistrationForm() {
                   When is your birthday?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Used by the fellowship welfare team so we can celebrate you on your special day!
+                  So we could celebrate with you on your special day!
                 </p>
               </div>
 
-              <div>
-                <input
-                  type="date"
-                  required
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Month <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={birthMonth}
+                    onChange={(e) => {
+                      const newMonth = e.target.value
+                      setBirthMonth(newMonth)
+                      if (birthDay) {
+                        const maxD = getDaysInMonth(newMonth)
+                        if (parseInt(birthDay, 10) > maxD) {
+                          setBirthDay(String(maxD).padStart(2, '0'))
+                        }
+                      }
+                    }}
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all cursor-pointer"
+                  >
+                    <option value="">Select Month</option>
+                    {MONTHS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Day <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={birthDay}
+                    onChange={(e) => setBirthDay(e.target.value)}
+                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all cursor-pointer"
+                  >
+                    <option value="">Select Day</option>
+                    {Array.from({ length: birthMonth ? getDaysInMonth(birthMonth) : 31 }, (_, i) => {
+                      const dayVal = String(i + 1).padStart(2, '0')
+                      return (
+                        <option key={dayVal} value={dayVal}>
+                          {i + 1}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -1105,7 +1244,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={!birthDate}
+                  disabled={!birthMonth || !birthDay}
                   onClick={() => setStep(7)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -1378,6 +1517,14 @@ export function WorkerRegistrationForm() {
                     {hall}, {roomNumber}
                   </span>
                 </div>
+                {birthMonth && birthDay && (
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500 font-medium">Birthday:</span>
+                    <span className="font-bold text-slate-900">
+                      {MONTHS.find((m) => m.value === birthMonth)?.label} {parseInt(birthDay, 10)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Exco Status:</span>
                   <span className="font-bold text-[#0077cc]">

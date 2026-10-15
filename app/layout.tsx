@@ -9,6 +9,12 @@ import "./globals.css";
  * 2. Body: Work Sans (Clean, highly legible grotesque sans) -> var(--font-work-sans)
  * 3. Styling / Accents: Geist Mono (Pills, overlines, timestamps, codes) -> var(--font-geist-mono)
  */
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+});
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -24,6 +30,7 @@ const belleza = Belleza({
 
 const workSans = Work_Sans({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-work-sans",
   display: "swap",
 });
@@ -68,9 +75,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${belleza.variable} ${workSans.variable} ${geistSans.variable} ${geistMono.variable}`}
+    >
       <body
-        className={`${belleza.variable} ${workSans.variable} ${geistMono.variable} antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans`}
+        className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
       >
         {children}
       </body>
