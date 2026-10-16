@@ -13,6 +13,7 @@ import {
   HandHeart,
   HeartHandshake,
   LayoutDashboard,
+  Megaphone,
   UserPlus,
   Users,
   Wallet,
@@ -39,6 +40,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Prayer Requests',
     href: SECTION_PATHS.prayerRequests,
     icon: HandHeart,
+  },
+  {
+    section: 'announcements',
+    label: 'Announcements',
+    href: SECTION_PATHS.announcements,
+    icon: Megaphone,
   },
 ]
 

@@ -23,11 +23,13 @@ export type DashboardSection =
   | 'firstTimers'
   | 'welfare'
   | 'prayerRequests'
+  | 'announcements'
 
 export type DashboardPermission =
   | 'attendance:create'
   | 'finance:create'
   | 'welfare:resolve'
+  | 'announcements:create'
   | 'sermons:sync'
   /** Overview cards that show money totals */
   | 'stats:finance'
@@ -52,6 +54,7 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
   firstTimers: '/dashboard/first-timers',
   welfare: '/dashboard/welfare',
   prayerRequests: '/dashboard/prayer-requests',
+  announcements: '/dashboard/announcements',
 }
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
@@ -62,12 +65,14 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   firstTimers: ['admin', 'hall_rep'],
   welfare: ['admin', 'team_lead', 'hall_rep'],
   prayerRequests: ['admin', 'team_lead', 'hall_rep'],
+  announcements: ['admin', 'team_lead'],
 }
 
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'attendance:create': ['admin', 'team_lead', 'hall_rep'],
   'finance:create': ['admin', 'finance'],
   'welfare:resolve': ['admin', 'team_lead', 'hall_rep'],
+  'announcements:create': ['admin', 'team_lead'],
   // ADR-002 §5.2.1: manual sync is admin, media team_lead, or hall_rep
   'sermons:sync': ['admin', 'team_lead', 'hall_rep'],
   'stats:finance': ['admin', 'finance'],
@@ -167,6 +172,42 @@ export function sectionForPath(pathname: string): DashboardSection | null {
     }
   }
   return match
+}
+
+export function requirePermission(role: string, permission: string) {
+  if (permission === 'finance' || permission === 'finance:create') {
+    if (!['admin', 'finance'].includes(role)) {
+      throw new Error(`Permission denied for role ${role} on finance`)
+    }
+    return
+  }
+  if (permission === 'welfare' || permission === 'welfare:resolve') {
+    if (!['admin', 'team_lead', 'hall_rep'].includes(role)) {
+      throw new Error(`Permission denied for role ${role} on welfare`)
+    }
+    return
+  }
+  if (permission === 'announcements' || permission === 'announcements:create') {
+    if (!['admin', 'team_lead'].includes(role)) {
+      throw new Error(`Permission denied for role ${role} on announcements`)
+    }
+    return
+  }
+  if (permission === 'prayer' || permission === 'prayerRequests') {
+    if (!['admin', 'team_lead', 'hall_rep'].includes(role)) {
+      throw new Error(`Permission denied for role ${role} on prayer`)
+    }
+    return
+  }
+  if (permission === 'sermons' || permission === 'sermons:sync') {
+    if (!['admin', 'team_lead', 'hall_rep'].includes(role)) {
+      throw new Error(`Permission denied for role ${role} on sermons`)
+    }
+    return
+  }
+  if (!hasPermission(role as WorkerRole, permission as DashboardPermission)) {
+    throw new Error(`Permission denied for role ${role} on ${permission}`)
+  }
 }
 
 export function isWorkerRole(value: unknown): value is WorkerRole {

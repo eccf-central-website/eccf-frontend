@@ -18,6 +18,7 @@ import DevSwitcher from '@/components/dashboard/shell/DevSwitcher'
 import AppSidebar from '@/components/dashboard/shell/AppSidebar'
 import SkipLink from '@/components/dashboard/shell/SkipLink'
 import TopBar from '@/components/dashboard/shell/TopBar'
+import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
 
 // Per-request session for every /dashboard/* page. Without this, production
 // builds (no mock session, no auth yet) prerender pages as static redirects.
@@ -43,19 +44,20 @@ export default async function DashboardShellLayout({
   }
 
   return (
-    <div className="flex min-h-dvh flex-1">
+    <div className="flex h-dvh w-full overflow-hidden">
       <SkipLink />
       <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
         <TopBar
           sections={sections}
           role={session.role}
           team={session.team}
           teams={session.teams}
           excoPosition={session.excoPosition}
+          actions={<SyncSermonsButton />}
           devTools={devTools}
         />
-        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">
           {children}
         </main>
       </div>
