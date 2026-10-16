@@ -148,9 +148,12 @@ export async function registerWorker(
     // overwrite the record or replace an exco's passwordHash). Write nothing
     // and return a neutral message that reveals no stored data. Profile
     // updates return in Phase 3, with identity taken from the session.
+    // Email is checked too: a new record reusing someone's email would make
+    // their sign-in lookup ambiguous and lock them out.
+    const cleanEmail = input.email.trim().toLowerCase()
     const existing = await sanityWriteClient.fetch<{ _id: string } | null>(
-      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{ _id }`,
-      { phoneNumber: cleanPhone, phoneBlindIndex }
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber || lower(email) == $email)][0]{ _id }`,
+      { phoneNumber: cleanPhone, phoneBlindIndex, email: cleanEmail }
     )
     if (existing) {
       return { ok: false, error: ALREADY_REGISTERED_MESSAGE }
@@ -219,7 +222,7 @@ export async function registerWorker(
       ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
       ...(cleanMiddleName ? { middleName: cleanMiddleName } : {}),
       ...(cleanLastName ? { lastName: cleanLastName } : {}),
-      email: input.email.trim().toLowerCase(),
+      email: cleanEmail,
       phoneNumber: encrypt(cleanPhone),
       phoneBlindIndex,
       team: primaryTeamReference,

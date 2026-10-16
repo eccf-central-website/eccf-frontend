@@ -38,8 +38,10 @@ export const authOptions: NextAuthOptions = {
         const cleanPhone = rawIdentifier.replace(/\s+/g, '')
         const phoneBlindIndex = createBlindIndex(cleanPhone)
 
-        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex
-        const worker = await sanityWriteClient.fetch<{
+        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex.
+        // Fetch up to two: an ambiguous match (e.g. one record reusing another's
+        // email) must not sign anyone in as whichever record happens to be first.
+        const matches = await sanityWriteClient.fetch<{
           _id: string
           fullName: string
           email?: string
@@ -52,8 +54,8 @@ export const authOptions: NextAuthOptions = {
           team?: string | { name?: string }
           hall?: string
           teams?: (string | { name?: string })[]
-        }>(
-          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex)][0]{
+        }[]>(
+          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex) && !(_id in path("drafts.**"))][0...2]{
             _id,
             fullName,
             email,
@@ -69,6 +71,13 @@ export const authOptions: NextAuthOptions = {
           }`,
           { cleanEmail, cleanPhone, phoneBlindIndex }
         )
+
+        if (matches.length > 1) {
+          // Log ids only — never the identifier or any personal data.
+          console.error('[authorize] Ambiguous sign-in match; refusing. Worker ids:', matches.map((m) => m._id))
+          throw new Error('Unable to sign in with those details. Please contact an administrator.')
+        }
+        const worker = matches[0]
 
         if (!worker) {
           throw new Error('No worker account found matching those credentials.')
