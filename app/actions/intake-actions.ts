@@ -1,6 +1,6 @@
 'use server'
 
-import { sanityClient, sanityWriteClient } from '@/lib/sanity'
+import { sanityWriteClient } from '@/lib/sanity'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { encrypt, createBlindIndex } from '@/lib/encryption'
@@ -166,7 +166,7 @@ export async function submitPrayerRequest(formData: FormData) {
     // Query Sanity for prayer coordinators and prayer team leaders
     let sanityPrayerEmails: string[] = []
     try {
-      sanityPrayerEmails = await sanityClient.fetch<string[]>(`
+      sanityPrayerEmails = await sanityWriteClient.fetch<string[]>(`
         *[_type == "worker" && defined(email) && email != "" && (
           excoPosition == "Prayer Coordinator" ||
           excoPosition match "*Prayer*" ||

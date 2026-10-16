@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch all active subscribers
-    const subscribers = await sanityClient.fetch<string[]>(
+    const subscribers = await sanityWriteClient.fetch<string[]>(
       `*[_type == "subscriber" && isActive != false && defined(email) && email != ""].email`
     )
 

@@ -16,13 +16,19 @@ import {createImageUrlBuilder} from '@sanity/image-url'
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
-/** Server-side read client — authenticated with SANITY_READ_TOKEN or fallback to WRITE_TOKEN */
+/**
+ * Read client for PUBLIC page content. Uses a read-only (Viewer) token when
+ * SANITY_READ_TOKEN is set, otherwise anonymous. It must never fall back to the
+ * write token (S8): that would let public queries see drafts and private docs.
+ * Reads of private data (workers, subscribers, …) go through sanityWriteClient
+ * in server-only code instead.
+ */
 export const sanityClient = createClient({
   projectId,
   dataset,
   apiVersion: '2024-01-01',
   useCdn: false, // Set false for immediate live preview of Sanity Studio edits
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN || undefined,
 })
 
 /** Image URL builder with automatic hotspot and crop support */

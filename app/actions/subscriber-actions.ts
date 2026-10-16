@@ -1,6 +1,6 @@
 'use server'
 
-import { sanityClient, sanityWriteClient } from '@/lib/sanity'
+import { sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -35,7 +35,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
     }
 
     // Check for existing subscriber
-    const existing = await sanityClient.fetch<{
+    const existing = await sanityWriteClient.fetch<{
       _id: string
       email: string
       isActive?: boolean

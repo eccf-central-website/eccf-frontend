@@ -101,7 +101,7 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
       return { success: false, message: 'Cannot broadcast draft announcement. Please publish it first.' }
     }
 
-    const subscribers = await sanityClient.fetch<string[]>(
+    const subscribers = await sanityWriteClient.fetch<string[]>(
       `*[_type == "subscriber" && isActive != false && defined(email) && email != ""].email`
     )
 
