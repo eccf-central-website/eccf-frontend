@@ -28,7 +28,6 @@ export const SERMONS_QUERY = `
     mediaUrl
   }
 `
-
 /** Fetch latest 3 sermons for homepage */
 export const LATEST_SERMONS_QUERY = `
   *[_type == "sermonVault"] | order(datePreached desc)[0...3] {
@@ -127,21 +126,16 @@ export const TEAMS_QUERY = `
 
 /** Fetch executive officers and leadership for About page */
 export const EXCOS_QUERY = `
-  *[_type == "worker" && (defined(excoPosition) || role in ["admin", "team_lead", "hall_rep", "finance"])] | order(excoPosition asc, fullName asc) {
+  *[_type == "publicLeader"] | order(order asc, fullName asc) {
     _id,
     fullName,
     excoPosition,
     role,
-    team->{
-      name
-    },
-    leadingTeam->{
-      name
-    },
-    headshot,
-    "headshotUrl": headshot.asset->url,
-    profileImageUrl,
-    hall
+    teamName,
+    profileImage,
+    "profileImageUrl": profileImage.asset->url,
+    bio,
+    badgeLabel
   }
 `
 
@@ -246,6 +240,10 @@ export const SITE_SETTINGS_QUERY = `
     statsCampusLegacy,
     visitContactPerson,
     visitWhatsAppNumber,
+    givingBankName,
+    givingAccountName,
+    givingAccountNumber,
+    givingInstructions,
     fellowshipEmail,
     socialYouTube,
     socialInstagram,
@@ -267,39 +265,5 @@ export const SITE_SETTINGS_QUERY = `
       iconType,
       isExternal
     }
-  }
-`
-
-// ---------------------------------------------------------------------------
-// Worker CRM — server-side only, used in Server Actions after auth check
-// ---------------------------------------------------------------------------
-
-/** Fetch all workers — for admin use only. Strip PII before sending to client. */
-export const ALL_WORKERS_QUERY = `
-  *[_type == "worker"] | order(fullName asc) {
-    _id,
-    fullName,
-    team,
-    hall,
-    role,
-    birthDate,
-    profileImageUrl,
-    createdAt,
-    updatedAt
-  }
-`
-
-/** Fetch a single worker by phone number for upsert matching */
-export const WORKER_BY_PHONE_QUERY = `
-  *[_type == "worker" && phoneNumber == $phoneNumber][0] {
-    _id,
-    fullName,
-    team,
-    hall,
-    roomNumber,
-    phoneNumber,
-    role,
-    birthDate,
-    updateLog
   }
 `

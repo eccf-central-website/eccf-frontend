@@ -2,7 +2,7 @@
  * About Us Page — /about
  *
  * Turning Point USA (tpusa.com)-inspired comprehensive About Page.
- * Server component fetching live Sanity data (aboutPage, siteSettings, teamUnits, workers)
+ * Server component fetching live Sanity data (aboutPage, siteSettings, teamUnits, public leaders)
  * with robust canonical fallbacks.
  *
  * Features:
@@ -56,16 +56,11 @@ interface RawSanityExco {
   fullName: string
   excoPosition?: string
   role?: string
-  team?: {
-    name?: string
-  }
-  leadingTeam?: {
-    name?: string
-  }
-  headshot?: unknown
-  headshotUrl?: string
+  teamName?: string
+  profileImage?: unknown
   profileImageUrl?: string
-  hall?: string
+  bio?: string
+  badgeLabel?: string
 }
 
 interface RawSanityAboutPage {
@@ -159,12 +154,12 @@ export default async function AboutPage() {
     fullName: e.fullName,
     excoPosition: e.excoPosition,
     role: e.role,
-    teamName: e.leadingTeam?.name || e.team?.name || 'Executive Council',
+    teamName: e.teamName || 'Executive Council',
     profileImageUrl:
-      urlForImage(e.headshot) ||
-      e.headshotUrl ||
+      urlForImage(e.profileImage) ||
       e.profileImageUrl,
-    hall: e.hall,
+    bio: e.bio,
+    badgeLabel: e.badgeLabel,
   }))
 
   const heroImage =

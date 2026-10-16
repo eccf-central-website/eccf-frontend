@@ -10,19 +10,22 @@
  * Docs: https://www.sanity.io/docs/js-client
  */
 
+import 'server-only'
+
+import { randomUUID } from 'crypto'
 import {createClient} from '@sanity/client'
 import {createImageUrlBuilder} from '@sanity/image-url'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
-/** Server-side read client — authenticated with SANITY_READ_TOKEN or fallback to WRITE_TOKEN */
+/** Anonymous published-content client. Never use this for operational records. */
 export const sanityClient = createClient({
   projectId,
   dataset,
-  apiVersion: '2024-01-01',
-  useCdn: false, // Set false for immediate live preview of Sanity Studio edits
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  apiVersion: '2025-02-19',
+  perspective: 'published',
+  useCdn: false,
 })
 
 /** Image URL builder with automatic hotspot and crop support */
@@ -50,7 +53,37 @@ export function urlForImage(source: unknown): string | undefined {
 export const sanityWriteClient = createClient({
   projectId,
   dataset,
-  apiVersion: '2024-01-01',
+  apiVersion: '2025-02-19',
   useCdn: false,
   token: process.env.SANITY_WRITE_TOKEN, // ⚠️ Server-side only — never prefix with NEXT_PUBLIC_
 })
+
+/**
+ * Authenticated view for operational documents kept as unpublished drafts.
+ * Unauthenticated public Sanity queries cannot retrieve these records.
+ */
+export const sanityPrivateClient = createClient({
+  projectId,
+  dataset,
+  apiVersion: '2025-02-19',
+  perspective: 'drafts',
+  useCdn: false,
+  token: process.env.SANITY_READ_TOKEN,
+})
+
+/** Draft IDs must be used for private operational document mutations. */
+export function privateDocumentId(id: string): string {
+  const cleanId = id.replace(/^drafts\./, '')
+  return `drafts.${cleanId}`
+}
+
+/** Create operational documents as private drafts; callers must keep the returned ID server-side. */
+export async function createPrivateDocument<T extends Record<string, unknown> & { _type: string }>(doc: T) {
+  const id = `drafts.${randomUUID().replace(/-/g, '')}`
+  return sanityWriteClient.create({ ...doc, _id: id })
+}
+
+/** Patch operational documents as drafts so public published data is not changed. */
+export function patchPrivateDocument(id: string) {
+  return sanityWriteClient.patch(privateDocumentId(id))
+}

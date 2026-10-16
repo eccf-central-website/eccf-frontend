@@ -1,8 +1,7 @@
 /**
  * Online Giving Page — /give
  *
- * Dedicated global giving portal supporting Tithes, Offerings, Building Projects,
- * Smile Projects, and Welfare contributions with Flutterwave SSL security.
+ * Dedicated global giving portal showing current fellowship bank transfer details.
  */
 
 import { Metadata } from 'next'
@@ -18,7 +17,7 @@ export const revalidate = 0
 export const metadata: Metadata = {
   title: 'Give Online | ECCF Edo State University Fellowship',
   description:
-    'Support the spiritual and physical development of ECCF via Tithes, Offerings, Building Projects, and Welfare contributions.',
+    'Support ECCF through confirmed fellowship bank transfer details for tithes, offerings, projects, and welfare.',
 }
 
 export default async function GivePage() {
@@ -28,7 +27,7 @@ export default async function GivePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 pt-20">
-      <GivingHubSection />
+      <GivingHubSection settings={settings} />
       <SocialMediaBanner
         youtubeUrl={settings?.socialYouTube}
         instagramUrl={settings?.socialInstagram}
