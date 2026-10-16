@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Bug,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -280,13 +281,42 @@ export default function QAPortal({ initialData }: QAPortalProps) {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-xs">
         <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
 
-          {/* Top Row: App Title & User Badge */}
+          {/* Top Row: Brand, Site Shortcut & User Badge */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <h1 className="text-base sm:text-lg font-bold text-slate-950 truncate">
-                ECCF QA Live Testing Portal
-              </h1>
+            <div className="flex items-center gap-2.5 min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logos/ECCF LOGO.png"
+                alt="ECCF"
+                className="h-8 w-8 object-contain shrink-0 rounded-full bg-white shadow-2xs"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <h1 className="text-sm sm:text-base font-bold text-slate-950 truncate">
+                    ECCF QA Live Testing Portal
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                  >
+                    Open Live Site <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                  <span>·</span>
+                  <a
+                    href="/dashboard/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                  >
+                    Exco Portal <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
@@ -297,7 +327,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 title="Change active tester name"
               >
                 <User className="h-3.5 w-3.5 text-blue-600" />
-                <span className="max-w-[90px] sm:max-w-[140px] truncate">
+                <span className="max-w-[85px] sm:max-w-[140px] truncate">
                   {testerName ? testerName : 'Set Name'}
                 </span>
               </button>
@@ -486,8 +516,21 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 {!isCollapsed && (
                   <div className="divide-y divide-slate-100 p-1 sm:p-2">
                     {suiteCases.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-slate-500">
-                        No tests match current filter criteria.
+                      <div className="p-5 text-center text-xs text-slate-500">
+                        {statusFilter === 'completed' && suitePassed === 0 ? (
+                          <div className="space-y-1.5">
+                            <p>No tests marked as passed in this suite yet.</p>
+                            <button
+                              type="button"
+                              onClick={() => setStatusFilter('all')}
+                              className="inline-flex items-center gap-1 text-blue-600 font-bold hover:underline"
+                            >
+                              Show All Tests ({suiteTotal}) →
+                            </button>
+                          </div>
+                        ) : (
+                          'No tests match current filter criteria.'
+                        )}
                       </div>
                     ) : (
                       suiteCases.map((tc) => {
