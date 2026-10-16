@@ -2,8 +2,8 @@
  * Worker Registration Server Action — app/actions/worker-registration.ts
  *
  * Implements SDD §6.4: Profile Registration & Upsert Data Flow.
- * - Deduplicates on `phoneNumber` (unique identifier)
- * - Computes automated delta logs into `updateLog` array
+ * - Deduplicates on `phoneNumber` / `phoneBlindIndex`. Existing records are
+ *   NEVER modified here (unauthenticated); see ALREADY_REGISTERED_MESSAGE.
  * - Handles client Base64 image bridge to Google Drive (via Apps Script)
  * - Implements Admin Approval Gate for Exco designations (SDD §7.3)
  * - Hashes Exco passwords with bcryptjs for NextAuth credentials verification
@@ -14,7 +14,7 @@
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
-import { encrypt, decrypt, createBlindIndex } from '@/lib/encryption'
+import { encrypt, createBlindIndex } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
 export interface WorkerRegistrationInput {
@@ -37,6 +37,10 @@ export interface WorkerRegistrationInput {
   password?: string
   ndprConsent: boolean
 }
+
+// Neutral on purpose: must not reveal anything stored on the existing record.
+const ALREADY_REGISTERED_MESSAGE =
+  "You're already registered. Profile updates will open once sign-in is added; contact your team lead for urgent changes."
 
 export interface WorkerRegistrationResult {
   ok: boolean
@@ -135,61 +139,26 @@ export async function registerWorker(
     const cleanTeam = cleanTeams[0] || 'General'
     const today = new Date().toISOString().split('T')[0]
 
-    // 2. Check if worker already exists (Deduplication / Upsert check)
-    const existing = await sanityWriteClient.fetch<{
-      _id: string
-      fullName?: string
-      team?: string
-      teams?: string[]
-      hall?: string
-      roomNumber?: string
-      email?: string
-      birthDate?: string
-      role?: WorkerRole
-      requestedRole?: WorkerRole
-      isExcoApproved?: boolean
-      passwordHash?: string
-      updateLog?: string[]
-    }>(
-      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{
-        _id,
-        fullName,
-        "team": coalesce(team->name, team),
-        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
-        hall,
-        roomNumber,
-        email,
-        birthDate,
-        role,
-        requestedRole,
-        isExcoApproved,
-        passwordHash,
-        updateLog
-      }`,
+    // 2. Existing record? This action is unauthenticated, so it must NEVER
+    // modify an existing worker (S3: anyone knowing a phone number could
+    // overwrite the record or replace an exco's passwordHash). Write nothing
+    // and return a neutral message that reveals no stored data. Profile
+    // updates return in Phase 3, with identity taken from the session.
+    const existing = await sanityWriteClient.fetch<{ _id: string } | null>(
+      `*[_type == "worker" && (phoneBlindIndex == $phoneBlindIndex || phoneNumber == $phoneNumber)][0]{ _id }`,
       { phoneNumber: cleanPhone, phoneBlindIndex }
     )
+    if (existing) {
+      return { ok: false, error: ALREADY_REGISTERED_MESSAGE }
+    }
 
-    // Password validation logic:
-    if (!existing) {
-      // For a brand-new worker requesting an Exco role, password is required
-      if (input.isExco) {
-        if (!input.requestedRole || !['admin', 'team_lead', 'hall_rep', 'finance'].includes(input.requestedRole)) {
-          return { ok: false, error: 'Please select your Exco designation.' }
-        }
-        if (!input.password || input.password.length < 8) {
-          return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
-        }
+    // For a brand-new worker requesting an Exco role, password is required
+    if (input.isExco) {
+      if (!input.requestedRole || !['admin', 'team_lead', 'hall_rep', 'finance'].includes(input.requestedRole)) {
+        return { ok: false, error: 'Please select your Exco designation.' }
       }
-    } else {
-      // Existing worker updating location / profile
-      if (input.password && input.password.length < 8) {
-        return { ok: false, error: 'Password must be at least 8 characters long.' }
-      }
-      // If a previously general worker (no passwordHash) requests Exco designation for the first time
-      if (input.isExco && !existing.passwordHash && !existing.role) {
-        if (!input.password || input.password.length < 8) {
-          return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
-        }
+      if (!input.password || input.password.length < 8) {
+        return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
       }
     }
 
@@ -234,136 +203,54 @@ export async function registerWorker(
       passwordHash = encrypt(rawHash)
     }
 
-    if (existing) {
-      // 4a. Worker Exists -> Compute Delta Log and Patch
-      const deltaLogs: string[] = []
-      const currentRoom = decrypt(existing.roomNumber)
+    // 4. New Worker -> Create document with initial updateLog
+    const initialLogs = [`Initial worker registration on ${today}`]
+    if (input.isExco && input.requestedRole) {
+      initialLogs.push(`Requested Exco role (${input.requestedRole}) on ${today} (pending approval)`)
+    }
 
-      const prevTeams = (existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team || 'General'])
-        .filter(Boolean)
-        .sort()
-        .join(', ')
-      const newTeamsStr = cleanTeams.slice().sort().join(', ')
-      if (prevTeams !== newTeamsStr) {
-        deltaLogs.push(`Updated Teams from [${prevTeams}] to [${newTeamsStr}] on ${today}`)
-      }
-      if (existing.hall && existing.hall !== input.hall) {
-        deltaLogs.push(`Changed Hall from ${existing.hall} to ${input.hall} on ${today}`)
-      }
-      if (currentRoom && currentRoom !== input.roomNumber) {
-        deltaLogs.push(`Changed Room from ${currentRoom} to ${input.roomNumber} on ${today}`)
-      }
-      if (existing.email && existing.email !== input.email) {
-        deltaLogs.push(`Updated Email on ${today}`)
-      }
-      if (existing.birthDate && existing.birthDate !== cleanBirthDate) {
-        deltaLogs.push(`Updated Birth Date on ${today}`)
-      }
-      if (profileImageUrl) {
-        deltaLogs.push(`Updated Birthday Picture on ${today}`)
-      }
-      if (input.isExco && input.requestedRole) {
-        deltaLogs.push(`Requested Exco role (${input.requestedRole}) on ${today} (pending approval)`)
-      }
+    const newDoc: { _type: 'worker'; [key: string]: unknown } = {
+      _type: 'worker',
+      fullName: cleanFullName,
+      ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
+      ...(cleanMiddleName ? { middleName: cleanMiddleName } : {}),
+      ...(cleanLastName ? { lastName: cleanLastName } : {}),
+      email: input.email.trim().toLowerCase(),
+      phoneNumber: encrypt(cleanPhone),
+      phoneBlindIndex,
+      team: primaryTeamReference,
+      teams: teamReferences,
+      hall: input.hall,
+      roomNumber: encrypt(input.roomNumber.trim()),
+      birthDate: cleanBirthDate,
+      ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
+      ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
+      verificationStatus: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      updateLog: initialLogs,
+    }
 
-      if (deltaLogs.length === 0) {
-        deltaLogs.push(`Profile re-verified on ${today}`)
-      }
+    if (profileImageUrl) {
+      newDoc.profileImageUrl = profileImageUrl
+    }
 
-      const patchData: Record<string, unknown> = {
-        fullName: cleanFullName,
-        ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
-        ...(cleanMiddleName !== undefined ? { middleName: cleanMiddleName } : {}),
-        ...(cleanLastName ? { lastName: cleanLastName } : {}),
-        email: input.email.trim().toLowerCase(),
-        phoneNumber: encrypt(cleanPhone),
-        phoneBlindIndex,
-        team: primaryTeamReference,
-        teams: teamReferences,
-        hall: input.hall,
-        roomNumber: encrypt(input.roomNumber.trim()),
-        birthDate: cleanBirthDate,
-        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
-        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
-        updatedAt: new Date().toISOString(),
-      }
+    if (input.isExco && passwordHash && input.requestedRole) {
+      newDoc.passwordHash = passwordHash
+      newDoc.requestedRole = input.requestedRole
+      newDoc.isExcoApproved = false
+    }
 
-      if (profileImageUrl) {
-        patchData.profileImageUrl = profileImageUrl
-      }
+    await sanityWriteClient.create(newDoc)
 
-      if (input.isExco && passwordHash) {
-        patchData.passwordHash = passwordHash
-        patchData.requestedRole = input.requestedRole
-        patchData.isExcoApproved = false
-      }
+    revalidatePath('/dashboard/workers')
 
-      await sanityWriteClient
-        .patch(existing._id)
-        .set(patchData)
-        .append('updateLog', deltaLogs)
-        .commit()
-
-      revalidatePath('/dashboard/workers')
-
-      const isNewlyRequestingExco = Boolean(input.isExco && passwordHash && !existing.isExcoApproved && !existing.role)
-      return {
-        ok: true,
-        isExco: Boolean(existing.role || input.isExco),
-        message: isNewlyRequestingExco
-          ? 'Profile updated successfully! Your Exco dashboard request has been submitted for administrator approval.'
-          : 'Profile and location updated successfully! Your fellowship records have been refreshed.',
-      }
-    } else {
-      // 4b. New Worker -> Create document with initial updateLog
-      const initialLogs = [`Initial worker registration on ${today}`]
-      if (input.isExco && input.requestedRole) {
-        initialLogs.push(`Requested Exco role (${input.requestedRole}) on ${today} (pending approval)`)
-      }
-
-      const newDoc: { _type: 'worker'; [key: string]: unknown } = {
-        _type: 'worker',
-        fullName: cleanFullName,
-        ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
-        ...(cleanMiddleName ? { middleName: cleanMiddleName } : {}),
-        ...(cleanLastName ? { lastName: cleanLastName } : {}),
-        email: input.email.trim().toLowerCase(),
-        phoneNumber: encrypt(cleanPhone),
-        phoneBlindIndex,
-        team: primaryTeamReference,
-        teams: teamReferences,
-        hall: input.hall,
-        roomNumber: encrypt(input.roomNumber.trim()),
-        birthDate: cleanBirthDate,
-        ...(cleanBirthMonth ? { birthMonth: cleanBirthMonth } : {}),
-        ...(cleanBirthDay ? { birthDay: cleanBirthDay } : {}),
-        verificationStatus: 'pending',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        updateLog: initialLogs,
-      }
-
-      if (profileImageUrl) {
-        newDoc.profileImageUrl = profileImageUrl
-      }
-
-      if (input.isExco && passwordHash && input.requestedRole) {
-        newDoc.passwordHash = passwordHash
-        newDoc.requestedRole = input.requestedRole
-        newDoc.isExcoApproved = false
-      }
-
-      await sanityWriteClient.create(newDoc)
-
-      revalidatePath('/dashboard/workers')
-
-      return {
-        ok: true,
-        isExco: Boolean(input.isExco),
-        message: input.isExco
-          ? `Welcome to ECCF, ${cleanFullName}! Your registration has been submitted to your Team Leader for verification, and your Exco dashboard request is pending CSGB approval.`
-          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Leader for membership approval.`,
-      }
+    return {
+      ok: true,
+      isExco: Boolean(input.isExco),
+      message: input.isExco
+        ? `Welcome to ECCF, ${cleanFullName}! Your registration has been submitted to your Team Leader for verification, and your Exco dashboard request is pending CSGB approval.`
+        : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Leader for membership approval.`,
     }
   } catch (err) {
     console.error('[registerWorker] Error:', err)
