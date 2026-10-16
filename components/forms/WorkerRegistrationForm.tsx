@@ -135,7 +135,7 @@ export function WorkerRegistrationForm() {
   const [roomNumber, setRoomNumber] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
-  const [birthDate, setBirthDate] = useState('')
+  const [birthDate] = useState('')
   const effectiveBirthDate =
     birthMonth && birthDay
       ? `2000-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
