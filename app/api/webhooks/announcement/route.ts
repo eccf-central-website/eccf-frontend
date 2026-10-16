@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sanityClient, sanityWriteClient } from '@/lib/sanity'
+import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
+import { constantTimeStringEqual } from '@/lib/security/constant-time'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -63,21 +64,20 @@ function blocksToHtml(blocks: unknown): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Optional secret verification
     const secret = process.env.SANITY_WEBHOOK_SECRET
-    if (secret) {
-      const authHeader = req.headers.get('authorization')
-      const urlSecret = req.nextUrl.searchParams.get('secret')
-      const isValid = authHeader === `Bearer ${secret}` || urlSecret === secret
-      if (!isValid) {
-        return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
-      }
+    if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
+      console.error('[announcement-webhook] SANITY_WEBHOOK_SECRET is not configured; refusing to run.')
+      return NextResponse.json({ error: 'Announcement webhook is not configured.' }, { status: 503 })
+    }
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader || !constantTimeStringEqual(authHeader, `Bearer ${secret}`)) {
+      return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
     }
 
     const payload = await req.json().catch(() => ({}))
     const docId = payload._id || payload.id
 
-    if (!docId) {
+    if (typeof docId !== 'string' || docId.length > 256) {
       return NextResponse.json({ error: 'No announcement ID provided in payload' }, { status: 400 })
     }
 
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch all active subscribers
-    const subscribers = await sanityClient.fetch<string[]>(
+    const subscribers = await sanityPrivateClient.fetch<string[]>(
       `*[_type == "subscriber" && isActive != false && defined(email) && email != ""].email`
     )
 

@@ -10,7 +10,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { sanityWriteClient } from '@/lib/sanity'
+import { createPrivateDocument, sanityClient, sanityPrivateClient } from '@/lib/sanity'
 import { authorize } from '@/lib/dashboard/auth'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import { MOCK_ATTENDANCE } from '@/lib/dashboard/mock/data'
@@ -35,8 +35,8 @@ async function resolveTeamReference(
   const normalized = teamName.trim()
   if (!normalized || normalized === 'General' || normalized === 'Exco') return null
 
-  const existingTeam = await sanityWriteClient.fetch<{ _id: string; name: string }>(
-    `*[_type == "teamUnit" && (lower(name) == lower($name) || name match $name)][0]{ _id, name }`,
+  const existingTeam = await sanityClient.fetch<{ _id: string; name: string } | null>(
+    `*[_type == "teamUnit" && lower(name) == lower($name)][0]{ _id, name }`,
     { name: normalized }
   )
 
@@ -44,15 +44,7 @@ async function resolveTeamReference(
     return { _type: 'reference', _ref: existingTeam._id }
   }
 
-  // Create teamUnit if missing
-  const newTeam = await sanityWriteClient.create({
-    _type: 'teamUnit',
-    name: normalized,
-    description: `${normalized} operational team of ECCF.`,
-    order: 10,
-  })
-
-  return { _type: 'reference', _ref: newTeam._id }
+  return null
 }
 
 export async function recordAttendanceAction(
@@ -74,6 +66,11 @@ export async function recordAttendanceAction(
     return { ok: false, error: 'Please select a service or meeting type.' }
   }
 
+  if (!Array.isArray(attendeeIds) || attendeeIds.length > 500 || attendeeIds.some((id) => typeof id !== 'string' || id.length > 128)) {
+    return { ok: false, error: 'The attendee list is invalid.' }
+  }
+  const uniqueAttendeeIds = Array.from(new Set(attendeeIds))
+
   // Enforce team scoping: team leads always record for their own operational team
   const effectiveTeam =
     auth.session.role === 'team_lead'
@@ -81,7 +78,7 @@ export async function recordAttendanceAction(
       : input.teamName || (serviceType === 'Team Meeting' ? auth.session.team : undefined)
 
   const sanitizedExtra = Math.max(0, Number(extraCount) || 0)
-  const totalCount = attendeeIds.length + sanitizedExtra
+  const totalCount = uniqueAttendeeIds.length + sanitizedExtra
 
   if (totalCount === 0) {
     return {
@@ -104,7 +101,7 @@ export async function recordAttendanceAction(
       meetingTitle: meetingTitle?.trim() || undefined,
       teamName: effectiveTeam,
       totalCount,
-      attendeeCount: attendeeIds.length,
+      attendeeCount: uniqueAttendeeIds.length,
       loggedBy: {
         _id: auth.session.id,
         fullName: 'Logged Exco Coordinator',
@@ -118,19 +115,47 @@ export async function recordAttendanceAction(
 
   // 4. Sanity database write
   try {
+    const attendees = uniqueAttendeeIds.length
+      ? await sanityPrivateClient.fetch<Array<{ _id: string; hall?: string; team?: string; teams?: string[] }>>(
+          `*[_type == "worker" && _id in $ids]{
+            _id,
+            hall,
+            "team": coalesce(team->name, team),
+            "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
+          }`,
+          { ids: uniqueAttendeeIds }
+        )
+      : []
+
+    if (attendees.length !== uniqueAttendeeIds.length) {
+      return { ok: false, error: 'Some selected workers could not be verified. Refresh the roster and try again.' }
+    }
+    if (
+      auth.session.role === 'team_lead' &&
+      attendees.some((worker) => worker.team !== auth.session.team && !worker.teams?.includes(auth.session.team))
+    ) {
+      return { ok: false, error: 'You can record attendance only for workers in your assigned team.' }
+    }
+    if (auth.session.role === 'hall_rep' && attendees.some((worker) => worker.hall !== auth.session.hall)) {
+      return { ok: false, error: 'You can record attendance only for workers in your assigned hall.' }
+    }
+
     let teamRef: { _type: 'reference'; _ref: string } | null = null
     if (effectiveTeam) {
       teamRef = await resolveTeamReference(effectiveTeam)
+      if (!teamRef) {
+        return { ok: false, error: 'The selected team is not available. Refresh the page and try again.' }
+      }
     }
 
-    const doc = await sanityWriteClient.create({
+    const doc = await createPrivateDocument({
       _type: 'attendanceLedger',
       date,
       serviceType,
       meetingTitle: meetingTitle?.trim() || undefined,
       team: teamRef ? { _type: 'reference', _ref: teamRef._ref } : undefined,
       totalCount,
-      attendees: attendeeIds.map((id) => ({
+      attendees: uniqueAttendeeIds.map((id) => ({
         _type: 'reference',
         _ref: id,
         _key: id,
@@ -144,7 +169,7 @@ export async function recordAttendanceAction(
     revalidatePath('/dashboard/attendance')
     revalidatePath('/dashboard')
 
-    return { ok: true, data: { id: doc._id } }
+    return { ok: true, data: { id: doc._id.replace(/^drafts\./, '') } }
   } catch (err) {
     console.error('Failed to create attendance ledger document:', err)
     return {

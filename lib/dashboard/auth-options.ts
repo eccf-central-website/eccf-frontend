@@ -8,11 +8,17 @@
  */
 
 import type { NextAuthOptions } from 'next-auth'
+import 'server-only'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
-import { sanityWriteClient } from '@/lib/sanity'
+import { sanityPrivateClient } from '@/lib/sanity'
 import { decrypt, createBlindIndex, getCandidateBlindIndexes } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
+
+const authSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+if (process.env.NODE_ENV === 'production' && (!authSecret || Buffer.byteLength(authSecret, 'utf8') < 32)) {
+  throw new Error('NEXTAUTH_SECRET must be configured before production authentication can start.')
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -29,7 +35,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
-          throw new Error('Please enter both your email/phone number and password.')
+          throw new Error('Sign-in failed.')
         }
 
         const rawIdentifier = credentials.identifier.trim()
@@ -41,7 +47,7 @@ export const authOptions: NextAuthOptions = {
 
         // Look up Worker in Sanity by email, phoneNumber, or candidate phoneBlindIndexes
         // Order by defined(passwordHash) desc, _updatedAt desc so populated credentials take priority
-        const worker = await sanityWriteClient.fetch<{
+        const worker = await sanityPrivateClient.fetch<{
           _id: string
           fullName: string
           email?: string
@@ -77,27 +83,27 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!worker) {
-          throw new Error('No worker account found matching those credentials.')
+          throw new Error('Sign-in failed.')
         }
 
         if (!worker.passwordHash) {
-          throw new Error('This account does not have a dashboard password set up.')
+          throw new Error('Sign-in failed.')
         }
 
         const storedHash = decrypt(worker.passwordHash)
         const isValid = await bcrypt.compare(credentials.password, storedHash)
         if (!isValid) {
-          throw new Error('Incorrect password. Please try again.')
+          throw new Error('Sign-in failed.')
         }
 
         // Admin Approval Gate (SDD §7.3)
         if (worker.isExcoApproved === false) {
-          throw new Error('Your Exco account is awaiting administrator approval.')
+          throw new Error('Sign-in failed.')
         }
 
         const effectiveRole = worker.role || (worker.isExcoApproved ? worker.requestedRole : undefined)
         if (!effectiveRole) {
-          throw new Error('This account does not have active Exco dashboard privileges.')
+          throw new Error('Sign-in failed.')
         }
 
         const rawTeams = Array.isArray(worker.teams) ? worker.teams : []
@@ -156,5 +162,5 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
     error: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'eccf-secret-session-key-production-fallback',
+  secret: authSecret,
 }

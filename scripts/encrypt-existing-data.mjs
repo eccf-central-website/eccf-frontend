@@ -1,320 +1,208 @@
-import fs from 'fs'
-import path from 'path'
-import crypto from 'crypto'
+import fs from 'node:fs'
+import path from 'node:path'
+import crypto from 'node:crypto'
+import { createClient } from '@sanity/client'
 
-// 1. Read .env.local
-const envPath = path.resolve('.env.local')
-const envContent = fs.readFileSync(envPath, 'utf-8')
-const envVars = {}
-for (const line of envContent.split('\n')) {
-  const trimmed = line.trim()
-  if (!trimmed || trimmed.startsWith('#')) continue
-  const eqIdx = trimmed.indexOf('=')
-  if (eqIdx !== -1) {
-    const key = trimmed.slice(0, eqIdx).trim()
-    const val = trimmed.slice(eqIdx + 1).trim()
-    envVars[key] = val
-  }
+function readEnvFile() {
+  const envPath = path.resolve('.env.local')
+  if (!fs.existsSync(envPath)) return {}
+  return Object.fromEntries(
+    fs.readFileSync(envPath, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#') && line.includes('='))
+      .map((line) => {
+        const index = line.indexOf('=')
+        return [line.slice(0, index).trim(), line.slice(index + 1).trim().replace(/^['"]|['"]$/g, '')]
+      })
+  )
 }
 
-const SANITY_WRITE_TOKEN = envVars.SANITY_WRITE_TOKEN
-const PROJECT_ID = envVars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
-const DATASET = envVars.NEXT_PUBLIC_SANITY_DATASET || 'production'
-const ENCRYPTION_SECRET =
-  envVars.ENCRYPTION_KEY ||
-  envVars.NEXTAUTH_SECRET ||
-  'eccf-production-security-salt-2026-key'
-const HMAC_SECRET =
-  envVars.HMAC_PEPPER ||
-  envVars.ENCRYPTION_KEY ||
-  envVars.NEXTAUTH_SECRET ||
-  'eccf-production-blind-index-pepper-2026'
+const fileEnv = readEnvFile()
+const env = (name) => process.env[name] || fileEnv[name]
+const projectId = env('NEXT_PUBLIC_SANITY_PROJECT_ID') || 'ynnot4j0'
+const dataset = env('NEXT_PUBLIC_SANITY_DATASET') || 'production'
+const readToken = env('SANITY_READ_TOKEN')
+const writeToken = env('SANITY_WRITE_TOKEN')
+const encryptionSecret = env('ENCRYPTION_KEY')
+const hmacSecret = env('HMAC_PEPPER')
+const legacyEncryptionSecrets = (env('ENCRYPTION_LEGACY_KEYS') || '').split(',').map((value) => value.trim()).filter(Boolean)
+const execute = process.argv.includes('--execute')
 
-if (!SANITY_WRITE_TOKEN) {
-  console.error('Missing SANITY_WRITE_TOKEN in .env.local')
+if (!readToken || !writeToken || !encryptionSecret || !hmacSecret) {
+  console.error('SANITY_READ_TOKEN, SANITY_WRITE_TOKEN, ENCRYPTION_KEY, and HMAC_PEPPER are required.')
+  process.exit(1)
+}
+if (Buffer.byteLength(encryptionSecret, 'utf8') < 32 || Buffer.byteLength(hmacSecret, 'utf8') < 32) {
+  console.error('ENCRYPTION_KEY and HMAC_PEPPER must each contain at least 32 bytes.')
   process.exit(1)
 }
 
-// 2. Encryption logic matching lib/encryption.ts
-const ALGORITHM = 'aes-256-gcm'
-const IV_LENGTH = 12
+const reader = createClient({ projectId, dataset, apiVersion: '2025-02-19', perspective: 'drafts', useCdn: false, token: readToken })
+const writer = reader.withConfig({ token: writeToken })
+const privateReader = reader.withConfig({ perspective: 'raw' })
 const PREFIX = 'enc:v1:'
 const BLIND_INDEX_PREFIX = 'bidx:v1:'
+const ALGORITHM = 'aes-256-gcm'
 
-function getEncryptionKey() {
-  return crypto.createHash('sha256').update(ENCRYPTION_SECRET).digest()
+function isEncrypted(value) {
+  return typeof value === 'string' && value.startsWith(PREFIX)
 }
 
-function getHmacKey() {
-  return crypto.createHash('sha256').update(HMAC_SECRET).digest()
-}
-
-function isEncrypted(val) {
-  return typeof val === 'string' && val.startsWith(PREFIX)
-}
-
-function encrypt(plainText) {
-  if (!plainText || typeof plainText !== 'string') return ''
-  if (isEncrypted(plainText)) return plainText
-
-  const key = getEncryptionKey()
-  const iv = crypto.randomBytes(IV_LENGTH)
+function encrypt(value) {
+  if (!value || typeof value !== 'string' || isEncrypted(value)) return value || ''
+  const key = crypto.createHash('sha256').update(encryptionSecret).digest()
+  const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
-
-  let encrypted = cipher.update(plainText, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
-  const tag = cipher.getAuthTag()
-
-  return `${PREFIX}${iv.toString('hex')}:${tag.toString('hex')}:${encrypted}`
+  const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()])
+  return `${PREFIX}${iv.toString('hex')}:${cipher.getAuthTag().toString('hex')}:${ciphertext.toString('hex')}`
 }
 
-function normalizePhone(rawPhone) {
-  if (!rawPhone || typeof rawPhone !== 'string') return ''
-  const digits = rawPhone.replace(/\D/g, '')
-  if (digits.startsWith('234') && digits.length >= 13) {
-    return digits.slice(3)
+function decrypt(value) {
+  if (!value || typeof value !== 'string' || !isEncrypted(value)) return value || ''
+  const [ivHex, tagHex, encryptedHex] = value.slice(PREFIX.length).split(':')
+  if (!ivHex || !tagHex || !encryptedHex) return '[Encrypted Data]'
+  for (const secret of [encryptionSecret, ...legacyEncryptionSecrets]) {
+    try {
+      const key = crypto.createHash('sha256').update(secret).digest()
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'))
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'))
+      return Buffer.concat([decipher.update(Buffer.from(encryptedHex, 'hex')), decipher.final()]).toString('utf8')
+    } catch {
+      // Try only explicitly configured key-rotation values.
+    }
   }
-  if (digits.startsWith('0') && digits.length >= 11) {
-    return digits.slice(1)
-  }
+  return '[Encrypted Data]'
+}
+
+function normalizePhone(value) {
+  const digits = String(value || '').replace(/\D/g, '')
+  if (digits.startsWith('234') && digits.length >= 13) return digits.slice(3)
+  if (digits.startsWith('0') && digits.length >= 11) return digits.slice(1)
   return digits
 }
 
-function createBlindIndex(phone) {
-  if (!phone) return ''
-  const normalized = normalizePhone(phone)
+function blindIndex(value) {
+  const normalized = normalizePhone(value)
   if (!normalized) return ''
-  const hmac = crypto.createHmac('sha256', getHmacKey())
-  hmac.update(normalized)
-  return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
+  const digest = crypto.createHmac('sha256', hmacSecret).update(normalized).digest('hex')
+  return `${BLIND_INDEX_PREFIX}${digest}`
 }
 
-function decrypt(cipherText) {
-  if (!cipherText || typeof cipherText !== 'string') return ''
-  if (!isEncrypted(cipherText)) return cipherText
-  try {
-    const withoutPrefix = cipherText.slice(PREFIX.length)
-    const [ivHex, tagHex, encryptedHex] = withoutPrefix.split(':')
-    if (!ivHex || !tagHex || !encryptedHex) return cipherText
-    const key = getEncryptionKey()
-    const iv = Buffer.from(ivHex, 'hex')
-    const tag = Buffer.from(tagHex, 'hex')
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
-    decipher.setAuthTag(tag)
-    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
-  } catch (err) {
-    console.error('Decryption failed:', err)
-    return cipherText
-  }
+function birthdayBlindIndex(value) {
+  const parts = String(value || '').trim().split('-')
+  const monthDay = parts.length === 3
+    ? `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+    : parts.length === 2
+      ? `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+      : String(value || '').trim()
+  if (!monthDay) return ''
+  const digest = crypto.createHmac('sha256', hmacSecret).update(`birthday:${monthDay}`).digest('hex')
+  return `${BLIND_INDEX_PREFIX}${digest}`
 }
 
-function createBirthdayBlindIndex(dateStr) {
-  if (!dateStr || typeof dateStr !== 'string') return ''
-  const trimmed = dateStr.trim()
-  let mmdd = ''
-  const parts = trimmed.split('-')
-  if (parts.length === 3) {
-    mmdd = `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
-  } else if (parts.length === 2) {
-    mmdd = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
-  } else {
-    mmdd = trimmed
-  }
-  const hmac = crypto.createHmac('sha256', getHmacKey())
-  hmac.update(`birthday:${mmdd}`)
-  return `${BLIND_INDEX_PREFIX}${hmac.digest('hex')}`
+function privateId(id) {
+  return `drafts.${String(id).replace(/^drafts\./, '')}`
 }
 
-// 3. Query Sanity API
-async function sanityQuery(query, params = {}) {
-  const url = new URL(`https://${PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${DATASET}`)
-  url.searchParams.set('query', query)
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(`$${k}`, JSON.stringify(v))
-  }
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${SANITY_WRITE_TOKEN}`,
-    },
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Sanity query failed: ${res.status} ${text}`)
-  }
-  const json = await res.json()
-  return json.result
+function toMonthDay(value) {
+  const parts = String(value || '').trim().split('-')
+  if (parts.length === 3) return `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+  if (parts.length === 2) return `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`
+  return String(value || '').trim()
 }
 
-// 4. Mutate Sanity API
-async function sanityMutate(mutations) {
-  const url = `https://${PROJECT_ID}.api.sanity.io/v2024-01-01/data/mutate/${DATASET}`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SANITY_WRITE_TOKEN}`,
-    },
-    body: JSON.stringify({ mutations }),
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Sanity mutate failed: ${res.status} ${text}`)
-  }
-  return await res.json()
+function addPhoneUpdate(doc, set) {
+  if (!doc.phoneNumber) return
+  const plainPhone = decrypt(doc.phoneNumber)
+  if (plainPhone === '[Encrypted Data]') throw new Error('decryption-failed')
+  if (!isEncrypted(doc.phoneNumber)) set.phoneNumber = encrypt(plainPhone)
+  const index = blindIndex(plainPhone)
+  if (index && doc.phoneBlindIndex !== index) set.phoneBlindIndex = index
 }
 
 async function run() {
-  console.log('--- Starting Sanity PII Encryption & Cleanup Migration ---')
+  console.log(`Sanity encryption migration target: ${projectId}/${dataset}`)
+  console.log(`Mode: ${execute ? 'EXECUTE' : 'DRY RUN (no changes)'}`)
 
-  const mutations = []
+  const types = ['worker', 'firstTimer', 'welfareRequest', 'prayerRequest']
+  const docs = await reader.fetch(`*[_type in $types]{_id, _type, phoneNumber, phoneBlindIndex, roomNumber, passwordHash, birthDate, birthdayBlindIndex, birthMonth, birthDay, requestDetails, request}`, { types })
+  const draftIds = docs.map((doc) => privateId(doc._id))
+  const presentDraftIds = draftIds.length
+    ? await privateReader.fetch('*[_id in $ids]._id', { ids: draftIds })
+    : []
+  if (presentDraftIds.length !== draftIds.length) {
+    console.error('Some operational documents do not have private drafts yet. Run the privacy migration first; no records were changed.')
+    process.exit(2)
+  }
 
-  // A. Workers
-  const workers = await sanityQuery(
-    `*[_type == "worker"]{ _id, fullName, phoneNumber, roomNumber, passwordHash, birthDate, birthdayBlindIndex, birthMonth, birthDay }`
-  )
-  console.log(`Found ${workers.length} workers.`)
-  for (const w of workers) {
-    const patch = { id: w._id, set: {}, unset: [] }
-    let changed = false
+  const updates = []
+  const counts = Object.fromEntries(types.map((type) => [type, { inspected: 0, changed: 0 }]))
+  let decryptionFailures = 0
 
-    if (w.phoneNumber && !isEncrypted(w.phoneNumber)) {
-      patch.set.phoneNumber = encrypt(w.phoneNumber)
-      patch.set.phoneBlindIndex = createBlindIndex(w.phoneNumber)
-      changed = true
-      console.log(`[Worker] Encrypting phone for: ${w.fullName}`)
-    }
-    if (w.roomNumber && !isEncrypted(w.roomNumber)) {
-      patch.set.roomNumber = encrypt(w.roomNumber)
-      changed = true
-      console.log(`[Worker] Encrypting room for: ${w.fullName}`)
-    }
-    // Ensure passwordHash is AES-256-GCM encrypted (never unset!)
-    if (w.passwordHash && !isEncrypted(w.passwordHash)) {
-      patch.set.passwordHash = encrypt(w.passwordHash)
-      changed = true
-      console.log(`[Worker] Encrypting plain passwordHash for: ${w.fullName}`)
-    }
-    // Encrypt birthDate as MM-DD and create birthdayBlindIndex
-    if (w.birthDate) {
-      let rawDate = w.birthDate
-      if (isEncrypted(w.birthDate)) {
-        rawDate = decrypt(w.birthDate)
+  for (const doc of docs) {
+    counts[doc._type].inspected += 1
+    const set = {}
+    const unset = []
+
+    try {
+      addPhoneUpdate(doc, set)
+      if (doc.roomNumber) {
+        const plainRoom = decrypt(doc.roomNumber)
+        if (plainRoom === '[Encrypted Data]') throw new Error('decryption-failed')
+        if (!isEncrypted(doc.roomNumber)) set.roomNumber = encrypt(plainRoom)
       }
-      if (rawDate && rawDate.includes('-')) {
-        const parts = rawDate.split('-')
-        if (parts.length === 3) {
-          rawDate = `${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
-          patch.set.birthDate = encrypt(rawDate)
-          changed = true
-          console.log(`[Worker] Standardized birthDate to MM-DD (${rawDate}) for: ${w.fullName}`)
-        } else if (!isEncrypted(w.birthDate)) {
-          patch.set.birthDate = encrypt(rawDate)
-          changed = true
-          console.log(`[Worker] Encrypted birthDate for: ${w.fullName}`)
+      if (doc._type === 'worker') {
+        if (doc.passwordHash && !isEncrypted(doc.passwordHash)) set.passwordHash = encrypt(doc.passwordHash)
+        if (doc.birthDate) {
+          const plainDate = decrypt(doc.birthDate)
+          if (plainDate === '[Encrypted Data]') throw new Error('decryption-failed')
+          const monthDay = toMonthDay(plainDate)
+          if (!isEncrypted(doc.birthDate) || monthDay !== plainDate) set.birthDate = encrypt(monthDay)
+          const index = birthdayBlindIndex(monthDay)
+          if (index && doc.birthdayBlindIndex !== index) set.birthdayBlindIndex = index
         }
+        if (doc.birthMonth !== undefined || doc.birthDay !== undefined) unset.push('birthMonth', 'birthDay')
       }
-      const expectedBidx = createBirthdayBlindIndex(rawDate)
-      if (w.birthdayBlindIndex !== expectedBidx && rawDate) {
-        patch.set.birthdayBlindIndex = expectedBidx
-        changed = true
-        console.log(`[Worker] Updated birthdayBlindIndex for: ${w.fullName}`)
+      if (doc._type === 'welfareRequest' && doc.requestDetails) {
+        const plainDetails = decrypt(doc.requestDetails)
+        if (plainDetails === '[Encrypted Data]') throw new Error('decryption-failed')
+        if (!isEncrypted(doc.requestDetails)) set.requestDetails = encrypt(plainDetails)
       }
-    }
-    // Unset plain birthMonth and birthDay
-    if (w.birthMonth !== undefined || w.birthDay !== undefined) {
-      patch.unset.push('birthMonth', 'birthDay')
-      changed = true
-      console.log(`[Worker] Unsetting plain birthMonth & birthDay for: ${w.fullName}`)
-    }
-
-    if (changed) {
-      const mut = { patch: { id: patch.id } }
-      if (Object.keys(patch.set).length > 0) mut.patch.set = patch.set
-      if (patch.unset.length > 0) mut.patch.unset = patch.unset
-      mutations.push(mut)
-    }
-  }
-
-  // B. First Timers
-  const firstTimers = await sanityQuery(`*[_type == "firstTimer"]{ _id, fullName, phoneNumber, roomNumber }`)
-  console.log(`Found ${firstTimers.length} first timers.`)
-  for (const ft of firstTimers) {
-    const patch = { id: ft._id, set: {} }
-    let changed = false
-
-    if (ft.phoneNumber && !isEncrypted(ft.phoneNumber)) {
-      patch.set.phoneNumber = encrypt(ft.phoneNumber)
-      patch.set.phoneBlindIndex = createBlindIndex(ft.phoneNumber)
-      changed = true
-      console.log(`[FirstTimer] Encrypting phone for: ${ft.fullName}`)
-    }
-    if (ft.roomNumber && !isEncrypted(ft.roomNumber)) {
-      patch.set.roomNumber = encrypt(ft.roomNumber)
-      changed = true
-      console.log(`[FirstTimer] Encrypting room for: ${ft.fullName}`)
+      if (doc._type === 'prayerRequest' && doc.request) {
+        const plainRequest = decrypt(doc.request)
+        if (plainRequest === '[Encrypted Data]') throw new Error('decryption-failed')
+        if (!isEncrypted(doc.request)) set.request = encrypt(plainRequest)
+      }
+    } catch {
+      decryptionFailures += 1
+      continue
     }
 
-    if (changed) {
-      mutations.push({ patch: { id: patch.id, set: patch.set } })
+    if (Object.keys(set).length || unset.length) {
+      updates.push({ patch: { id: privateId(doc._id), set, ...(unset.length ? { unset } : {}) } })
+      counts[doc._type].changed += 1
     }
   }
 
-  // C. Welfare Requests
-  const welfare = await sanityQuery(`*[_type == "welfareRequest"]{ _id, name, phoneNumber, requestDetails }`)
-  console.log(`Found ${welfare.length} welfare requests.`)
-  for (const wf of welfare) {
-    const patch = { id: wf._id, set: {} }
-    let changed = false
-
-    if (wf.phoneNumber && !isEncrypted(wf.phoneNumber)) {
-      patch.set.phoneNumber = encrypt(wf.phoneNumber)
-      patch.set.phoneBlindIndex = createBlindIndex(wf.phoneNumber)
-      changed = true
-      console.log(`[Welfare] Encrypting phone for: ${wf.name}`)
-    }
-    if (wf.requestDetails && !isEncrypted(wf.requestDetails)) {
-      patch.set.requestDetails = encrypt(wf.requestDetails)
-      changed = true
-      console.log(`[Welfare] Encrypting requestDetails for: ${wf.name}`)
-    }
-
-    if (changed) {
-      mutations.push({ patch: { id: patch.id, set: patch.set } })
-    }
+  for (const type of types) {
+    console.log(`${type}: inspected ${counts[type].inspected}, updates planned ${counts[type].changed}`)
   }
+  console.log(`Records skipped because configured decryption keys could not open a field: ${decryptionFailures}`)
+  console.log(`Mode: ${execute ? 'EXECUTE' : 'DRY RUN'}. Planned document updates: ${updates.length}`)
 
-  // D. Prayer Requests
-  const prayer = await sanityQuery(`*[_type == "prayerRequest"]{ _id, name, request }`)
-  console.log(`Found ${prayer.length} prayer requests.`)
-  for (const pr of prayer) {
-    const patch = { id: pr._id, set: {} }
-    let changed = false
-
-    if (pr.request && !isEncrypted(pr.request)) {
-      patch.set.request = encrypt(pr.request)
-      changed = true
-      console.log(`[Prayer] Encrypting request for: ${pr.name || 'Anonymous'}`)
-    }
-
-    if (changed) {
-      mutations.push({ patch: { id: patch.id, set: patch.set } })
-    }
+  if (!execute) {
+    console.log('No records were changed. Review results, then rerun with --execute to apply draft-only updates.')
+    return
   }
-
-  console.log(`Total mutations to commit: ${mutations.length}`)
-  if (mutations.length > 0) {
-    const res = await sanityMutate(mutations)
-    console.log('Mutations successfully committed to Sanity:', res)
-  } else {
-    console.log('No unencrypted records found. All records are already encrypted.')
+  for (let offset = 0; offset < updates.length; offset += 50) {
+    await writer.mutate(updates.slice(offset, offset + 50), { visibility: 'sync' })
   }
-
-  console.log('--- Migration Complete ---')
+  console.log('Draft updates were committed.')
+  if (decryptionFailures) process.exitCode = 2
 }
 
-run().catch((err) => {
-  console.error('Migration failed:', err)
+run().catch(() => {
+  console.error('Encryption migration failed. Review credentials, configuration, and Sanity access.')
   process.exit(1)
 })

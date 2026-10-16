@@ -3,7 +3,7 @@
  * 
  * System Design Reference: SDD §4.6, §5.2, §6.4, §7.1
  * 
- * Receives Base64 encoded images from the client browser / Next.js Server,
+ * Receives signed Base64 image uploads from the Next.js server only,
  * decodes the binary stream on Google's V8 infrastructure, saves the file
  * to the fellowship's Google Drive shared folder, sets public read permissions,
  * and returns direct CDN image links (https://lh3.googleusercontent.com/d/<id>).
@@ -13,7 +13,7 @@
  */
 
 /**
- * Handle HTTP POST requests from the client or server proxy.
+ * Handle signed HTTP POST requests from the Next.js server proxy.
  */
 function doPost(e) {
   try {
@@ -34,10 +34,23 @@ function doPost(e) {
       }, 400);
     }
 
-    // Extract fields
+    // Authenticate the server proxy before any Drive operation.
+    var sharedSecret = PropertiesService.getScriptProperties().getProperty('UPLOAD_HMAC_SECRET');
+    var timestamp = Number(payload.timestamp);
+    var suppliedSignature = String(payload.signature || '');
+    if (!sharedSecret || !timestamp || Math.abs(Date.now() - timestamp) > 5 * 60 * 1000) {
+      return createJsonResponse({ ok: false, error: 'Unauthorized or expired upload request.' }, 401);
+    }
+
+    var signedMessage = [payload.timestamp, payload.cleanFileName, payload.mimeType, payload.base64].join('\n');
+    var expectedSignature = bytesToHex(Utilities.computeHmacSha256Signature(signedMessage, sharedSecret));
+    if (!constantTimeEqual(suppliedSignature, expectedSignature)) {
+      return createJsonResponse({ ok: false, error: 'Unauthorized upload request.' }, 401);
+    }
+
+    // Extract fields only after authentication.
     var rawBase64 = payload.base64 || payload.imageBase64 || payload.data;
-    var cleanFileName = payload.cleanFileName || payload.fileName || payload.filename;
-    var folderId = payload.folderId;
+    var cleanFileName = String(payload.cleanFileName || '');
     var mimeType = payload.mimeType || 'image/jpeg';
 
     if (!rawBase64) {
@@ -62,6 +75,10 @@ function doPost(e) {
     // Remove any unexpected whitespace or newlines
     cleanBase64 = cleanBase64.replace(/\s+/g, '');
 
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) {
+      return createJsonResponse({ ok: false, error: 'Unsupported image type.' }, 400);
+    }
+
     // Default file name if missing: [FullName]_[Team]_BirthdayPic.jpg
     if (!cleanFileName) {
       var namePart = (payload.fullName || 'Worker').toString().replace(/\s+/g, '_');
@@ -71,10 +88,17 @@ function doPost(e) {
 
     // Decode Base64 to Binary Blob
     var decodedBytes = Utilities.base64Decode(cleanBase64);
+    if (decodedBytes.length === 0 || decodedBytes.length > 2 * 1024 * 1024) {
+      return createJsonResponse({ ok: false, error: 'Image must be 2 MB or smaller.' }, 413);
+    }
+    if (!matchesImageType(decodedBytes, mimeType)) {
+      return createJsonResponse({ ok: false, error: 'Image content does not match its file type.' }, 400);
+    }
+    cleanFileName = cleanFileName.replace(/[^a-zA-Z0-9_.-]/g, '_').slice(0, 120);
     var blob = Utilities.newBlob(decodedBytes, mimeType, cleanFileName);
 
     // Resolve Google Drive Destination Folder
-    var folder = resolveTargetFolder(folderId);
+    var folder = resolveTargetFolder();
 
     // File Deduplication / Upsert: Remove prior photo with identical filename if present
     try {
@@ -135,37 +159,45 @@ function doGet(e) {
   }, 200);
 }
 
+function bytesToHex(bytes) {
+  return bytes.map(function (value) {
+    return ((value + 256) % 256).toString(16).padStart(2, '0');
+  }).join('');
+}
+
+function constantTimeEqual(left, right) {
+  if (left.length !== right.length) return false;
+  var mismatch = 0;
+  for (var i = 0; i < left.length; i++) mismatch |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  return mismatch === 0;
+}
+
+function matchesImageType(bytes, mimeType) {
+  if (mimeType === 'image/jpeg') return bytes[0] === -1 && bytes[1] === -40 && bytes[2] === -1;
+  if (mimeType === 'image/png') {
+    return bytes.slice(0, 8).join(',') === [-119, 80, 78, 71, 13, 10, 26, 10].join(',');
+  }
+  if (mimeType === 'image/webp') {
+    return Utilities.newBlob(bytes).getDataAsString().slice(0, 4) === 'RIFF' &&
+      Utilities.newBlob(bytes).getDataAsString().slice(8, 12) === 'WEBP';
+  }
+  return false;
+}
+
 /**
  * Resolve the target Google Drive Folder.
  * 1. Checks function argument folderId
  * 2. Checks Script Properties 'DRIVE_FOLDER_ID'
  * 3. Fallbacks to searching/creating folder 'ECCF Workforce Birthday Photos' in root Drive
  */
-function resolveTargetFolder(folderId) {
+function resolveTargetFolder() {
   var scriptProperties = PropertiesService.getScriptProperties();
-  var configuredFolderId = folderId || scriptProperties.getProperty('DRIVE_FOLDER_ID');
+  var configuredFolderId = scriptProperties.getProperty('DRIVE_FOLDER_ID');
 
-  if (configuredFolderId) {
-    try {
-      return DriveApp.getFolderById(configuredFolderId.trim());
-    } catch (e) {
-      Logger.log('Could not find folder by ID (' + configuredFolderId + '), falling back to default folder name.');
-    }
+  if (!configuredFolderId) {
+    throw new Error('DRIVE_FOLDER_ID is not configured in Script Properties.');
   }
-
-  var folderName = 'ECCF Workforce Birthday Photos';
-  var folders = DriveApp.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next();
-  }
-
-  // Create folder if it does not exist
-  var newFolder = DriveApp.createFolder(folderName);
-  newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  
-  // Cache the created folder ID in Script Properties for future queries
-  scriptProperties.setProperty('DRIVE_FOLDER_ID', newFolder.getId());
-  return newFolder;
+  return DriveApp.getFolderById(configuredFolderId.trim());
 }
 
 /**

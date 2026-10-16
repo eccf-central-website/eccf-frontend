@@ -1,101 +1,152 @@
+import 'server-only'
+
+import { createHash, createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
+import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 
-/**
- * API Route: /api/upload-drive
- *
- * System Design Reference: SDD §4.6, §6.4, §7.1
- * Proxies Base64 image payloads from the client to the Google Apps Script Webhook.
- * Prevents browser CORS limitations (Google Apps Script does not support OPTIONS preflights)
- * and keeps Google Drive folder IDs and webhook keys secured.
- */
-export async function POST(request: Request) {
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+const MAX_BODY_BYTES = 3 * 1024 * 1024
+
+function getImageMimeType(bytes: Buffer): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg'
+  }
+  if (
+    bytes.length >= 8 &&
+    bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  ) {
+    return 'image/png'
+  }
+  if (bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') {
+    return 'image/webp'
+  }
+  return null
+}
+
+function safeFileName(fullName: unknown, team: unknown): string {
+  const cleanPart = (value: unknown, fallback: string) =>
+    String(value || fallback)
+      .normalize('NFKD')
+      .replace(/[^a-zA-Z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 50) || fallback
+  return `${cleanPart(fullName, 'Worker')}_${cleanPart(team, 'General')}_BirthdayPic`
+}
+
+function isSameOrigin(request: Request): boolean {
+  const origin = request.headers.get('origin')
+  if (!origin) return false
   try {
-    const body = await request.json()
-    const { base64, cleanFileName, fullName, team, mimeType } = body
+    return new URL(origin).host === new URL(request.url).host
+  } catch {
+    return false
+  }
+}
 
-    if (!base64) {
-      return NextResponse.json(
-        { ok: false, error: 'No Base64 image data provided' },
-        { status: 400 }
-      )
+export async function POST(request: Request) {
+  const appScriptUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL
+  const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
+  if (!appScriptUrl || !signingSecret || Buffer.byteLength(signingSecret, 'utf8') < 32) {
+    return NextResponse.json({ ok: false, error: 'Image upload is not configured.' }, { status: 503 })
+  }
+
+  if (!isSameOrigin(request) || request.headers.get('sec-fetch-site') === 'cross-site') {
+    return NextResponse.json({ ok: false, error: 'Origin check failed.' }, { status: 403 })
+  }
+
+  const declaredLength = Number(request.headers.get('content-length') || 0)
+  if (declaredLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ ok: false, error: 'Image must be 2 MB or smaller.' }, { status: 413 })
+  }
+
+  try {
+    const rawBody = await request.text()
+    if (Buffer.byteLength(rawBody, 'utf8') > MAX_BODY_BYTES) {
+      return NextResponse.json({ ok: false, error: 'Image must be 2 MB or smaller.' }, { status: 413 })
     }
 
-    const webhookUrl =
-      process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL ||
-      process.env.NEXT_PUBLIC_GOOGLE_APPS_SCRIPT_WEBHOOK_URL
-
-    if (!webhookUrl) {
-      console.warn(
-        '[/api/upload-drive] GOOGLE_APPS_SCRIPT_WEBHOOK_URL is not configured in environment.'
-      )
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            'Google Apps Script webhook is not configured. Please add GOOGLE_APPS_SCRIPT_WEBHOOK_URL to .env.local.',
-        },
-        { status: 503 }
-      )
+    const body = JSON.parse(rawBody) as {
+      base64?: unknown
+      fullName?: unknown
+      team?: unknown
+      uploadGrant?: unknown
+    }
+    if (typeof body.base64 !== 'string' || !body.base64 || body.base64.length > MAX_IMAGE_BYTES * 1.5) {
+      return NextResponse.json({ ok: false, error: 'A valid image is required.' }, { status: 400 })
     }
 
-    // Forward to Google Apps Script Webhook
-    const gasResponse = await fetch(webhookUrl, {
+    const imageBytes = Buffer.from(body.base64, 'base64')
+    const mimeType = getImageMimeType(imageBytes)
+    if (!mimeType || imageBytes.length === 0 || imageBytes.length > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ ok: false, error: 'Use a JPEG, PNG, or WebP image up to 2 MB.' }, { status: 400 })
+    }
+
+    if (typeof body.uploadGrant !== 'string' || !/^[A-Za-z0-9_-]{40,60}$/.test(body.uploadGrant)) {
+      return NextResponse.json({ ok: false, error: 'This upload request is not authorized.' }, { status: 401 })
+    }
+    const grantHash = createHash('sha256').update(body.uploadGrant).digest('hex')
+    const worker = await sanityPrivateClient.fetch<{ _id: string; _rev: string } | null>(
+      `*[_type == "worker" && uploadGrantHash == $grantHash && uploadGrantExpiresAt > $now][0]{_id, _rev}`,
+      { grantHash, now: new Date().toISOString() }
+    )
+    if (!worker) {
+      return NextResponse.json({ ok: false, error: 'This upload request is not authorized or has expired.' }, { status: 401 })
+    }
+
+    try {
+      await patchPrivateDocument(worker._id)
+        .ifRevisionId(worker._rev)
+        .unset(['uploadGrantHash', 'uploadGrantExpiresAt'])
+        .commit()
+    } catch {
+      return NextResponse.json({ ok: false, error: 'This upload request has already been used. Reopen the form to try again.' }, { status: 409 })
+    }
+
+    const timestamp = Date.now().toString()
+    const cleanFileName = safeFileName(body.fullName, body.team)
+    const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${body.base64}`
+    const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
+
+    const gasResponse = await fetch(appScriptUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        base64,
-        cleanFileName,
-        fullName,
-        team,
-        mimeType: mimeType || 'image/jpeg',
+        base64: body.base64,
+        cleanFileName: `${cleanFileName}.${mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'}`,
+        mimeType,
+        timestamp,
+        signature,
       }),
-      // Follow redirects automatically (Google Apps Script redirects via 302 to script.googleusercontent.com)
       redirect: 'follow',
+      cache: 'no-store',
     })
 
     if (!gasResponse.ok) {
-      const errText = await gasResponse.text()
-      console.error('[/api/upload-drive] Google Apps Script returned error:', gasResponse.status, errText)
-      return NextResponse.json(
-        { ok: false, error: `Google Apps Script returned status ${gasResponse.status}` },
-        { status: 502 }
-      )
+      return NextResponse.json({ ok: false, error: 'The image upload service could not save the file.' }, { status: 502 })
     }
 
-    const data = (await gasResponse.json()) as {
-      ok?: boolean
-      fileUrl?: string
-      url?: string
-      directUrl?: string
-      driveViewUrl?: string
-      error?: string
+    const data = (await gasResponse.json()) as { ok?: boolean; fileUrl?: string }
+    if (!data.ok || !data.fileUrl) {
+      return NextResponse.json({ ok: false, error: 'The image upload service could not save the file.' }, { status: 502 })
     }
 
-    if (data.ok === false || data.error) {
-      console.error('[/api/upload-drive] Google Apps Script failure payload:', data.error)
-      return NextResponse.json(
-        { ok: false, error: data.error || 'Failed to save image to Google Drive' },
-        { status: 500 }
-      )
+    let uploadedUrl: URL
+    try {
+      uploadedUrl = new URL(data.fileUrl)
+    } catch {
+      return NextResponse.json({ ok: false, error: 'The image upload service returned an invalid file address.' }, { status: 502 })
+    }
+    if (uploadedUrl.protocol !== 'https:' || uploadedUrl.hostname !== 'lh3.googleusercontent.com') {
+      return NextResponse.json({ ok: false, error: 'The image upload service returned an untrusted file address.' }, { status: 502 })
     }
 
-    const fileUrl = data.fileUrl || data.directUrl || data.url
+    await patchPrivateDocument(worker._id)
+      .set({ profileImageUrl: uploadedUrl.toString(), updatedAt: new Date().toISOString() })
+      .append('updateLog', [`Updated profile image on ${new Date().toISOString().slice(0, 10)}`])
+      .commit()
 
-    return NextResponse.json({
-      ok: true,
-      fileUrl,
-      driveViewUrl: data.driveViewUrl,
-    })
-  } catch (error) {
-    console.error('[/api/upload-drive] Exception processing upload:', error)
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : 'Internal server error processing image upload',
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: true, fileUrl: uploadedUrl.toString() })
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid upload request.' }, { status: 400 })
   }
 }

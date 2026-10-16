@@ -37,6 +37,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { submitFirstTimer } from '@/app/actions/intake-actions'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 type ViewMode = 'menu' | 'connect-card' | 'more-steps'
 
@@ -45,6 +46,8 @@ export default function TheLauncher() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [view, setView] = useState<ViewMode>('menu')
   const [formLoading, setFormLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
   const [formStatus, setFormStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -93,11 +96,14 @@ export default function TheLauncher() {
     setFormStatus(null)
 
     const formData = new FormData(e.currentTarget)
+    formData.set('turnstileToken', turnstileToken)
     try {
       const res = await submitFirstTimer(formData)
       setFormStatus(res)
       if (res.success) {
         ;(e.target as HTMLFormElement).reset()
+        setTurnstileToken('')
+        setTurnstileResetSignal((signal) => signal + 1)
       }
     } catch {
       setFormStatus({ success: false, error: 'Connection failed. Please try again.' })
@@ -390,6 +396,8 @@ export default function TheLauncher() {
                           className="w-full rounded-xl bg-[#233138] border border-white/10 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-400"
                         />
                       </div>
+
+                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
 
                       <button
                         type="submit"

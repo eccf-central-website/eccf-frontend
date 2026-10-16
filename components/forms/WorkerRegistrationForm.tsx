@@ -21,10 +21,15 @@ import {
   Lock,
   KeyRound,
 } from 'lucide-react'
-import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
+import {
+  confirmWorkerSelfServiceLink,
+  registerWorker,
+  requestWorkerSelfServiceLink,
+} from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { compressImage } from '@/lib/image-compression'
 import type { WorkerRole } from '@/types'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 const HALLS_OF_RESIDENCE = [
   'Hall 1',
@@ -71,6 +76,7 @@ const VALID_WORKFORCE_CODES = [
 export function WorkerRegistrationForm() {
   const searchParams = useSearchParams()
   const codeParam = searchParams.get('code') || searchParams.get('passcode') || searchParams.get('key') || ''
+  const selfServiceToken = searchParams.get('selfServiceToken') || ''
 
   // Access Gate Security
   const [isUnlocked, setIsUnlocked] = useState(false)
@@ -96,6 +102,7 @@ export function WorkerRegistrationForm() {
     }
   }, [codeParam])
 
+
   function handleUnlock(e: React.FormEvent) {
     e.preventDefault()
     const clean = enteredCode.trim().toUpperCase()
@@ -113,8 +120,12 @@ export function WorkerRegistrationForm() {
   // Step & Flow State
   const [step, setStep] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
-  const [checkingPhone, setCheckingPhone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [requestingUpdateLink, setRequestingUpdateLink] = useState(false)
+  const [updateLinkMessage, setUpdateLinkMessage] = useState<string | null>(null)
+  const [updateIdentifier, setUpdateIdentifier] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -135,11 +146,10 @@ export function WorkerRegistrationForm() {
   const [roomNumber, setRoomNumber] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
-  const [birthDate, setBirthDate] = useState('')
   const effectiveBirthDate =
     birthMonth && birthDay
       ? `${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
-      : birthDate
+      : ''
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
@@ -161,6 +171,51 @@ export function WorkerRegistrationForm() {
   } | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setTurnstileToken('')
+  }, [step])
+
+  useEffect(() => {
+    if (!selfServiceToken) return
+    let active = true
+
+    void confirmWorkerSelfServiceLink(selfServiceToken).then((result) => {
+      if (!active) return
+      if (result.ok && result.purpose === 'profile' && result.worker) {
+        const worker = result.worker
+        setIsUnlocked(true)
+        setIsReturning(true)
+        setPhoneNumber(worker.phoneNumber || '')
+        setFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || '')
+        setMiddleName(worker.middleName || '')
+        setLastName(worker.lastName || '')
+        setEmail(worker.email || '')
+        setTeams(worker.teams.length > 0 ? worker.teams : [worker.team])
+        setHall(worker.hall || '')
+        setRoomNumber(worker.roomNumber || '')
+        setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
+        setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
+        setExistingPhotoUrl(worker.profileImageUrl || null)
+        setIsExco(worker.isExco || false)
+        setStep(2)
+        setError(null)
+      } else {
+        setError(result.error || 'This secure link is invalid or has expired. Request a new one.')
+      }
+
+      const url = new URL(window.location.href)
+      url.searchParams.delete('selfServiceToken')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }).catch(() => {
+      if (active) setError('This secure link is invalid or has expired. Request a new one.')
+    })
+
+    return () => {
+      active = false
+    }
+  }, [selfServiceToken])
+
 
   // Total steps based on flow
   // Returning flow: Step 1 (Phone) -> Step 2 (Location) -> Step 3 (Photo) -> Step 4 (Confirm)
@@ -199,8 +254,8 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // Gateway: Phone Check (Step 1)
-  async function handlePhoneSubmit(e: React.FormEvent) {
+  // New registrations continue without looking up an existing record.
+  function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -210,115 +265,38 @@ export function WorkerRegistrationForm() {
       return
     }
 
-    setCheckingPhone(true)
-    try {
-      const res = await lookupWorkerByPhone(clean)
-      if (res.found && res.worker) {
-        setIsReturning(true)
-        const returnedWorker = res.worker as {
-          firstName?: string
-          middleName?: string
-          lastName?: string
-          birthMonth?: number | string
-          birthDay?: number | string
-        } & typeof res.worker
-
-        if (returnedWorker.firstName) {
-          setFirstName(returnedWorker.firstName)
-          setMiddleName(returnedWorker.middleName || '')
-          setLastName(returnedWorker.lastName || '')
-        } else if (res.worker.fullName) {
-          const parts = res.worker.fullName.trim().split(/\s+/)
-          if (parts.length === 1) {
-            setFirstName(parts[0])
-            setMiddleName('')
-            setLastName('')
-          } else if (parts.length === 2) {
-            setFirstName(parts[0])
-            setMiddleName('')
-            setLastName(parts[1])
-          } else {
-            setFirstName(parts[0])
-            setMiddleName(parts.slice(1, -1).join(' '))
-            setLastName(parts[parts.length - 1])
-          }
-        }
-        setEmail(res.worker.email || '')
-        if (res.worker.teams && res.worker.teams.length > 0) {
-          setTeams(res.worker.teams)
-        } else if (res.worker.team) {
-          setTeams(res.worker.team.split(',').map((t) => t.trim()).filter(Boolean))
-        } else {
-          setTeams([])
-        }
-        setHall(res.worker.hall || '')
-        setRoomNumber(res.worker.roomNumber || '')
-        setBirthDate(res.worker.birthDate || '')
-        if (returnedWorker.birthMonth && returnedWorker.birthDay) {
-          setBirthMonth(String(returnedWorker.birthMonth).padStart(2, '0'))
-          setBirthDay(String(returnedWorker.birthDay).padStart(2, '0'))
-        } else if (res.worker.birthDate) {
-          const bParts = res.worker.birthDate.split('-')
-          if (bParts.length === 3) {
-            setBirthMonth(bParts[1])
-            setBirthDay(bParts[2])
-          } else if (bParts.length === 2) {
-            setBirthMonth(bParts[0])
-            setBirthDay(bParts[1])
-          }
-        }
-        setExistingPhotoUrl(res.worker.profileImageUrl || null)
-        if (res.worker.role) {
-          setIsExco(true)
-          setRequestedRole(res.worker.role)
-        } else {
-          setIsExco(false)
-        }
-        setStep(2)
-      } else {
-        setIsReturning(false)
-        setIsExco(false)
-        setTeams([])
-        setStep(2)
-      }
-    } catch {
-      setError('Network verification error. Please try again.')
-    } finally {
-      setCheckingPhone(false)
-    }
+    setIsReturning(false)
+    setIsExco(false)
+    setTeams([])
+    setStep(2)
   }
 
+  async function handleRequestUpdateLink() {
+    setError(null)
+    setUpdateLinkMessage(null)
+    setRequestingUpdateLink(true)
+    try {
+      const result = await requestWorkerSelfServiceLink({ identifier: updateIdentifier, purpose: 'profile', turnstileToken })
+      setUpdateLinkMessage(result.message)
+    } catch {
+      setUpdateLinkMessage('If those details match a worker account with an email on file, a secure link has been sent.')
+    } finally {
+      setRequestingUpdateLink(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((value) => value + 1)
+    }
+  }
   // Final Submission
   async function handleFinalSubmit() {
     setError(null)
+    if (!turnstileToken) {
+      setError('Complete the security check before submitting the form.')
+      return
+    }
     setSubmitting(true)
 
     try {
-      let uploadedProfileImageUrl = existingPhotoUrl || undefined
-
-      if (base64Image) {
-        try {
-          const uploadRes = await fetch('/api/upload-drive', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              base64: base64Image,
-              fullName,
-              team: teams[0] || 'General',
-            }),
-          })
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json()
-            if (uploadData.fileUrl) {
-              uploadedProfileImageUrl = uploadData.fileUrl
-            }
-          }
-        } catch (uploadErr) {
-          console.warn('[upload-drive] Drive upload skipped, falling back to server action:', uploadErr)
-        }
-      }
-
-      const res = await registerWorker({
+      const registrationResult = await registerWorker({
         fullName,
         firstName,
         middleName,
@@ -332,23 +310,46 @@ export function WorkerRegistrationForm() {
         birthDate: effectiveBirthDate,
         birthMonth,
         birthDay,
-        profileImageUrl: uploadedProfileImageUrl,
-        birthdayPictureBase64: uploadedProfileImageUrl ? undefined : (base64Image || undefined),
+        profileImageUrl: base64Image ? undefined : existingPhotoUrl || undefined,
+        requestPhotoUpload: Boolean(base64Image),
+        turnstileToken,
         isExco,
         requestedRole: isExco ? requestedRole : undefined,
         password: isExco && password ? password : undefined,
         ndprConsent,
       })
 
-      if (res.ok) {
-        setSuccessResult(res)
+      if (registrationResult.ok) {
+        let finalResult = registrationResult
+        if (base64Image && registrationResult.uploadGrant) {
+          try {
+            const uploadRes = await fetch('/api/upload-drive', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                base64: base64Image,
+                fullName,
+                team: teams[0] || 'General',
+                uploadGrant: registrationResult.uploadGrant,
+              }),
+            })
+            if (!uploadRes.ok) {
+              finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+            }
+          } catch {
+            finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+          }
+        }
+        setSuccessResult(finalResult)
       } else {
-        setError(res.error || 'Failed to submit registration. Please check your fields.')
+        setError(registrationResult.error || 'Failed to submit registration. Please check your fields.')
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setSubmitting(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((value) => value + 1)
     }
   }
 
@@ -368,7 +369,7 @@ export function WorkerRegistrationForm() {
             REGISTRATION CONFIRMED
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
-            {isReturning ? 'Location Updated!' : 'Welcome to the Workforce!'}
+            {isReturning ? 'Profile Updated!' : 'Welcome to the Workforce!'}
           </h1>
           <p className="text-base sm:text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
             {successResult.message}
@@ -534,6 +535,12 @@ export function WorkerRegistrationForm() {
 
       {/* Main Interactive Container */}
       <div className="space-y-6">
+        {(step === 1 && Boolean(updateIdentifier.trim()) || (isReturning && step === 4) || (!isReturning && step === 9)) && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to continue.</p>
+            <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+          </div>
+        )}
         {/* Error Notification */}
         {error && (
           <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 text-sm font-semibold flex items-start gap-3 shadow-xs">
@@ -558,10 +565,10 @@ export function WorkerRegistrationForm() {
             >
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Identity Verification
+                  Worker Registration
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
-                  What is your phone number?
+                  Start with your phone number
                 </h2>
               </div>
 
@@ -580,21 +587,46 @@ export function WorkerRegistrationForm() {
 
                 <button
                   type="submit"
-                  disabled={checkingPhone || phoneNumber.trim().length < 8}
+                  disabled={phoneNumber.trim().length < 8}
                   className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                 >
-                  {checkingPhone ? (
-                    <span className="inline-flex items-center justify-center gap-2.5">
-                      <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Checking Fellowship Records…</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      Continue <ArrowRight className="h-5 w-5" />
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-2">
+                    Continue <ArrowRight className="h-5 w-5" />
+                  </span>
                 </button>
               </form>
+
+              <div className="border-t border-slate-200 pt-5 space-y-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Already have a worker profile?</h3>
+                  <p className="text-xs text-slate-600 mt-1">Enter the email or phone number on your record. We’ll send a secure link to your saved email address.</p>
+                </div>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  value={updateIdentifier}
+                  onChange={(event) => setUpdateIdentifier(event.target.value)}
+                  placeholder="Registered email or phone number"
+                  aria-label="Email or phone number on your worker profile"
+                  className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
+                />
+                <button
+                  type="button"
+                  onClick={handleRequestUpdateLink}
+                  disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-[#0077cc] hover:text-[#0077cc] disabled:opacity-50"
+                >
+                  {requestingUpdateLink ? 'Sending secure link…' : 'Email me a profile update link'}
+                </button>
+                {updateLinkMessage && (
+                  <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
+                    {updateLinkMessage}
+                  </p>
+                )}
+                <p className="text-xs text-slate-500">
+                  If you no longer have access to the email on file, contact an ECCF administrator to verify and update your contact details. You can still use this same form after opening the secure link; no dashboard account is required.
+                </p>
+              </div>
             </motion.div>
           )}
 
@@ -628,15 +660,48 @@ export function WorkerRegistrationForm() {
                 </div>
               </div>
 
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
+                <h3 className="text-sm font-bold text-slate-900">Update your profile details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <input aria-label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  <input aria-label="Middle name" value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name (optional)" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  <input aria-label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Email on file
+                    <input type="email" value={email} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Phone on file
+                    <input type="tel" value={phoneNumber} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500">To change your email or phone number, contact an ECCF administrator so the new contact can be verified.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Birthday month
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]">
+                      <option value="">Select month</option>
+                      {MONTHS.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Birthday day
+                    <input type="number" min="1" max={birthMonth ? getDaysInMonth(birthMonth) : 31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
                   Session Update
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Where are you staying this session?
+                  What details have changed?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Update your hostel, room allocation, and operational teams for the current session.
+                  Review your profile, current residence, operational teams, and birthday details.
                 </p>
               </div>
 
@@ -883,7 +948,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={submitting}
+                  disabled={submitting || !turnstileToken}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -893,7 +958,7 @@ export function WorkerRegistrationForm() {
                       <span>Saving Location…</span>
                     </span>
                   ) : (
-                    'Confirm & Update Location'
+                    'Save Profile Updates'
                   )}
                 </button>
               </div>
@@ -1604,7 +1669,7 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={submitting || !ndprConsent}
+                  disabled={submitting || !ndprConsent || !turnstileToken}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >

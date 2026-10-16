@@ -19,7 +19,7 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
-import { sanityWriteClient } from '@/lib/sanity'
+import { sanityPrivateClient } from '@/lib/sanity'
 import { decrypt } from '@/lib/encryption'
 import type {
   AttendanceRow,
@@ -87,7 +87,7 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
   const hall =
     dataSource() === 'mock'
       ? mockHallForWorker(session.id)
-      : await sanityWriteClient.fetch<string | null>(WORKER_HALL_BY_ID_QUERY, { id: session.id })
+      : await sanityPrivateClient.fetch<string | null>(WORKER_HALL_BY_ID_QUERY, { id: session.id })
   // A hall_rep without a hall on record must not fall through to "all halls".
   return hall ?? '__no-hall__'
 }
@@ -163,8 +163,8 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
   }
 
   const [people, finance] = await Promise.all([
-    showPeople ? sanityWriteClient.fetch<PeopleStats>(PEOPLE_STATS_QUERY, params) : undefined,
-    showFinance ? sanityWriteClient.fetch<FinanceStats>(FINANCE_STATS_QUERY, params) : undefined,
+    showPeople ? sanityPrivateClient.fetch<PeopleStats>(PEOPLE_STATS_QUERY, params) : undefined,
+    showFinance ? sanityPrivateClient.fetch<FinanceStats>(FINANCE_STATS_QUERY, params) : undefined,
   ])
   return { people, finance }
 }
@@ -206,7 +206,7 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
       ? (await fromMock(MOCK_WORKERS, [])).filter(
           (w) => matchesHall(w.hall, hall) && matchesTeam(w.team, w.teams, team)
         )
-      : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
+      : await sanityPrivateClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
 
   const rows = rawRows.map((w) => {
     const decryptedBirthDate = decrypt(w.birthDate)
@@ -260,7 +260,7 @@ export async function fetchWorkersForAttendance(
     "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall
   }`
-  const rows = await sanityWriteClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
+  const rows = await sanityPrivateClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
   return stripPII(rows)
 }
 
@@ -275,7 +275,7 @@ export async function listAttendance(session?: ECCFSession): Promise<AttendanceR
       ? (await fromMock(MOCK_ATTENDANCE, [])).filter(
           (a) => team === null || a.teamName === team || a.serviceType !== 'Team Meeting'
         )
-      : await sanityWriteClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY, { team })
+      : await sanityPrivateClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY, { team })
   return stripPII(rows)
 }
 
@@ -283,7 +283,7 @@ export async function listFinance(): Promise<FinanceRow[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_FINANCE, [])
-      : await sanityWriteClient.fetch<FinanceRow[]>(DASHBOARD_FINANCE_QUERY)
+      : await sanityPrivateClient.fetch<FinanceRow[]>(DASHBOARD_FINANCE_QUERY)
   return stripPII(rows)
 }
 
@@ -301,7 +301,7 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
     return raw
   }
 
-  const rows = await sanityWriteClient.fetch<FirstTimerRow[]>(DASHBOARD_FIRST_TIMERS_QUERY, {
+  const rows = await sanityPrivateClient.fetch<FirstTimerRow[]>(DASHBOARD_FIRST_TIMERS_QUERY, {
     hall: hall && hall !== '__no-hall__' ? hall : null,
   })
 
@@ -316,7 +316,7 @@ export async function listWelfare(): Promise<SafeWelfareRequest[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_WELFARE, [])
-      : await sanityWriteClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
+      : await sanityPrivateClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
   return stripPII(rows).map((row) => ({
     ...row,
     requestDetails: decrypt(row.requestDetails),
@@ -327,7 +327,7 @@ export async function listPrayerRequests(): Promise<PrayerRequest[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_PRAYER_REQUESTS, [])
-      : await sanityWriteClient.fetch<PrayerRequest[]>(DASHBOARD_PRAYER_REQUESTS_QUERY)
+      : await sanityPrivateClient.fetch<PrayerRequest[]>(DASHBOARD_PRAYER_REQUESTS_QUERY)
   return stripPII(rows).map((row) => ({
     ...row,
     request: decrypt(row.request),

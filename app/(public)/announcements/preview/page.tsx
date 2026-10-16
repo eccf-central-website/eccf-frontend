@@ -7,6 +7,8 @@
  */
 
 import { sanityWriteClient } from '@/lib/sanity'
+import { getSession } from '@/lib/dashboard/auth'
+import { redirect } from 'next/navigation'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
 import { toPlainText } from '@portabletext/react'
 import type { PortableTextBlock } from '@portabletext/types'
@@ -64,6 +66,9 @@ export default async function AnnouncementPreviewPage({
 }: {
   searchParams: { id?: string; mode?: string }
 }) {
+  const session = await getSession()
+  if (!session || session.role !== 'admin') redirect('/login')
+
   const rawId = searchParams.id || ''
   const cleanId = rawId.replace(/^drafts\./, '')
 

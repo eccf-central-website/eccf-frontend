@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Eye, EyeOff, AlertCircle, Clock, KeyRound, CheckCircle2, Lock } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, CheckCircle2, Lock } from 'lucide-react'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 import {
   Dialog,
   DialogContent,
@@ -15,13 +16,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/dashboard/ui/dialog'
-import { setupExcoPassword } from '@/app/actions/worker-registration'
+import {
+  confirmWorkerSelfServiceLink,
+  requestWorkerSelfServiceLink,
+  setupExcoPassword,
+} from '@/app/actions/worker-registration'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const initialError = searchParams.get('error')
+  const selfServiceToken = searchParams.get('selfServiceToken') || ''
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -30,22 +36,41 @@ function LoginForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(
     initialError === 'CredentialsSignin' ? 'Invalid credentials. Please check your details.' : null
   )
-  const [isPendingApproval, setIsPendingApproval] = useState(false)
 
   // Reset / Set Password Modal State
   const [isResetOpen, setIsResetOpen] = useState(false)
   const [resetIdentifier, setResetIdentifier] = useState('')
+  const [resetLinkVerified, setResetLinkVerified] = useState(false)
   const [resetPassword, setResetPassword] = useState('')
   const [resetConfirmPassword, setResetConfirmPassword] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
   const [resetSuccess, setResetSuccess] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+
+  useEffect(() => {
+    if (!selfServiceToken) return
+    setIsResetOpen(true)
+    void confirmWorkerSelfServiceLink(selfServiceToken).then((result) => {
+      if (result.ok && result.purpose === 'password') {
+        setResetLinkVerified(true)
+        setResetError(null)
+      } else {
+        setResetError(result.error || 'This secure link is invalid or has expired. Request another link.')
+      }
+      const url = new URL(window.location.href)
+      url.searchParams.delete('selfServiceToken')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }).catch(() => {
+      setResetError('This secure link is invalid or has expired. Request another link.')
+    })
+  }, [selfServiceToken])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setErrorMessage(null)
-    setIsPendingApproval(false)
 
     try {
       const res = await signIn('credentials', {
@@ -56,14 +81,7 @@ function LoginForm() {
       })
 
       if (res?.error) {
-        if (res.error.toLowerCase().includes('pending administrator approval')) {
-          setIsPendingApproval(true)
-          setErrorMessage(
-            'Your Exco designation request is currently pending administrator approval. Please contact a fellowship executive.'
-          )
-        } else {
-          setErrorMessage(res.error)
-        }
+        setErrorMessage('Sign-in failed. Check your details, account approval, or use the secure password setup link.')
       } else if (res?.ok) {
         router.push(callbackUrl)
         router.refresh()
@@ -75,17 +93,37 @@ function LoginForm() {
     }
   }
 
+  async function handleRequestPasswordLink() {
+    setResetError(null)
+    setResetSuccess(null)
+    if (!resetIdentifier.trim()) {
+      setResetError('Enter the email or phone number on your worker record.')
+      return
+    }
+    if (!turnstileToken) {
+      setResetError('Complete the security check and try again.')
+      return
+    }
+    setResetLoading(true)
+    try {
+      const result = await requestWorkerSelfServiceLink({ identifier: resetIdentifier.trim(), purpose: 'password', turnstileToken })
+      setResetSuccess(result.message)
+    } catch {
+      setResetSuccess('If the details match an Exco worker account with an email on file, a secure link has been sent.')
+    } finally {
+      setResetLoading(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((value) => value + 1)
+    }
+  }
+
   async function handleSetupPassword(e: React.FormEvent) {
     e.preventDefault()
     setResetError(null)
     setResetSuccess(null)
 
-    if (!resetIdentifier.trim()) {
-      setResetError('Please enter your registered email or phone number.')
-      return
-    }
-    if (resetPassword.length < 8) {
-      setResetError('Password must be at least 8 characters long.')
+    if (resetPassword.length < 12) {
+      setResetError('Choose a password with at least 12 characters.')
       return
     }
     if (resetPassword !== resetConfirmPassword) {
@@ -95,15 +133,10 @@ function LoginForm() {
 
     setResetLoading(true)
     try {
-      const result = await setupExcoPassword({
-        identifier: resetIdentifier.trim(),
-        newPassword: resetPassword,
-      })
+      const result = await setupExcoPassword({ newPassword: resetPassword })
 
       if (result.ok) {
         setResetSuccess(result.message || 'Password set successfully!')
-        setIdentifier(resetIdentifier.trim())
-        setPassword(resetPassword)
         setErrorMessage(null)
         setTimeout(() => {
           setIsResetOpen(false)
@@ -120,8 +153,6 @@ function LoginForm() {
       setResetLoading(false)
     }
   }
-
-  const isMissingPasswordError = errorMessage?.toLowerCase().includes('password set up')
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-16 sm:py-24">
@@ -149,38 +180,12 @@ function LoginForm() {
         {/* Error / Alert banner */}
         {errorMessage && (
           <div
-            className={`p-4 rounded-xl text-sm flex flex-col gap-2 shadow-xs ${
-              isPendingApproval
-                ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                : 'bg-destructive/10 text-destructive border border-destructive/20'
-            }`}
+            className="p-4 rounded-xl text-sm flex flex-col gap-2 shadow-xs bg-destructive/10 text-destructive border border-destructive/20"
           >
             <div className="flex items-start gap-3">
-              {isPendingApproval ? (
-                <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-              )}
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
               <p className="font-medium leading-relaxed">{errorMessage}</p>
             </div>
-
-            {isMissingPasswordError && (
-              <div className="mt-1 pt-2 border-t border-destructive/20 pl-8">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResetIdentifier(identifier)
-                    setResetError(null)
-                    setResetSuccess(null)
-                    setIsResetOpen(true)
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-destructive hover:underline cursor-pointer"
-                >
-                  <KeyRound className="h-3.5 w-3.5" />
-                  Set up your dashboard password now &rarr;
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -210,6 +215,7 @@ function LoginForm() {
                 type="button"
                 onClick={() => {
                   setResetIdentifier(identifier)
+                  setResetLinkVerified(false)
                   setResetError(null)
                   setResetSuccess(null)
                   setIsResetOpen(true)
@@ -275,7 +281,7 @@ function LoginForm() {
               <DialogTitle className="text-lg font-bold">Configure Exco Password</DialogTitle>
             </div>
             <DialogDescription className="text-xs text-muted-foreground">
-              Establish or update your dashboard credentials for your registered Exco profile.
+              Verify the email on your worker record before changing your Exco password.
             </DialogDescription>
           </DialogHeader>
 
@@ -293,70 +299,57 @@ function LoginForm() {
             </div>
           )}
 
-          <form onSubmit={handleSetupPassword} className="space-y-3.5 mt-2">
-            <div className="space-y-1">
-              <Label htmlFor="reset-id" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
-                Registered Email or Phone Number
-              </Label>
-              <Input
-                id="reset-id"
-                type="text"
-                required
-                value={resetIdentifier}
-                onChange={(e) => setResetIdentifier(e.target.value)}
-                placeholder="e.g. 08168730661 or name@example.com"
-                className="h-11 rounded-xl text-sm"
-              />
+          {!resetLinkVerified ? (
+            <div className="space-y-3.5 mt-2">
+              <div className="space-y-1">
+                <Label htmlFor="reset-id" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                  Email or phone on your worker record
+                </Label>
+                <Input
+                  id="reset-id"
+                  type="text"
+                  required
+                  value={resetIdentifier}
+                  onChange={(e) => setResetIdentifier(e.target.value)}
+                  placeholder="Email or phone number"
+                  className="h-11 rounded-xl text-sm"
+                />
+              </div>
+              <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+              <div className="pt-2 flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsResetOpen(false)} className="flex-1 h-11 rounded-xl text-xs font-semibold">
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleRequestPasswordLink} disabled={resetLoading || !turnstileToken} className="flex-1 h-11 rounded-xl text-xs font-semibold">
+                  {resetLoading ? 'Sending…' : 'Email secure link'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">If the account matches an Exco worker record, we will send a short-lived link to the email on file.</p>
             </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="reset-pw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
-                New Password (Min. 8 characters)
-              </Label>
-              <Input
-                id="reset-pw"
-                type="password"
-                required
-                value={resetPassword}
-                onChange={(e) => setResetPassword(e.target.value)}
-                placeholder="Enter new secure password"
-                className="h-11 rounded-xl text-sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="reset-cpw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
-                Confirm New Password
-              </Label>
-              <Input
-                id="reset-cpw"
-                type="password"
-                required
-                value={resetConfirmPassword}
-                onChange={(e) => setResetConfirmPassword(e.target.value)}
-                placeholder="Re-enter password"
-                className="h-11 rounded-xl text-sm"
-              />
-            </div>
-
-            <div className="pt-2 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsResetOpen(false)}
-                className="flex-1 h-11 rounded-xl text-xs font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={resetLoading}
-                className="flex-1 h-11 rounded-xl text-xs font-semibold"
-              >
-                {resetLoading ? 'Saving…' : 'Save Password'}
-              </Button>
-            </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSetupPassword} className="space-y-3.5 mt-2">
+              <div className="space-y-1">
+                <Label htmlFor="reset-pw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                  New password (12 characters minimum)
+                </Label>
+                <Input id="reset-pw" type="password" required minLength={12} autoComplete="new-password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="Enter a new secure password" className="h-11 rounded-xl text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="reset-cpw" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300">
+                  Confirm new password
+                </Label>
+                <Input id="reset-cpw" type="password" required minLength={12} autoComplete="new-password" value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)} placeholder="Re-enter password" className="h-11 rounded-xl text-sm" />
+              </div>
+              <div className="pt-2 flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsResetOpen(false)} className="flex-1 h-11 rounded-xl text-xs font-semibold">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={resetLoading} className="flex-1 h-11 rounded-xl text-xs font-semibold">
+                  {resetLoading ? 'Saving…' : 'Save password'}
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

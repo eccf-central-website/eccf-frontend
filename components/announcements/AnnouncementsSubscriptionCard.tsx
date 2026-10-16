@@ -4,11 +4,14 @@ import * as React from 'react'
 import { useState } from 'react'
 import { Bell, CheckCircle2, Loader2, Mail, Send, ShieldCheck } from 'lucide-react'
 import { subscribeToAnnouncements } from '@/app/actions/subscriber-actions'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 export default function AnnouncementsSubscriptionCard() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
   const [status, setStatus] = useState<{
     success?: boolean
     message?: string
@@ -23,6 +26,7 @@ export default function AnnouncementsSubscriptionCard() {
 
     const formData = new FormData()
     formData.append('email', email.trim())
+    formData.append('turnstileToken', turnstileToken)
     if (name.trim()) {
       formData.append('name', name.trim())
     }
@@ -33,6 +37,8 @@ export default function AnnouncementsSubscriptionCard() {
       if (res.success) {
         setEmail('')
         setName('')
+        setTurnstileToken('')
+        setTurnstileResetSignal((signal) => signal + 1)
       }
     } catch {
       setStatus({
@@ -112,6 +118,10 @@ export default function AnnouncementsSubscriptionCard() {
                   </>
                 )}
               </button>
+            </div>
+
+            <div className="flex justify-center">
+              <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
             </div>
 
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
