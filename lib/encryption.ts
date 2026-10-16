@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { getEncryptionSecret, getHmacSecret } from '@/lib/env'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
@@ -6,19 +7,12 @@ const PREFIX = 'enc:v1:'
 const BLIND_INDEX_PREFIX = 'bidx:v1:'
 
 function getEncryptionKey(): Buffer {
-  const secret =
-    process.env.ENCRYPTION_KEY ||
-    process.env.NEXTAUTH_SECRET ||
-    'eccf-production-security-salt-2026-key'
+  const secret = getEncryptionSecret()
   return crypto.createHash('sha256').update(secret).digest()
 }
 
 function getHmacKey(): Buffer {
-  const secret =
-    process.env.HMAC_PEPPER ||
-    process.env.ENCRYPTION_KEY ||
-    process.env.NEXTAUTH_SECRET ||
-    'eccf-production-blind-index-pepper-2026'
+  const secret = getHmacSecret()
   return crypto.createHash('sha256').update(secret).digest()
 }
 

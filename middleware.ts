@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { getAuthSecret } from '@/lib/env'
 import { canAccessSection, isWorkerRole, sectionForPath, SECTION_PATHS } from '@/lib/dashboard/rbac'
 
 export async function middleware(req: NextRequest) {
@@ -26,10 +27,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/dashboard')) {
     const token = await getToken({
       req,
-      secret:
-        process.env.NEXTAUTH_SECRET ||
-        process.env.AUTH_SECRET ||
-        'eccf-secret-session-key-production-fallback',
+      secret: getAuthSecret(),
     })
 
     if (!token) {

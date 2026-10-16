@@ -12,6 +12,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { sanityWriteClient } from '@/lib/sanity'
 import { decrypt, createBlindIndex } from '@/lib/encryption'
+import { getAuthSecret } from '@/lib/env'
 import type { WorkerRole } from '@/types'
 
 export const authOptions: NextAuthOptions = {
@@ -149,5 +150,8 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
     error: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'eccf-secret-session-key-production-fallback',
+  // Getter: a missing secret fails with a clear error on first use rather than at build time.
+  get secret() {
+    return getAuthSecret()
+  },
 }

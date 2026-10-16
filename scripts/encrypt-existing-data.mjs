@@ -20,15 +20,14 @@ for (const line of envContent.split('\n')) {
 const SANITY_WRITE_TOKEN = envVars.SANITY_WRITE_TOKEN
 const PROJECT_ID = envVars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const DATASET = envVars.NEXT_PUBLIC_SANITY_DATASET || 'production'
-const ENCRYPTION_SECRET =
-  envVars.ENCRYPTION_KEY ||
-  envVars.NEXTAUTH_SECRET ||
-  'eccf-production-security-salt-2026-key'
-const HMAC_SECRET =
-  envVars.HMAC_PEPPER ||
-  envVars.ENCRYPTION_KEY ||
-  envVars.NEXTAUTH_SECRET ||
-  'eccf-production-blind-index-pepper-2026'
+// Same env chains as lib/env.ts. No hardcoded default: the repo is public.
+const ENCRYPTION_SECRET = envVars.ENCRYPTION_KEY || envVars.NEXTAUTH_SECRET
+const HMAC_SECRET = envVars.HMAC_PEPPER || envVars.ENCRYPTION_KEY || envVars.NEXTAUTH_SECRET
+
+if (!ENCRYPTION_SECRET || !HMAC_SECRET) {
+  console.error('Missing ENCRYPTION_KEY / HMAC_PEPPER / NEXTAUTH_SECRET in .env.local')
+  process.exit(1)
+}
 
 if (!SANITY_WRITE_TOKEN) {
   console.error('Missing SANITY_WRITE_TOKEN in .env.local')

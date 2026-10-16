@@ -17,10 +17,12 @@ for (const line of envContent.split('\n')) {
 const SANITY_WRITE_TOKEN = envVars.SANITY_WRITE_TOKEN
 const PROJECT_ID = envVars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const DATASET = envVars.NEXT_PUBLIC_SANITY_DATASET || 'production'
-const ENCRYPTION_SECRET =
-  envVars.ENCRYPTION_KEY ||
-  envVars.NEXTAUTH_SECRET ||
-  'eccf-production-security-salt-2026-key'
+// Same env chain as lib/env.ts. No hardcoded default: the repo is public.
+const ENCRYPTION_SECRET = envVars.ENCRYPTION_KEY || envVars.NEXTAUTH_SECRET
+if (!ENCRYPTION_SECRET) {
+  console.error('Missing ENCRYPTION_KEY / NEXTAUTH_SECRET in .env.local')
+  process.exit(1)
+}
 
 const PREFIX = 'enc:v1:'
 const ALGORITHM = 'aes-256-gcm'
