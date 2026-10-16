@@ -108,7 +108,7 @@ export default async function Home() {
       <FellowshipMomentsSection gallery={gallery || []} />
 
       {/* 6. Giving Hub Section */}
-      <GivingHubSection />
+      <GivingHubSection settings={settings} />
 
       {/* 7. High-Impact Social Media Banner (Follow Us for Exclusive Content) */}
       <SocialMediaBanner

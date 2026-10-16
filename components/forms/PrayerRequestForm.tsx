@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import { submitPrayerRequest } from '@/app/actions/intake-actions'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 export function PrayerRequestForm() {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setStatus(null)
+    formData.set('turnstileToken', turnstileToken)
     
     try {
       const result = await submitPrayerRequest(formData)
@@ -17,6 +21,8 @@ export function PrayerRequestForm() {
       if (result.success) {
         const form = document.getElementById('prayer-form') as HTMLFormElement
         if (form) form.reset()
+        setTurnstileToken('')
+        setTurnstileResetSignal((signal) => signal + 1)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -66,6 +72,8 @@ export function PrayerRequestForm() {
             placeholder="How can our intercessory team pray with you?"
           />
         </div>
+
+        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
 
         <button
           type="submit"

@@ -11,7 +11,7 @@
  */
 
 import { revalidatePath } from 'next/cache'
-import { sanityWriteClient } from '@/lib/sanity'
+import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import type { ActionResult } from '@/lib/dashboard/action-result'
@@ -92,7 +92,7 @@ export async function verifyWorkerMembership(
 
   // Live Sanity update
   try {
-    const existing = await sanityWriteClient.fetch<{
+    const existing = await sanityPrivateClient.fetch<{
       _id: string
       fullName: string
       team?: string
@@ -127,8 +127,7 @@ export async function verifyWorkerMembership(
       }
     }
 
-    await sanityWriteClient
-      .patch(input.workerId)
+    await patchPrivateDocument(input.workerId)
       .set({
         verificationStatus: newStatus,
         verifiedAt: now.toISOString(),
@@ -200,8 +199,7 @@ export async function toggleExcoApproval(
       patchData.excoPosition = input.excoPosition
     }
 
-    await sanityWriteClient
-      .patch(input.workerId)
+    await patchPrivateDocument(input.workerId)
       .set(patchData)
       .append('updateLog', [logMessage])
       .commit()

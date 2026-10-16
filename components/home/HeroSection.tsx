@@ -13,7 +13,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { urlForImage } from '@/lib/sanity'
+import { urlForImage } from '@/lib/sanity-image'
 
 export interface CollagePhotoItem {
   _key?: string
@@ -24,6 +24,7 @@ export interface CollagePhotoItem {
 }
 
 export interface SiteSettingsData {
+  heroHeadline?: string
   heroHeadlineStart?: string
   heroAccentWord?: string
   heroHeadlineEnd?: string
@@ -42,6 +43,10 @@ export interface SiteSettingsData {
   statsCampusLegacy?: string
   visitContactPerson?: string
   visitWhatsAppNumber?: string
+  givingBankName?: string
+  givingAccountName?: string
+  givingAccountNumber?: string
+  givingInstructions?: string
   fellowshipEmail?: string
   socialYouTube?: string
   socialInstagram?: string
@@ -82,9 +87,10 @@ export default function HeroSection({ settings }: Props) {
   const topLabel = settings?.heroTopPill || 'Join us this week'
 
   const headline =
-    settings?.heroHeadlineStart && settings?.heroHeadlineEnd
+    settings?.heroHeadline ||
+    (settings?.heroHeadlineStart && settings?.heroHeadlineEnd
       ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
-      : 'An Assembly of Spiritual Dynamites & Academic Giants'
+      : 'An Assembly of Spiritual Dynamites & Academic Giants')
 
   const bodyText =
     settings?.heroParagraph ||

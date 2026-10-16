@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import { submitWelfareRequest } from '@/app/actions/intake-actions'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 export function WelfareForm() {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setStatus(null)
+    formData.set('turnstileToken', turnstileToken)
     
     try {
       const result = await submitWelfareRequest(formData)
@@ -17,6 +21,8 @@ export function WelfareForm() {
       if (result.success) {
         const form = document.getElementById('welfare-form') as HTMLFormElement
         if (form) form.reset()
+        setTurnstileToken('')
+        setTurnstileResetSignal((signal) => signal + 1)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -81,6 +87,8 @@ export function WelfareForm() {
             placeholder="Please describe your need in confidence..."
           />
         </div>
+
+        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
 
         <button
           type="submit"

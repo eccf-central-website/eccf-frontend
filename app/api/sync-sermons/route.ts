@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { sanityWriteClient } from '@/lib/sanity'
+import { constantTimeStringEqual } from '@/lib/security/constant-time'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,8 +20,12 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get('authorization')
     const secret = process.env.CRON_SECRET
 
-    // Validate Cron Secret header if configured
-    if (secret && authHeader !== `Bearer ${secret}`) {
+    if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
+      console.error('[sync-sermons] CRON_SECRET is not configured; refusing to run.')
+      return NextResponse.json({ error: 'Sermon sync is not configured.' }, { status: 503 })
+    }
+
+    if (!authHeader || !constantTimeStringEqual(authHeader, `Bearer ${secret}`)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
