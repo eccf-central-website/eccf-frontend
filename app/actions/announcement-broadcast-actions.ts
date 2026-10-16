@@ -1,6 +1,7 @@
 'use server'
 
 import { sanityClient, sanityWriteClient } from '@/lib/sanity'
+import { getSession } from '@/lib/dashboard/auth'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -67,6 +68,12 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
   message: string
   recipientCount?: number
 }> {
+  // Emails every subscriber, so only a signed-in admin (CSGB) may trigger it (S5).
+  const session = await getSession()
+  if (!session || session.role !== 'admin') {
+    return { success: false, message: 'Not authorised to broadcast announcements.' }
+  }
+
   try {
     const cleanId = announcementId.replace(/^drafts\./, '')
 
