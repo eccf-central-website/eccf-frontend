@@ -19,8 +19,13 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get('authorization')
     const secret = process.env.CRON_SECRET
 
-    // Validate Cron Secret header if configured
-    if (secret && authHeader !== `Bearer ${secret}`) {
+    // Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. Fail closed when
+    // the secret is unset (S6). GET delegates here, so it is guarded too.
+    if (!secret) {
+      console.error('[sync-sermons] CRON_SECRET is not set; rejecting request.')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authHeader !== `Bearer ${secret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

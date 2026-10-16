@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanityClient, sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
+import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -63,18 +64,28 @@ function blocksToHtml(blocks: unknown): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Optional secret verification
+    // Sanity signed webhook (S6). Fail closed when the secret is unset, and
+    // never accept the secret in the URL (it ends up in access logs).
     const secret = process.env.SANITY_WEBHOOK_SECRET
-    if (secret) {
-      const authHeader = req.headers.get('authorization')
-      const urlSecret = req.nextUrl.searchParams.get('secret')
-      const isValid = authHeader === `Bearer ${secret}` || urlSecret === secret
-      if (!isValid) {
-        return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
-      }
+    if (!secret) {
+      console.error('[announcement webhook] SANITY_WEBHOOK_SECRET is not set; rejecting request.')
+      return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
     }
 
-    const payload = await req.json().catch(() => ({}))
+    // Verify against the raw body: re-encoded JSON can differ byte-for-byte.
+    const rawBody = await req.text()
+    const signature = req.headers.get(SIGNATURE_HEADER_NAME) || ''
+    if (!signature || !(await isValidSignature(rawBody, signature, secret).catch(() => false))) {
+      return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
+    }
+
+    const payload = (() => {
+      try {
+        return JSON.parse(rawBody)
+      } catch {
+        return {}
+      }
+    })()
     const docId = payload._id || payload.id
 
     if (!docId) {
