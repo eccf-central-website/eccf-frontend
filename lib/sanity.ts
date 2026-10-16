@@ -14,7 +14,7 @@ import 'server-only'
 
 import { randomUUID } from 'crypto'
 import {createClient} from '@sanity/client'
-import {createImageUrlBuilder} from '@sanity/image-url'
+export { urlForImage } from '@/lib/sanity-image'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
@@ -27,23 +27,6 @@ export const sanityClient = createClient({
   perspective: 'published',
   useCdn: false,
 })
-
-/** Image URL builder with automatic hotspot and crop support */
-const imageBuilder = createImageUrlBuilder({
-  projectId,
-  dataset,
-})
-
-export function urlForImage(source: unknown): string | undefined {
-  if (!source) return undefined
-  if (typeof source === 'string') return source
-  try {
-    return imageBuilder.image(source as Parameters<typeof imageBuilder.image>[0]).auto('format').fit('max').url()
-  } catch (err) {
-    console.error('[urlForImage] Failed to generate URL:', err)
-    return undefined
-  }
-}
 
 /**
  * Authenticated write client — SERVER-SIDE ONLY.

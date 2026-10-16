@@ -13,7 +13,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { urlForImage } from '@/lib/sanity'
+import { urlForImage } from '@/lib/sanity-image'
 
 export interface CollagePhotoItem {
   _key?: string
