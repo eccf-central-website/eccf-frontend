@@ -22,7 +22,7 @@ import {
   Lock,
   KeyRound,
 } from 'lucide-react'
-import { registerWorker, lookupWorkerByPhone } from '@/app/actions/worker-registration'
+import { registerWorker } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import type { WorkerRole } from '@/types'
 
@@ -113,7 +113,7 @@ export function WorkerRegistrationForm() {
   // Step & Flow State
   const [step, setStep] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
-  const [checkingPhone, setCheckingPhone] = useState(false)
+  const [checkingPhone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   // Form Fields
@@ -140,7 +140,7 @@ export function WorkerRegistrationForm() {
     birthMonth && birthDay
       ? `2000-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
       : birthDate
-  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
+  const [existingPhotoUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
 
@@ -193,7 +193,7 @@ export function WorkerRegistrationForm() {
   }
 
   // Gateway: Phone Check (Step 1)
-  async function handlePhoneSubmit(e: React.FormEvent) {
+  function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -203,71 +203,13 @@ export function WorkerRegistrationForm() {
       return
     }
 
-    setCheckingPhone(true)
-    try {
-      const res = await lookupWorkerByPhone(clean)
-      if (res.found && res.worker) {
-        setIsReturning(true)
-        if (res.worker.firstName) {
-          setFirstName(res.worker.firstName)
-          setMiddleName(res.worker.middleName || '')
-          setLastName(res.worker.lastName || '')
-        } else if (res.worker.fullName) {
-          const parts = res.worker.fullName.trim().split(/\s+/)
-          if (parts.length === 1) {
-            setFirstName(parts[0])
-            setMiddleName('')
-            setLastName('')
-          } else if (parts.length === 2) {
-            setFirstName(parts[0])
-            setMiddleName('')
-            setLastName(parts[1])
-          } else {
-            setFirstName(parts[0])
-            setMiddleName(parts.slice(1, -1).join(' '))
-            setLastName(parts[parts.length - 1])
-          }
-        }
-        setEmail(res.worker.email || '')
-        if (res.worker.teams && res.worker.teams.length > 0) {
-          setTeams(res.worker.teams)
-        } else if (res.worker.team) {
-          setTeams(res.worker.team.split(',').map((t) => t.trim()).filter(Boolean))
-        } else {
-          setTeams([])
-        }
-        setHall(res.worker.hall || '')
-        setRoomNumber(res.worker.roomNumber || '')
-        setBirthDate(res.worker.birthDate || '')
-        if (res.worker.birthMonth && res.worker.birthDay) {
-          setBirthMonth(String(res.worker.birthMonth).padStart(2, '0'))
-          setBirthDay(String(res.worker.birthDay).padStart(2, '0'))
-        } else if (res.worker.birthDate) {
-          const bParts = res.worker.birthDate.split('-')
-          if (bParts.length === 3) {
-            setBirthMonth(bParts[1])
-            setBirthDay(bParts[2])
-          }
-        }
-        setExistingPhotoUrl(res.worker.profileImageUrl || null)
-        if (res.worker.role) {
-          setIsExco(true)
-          setRequestedRole(res.worker.role)
-        } else {
-          setIsExco(false)
-        }
-        setStep(2)
-      } else {
-        setIsReturning(false)
-        setIsExco(false)
-        setTeams([])
-        setStep(2)
-      }
-    } catch {
-      setError('Network verification error. Please try again.')
-    } finally {
-      setCheckingPhone(false)
-    }
+    // No lookup by phone: it exposed other workers' details to anyone (S2).
+    // Step 1 always continues to a new registration; registerWorker refuses
+    // to touch an existing record until sign-in lands (Phase 3).
+    setIsReturning(false)
+    setIsExco(false)
+    setTeams([])
+    setStep(2)
   }
 
   // Final Submission
