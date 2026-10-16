@@ -75,8 +75,8 @@ for (const source of publishedDocs) {
   try {
     await client.transaction().create(draft).delete(source._id).commit({ visibility: 'sync' })
     migrated += 1
-  } catch {
-    // Do not log document IDs or record content. A rerun safely picks up remaining records.
+  } catch (err) {
+    console.error('Migration error for ' + source._id + ':', err?.message || err)
     failures += 1
   }
 }

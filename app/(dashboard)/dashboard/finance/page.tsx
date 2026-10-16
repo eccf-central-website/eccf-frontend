@@ -1,37 +1,37 @@
 /**
- * Finance — /dashboard/finance
+ * Finance Ledger — /dashboard/finance
  *
- * Stub until feature/dashboard-ledger-forms:
- * guards direct-URL access with requireSection() and
- * already fetches the section's data, so the dev switcher's slow / empty /
- * error states exercise loading.tsx, SectionEmpty and error.tsx here.
+ * Exco Finance ledger: tracks tithes, offerings, project levies, online giving,
+ * and fellowship expenses. Records are securely stored as private drafts.
  */
 
-import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
-import SectionPlaceholder from '@/components/dashboard/shell/SectionPlaceholder'
+import PageContainer from '@/components/dashboard/shell/PageContainer'
+import FinanceClient from '@/components/dashboard/finance/FinanceClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listFinance } from '@/lib/dashboard/data'
+import { Wallet } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default async function FinancePage() {
   await requireSection('finance')
   const rows = await listFinance()
 
-  if (rows.length === 0) {
-    return (
-      <SectionEmpty
-        section="finance"
-        title="No finance entries yet"
-        description="Add the first income or expense entry and the ledger will start here."
-      />
-    )
-  }
-
   return (
-    <SectionPlaceholder
-      section="finance"
-      branch="feature/dashboard-ledger-forms"
-      description="Finance ledger for expenses and cash income, with an Add entry form."
-      count={rows.length}
-    />
+    <PageContainer>
+      <div className="flex flex-col gap-2 border-b pb-5 mb-6">
+        <div className="flex items-center gap-2.5 text-primary">
+          <Wallet className="h-6 w-6" />
+          <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Finance Ledger
+          </h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Track fellowship income and expenditures. Records are kept in private draft storage per SDD financial compliance guidelines.
+        </p>
+      </div>
+
+      <FinanceClient initialEntries={rows} />
+    </PageContainer>
   )
 }

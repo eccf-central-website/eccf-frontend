@@ -107,6 +107,12 @@ export function hasPermission(role: WorkerRole, permission: DashboardPermission)
   return PERMISSIONS[permission].includes(role)
 }
 
+export function requirePermission(role: string, permission: DashboardPermission): void {
+  if (!isWorkerRole(role) || !hasPermission(role, permission)) {
+    throw new Error(`Permission denied for role ${role} on ${permission}`)
+  }
+}
+
 /** hall_rep sees only workers from their own hall; other roles see all. */
 export function isHallScoped(role: WorkerRole): boolean {
   return role === 'hall_rep'
