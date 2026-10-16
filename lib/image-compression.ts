@@ -1,6 +1,6 @@
 /**
  * Client-Side Image Compression & Base64 Encoder
- * 
+ *
  * System Design Reference: SDD §3.2, §4.6, §6.4
  * Resizes and compresses user-uploaded images in the browser before network transmission.
  * Reduces 5MB-15MB camera portraits to ~150KB-300KB JPEG Base64 payloads,

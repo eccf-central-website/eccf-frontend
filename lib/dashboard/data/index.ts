@@ -94,7 +94,7 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
 
 /** Team used to scope team_lead reads; null means all teams. */
 function teamScope(session: ECCFSession): string | null {
-  if (!isTeamScoped(session.role, session)) return null
+  if (!isTeamScoped(session.role)) return null
   return session.team || '__no-team__'
 }
 

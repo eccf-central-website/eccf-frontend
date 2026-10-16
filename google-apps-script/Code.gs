@@ -1,8 +1,8 @@
 /**
  * ECCF Central Website — Google Apps Script Image Upload Bridge
- * 
+ *
  * System Design Reference: SDD §4.6, §5.2, §6.4, §7.1
- * 
+ *
  * Receives signed Base64 image uploads from the Next.js server only,
  * decodes the binary stream on Google's V8 infrastructure, saves the file
  * to the fellowship's Google Drive shared folder, sets public read permissions,
@@ -65,7 +65,7 @@ function doPost(e) {
     if (cleanBase64.indexOf(',') > -1) {
       var header = cleanBase64.split(',')[0];
       cleanBase64 = cleanBase64.split(',')[1];
-      
+
       var match = header.match(/:(.*?);/);
       if (match && match[1]) {
         mimeType = match[1];
@@ -118,10 +118,10 @@ function doPost(e) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     var fileId = file.getId();
-    
+
     // Google's high-speed direct CDN asset link (best for <img> tags and avatars)
     var cdnDirectUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
-    
+
     // Fallback direct download/stream link
     var driveDirectUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
 
