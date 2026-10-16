@@ -119,7 +119,15 @@ export async function requestWorkerSelfServiceLink(input: {
     const identifier = input.identifier?.trim() || ''
     if (!identifier || !['profile', 'password'].includes(input.purpose)) return genericResponse
     if (!(await verifyTurnstileToken(input.turnstileToken))) return genericResponse
-    if (!selfServiceEmailer || !process.env.NEXTAUTH_URL) return genericResponse
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:3000'
+    if (!selfServiceEmailer || !baseUrl) {
+      console.warn('[requestWorkerSelfServiceLink] Missing selfServiceEmailer (RESEND_API_KEY) or baseUrl')
+      return genericResponse
+    }
 
     const cleanEmail = identifier.toLowerCase()
     const cleanPhone = identifier.replace(/\s+/g, '')
@@ -151,8 +159,11 @@ export async function requestWorkerSelfServiceLink(input: {
 
     const token = randomBytes(32).toString('base64url')
     const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
-    await patchPrivateDocument(worker._id)
-      .ifRevisionId(worker._rev)
+    const patchBuilder = patchPrivateDocument(worker._id)
+    if (worker._id.startsWith('drafts.')) {
+      patchBuilder.ifRevisionId(worker._rev)
+    }
+    await patchBuilder
       .set({
         selfServiceTokenHash: hashSelfServiceToken(token),
         selfServiceTokenPurpose: input.purpose,
@@ -161,7 +172,7 @@ export async function requestWorkerSelfServiceLink(input: {
       })
       .commit()
 
-    const confirmationUrl = new URL(input.purpose === 'profile' ? '/register' : '/login', process.env.NEXTAUTH_URL)
+    const confirmationUrl = new URL(input.purpose === 'profile' ? '/register' : '/login', baseUrl)
     confirmationUrl.searchParams.set('selfServiceToken', token)
     const subject = input.purpose === 'profile' ? 'Confirm your ECCF worker profile update' : 'Confirm your ECCF dashboard password setup'
     const explanation = input.purpose === 'profile'
@@ -175,9 +186,9 @@ export async function requestWorkerSelfServiceLink(input: {
       text: `${explanation}\n\n${confirmationUrl.toString()}\n\nThis link expires in 15 minutes. If you did not request this, ignore this message.`,
     })
     return genericResponse
-  } catch {
+  } catch (err) {
     // Keep responses generic so account existence and delivery state are not exposed.
-    console.error('[requestWorkerSelfServiceLink] Request could not be completed.')
+    console.error('[requestWorkerSelfServiceLink] Request could not be completed:', err)
     return genericResponse
   }
 }

@@ -51,7 +51,7 @@ export const sanityPrivateClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN,
+  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
 })
 
 /** Draft IDs must be used for private operational document mutations. */

@@ -29,8 +29,8 @@ export default function Footer() {
                 />
               </div>
               <div>
-                <span className="text-2xl sm:text-3xl font-black text-[#0095ff] tracking-tight block">
-                  ECCF
+                <span className="text-2xl sm:text-3xl font-serif font-normal text-[#0095ff] tracking-tight block">
+                  ECCF Family
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-600 tracking-normal block mt-0.5">
                   ESUI Christian Campus Fellowship

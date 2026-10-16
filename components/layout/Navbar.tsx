@@ -79,8 +79,8 @@ export default function Navbar() {
             />
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
-              ECCF
+            <span className="block text-xl sm:text-2xl font-serif font-normal text-slate-950 tracking-tight leading-none">
+              ECCF Family
             </span>
             <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5 truncate max-w-[calc(100vw-130px)] sm:max-w-none">
               ESUI Christian Campus Fellowship
@@ -89,7 +89,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links with Persistent Active State */}
-        <ul className="hidden md:flex items-center gap-2 lg:gap-3">
+        <ul className="hidden md:flex items-center gap-1.5 lg:gap-2.5">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
             const isPending = pendingHref === link.href
@@ -99,15 +99,15 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-200 focus:outline-none ${
+                  className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-base font-semibold transition-all duration-200 focus:outline-none ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/70 shadow-sm'
+                      ? 'bg-sky-50 text-[#0095ff] font-bold border border-sky-200/70 shadow-sm'
                       : isPending
                       ? 'bg-sky-50/60 text-[#0095ff] animate-pulse'
                       : 'text-slate-600 hover:text-[#0095ff] hover:bg-slate-50'
                   }`}
                 >
-                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff]" />}
+                  {isPending && <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />}
                   {active && !isPending && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#0095ff] shrink-0" />
                   )}
@@ -155,9 +155,9 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm sm:text-base font-bold uppercase tracking-wider transition-colors ${
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-base sm:text-lg font-semibold transition-colors ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/60'
+                      ? 'bg-sky-50 text-[#0095ff] font-bold border border-sky-200/60'
                       : isPending
                       ? 'bg-sky-50/50 text-[#0095ff]'
                       : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff]'

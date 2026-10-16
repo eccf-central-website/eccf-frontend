@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useTransition } from 'react'
 import {
   CheckCircle2,
   Circle,
-  AlertCircle,
   Search,
   Printer,
   RefreshCw,
@@ -15,11 +14,6 @@ import {
   ChevronUp,
   Bug,
   Sparkles,
-  ShieldAlert,
-  Smartphone,
-  ExternalLink,
-  Download,
-  Share2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -67,7 +61,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   const [defectNotes, setDefectNotes] = useState('')
 
   // Loading & Transitions
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [isSyncing, setIsSyncing] = useState(false)
 
   // 1. Initialize Tester Name from LocalStorage
@@ -600,7 +594,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
           {defects.length === 0 ? (
             <div className="py-8 text-center text-xs sm:text-sm text-slate-500">
-              🎉 No open defects recorded! If you find an issue while testing, tap "Report a Bug".
+              No open defects recorded! If you find an issue while testing, tap &quot;Report a Bug&quot;.
             </div>
           ) : (
             <div className="space-y-3">

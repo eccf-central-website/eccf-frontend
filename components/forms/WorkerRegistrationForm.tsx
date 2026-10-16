@@ -535,7 +535,7 @@ export function WorkerRegistrationForm() {
 
       {/* Main Interactive Container */}
       <div className="space-y-6">
-        {(step === 1 && Boolean(updateIdentifier.trim()) || (isReturning && step === 4) || (!isReturning && step === 9)) && (
+        {((isReturning && step === 4) || (!isReturning && step === 9)) && (
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
             <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to continue.</p>
             <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
@@ -610,6 +610,12 @@ export function WorkerRegistrationForm() {
                   aria-label="Email or phone number on your worker profile"
                   className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
                 />
+                {Boolean(updateIdentifier.trim()) && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to receive your link:</p>
+                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleRequestUpdateLink}

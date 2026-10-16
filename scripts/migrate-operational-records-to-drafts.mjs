@@ -49,7 +49,7 @@ if (!execute) {
 
 const draftIds = publishedDocs.map((doc) => `drafts.${doc._id}`)
 const existingDraftIds = draftIds.length
-  ? await client.withConfig({ perspective: 'raw' }).fetch<string[]>(
+  ? await client.withConfig({ perspective: 'raw' }).fetch(
       '*[_id in $ids]._id',
       { ids: draftIds }
     )
