@@ -45,28 +45,19 @@ export interface WorkerRegistrationResult {
   message?: string
 }
 
+/**
+ * Resolve a team name to an EXISTING published teamUnit (case-insensitive
+ * exact name). Returns null for unknown teams — anonymous registrations must
+ * never create teamUnit documents, and `match` is too loose (S7).
+ */
 async function resolveTeamReference(
   teamName: string
-): Promise<{ _type: 'reference'; _ref: string }> {
-  const normalized = teamName.trim()
-  const existingTeam = await sanityWriteClient.fetch<{ _id: string; name: string }>(
-    `*[_type == "teamUnit" && (lower(name) == lower($name) || name match $name)][0]{ _id, name }`,
-    { name: normalized }
+): Promise<{ _type: 'reference'; _ref: string } | null> {
+  const existingTeam = await sanityWriteClient.fetch<{ _id: string } | null>(
+    `*[_type == "teamUnit" && !(_id in path("drafts.**")) && lower(name) == lower($name)][0]{ _id }`,
+    { name: teamName.trim() }
   )
-
-  if (existingTeam?._id) {
-    return { _type: 'reference', _ref: existingTeam._id }
-  }
-
-  // Auto-create teamUnit document in Sanity if not present
-  const newTeam = await sanityWriteClient.create({
-    _type: 'teamUnit',
-    name: normalized,
-    description: `${normalized} operational team of ECCF.`,
-    order: 10,
-  })
-
-  return { _type: 'reference', _ref: newTeam._id }
+  return existingTeam?._id ? { _type: 'reference', _ref: existingTeam._id } : null
 }
 
 export async function registerWorker(
@@ -203,7 +194,12 @@ export async function registerWorker(
     }
 
     // Resolve team references to match Sanity schema
-    const teamReferences = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
+    const resolvedTeams = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
+    const unknownTeams = cleanTeams.filter((_, i) => !resolvedTeams[i])
+    if (unknownTeams.length > 0) {
+      return { ok: false, error: `Unknown team: ${unknownTeams.join(', ')}. Please choose from the listed teams.` }
+    }
+    const teamReferences = resolvedTeams.filter((ref): ref is { _type: 'reference'; _ref: string } => ref !== null)
     const primaryTeamReference = teamReferences[0]
 
     // 3. Process Birthday Picture via Google Apps Script bridge if provided
