@@ -24,8 +24,8 @@ export interface WorkerRegistrationInput {
   lastName?: string
   email: string
   phoneNumber: string
-  team?: string
-  teams?: string[]
+  /** Published teamUnit _ids (from the options rendered on /register). */
+  teamIds: string[]
   hall: string
   roomNumber: string
   birthDate?: string
@@ -49,19 +49,26 @@ export interface WorkerRegistrationResult {
   message?: string
 }
 
+type TeamReference = { _type: 'reference'; _ref: string }
+
 /**
- * Resolve a team name to an EXISTING published teamUnit (case-insensitive
- * exact name). Returns null for unknown teams — anonymous registrations must
- * never create teamUnit documents, and `match` is too loose (S7).
+ * Resolve selected teamUnit _ids to references, checking each is an EXISTING
+ * published teamUnit (S7). Anonymous registrations never create teamUnit docs
+ * and never match teams by name. Returns null if any id is unknown.
  */
-async function resolveTeamReference(
-  teamName: string
-): Promise<{ _type: 'reference'; _ref: string } | null> {
-  const existingTeam = await sanityWriteClient.fetch<{ _id: string } | null>(
-    `*[_type == "teamUnit" && !(_id in path("drafts.**")) && lower(name) == lower($name)][0]{ _id }`,
-    { name: teamName.trim() }
+async function resolveTeamReferences(
+  teamIds: string[]
+): Promise<{ references: TeamReference[]; names: string[] } | null> {
+  const found = await sanityWriteClient.fetch<{ _id: string; name?: string }[]>(
+    `*[_type == "teamUnit" && _id in $ids && !(_id in path("drafts.**"))]{ _id, name }`,
+    { ids: teamIds }
   )
-  return existingTeam?._id ? { _type: 'reference', _ref: existingTeam._id } : null
+  const byId = new Map(found.map((t) => [t._id, t]))
+  if (!teamIds.every((id) => byId.has(id))) return null
+  return {
+    references: teamIds.map((id) => ({ _type: 'reference', _ref: id })),
+    names: teamIds.map((id) => byId.get(id)?.name || ''),
+  }
 }
 
 export async function registerWorker(
@@ -91,18 +98,16 @@ export async function registerWorker(
     if (!input.phoneNumber || input.phoneNumber.trim().length < 8) {
       return { ok: false, error: 'Please enter a valid phone number.' }
     }
-    const selectedTeams: string[] = (
-      input.teams && input.teams.length > 0
-        ? input.teams
-        : input.team
-          ? [input.team]
-          : []
-    )
+    const selectedTeamIds: string[] = (Array.isArray(input.teamIds) ? input.teamIds : [])
+      .filter((t): t is string => typeof t === 'string')
       .map((t) => t.trim())
       .filter((t) => t.length > 0)
 
-    if (selectedTeams.length === 0) {
+    if (selectedTeamIds.length === 0) {
       return { ok: false, error: 'Please select at least one operational team.' }
+    }
+    if (selectedTeamIds.length > 20 || selectedTeamIds.some((id) => !/^[A-Za-z0-9._-]{1,128}$/.test(id) || id.startsWith('drafts.'))) {
+      return { ok: false, error: 'Please choose your teams from the listed options.' }
     }
     if (!input.hall || input.hall.trim().length === 0) {
       return { ok: false, error: 'Please select your hall of residence.' }
@@ -135,8 +140,7 @@ export async function registerWorker(
 
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
     const phoneBlindIndex = createBlindIndex(cleanPhone)
-    const cleanTeams = Array.from(new Set(selectedTeams))
-    const cleanTeam = cleanTeams[0] || 'General'
+    const cleanTeamIds = Array.from(new Set(selectedTeamIds))
     const today = new Date().toISOString().split('T')[0]
 
     // 2. Existing record? This action is unauthenticated, so it must NEVER
@@ -162,14 +166,14 @@ export async function registerWorker(
       }
     }
 
-    // Resolve team references to match Sanity schema
-    const resolvedTeams = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
-    const unknownTeams = cleanTeams.filter((_, i) => !resolvedTeams[i])
-    if (unknownTeams.length > 0) {
-      return { ok: false, error: `Unknown team: ${unknownTeams.join(', ')}. Please choose from the listed teams.` }
+    // Check the selected teams against published teamUnit docs (S7)
+    const resolvedTeams = await resolveTeamReferences(cleanTeamIds)
+    if (!resolvedTeams) {
+      return { ok: false, error: 'One or more selected teams no longer exist. Please reload the page and choose again.' }
     }
-    const teamReferences = resolvedTeams.filter((ref): ref is { _type: 'reference'; _ref: string } => ref !== null)
+    const teamReferences = resolvedTeams.references
     const primaryTeamReference = teamReferences[0]
+    const cleanTeam = resolvedTeams.names[0] || 'General'
 
     // 3. Process Birthday Picture via Google Apps Script bridge if provided
     let profileImageUrl: string | undefined = undefined

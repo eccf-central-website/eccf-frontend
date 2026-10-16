@@ -23,8 +23,13 @@ import {
   KeyRound,
 } from 'lucide-react'
 import { registerWorker } from '@/app/actions/worker-registration'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import type { WorkerRole } from '@/types'
+
+/** A published teamUnit, loaded on the server. `id` is what registerWorker accepts. */
+export interface TeamOption {
+  id: string
+  name: string
+}
 
 const HALLS_OF_RESIDENCE = [
   'Hall 1',
@@ -68,7 +73,7 @@ const VALID_WORKFORCE_CODES = [
   (process.env.NEXT_PUBLIC_WORKER_ACCESS_CODE || '').toUpperCase().trim(),
 ].filter(Boolean)
 
-export function WorkerRegistrationForm() {
+export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOption[] }) {
   const searchParams = useSearchParams()
   const codeParam = searchParams.get('code') || searchParams.get('passcode') || searchParams.get('key') || ''
 
@@ -123,7 +128,9 @@ export function WorkerRegistrationForm() {
   const [lastName, setLastName] = useState('')
   const fullName = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ')
   const [email, setEmail] = useState('')
+  // Selected teamUnit _ids
   const [teams, setTeams] = useState<string[]>([])
+  const teamNames = teams.map((id) => teamOptions.find((o) => o.id === id)?.name || id)
 
   const toggleTeam = (t: string) => {
     setTeams((prev) =>
@@ -225,8 +232,7 @@ export function WorkerRegistrationForm() {
         lastName,
         email,
         phoneNumber,
-        team: teams[0] || '',
-        teams,
+        teamIds: teams,
         hall,
         roomNumber,
         birthDate: effectiveBirthDate,
@@ -519,7 +525,7 @@ export function WorkerRegistrationForm() {
                   </h4>
                   <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">
                     Operational Team{teams.length > 1 ? 's' : ''}:{' '}
-                    <strong>{teams.join(', ') || 'Unassigned'}</strong> · Previous record:{' '}
+                    <strong>{teamNames.join(', ') || 'Unassigned'}</strong> · Previous record:{' '}
                     <strong>
                       {hall || 'Unassigned'}, Room {roomNumber || '—'}
                     </strong>
@@ -588,7 +594,7 @@ export function WorkerRegistrationForm() {
                     Select all teams you belong to for this session. A worker can serve in multiple teams.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
-                    {FELLOWSHIP_TEAMS.map((t) => {
+                    {teamOptions.map(({ id: t, name }) => {
                       const isSelected = teams.includes(t)
                       return (
                         <button
@@ -609,7 +615,7 @@ export function WorkerRegistrationForm() {
                             >
                               {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                             </span>
-                            <span>{t}</span>
+                            <span>{name}</span>
                           </span>
                         </button>
                       )
@@ -756,7 +762,7 @@ export function WorkerRegistrationForm() {
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">Operational Team{teams.length > 1 ? 's' : ''}:</span>
-                  <span className="font-bold text-slate-900">{teams.join(', ')}</span>
+                  <span className="font-bold text-slate-900">{teamNames.join(', ')}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
                   <span className="text-slate-500 font-medium">New Residence:</span>
@@ -972,7 +978,7 @@ export function WorkerRegistrationForm() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
-                {FELLOWSHIP_TEAMS.map((t) => {
+                {teamOptions.map(({ id: t, name }) => {
                   const isSelected = teams.includes(t)
                   return (
                     <button
@@ -993,7 +999,7 @@ export function WorkerRegistrationForm() {
                         >
                           {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                         </span>
-                        <span>{t}</span>
+                        <span>{name}</span>
                       </span>
                       {isSelected && (
                         <span className="text-xs font-medium text-sky-600 bg-sky-100/60 px-2 py-0.5 rounded-md">
@@ -1451,7 +1457,7 @@ export function WorkerRegistrationForm() {
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Operational Team{teams.length > 1 ? 's' : ''}:</span>
-                  <span className="font-bold text-slate-900">{teams.join(', ')}</span>
+                  <span className="font-bold text-slate-900">{teamNames.join(', ')}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Hostel / Room:</span>
