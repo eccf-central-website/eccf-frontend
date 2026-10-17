@@ -12,12 +12,13 @@
 'use server'
 
 import bcrypt from 'bcryptjs'
-import { createHash, randomBytes } from 'crypto'
+import { createHash, randomBytes, randomInt } from 'crypto'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
+import { constantTimeStringEqual } from '@/lib/security/constant-time'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
 
@@ -66,8 +67,17 @@ export interface CheckWorkerPhoneResult {
 }
 
 export interface VerifyWorkerOtpInput {
-  phoneNumber: string
+  /** The phone number or email the code was requested with. */
+  identifier: string
   otp: string
+}
+
+/** Wrong guesses allowed per emailed code before it is invalidated. */
+const MAX_OTP_ATTEMPTS = 5
+
+function generateOtp(): string {
+  // CSPRNG, not Math.random: the code is a credential.
+  return String(randomInt(100000, 1000000))
 }
 
 export interface VerifyWorkerOtpResult {
@@ -210,8 +220,13 @@ async function sendWorkerVerificationEmail({
 
   const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes. If you did not request this, no action is needed.`
 
+  // The code and link are credentials: they are only ever logged in local
+  // development, never in production (where logs are shared and retained).
+  const isDev = process.env.NODE_ENV !== 'production'
+
   if (!selfServiceEmailer) {
-    console.warn('[sendWorkerVerificationEmail] Missing selfServiceEmailer (RESEND_API_KEY). Simulating dispatch in log.')
+    console.warn('[sendWorkerVerificationEmail] RESEND_API_KEY is not set; verification email not sent.')
+    if (!isDev) return false
     console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
     return true
   }
@@ -228,7 +243,7 @@ async function sendWorkerVerificationEmail({
   } catch (err: unknown) {
     console.error('[sendWorkerVerificationEmail] Resend dispatch error:', err)
     const errMsg = err instanceof Error ? err.message : String(err)
-    if (errMsg.includes('only send testing emails to your own email address')) {
+    if (isDev && errMsg.includes('only send testing emails to your own email address')) {
       console.warn('[sendWorkerVerificationEmail] Resend testing domain notice. Simulating dispatch in log.')
       console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
       return true
@@ -289,7 +304,8 @@ export async function checkWorkerPhoneAndInitiateVerification(
       return { ok: false, exists: false, error: 'Please enter a valid phone number (at least 8 digits).' }
     }
 
-    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+    // Always required: this action emails a code and confirms a phone is registered.
+    if (!(await verifyTurnstileToken(input.turnstileToken))) {
       return { ok: false, exists: false, error: 'Complete the security verification and try again.' }
     }
 
@@ -350,7 +366,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
 
     // Generate Token & 6-digit OTP
     const token = randomBytes(32).toString('base64url')
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
+    const otp = generateOtp()
     const expiresAt = new Date(now + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
 
     const patchBuilder = patchPrivateDocument(worker._id)
@@ -362,6 +378,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
       .set({
         selfServiceTokenHash: hashSelfServiceToken(token),
         selfServiceOtpHash: hashSelfServiceToken(otp),
+        selfServiceOtpAttempts: 0,
         selfServiceTokenPurpose: 'profile',
         selfServiceTokenExpiresAt: expiresAt,
         selfServiceRequestedAt: new Date().toISOString(),
@@ -396,21 +413,25 @@ export async function verifyWorkerOtp(
   input: VerifyWorkerOtpInput
 ): Promise<VerifyWorkerOtpResult> {
   try {
-    const rawPhone = input.phoneNumber?.trim() || ''
-    const cleanPhone = rawPhone.replace(/\s+/g, '')
+    const identifier = input.identifier?.trim() || ''
+    const isEmail = identifier.includes('@')
+    const cleanEmail = isEmail ? identifier.toLowerCase() : ''
+    const cleanPhone = isEmail ? '' : identifier.replace(/\s+/g, '')
     const cleanOtp = input.otp?.trim().replace(/\s+/g, '') || ''
+    const invalidCode = 'Invalid or expired verification code. Please check your email or request a new code.'
 
-    if (!cleanPhone || cleanPhone.length < 8) {
-      return { ok: false, error: 'Please enter a valid phone number.' }
+    if (isEmail ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) : cleanPhone.length < 8) {
+      return { ok: false, error: 'Please enter a valid phone number or email.' }
     }
     if (!cleanOtp || cleanOtp.length !== 6 || !/^\d{6}$/.test(cleanOtp)) {
       return { ok: false, error: 'Please enter a valid 6-digit verification code.' }
     }
 
-    const indexes = Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
-    const otpHash = hashSelfServiceToken(cleanOtp)
+    const indexes = isEmail ? [] : Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
     const nowIso = new Date().toISOString()
 
+    // Find the worker with an ACTIVE profile code first, without matching the
+    // code itself, so every guess can be counted against that code.
     const worker = await sanityPrivateClient.fetch<{
       _id: string
       _rev: string
@@ -429,27 +450,46 @@ export async function verifyWorkerOtp(
       role?: WorkerRole
       requestedRole?: WorkerRole
       isExcoApproved?: boolean
-      passwordHash?: string
-      selfServiceTokenHash?: string
+      selfServiceOtpHash?: string
+      selfServiceOtpAttempts?: number
     } | null>(
       `*[_type == "worker" && (
-        phoneBlindIndex in $indexes ||
-        phoneNumber == $cleanPhone
-      ) && selfServiceOtpHash == $otpHash &&
+        ($isEmail && lower(email) == $cleanEmail) ||
+        (!$isEmail && (phoneBlindIndex in $indexes || phoneNumber == $cleanPhone))
+      ) && defined(selfServiceOtpHash) &&
         selfServiceTokenExpiresAt > $nowIso &&
-        selfServiceTokenPurpose == 'profile'][0]{
+        selfServiceTokenPurpose == 'profile'] | order(_updatedAt desc)[0]{
         _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
-        isExcoApproved, passwordHash, selfServiceTokenHash
+        isExcoApproved, selfServiceOtpHash, selfServiceOtpAttempts
       }`,
-      { cleanPhone, indexes, otpHash, nowIso }
+      { isEmail, cleanEmail, cleanPhone, indexes, nowIso }
     )
 
-    if (!worker) {
-      return { ok: false, error: 'Invalid or expired verification code. Please check your email or request a new code.' }
+    if (!worker || !worker.selfServiceOtpHash) {
+      return { ok: false, error: invalidCode }
     }
+
+    // Count this guess atomically before checking it. After MAX_OTP_ATTEMPTS
+    // wrong guesses the code is destroyed and a new one must be requested, so a
+    // 6-digit code cannot be brute-forced.
+    const counted = await patchPrivateDocument(worker._id)
+      .setIfMissing({ selfServiceOtpAttempts: 0 })
+      .inc({ selfServiceOtpAttempts: 1 })
+      .commit<{ _rev: string; selfServiceOtpAttempts?: number }>()
+    const attempts = counted.selfServiceOtpAttempts ?? MAX_OTP_ATTEMPTS + 1
+    const codeMatches = constantTimeStringEqual(hashSelfServiceToken(cleanOtp), worker.selfServiceOtpHash)
+
+    if (attempts > MAX_OTP_ATTEMPTS || !codeMatches) {
+      if (attempts >= MAX_OTP_ATTEMPTS) {
+        await patchPrivateDocument(worker._id).unset(['selfServiceOtpHash']).commit().catch(() => null)
+        return { ok: false, error: 'Too many incorrect codes. Request a new verification code.' }
+      }
+      return { ok: false, error: invalidCode }
+    }
+    worker._rev = counted._rev
 
     // Generate a fresh session token for the cookie so registerWorker can authenticate the update
     const sessionToken = randomBytes(32).toString('base64url')
@@ -465,7 +505,7 @@ export async function verifyWorkerOtp(
         selfServiceTokenHash: sessionTokenHash,
         selfServiceTokenExpiresAt: expiresAt,
       })
-      .unset(['selfServiceOtpHash'])
+      .unset(['selfServiceOtpHash', 'selfServiceOtpAttempts'])
       .commit()
 
     const cookieStore = cookies()
@@ -518,11 +558,13 @@ export async function verifyWorkerOtp(
   }
 }
 
+// Never returns personal data (S2): the caller is unauthenticated. The client
+// keeps the identifier it typed and passes it to verifyWorkerOtp.
 export async function requestWorkerSelfServiceLink(input: {
   identifier: string
   purpose: 'profile' | 'password'
   turnstileToken?: string
-}): Promise<{ ok: true; message: string; maskedEmail?: string; phoneNumber?: string }> {
+}): Promise<{ ok: true; message: string; maskedEmail?: string }> {
   const genericResponse = selfServiceResponse()
   try {
     const identifier = input.identifier?.trim() || ''
@@ -572,12 +614,11 @@ export async function requestWorkerSelfServiceLink(input: {
         ok: true,
         message: `A verification message was recently sent to ${maskEmail(email)}. Please check your inbox or wait a minute to request a new code.`,
         maskedEmail: maskEmail(email),
-        phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
       }
     }
 
     const token = randomBytes(32).toString('base64url')
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
+    const otp = generateOtp()
     const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
     const patchBuilder = patchPrivateDocument(worker._id)
     if (worker._id.startsWith('drafts.')) {
@@ -587,6 +628,7 @@ export async function requestWorkerSelfServiceLink(input: {
       .set({
         selfServiceTokenHash: hashSelfServiceToken(token),
         selfServiceOtpHash: hashSelfServiceToken(otp),
+        selfServiceOtpAttempts: 0,
         selfServiceTokenPurpose: input.purpose,
         selfServiceTokenExpiresAt: expiresAt,
         selfServiceRequestedAt: new Date().toISOString(),
@@ -605,7 +647,6 @@ export async function requestWorkerSelfServiceLink(input: {
         ok: true,
         message: `A 6-digit verification code and secure unlock link have been dispatched to ${maskEmail(email)}.`,
         maskedEmail: maskEmail(email),
-        phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
       }
     }
 
@@ -900,7 +941,6 @@ export async function registerWorker(
         }
       }
     }
-
     // Check the selected teams against published teamUnit docs (S7)
     const resolvedTeams = await resolveTeamReferences(cleanTeamIds)
     if (!resolvedTeams) {

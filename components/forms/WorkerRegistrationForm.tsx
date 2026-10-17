@@ -88,6 +88,8 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
   const [requestingUpdateLink, setRequestingUpdateLink] = useState(false)
   const [updateLinkMessage, setUpdateLinkMessage] = useState<string | null>(null)
   const [updateIdentifier, setUpdateIdentifier] = useState('')
+  // Phone or email the current verification code was requested with
+  const [verifyIdentifier, setVerifyIdentifier] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
@@ -272,6 +274,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
 
       // Existing worker detected! Do NOT display details right away.
       // Transition to security verification state
+      setVerifyIdentifier(clean)
       setVerificationPending(true)
       setMaskedEmail(result.maskedEmail || 'your registered email')
       setVerificationNotice(
@@ -302,7 +305,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
     setVerifyingOtp(true)
     try {
       const result = await verifyWorkerOtp({
-        phoneNumber,
+        identifier: verifyIdentifier,
         otp: clean,
       })
 
@@ -344,8 +347,15 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
     setVerificationNotice(null)
     setCheckingPhone(true)
     try {
+      // Resend through the same channel the code was first requested with.
+      if (verifyIdentifier.includes('@')) {
+        const result = await requestWorkerSelfServiceLink({ identifier: verifyIdentifier, purpose: 'profile', turnstileToken })
+        setVerificationNotice(result.message)
+        setResendCooldown(60)
+        return
+      }
       const result = await checkWorkerPhoneAndInitiateVerification({
-        phoneNumber,
+        phoneNumber: verifyIdentifier,
         turnstileToken: turnstileToken || undefined,
       })
       if (result.ok) {
@@ -384,9 +394,8 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
       setUpdateLinkMessage(result.message)
       if (result.maskedEmail) {
         setMaskedEmail(result.maskedEmail)
-        if (result.phoneNumber) {
-          setPhoneNumber(result.phoneNumber)
-        }
+        // Keep what the user typed; the server never returns their phone here.
+        setVerifyIdentifier(updateIdentifier.trim())
         setVerificationPending(true)
         setResendCooldown(60)
       }
