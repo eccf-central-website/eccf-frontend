@@ -11,7 +11,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Loader2 } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 const navLinks = [
   { label: 'Sermons', href: '/sermons' },
@@ -41,7 +41,7 @@ export default function Navbar() {
     return () => window.removeEventListener('hashchange', syncHash)
   }, [])
 
-  // Reset pending state on route change
+  // Sync section hash and reset pending on route change
   useEffect(() => {
     setPendingHref(null)
     if (typeof window !== 'undefined') {
@@ -155,33 +155,32 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links with Persistent Active State */}
+        {/* Desktop Navigation Links with Persistent Active State & Hover Line Animation */}
         <ul className="hidden lg:flex items-center gap-1 xl:gap-2.5">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
-            const isPending = pendingHref === link.href
 
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm xl:text-base whitespace-nowrap transition-colors duration-200 focus:outline-none ${
+                  className={`group relative inline-flex items-center px-3 xl:px-4 py-2 text-sm xl:text-base whitespace-nowrap transition-colors duration-200 focus:outline-none ${
                     active
                       ? 'text-[#0095ff] font-bold'
-                      : isPending
-                      ? 'text-[#0095ff] animate-pulse font-semibold'
                       : 'text-slate-600 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
-                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff] shrink-0" />}
                   <span>{link.label}</span>
-                  {active && !isPending && (
-                    <span
-                      className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-200"
-                      aria-hidden="true"
-                    />
-                  )}
+                  {/* Underline indicator: stays visible when active, animates drawn from left to right on hover */}
+                  <span
+                    className={`absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
+                      active
+                        ? 'scale-x-100 opacity-100'
+                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                    }`}
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             )
@@ -218,23 +217,27 @@ export default function Navbar() {
         <ul className="flex flex-col px-6 pt-3.5 pb-4 gap-2">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
-            const isPending = pendingHref === link.href
 
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`flex items-center justify-between rounded-r-xl px-4 py-3 text-base sm:text-lg transition-colors ${
+                  className={`group relative flex items-center justify-between rounded-r-xl px-4 py-3 text-base sm:text-lg transition-colors overflow-hidden ${
                     active
                       ? 'text-[#0095ff] font-bold border-l-4 border-[#0095ff] bg-sky-50/60 pl-3.5'
-                      : isPending
-                      ? 'text-[#0095ff] bg-sky-50/30 font-semibold'
                       : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
                   <span>{link.label}</span>
-                  {isPending && <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />}
+                  <span
+                    className={`absolute bottom-0 left-4 right-4 h-[2px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
+                      active
+                        ? 'scale-x-0 opacity-0'
+                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                    }`}
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             )

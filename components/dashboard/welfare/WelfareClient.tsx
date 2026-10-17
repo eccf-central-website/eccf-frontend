@@ -119,32 +119,32 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs border-amber-200/60 bg-amber-50/30">
+        <Card className="shadow-xs border-amber-500/25 bg-amber-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-900">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                 Pending Attention
               </span>
-              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <AlertCircle className="h-5 w-5 text-amber-500" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-amber-700">
+              <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
                 {pendingCount}
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs border-emerald-200/60 bg-emerald-50/30">
+        <Card className="shadow-xs border-emerald-500/25 bg-emerald-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-900">
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 Resolved
               </span>
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-emerald-700">
+              <span className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
                 {resolvedCount}
               </span>
             </div>
@@ -193,8 +193,8 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               key={req._id}
               className={`transition-all shadow-xs ${
                 req.status === 'Pending'
-                  ? 'border-l-4 border-l-amber-500 bg-white'
-                  : 'border-l-4 border-l-emerald-500 bg-stone-50/50'
+                  ? 'border-l-4 border-l-amber-500 bg-card'
+                  : 'border-l-4 border-l-emerald-500 bg-card/60'
               }`}
             >
               <CardContent className="pt-5 pb-5">
@@ -209,8 +209,8 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                         variant={req.status === 'Pending' ? 'outline' : 'secondary'}
                         className={
                           req.status === 'Pending'
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
-                            : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                         }
                       >
                         {req.status === 'Pending' ? 'Pending Attention' : 'Resolved'}
@@ -221,7 +221,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                       </span>
                     </div>
 
-                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3.5 rounded-xl border border-border/60">
                       {req.requestDetails}
                     </p>
                   </div>

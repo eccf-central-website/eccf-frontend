@@ -201,16 +201,16 @@ export default function SendWorkerEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl">
-        <DialogHeader className="pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0077cc]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-border text-card-foreground">
+        <DialogHeader className="pb-3 border-b border-border">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-primary">
             <Mail className="h-4 w-4" />
             <span>Exco Communication Portal</span>
           </div>
-          <DialogTitle className="font-serif text-2xl font-black text-slate-900 tracking-tight">
+          <DialogTitle className="font-serif text-2xl font-black text-foreground tracking-tight">
             Send Email to Workers
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600">
+          <DialogDescription className="text-sm text-muted-foreground">
             {isAdmin
               ? 'Broadcast fellowship-wide notifications, email all EXCOs, or message specific operational units and individuals.'
               : `Compose and dispatch official email updates to workers in ${session.team}.`}
@@ -222,7 +222,7 @@ export default function SendWorkerEmailDialog({
           {/* AUDIENCE SELECTOR                                                */}
           {/* ================================================================ */}
           <div className="space-y-2">
-            <Label className="text-xs font-mono uppercase font-bold text-slate-600">
+            <Label className="text-xs font-mono uppercase font-bold text-muted-foreground">
               Recipient Audience
             </Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -234,16 +234,16 @@ export default function SendWorkerEmailDialog({
                     onClick={() => setAudienceType('all_workers')}
                     className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
                       audienceType === 'all_workers'
-                        ? 'border-[#0077cc] bg-sky-50/80 shadow-xs ring-1 ring-[#0077cc]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
+                        : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
                     }`}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-[#0077cc]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                       <Users className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">All Workers</p>
-                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                      <p className="font-bold text-xs text-foreground">All Workers</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
                         Fellowship-wide broadcast to all units
                       </p>
                     </div>
@@ -254,16 +254,16 @@ export default function SendWorkerEmailDialog({
                     onClick={() => setAudienceType('all_excos')}
                     className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
                       audienceType === 'all_excos'
-                        ? 'border-purple-600 bg-purple-50/80 shadow-xs ring-1 ring-purple-600'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? 'border-purple-500 bg-purple-500/15 shadow-xs ring-1 ring-purple-500'
+                        : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
                     }`}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-700">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400">
                       <ShieldCheck className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">All EXCOs</p>
-                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                      <p className="font-bold text-xs text-foreground">All EXCOs</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
                         Executive Council &amp; Unit Leads
                       </p>
                     </div>
@@ -277,18 +277,18 @@ export default function SendWorkerEmailDialog({
                 onClick={() => setAudienceType('team')}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
                   audienceType === 'team'
-                    ? 'border-[#0077cc] bg-sky-50/80 shadow-xs ring-1 ring-[#0077cc]'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
+                    : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
                 }`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
                   <Users className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-bold text-xs text-slate-900">
+                  <p className="font-bold text-xs text-foreground">
                     {isAdmin ? 'Operational Team' : `All ${session.team} Members`}
                   </p>
-                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
                     {isAdmin
                       ? 'Broadcast to a specific department'
                       : `All active workers in your team`}
@@ -302,16 +302,16 @@ export default function SendWorkerEmailDialog({
                 onClick={() => setAudienceType('specific_worker')}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
                   audienceType === 'specific_worker'
-                    ? 'border-[#0077cc] bg-sky-50/80 shadow-xs ring-1 ring-[#0077cc]'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
+                    : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
                 }`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
                   <User className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-bold text-xs text-slate-900">Specific Worker</p>
-                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                  <p className="font-bold text-xs text-foreground">Specific Worker</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
                     Send direct message to one worker
                   </p>
                 </div>
@@ -323,11 +323,11 @@ export default function SendWorkerEmailDialog({
           {/* CONDITIONAL CONTROLS (Team Picker / Worker Picker)               */}
           {/* ================================================================ */}
           {audienceType === 'team' && (
-            <div className="space-y-1.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <Label className="text-xs font-bold text-slate-700">Select Target Team</Label>
+            <div className="space-y-1.5 p-3.5 rounded-xl bg-muted/30 border border-border">
+              <Label className="text-xs font-bold text-foreground">Select Target Team</Label>
               {isAdmin ? (
                 <Select value={targetTeam} onValueChange={setTargetTeam}>
-                  <SelectTrigger className="h-10 bg-white border-slate-200 text-sm">
+                  <SelectTrigger className="h-10 bg-background border-input text-foreground text-sm">
                     <SelectValue placeholder="Choose a team..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -340,7 +340,7 @@ export default function SendWorkerEmailDialog({
                 </Select>
               ) : session.teams && session.teams.length > 1 ? (
                 <Select value={targetTeam} onValueChange={setTargetTeam}>
-                  <SelectTrigger className="h-10 bg-white border-slate-200 text-sm">
+                  <SelectTrigger className="h-10 bg-background border-input text-foreground text-sm">
                     <SelectValue placeholder="Choose your team..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -352,8 +352,8 @@ export default function SendWorkerEmailDialog({
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-[#0077cc]" />
+                <div className="p-2.5 rounded-lg bg-background border border-border text-xs font-bold text-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
                   <span>{session.team}</span>
                 </div>
               )}
@@ -361,32 +361,32 @@ export default function SendWorkerEmailDialog({
           )}
 
           {audienceType === 'specific_worker' && (
-            <div className="space-y-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="space-y-2 p-3.5 rounded-xl bg-muted/30 border border-border">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-slate-700">
+                <Label className="text-xs font-bold text-foreground">
                   Select Recipient Worker
                 </Label>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-muted-foreground">
                   {eligibleWorkers.length} available
                 </span>
               </div>
 
               {/* Worker Search Box */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Filter workers by name, team, or hall..."
                   value={workerSearch}
                   onChange={(e) => setWorkerSearch(e.target.value)}
-                  className="pl-9 h-9 bg-white text-xs rounded-lg border-slate-200"
+                  className="pl-9 h-9 bg-background text-foreground text-xs rounded-lg border-input"
                 />
               </div>
 
               {/* Worker Dropdown / List */}
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/60">
                 {searchedWorkers.length === 0 ? (
-                  <div className="p-3 text-center text-xs text-slate-500">
+                  <div className="p-3 text-center text-xs text-muted-foreground">
                     No matching workers found.
                   </div>
                 ) : (
@@ -400,17 +400,17 @@ export default function SendWorkerEmailDialog({
                         onClick={() => setSelectedWorkerId(w._id)}
                         className={`w-full flex items-center justify-between p-2.5 text-left text-xs transition-colors ${
                           isSelected
-                            ? 'bg-sky-50 text-[#0077cc] font-bold'
-                            : 'hover:bg-slate-50 text-slate-800'
+                            ? 'bg-primary/10 text-primary font-bold'
+                            : 'hover:bg-muted text-foreground'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-[10px]">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-[10px] text-foreground">
                             {w.fullName.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <p className="truncate font-medium">{w.fullName}</p>
-                            <p className="text-[10px] text-slate-400 truncate">
+                            <p className="text-[10px] text-muted-foreground truncate">
                               {w.team || 'No team'} • {w.hall || 'No hall'}
                             </p>
                           </div>
@@ -418,15 +418,15 @@ export default function SendWorkerEmailDialog({
 
                         <div className="shrink-0 flex items-center gap-1.5">
                           {hasEmail ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-medium">
                               Ready
                             </span>
                           ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-medium">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-medium">
                               No email
                             </span>
                           )}
-                          {isSelected && <CheckCircle2 className="h-4 w-4 text-[#0077cc]" />}
+                          {isSelected && <CheckCircle2 className="h-4 w-4 text-primary" />}
                         </div>
                       </button>
                     )
@@ -435,8 +435,8 @@ export default function SendWorkerEmailDialog({
               </div>
 
               {selectedWorkerObj && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-sky-50/80 border border-sky-200 text-xs text-sky-900">
-                  <User className="h-3.5 w-3.5 text-[#0077cc]" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/25 text-xs text-primary">
+                  <User className="h-3.5 w-3.5 text-primary" />
                   <span>
                     Selected: <strong>{selectedWorkerObj.fullName}</strong> ({selectedWorkerObj.team})
                   </span>
@@ -449,7 +449,7 @@ export default function SendWorkerEmailDialog({
           {/* SUBJECT INPUT                                                    */}
           {/* ================================================================ */}
           <div className="space-y-1.5">
-            <Label htmlFor="email-subject" className="text-xs font-bold text-slate-700">
+            <Label htmlFor="email-subject" className="text-xs font-bold text-foreground">
               Subject
             </Label>
             <Input
@@ -458,7 +458,7 @@ export default function SendWorkerEmailDialog({
               placeholder="e.g., Important Rehearsal Schedule for Sunday Service"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="h-11 rounded-xl bg-slate-50/50 border-slate-200 focus:bg-white text-sm"
+              className="h-11 rounded-xl bg-background border-input text-foreground text-sm"
               maxLength={200}
             />
           </div>
@@ -467,9 +467,9 @@ export default function SendWorkerEmailDialog({
           {/* QUICK TEMPLATES PILLS                                            */}
           {/* ================================================================ */}
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Sparkles className="h-3 w-3 text-amber-500" />
-              <span className="font-semibold">Quick Templates:</span>
+              <span className="font-semibold text-foreground">Quick Templates:</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               <button
@@ -480,7 +480,7 @@ export default function SendWorkerEmailDialog({
                     'Dear Worker,\n\nGrace and peace to you in the name of our Lord Jesus Christ.\n\nPlease be reminded of our upcoming team review and prayer session this week. Your presence and dedication are deeply appreciated.\n\nTime: 4:30 PM\nVenue: Fellowship Chapel\n\nRemain blessed in His service!'
                   )
                 }
-                className="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg text-xs bg-muted hover:bg-accent text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
                 Team Meeting
               </button>
@@ -492,7 +492,7 @@ export default function SendWorkerEmailDialog({
                     'Dear Brethren,\n\nWe thank God for the privilege to serve in His sanctuary this coming Sunday.\n\nKindly note your reporting time is 07:30 AM sharp for pre-service prayers and readiness check. Let us come prepared in the spirit.\n\nGod bless you abundantly!'
                   )
                 }
-                className="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg text-xs bg-muted hover:bg-accent text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
                 Sunday Roster
               </button>
@@ -504,7 +504,7 @@ export default function SendWorkerEmailDialog({
                     'Beloved Worker,\n\nJust checking in on your welfare, spiritual walk, and academic progress this semester. If there is any need or prayer request you would like the leadership to stand in faith with you for, please reach out to us.\n\nYou are valued and prayed for constantly.'
                   )
                 }
-                className="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg text-xs bg-muted hover:bg-accent text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
                 Welfare Check-in
               </button>
@@ -516,10 +516,10 @@ export default function SendWorkerEmailDialog({
           {/* ================================================================ */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="email-message" className="text-xs font-bold text-slate-700">
+              <Label htmlFor="email-message" className="text-xs font-bold text-foreground">
                 Message Body
               </Label>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-muted-foreground">
                 {message.length} characters
               </span>
             </div>
@@ -529,33 +529,33 @@ export default function SendWorkerEmailDialog({
               placeholder="Write your official message to the workers here. Paragraphs will be cleanly formatted in the email..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-sm leading-relaxed text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all resize-y"
+              className="w-full rounded-xl border border-input bg-background p-3.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-y"
             />
           </div>
 
           {/* ================================================================ */}
           {/* ESTIMATED RECIPIENTS BANNER                                      */}
           {/* ================================================================ */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-            <div className="flex items-center gap-2 text-slate-600">
-              <AlertCircle className="h-4 w-4 text-[#0077cc]" />
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4 text-primary" />
               <span>
-                Audience scope: <strong>{audienceType.replace('_', ' ').toUpperCase()}</strong>
+                Audience scope: <strong className="text-foreground">{audienceType.replace('_', ' ').toUpperCase()}</strong>
               </span>
             </div>
-            <div className="flex items-center gap-1.5 font-bold text-slate-900">
+            <div className="flex items-center gap-1.5 font-bold text-foreground">
               <span>Recipients:</span>
-              <span className="px-2 py-0.5 rounded-full bg-sky-100 text-[#0077cc] font-mono">
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
                 {estimatedRecipientCount}
               </span>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="text-[11px] text-slate-400 flex items-center gap-1">
+        <DialogFooter className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
             <span>Sender:</span>
-            <strong className="text-slate-600">{session.role === 'admin' ? 'CSGB Admin' : session.team}</strong>
+            <strong className="text-foreground">{session.role === 'admin' ? 'CSGB Admin' : session.team}</strong>
           </div>
 
           <div className="flex items-center gap-2">
@@ -564,7 +564,7 @@ export default function SendWorkerEmailDialog({
               variant="outline"
               disabled={isPending}
               onClick={() => onOpenChange(false)}
-              className="rounded-xl border-slate-200 text-xs font-bold"
+              className="rounded-xl border-border text-foreground hover:bg-accent text-xs font-bold"
             >
               Cancel
             </Button>
@@ -572,7 +572,7 @@ export default function SendWorkerEmailDialog({
               type="button"
               disabled={isPending || estimatedRecipientCount === 0}
               onClick={handleSend}
-              className="rounded-xl bg-[#0077cc] hover:bg-[#0060aa] text-white font-bold text-xs shadow-xs px-5"
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs px-5"
             >
               {isPending ? (
                 <>

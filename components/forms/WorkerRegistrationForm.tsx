@@ -20,11 +20,14 @@ import {
   Loader2,
   Lock,
   KeyRound,
+  Mail,
 } from 'lucide-react'
 import {
+  checkWorkerPhoneAndInitiateVerification,
   confirmWorkerSelfServiceLink,
   registerWorker,
   requestWorkerSelfServiceLink,
+  verifyWorkerOtp,
 } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { compressImage } from '@/lib/image-compression'
@@ -126,6 +129,23 @@ export function WorkerRegistrationForm() {
   const [updateIdentifier, setUpdateIdentifier] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+
+  // Existing Worker Detection & OTP Verification State
+  const [checkingPhone, setCheckingPhone] = useState(false)
+  const [verificationPending, setVerificationPending] = useState(false)
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [verificationNotice, setVerificationNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -254,21 +274,139 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // New registrations continue without looking up an existing record.
-  function handlePhoneSubmit(e: React.FormEvent) {
+  // Phone submit: checks if worker already exists; sends OTP/magic link if existing
+  async function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setVerificationNotice(null)
 
     const clean = phoneNumber.trim().replace(/\s+/g, '')
     if (clean.length < 8) {
-      setError('Please enter a valid phone number.')
+      setError('Please enter a valid phone number (at least 8 digits).')
       return
     }
 
-    setIsReturning(false)
-    setIsExco(false)
-    setTeams([])
-    setStep(2)
+    setCheckingPhone(true)
+    try {
+      const result = await checkWorkerPhoneAndInitiateVerification({
+        phoneNumber: clean,
+        turnstileToken: turnstileToken || undefined,
+      })
+
+      if (!result.ok) {
+        setError(result.error || 'Unable to check phone number. Please try again.')
+        return
+      }
+
+      // If worker does NOT exist -> Proceed as new registration
+      if (!result.exists) {
+        setIsReturning(false)
+        setIsExco(false)
+        setTeams([])
+        setStep(2)
+        return
+      }
+
+      // Existing worker detected! Do NOT display details right away.
+      // Transition to security verification state
+      setVerificationPending(true)
+      setMaskedEmail(result.maskedEmail || 'your registered email')
+      setVerificationNotice(
+        result.message ||
+          `A 6-digit verification code and secure unlock link have been dispatched to ${result.maskedEmail || 'your email'}.`
+      )
+      setResendCooldown(60)
+    } catch {
+      setError('An unexpected error occurred while checking your phone number. Please try again.')
+    } finally {
+      setCheckingPhone(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
+  // Verifies the 6-digit OTP code entered on the page
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    const clean = otpCode.trim().replace(/\s+/g, '')
+    if (clean.length !== 6 || !/^\d{6}$/.test(clean)) {
+      setError('Please enter the 6-digit verification code sent to your email.')
+      return
+    }
+
+    setVerifyingOtp(true)
+    try {
+      const result = await verifyWorkerOtp({
+        phoneNumber,
+        otp: clean,
+      })
+
+      if (!result.ok || !result.worker) {
+        setError(result.error || 'Invalid or expired verification code. Please check your email or request a new code.')
+        return
+      }
+
+      const worker = result.worker
+      setIsUnlocked(true)
+      setIsReturning(true)
+      setPhoneNumber(worker.phoneNumber || phoneNumber)
+      setFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || '')
+      setMiddleName(worker.middleName || '')
+      setLastName(worker.lastName || '')
+      setEmail(worker.email || '')
+      setTeams(worker.teams.length > 0 ? worker.teams : [worker.team])
+      setHall(worker.hall || '')
+      setRoomNumber(worker.roomNumber || '')
+      setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
+      setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
+      setExistingPhotoUrl(worker.profileImageUrl || null)
+      setIsExco(worker.isExco || false)
+
+      setVerificationPending(false)
+      setOtpCode('')
+      setStep(2) // Jump straight to Returning Worker Step 2 (Location / Room update)
+      setError(null)
+    } catch {
+      setError('An error occurred during verification. Please try again.')
+    } finally {
+      setVerifyingOtp(false)
+    }
+  }
+
+  // Resend verification code / link with cooldown
+  async function handleResendCode() {
+    if (resendCooldown > 0) return
+    setError(null)
+    setVerificationNotice(null)
+    setCheckingPhone(true)
+    try {
+      const result = await checkWorkerPhoneAndInitiateVerification({
+        phoneNumber,
+        turnstileToken: turnstileToken || undefined,
+      })
+      if (result.ok) {
+        setVerificationNotice(`A fresh 6-digit verification code and link were sent to ${result.maskedEmail || maskedEmail}.`)
+        setResendCooldown(60)
+      } else {
+        setError(result.error || 'Failed to resend code. Please try again.')
+      }
+    } catch {
+      setError('Could not resend code. Please try again.')
+    } finally {
+      setCheckingPhone(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
+  // Back from OTP verification to edit the phone number
+  function handleChangePhone() {
+    setVerificationPending(false)
+    setOtpCode('')
+    setError(null)
+    setVerificationNotice(null)
   }
 
   async function handleRequestUpdateLink() {
@@ -276,10 +414,22 @@ export function WorkerRegistrationForm() {
     setUpdateLinkMessage(null)
     setRequestingUpdateLink(true)
     try {
-      const result = await requestWorkerSelfServiceLink({ identifier: updateIdentifier, purpose: 'profile', turnstileToken })
+      const result = await requestWorkerSelfServiceLink({
+        identifier: updateIdentifier,
+        purpose: 'profile',
+        turnstileToken,
+      })
       setUpdateLinkMessage(result.message)
+      if (result.maskedEmail) {
+        setMaskedEmail(result.maskedEmail)
+        if (result.phoneNumber) {
+          setPhoneNumber(result.phoneNumber)
+        }
+        setVerificationPending(true)
+        setResendCooldown(60)
+      }
     } catch {
-      setUpdateLinkMessage('If those details match a worker account with an email on file, a secure link has been sent.')
+      setUpdateLinkMessage('If those details match a worker account with an email on file, a secure link and code have been sent.')
     } finally {
       setRequestingUpdateLink(false)
       setTurnstileToken('')

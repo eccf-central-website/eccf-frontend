@@ -159,24 +159,24 @@ export default function SendWorkerEmailCard({
 
   return (
     <div
-      className={`rounded-2xl border border-sky-200 bg-gradient-to-b from-sky-50/50 via-white to-white p-5 shadow-xs transition-all ${className}`}
+      className={`rounded-2xl border border-border bg-card p-5 shadow-xs transition-all ${className}`}
     >
       {/* Header bar with toggle */}
-      <div className="flex items-center justify-between pb-3 border-b border-sky-100">
+      <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0077cc] text-white shadow-xs">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
             <Mail className="h-4 w-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0077cc]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary">
                 Workforce Email Dispatcher
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
                 Resend API
               </span>
             </div>
-            <h3 className="font-serif font-bold text-lg text-slate-900 leading-tight">
+            <h3 className="font-serif font-bold text-lg text-foreground leading-tight">
               {isAdmin ? 'Send Mails to Fellowship Workers' : `Send Mails to ${session.team}`}
             </h3>
           </div>
@@ -186,7 +186,7 @@ export default function SendWorkerEmailCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <span>{isExpanded ? 'Collapse' : 'Compose'}</span>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -200,7 +200,7 @@ export default function SendWorkerEmailCard({
           {/* AUDIENCE SELECTOR PILLS                                          */}
           {/* ================================================================ */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700">Target Recipient Audience</Label>
+            <Label className="text-xs font-bold text-foreground">Target Recipient Audience</Label>
             <div className="flex flex-wrap gap-2">
               {isAdmin && (
                 <>
@@ -209,8 +209,8 @@ export default function SendWorkerEmailCard({
                     onClick={() => setAudienceType('all_workers')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       audienceType === 'all_workers'
-                        ? 'bg-[#0077cc] text-white shadow-xs ring-2 ring-[#0077cc]/20'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/20'
+                        : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     <Users className="h-3.5 w-3.5" />
@@ -222,8 +222,8 @@ export default function SendWorkerEmailCard({
                     onClick={() => setAudienceType('all_excos')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       audienceType === 'all_excos'
-                        ? 'bg-purple-700 text-white shadow-xs ring-2 ring-purple-500/20'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-500/20'
+                        : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     <ShieldCheck className="h-3.5 w-3.5" />
@@ -237,8 +237,8 @@ export default function SendWorkerEmailCard({
                 onClick={() => setAudienceType('team')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   audienceType === 'team'
-                    ? 'bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-500/20'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20'
+                    : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <Users className="h-3.5 w-3.5" />
@@ -251,7 +251,7 @@ export default function SendWorkerEmailCard({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   audienceType === 'specific_worker'
                     ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-500/20'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <User className="h-3.5 w-3.5" />
@@ -263,9 +263,9 @@ export default function SendWorkerEmailCard({
           {/* Conditional Controls */}
           {audienceType === 'team' && isAdmin && (
             <div className="w-full sm:w-72">
-              <Label className="text-xs font-bold text-slate-700 block mb-1">Select Department</Label>
+              <Label className="text-xs font-bold text-foreground block mb-1">Select Department</Label>
               <Select value={targetTeam} onValueChange={setTargetTeam}>
-                <SelectTrigger className="h-10 bg-white border-slate-200 text-xs">
+                <SelectTrigger className="h-10 bg-background border-input text-foreground text-xs">
                   <SelectValue placeholder="Pick team..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -280,24 +280,24 @@ export default function SendWorkerEmailCard({
           )}
 
           {audienceType === 'specific_worker' && (
-            <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="space-y-2 p-3 rounded-xl bg-muted/30 border border-border">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-slate-700">Select Worker</Label>
-                <span className="text-[11px] text-slate-500">{eligibleWorkers.length} workers eligible</span>
+                <Label className="text-xs font-bold text-foreground">Select Worker</Label>
+                <span className="text-[11px] text-muted-foreground">{eligibleWorkers.length} workers eligible</span>
               </div>
 
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search worker by name..."
                   value={workerSearch}
                   onChange={(e) => setWorkerSearch(e.target.value)}
-                  className="pl-9 h-9 bg-white text-xs rounded-lg border-slate-200"
+                  className="pl-9 h-9 bg-background text-foreground text-xs rounded-lg border-input"
                 />
               </div>
 
-              <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+              <div className="max-h-36 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/60">
                 {searchedWorkers.map((w) => {
                   const isSelected = selectedWorkerId === w._id
                   return (
@@ -306,21 +306,21 @@ export default function SendWorkerEmailCard({
                       type="button"
                       onClick={() => setSelectedWorkerId(w._id)}
                       className={`w-full flex items-center justify-between p-2 text-left text-xs transition-colors ${
-                        isSelected ? 'bg-sky-50 text-[#0077cc] font-bold' : 'hover:bg-slate-50 text-slate-800'
+                        isSelected ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted text-foreground'
                       }`}
                     >
                       <div className="truncate">
                         <p className="truncate font-semibold">{w.fullName}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{w.team} • {w.hall || 'No hall'}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{w.team} • {w.hall || 'No hall'}</p>
                       </div>
-                      {isSelected && <CheckCircle2 className="h-4 w-4 text-[#0077cc] shrink-0" />}
+                      {isSelected && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
                     </button>
                   )
                 })}
               </div>
 
               {selectedWorkerObj && (
-                <p className="text-xs font-semibold text-[#0077cc]">
+                <p className="text-xs font-semibold text-primary">
                   Target: {selectedWorkerObj.fullName} ({selectedWorkerObj.team})
                 </p>
               )}
@@ -330,7 +330,7 @@ export default function SendWorkerEmailCard({
           {/* Subject & Message Input Box */}
           <div className="space-y-3">
             <div>
-              <Label htmlFor="inline-subject" className="text-xs font-bold text-slate-700 block mb-1">
+              <Label htmlFor="inline-subject" className="text-xs font-bold text-foreground block mb-1">
                 Subject
               </Label>
               <Input
@@ -339,16 +339,16 @@ export default function SendWorkerEmailCard({
                 placeholder="e.g. Schedule Update for Fellowship Encounter"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="h-10 rounded-xl bg-white border-slate-200 text-xs"
+                className="h-10 rounded-xl bg-background border-input text-foreground text-xs"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="inline-message" className="text-xs font-bold text-slate-700">
+                <Label htmlFor="inline-message" className="text-xs font-bold text-foreground">
                   Message Content Box
                 </Label>
-                <span className="text-[11px] text-slate-400">{message.length} chars</span>
+                <span className="text-[11px] text-muted-foreground">{message.length} chars</span>
               </div>
               <textarea
                 id="inline-message"
@@ -356,19 +356,19 @@ export default function SendWorkerEmailCard({
                 placeholder="Type your official announcement or instructions to workers here..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all resize-y"
+                className="w-full rounded-xl border border-input bg-background p-3 text-xs leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-y"
               />
             </div>
           </div>
 
           {/* Action Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-semibold">Recipients:</span>
-              <span className="px-2 py-0.5 rounded-full bg-sky-100 text-[#0077cc] font-mono font-bold">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Recipients:</span>
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-bold">
                 {estimatedRecipientCount}
               </span>
-              <span className="text-slate-400 text-[11px]">
+              <span className="text-muted-foreground text-[11px]">
                 ({audienceType.replace('_', ' ').toUpperCase()})
               </span>
             </div>
@@ -377,7 +377,7 @@ export default function SendWorkerEmailCard({
               type="button"
               disabled={isPending || estimatedRecipientCount === 0}
               onClick={handleSend}
-              className="rounded-xl bg-[#0077cc] hover:bg-[#0060aa] text-white font-bold text-xs shadow-xs px-5 h-9"
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs px-5 h-9"
             >
               {isPending ? (
                 <>

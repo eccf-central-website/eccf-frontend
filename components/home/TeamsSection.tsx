@@ -10,8 +10,8 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowUpRight, Maximize2, X, Users } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowUpRight, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export interface TeamItem {
@@ -36,7 +36,6 @@ interface Props {
 }
 
 export default function TeamsSection({ teams, gallery }: Props) {
-  const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
   const [showAllGallery, setShowAllGallery] = useState(false)
 
   const safeTeams = teams || []
@@ -154,7 +153,6 @@ export default function TeamsSection({ teams, gallery }: Props) {
                   Moments in God&apos;s Presence
                 </h3>
               </div>
-              <span className="text-xs sm:text-sm text-slate-500 font-medium">Click photo to zoom</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -165,9 +163,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.3) }}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setSelectedImage(img)}
-                  className="group relative h-48 sm:h-64 overflow-hidden rounded-[20px] shadow-sm cursor-pointer bg-slate-900 border border-stone-200/60"
+                  className="group relative h-48 sm:h-64 overflow-hidden rounded-[20px] shadow-sm bg-slate-900 border border-stone-200/60"
                 >
                   <Image
                     src={img.src}
@@ -176,9 +172,6 @@ export default function TeamsSection({ teams, gallery }: Props) {
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Maximize2 className="h-6 w-6 text-white" />
-                  </div>
                 </motion.div>
               ))}
             </div>
@@ -200,53 +193,6 @@ export default function TeamsSection({ teams, gallery }: Props) {
           </div>
         )}
       </div>
-
-      {/* Lightbox Modal */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedImage(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 sm:p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full bg-slate-900 rounded-[28px] overflow-hidden shadow-2xl"
-            >
-              <div className="relative h-80 sm:h-[500px] w-full bg-black">
-                <Image
-                  src={selectedImage.src}
-                  alt={selectedImage.title}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="p-6 bg-slate-900 flex items-center justify-between border-t border-slate-800">
-                <div>
-                  <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block">
-                    {selectedImage.category}
-                  </span>
-                  <h4 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                    {selectedImage.title}
-                  </h4>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedImage(null)}
-                  className="h-11 w-11 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   )
 }

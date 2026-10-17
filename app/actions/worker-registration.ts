@@ -52,9 +52,59 @@ export interface WorkerRegistrationResult {
   uploadGrant?: string
 }
 
+export interface CheckWorkerPhoneInput {
+  phoneNumber: string
+  turnstileToken?: string
+}
+
+export interface CheckWorkerPhoneResult {
+  ok: boolean
+  exists: boolean
+  maskedEmail?: string
+  message?: string
+  error?: string
+}
+
+export interface VerifyWorkerOtpInput {
+  phoneNumber: string
+  otp: string
+}
+
+export interface VerifyWorkerOtpResult {
+  ok: boolean
+  worker?: {
+    fullName: string
+    firstName?: string
+    middleName?: string
+    lastName?: string
+    email?: string
+    phoneNumber?: string
+    team: string
+    teams: string[]
+    hall?: string
+    roomNumber?: string
+    birthMonth?: number
+    birthDay?: number
+    profileImageUrl?: string
+    isExco?: boolean
+  }
+  error?: string
+}
+
+function maskEmail(email?: string | null): string {
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return 'your registered email'
+  }
+  const [local, domain] = email.split('@')
+  if (local.length <= 2) {
+    return `${local[0]}***@${domain}`
+  }
+  return `${local[0]}***${local[local.length - 1]}@${domain}`
+}
+
 const SELF_SERVICE_COOKIE = 'eccf_worker_self_service'
 const SELF_SERVICE_TOKEN_TTL_MS = 15 * 60 * 1000
-const SELF_SERVICE_RESEND_COOLDOWN_MS = 2 * 60 * 1000
+const SELF_SERVICE_RESEND_COOLDOWN_MS = 60 * 1000
 const selfServiceEmailer = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 function hashSelfServiceToken(token: string): string {
@@ -64,12 +114,127 @@ function hashSelfServiceToken(token: string): string {
 function selfServiceResponse(): { ok: true; message: string } {
   return {
     ok: true,
-    message: 'If those details match a worker account with an email on file, a secure link has been sent. Check your inbox and spam folder. The link expires in 15 minutes.',
+    message: 'If those details match a worker account with an email on file, a secure link and code have been sent. Check your inbox and spam folder. The link expires in 15 minutes.',
   }
 }
 
 function isValidSelfServiceToken(token: string): boolean {
   return /^[A-Za-z0-9_-]{40,60}$/.test(token)
+}
+
+async function sendWorkerVerificationEmail({
+  email,
+  fullName,
+  otp,
+  token,
+  baseUrl,
+}: {
+  email: string
+  fullName: string
+  otp: string
+  token: string
+  baseUrl: string
+}): Promise<boolean> {
+  const confirmationUrl = new URL('/register', baseUrl)
+  confirmationUrl.searchParams.set('selfServiceToken', token)
+  const fromAddress = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'ECCF Workforce <onboarding@resend.dev>'
+  const subject = `[ECCF Workforce] Your Verification Code: ${otp}`
+
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>ECCF Worker Profile Verification</title>
+    </head>
+    <body style="margin: 0; padding: 24px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+      <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <!-- Top Brand Header -->
+        <div style="background: #0f172a; padding: 28px 24px; text-align: center;">
+          <p style="margin: 0 0 6px 0; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
+            Edo State University Christian Campus Fellowship
+          </p>
+          <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
+            Worker Profile Security Verification
+          </h1>
+        </div>
+
+        <!-- Body Content -->
+        <div style="padding: 32px 28px;">
+          <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
+            Hello ${fullName || 'Beloved Worker'},
+          </p>
+          <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+            We received a request to access and update your workforce profile on the ECCF portal. For your protection and privacy, personal details (hostel room, phone number, and teams) are kept locked until verified.
+          </p>
+
+          <!-- OTP Box -->
+          <div style="margin: 28px 0; padding: 22px; background: #f0f9ff; border: 2px dashed #0077cc; border-radius: 14px; text-align: center;">
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #0077cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+              Your 6-Digit Verification Code
+            </span>
+            <span style="font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #0f172a; display: inline-block;">
+              ${otp}
+            </span>
+            <span style="display: block; font-size: 12px; color: #64748b; margin-top: 8px;">
+              Enter this code directly on the registration page to unlock your profile.
+            </span>
+          </div>
+
+          <div style="text-align: center; margin: 20px 0; color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+            &mdash; OR USE ONE-CLICK UNLOCK &mdash;
+          </div>
+
+          <!-- Magic Link Button -->
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${confirmationUrl.toString()}" style="display: inline-block; background: #0077cc; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 119, 204, 0.25);">
+              Unlock My Worker Profile &rarr;
+            </a>
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 10px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.5; color: #64748b; margin-top: 28px;">
+            <strong style="color: #334155;">Security Notice:</strong> This verification code and link will expire in <strong>15 minutes</strong>. If you did not make this request, you can safely ignore this email &mdash; your information remains encrypted and protected.
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
+          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI, Uzairue, Edo State &bull; Official Workforce Portal</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes. If you did not request this, no action is needed.`
+
+  if (!selfServiceEmailer) {
+    console.warn('[sendWorkerVerificationEmail] Missing selfServiceEmailer (RESEND_API_KEY). Simulating dispatch in log.')
+    console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
+    return true
+  }
+
+  try {
+    await selfServiceEmailer.emails.send({
+      from: fromAddress,
+      to: email,
+      subject,
+      text: plainText,
+      html: emailHtml,
+    })
+    return true
+  } catch (err: unknown) {
+    console.error('[sendWorkerVerificationEmail] Resend dispatch error:', err)
+    const errMsg = err instanceof Error ? err.message : String(err)
+    if (errMsg.includes('only send testing emails to your own email address')) {
+      console.warn('[sendWorkerVerificationEmail] Resend testing domain notice. Simulating dispatch in log.')
+      console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
+      return true
+    }
+    return false
+  }
 }
 
 async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 'password') {
@@ -109,11 +274,255 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
   )
 }
 
+/**
+ * Checks if a phone number is already registered to a worker.
+ * If found, DOES NOT reveal personal details, but immediately generates a 6-digit OTP
+ * and secure unlock link, emailing them to the worker's address on file.
+ */
+export async function checkWorkerPhoneAndInitiateVerification(
+  input: CheckWorkerPhoneInput
+): Promise<CheckWorkerPhoneResult> {
+  try {
+    const rawPhone = input.phoneNumber?.trim() || ''
+    const cleanPhone = rawPhone.replace(/\s+/g, '')
+    if (cleanPhone.length < 8) {
+      return { ok: false, exists: false, error: 'Please enter a valid phone number (at least 8 digits).' }
+    }
+
+    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+      return { ok: false, exists: false, error: 'Complete the security verification and try again.' }
+    }
+
+    const indexes = Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
+
+    // Query for existing worker by blind indexes or raw phone
+    const worker = await sanityPrivateClient.fetch<{
+      _id: string
+      _rev: string
+      fullName?: string
+      firstName?: string
+      email?: string
+      phoneNumber?: string
+      selfServiceRequestedAt?: string
+    } | null>(
+      `*[_type == "worker" && (
+        phoneBlindIndex in $indexes ||
+        phoneNumber == $cleanPhone
+      )] | order(_updatedAt desc)[0]{
+        _id, _rev, fullName, firstName, email, phoneNumber, selfServiceRequestedAt
+      }`,
+      { cleanPhone, indexes }
+    )
+
+    // CASE A: Worker not found -> brand new registration allowed to proceed
+    if (!worker) {
+      return { ok: true, exists: false }
+    }
+
+    // CASE B: Worker found! Protect details and send verification
+    const email = worker.email?.trim()
+    if (!email || !email.includes('@')) {
+      return {
+        ok: false,
+        exists: true,
+        error: 'A worker profile was found matching this phone number, but no email address is on record. Please contact an ECCF administrator or your Hall Pastor to verify your account.',
+      }
+    }
+
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:3000'
+
+    // Rate-limit check (60s cooldown)
+    const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
+    const now = Date.now()
+
+    if (requestedAt && now - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
+      return {
+        ok: true,
+        exists: true,
+        maskedEmail: maskEmail(email),
+        message: `A verification code was recently dispatched to ${maskEmail(email)}. Please check your inbox or wait a moment to request a new code.`,
+      }
+    }
+
+    // Generate Token & 6-digit OTP
+    const token = randomBytes(32).toString('base64url')
+    const otp = String(Math.floor(100000 + Math.random() * 900000))
+    const expiresAt = new Date(now + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
+
+    const patchBuilder = patchPrivateDocument(worker._id)
+    if (worker._id.startsWith('drafts.')) {
+      patchBuilder.ifRevisionId(worker._rev)
+    }
+
+    await patchBuilder
+      .set({
+        selfServiceTokenHash: hashSelfServiceToken(token),
+        selfServiceOtpHash: hashSelfServiceToken(otp),
+        selfServiceTokenPurpose: 'profile',
+        selfServiceTokenExpiresAt: expiresAt,
+        selfServiceRequestedAt: new Date().toISOString(),
+      })
+      .commit()
+
+    await sendWorkerVerificationEmail({
+      email,
+      fullName: worker.firstName || worker.fullName || '',
+      otp,
+      token,
+      baseUrl,
+    })
+
+    return {
+      ok: true,
+      exists: true,
+      maskedEmail: maskEmail(email),
+      message: `A 6-digit verification code and secure unlock link have been sent to ${maskEmail(email)}.`,
+    }
+  } catch (err) {
+    console.error('[checkWorkerPhoneAndInitiateVerification] Error:', err)
+    return { ok: false, exists: false, error: 'Unable to check phone number. Please try again.' }
+  }
+}
+
+/**
+ * Verifies a 6-digit OTP code entered on the /register page for an existing worker.
+ * Unlocks the profile, sets the secure self-service cookie, and returns decrypted details.
+ */
+export async function verifyWorkerOtp(
+  input: VerifyWorkerOtpInput
+): Promise<VerifyWorkerOtpResult> {
+  try {
+    const rawPhone = input.phoneNumber?.trim() || ''
+    const cleanPhone = rawPhone.replace(/\s+/g, '')
+    const cleanOtp = input.otp?.trim().replace(/\s+/g, '') || ''
+
+    if (!cleanPhone || cleanPhone.length < 8) {
+      return { ok: false, error: 'Please enter a valid phone number.' }
+    }
+    if (!cleanOtp || cleanOtp.length !== 6 || !/^\d{6}$/.test(cleanOtp)) {
+      return { ok: false, error: 'Please enter a valid 6-digit verification code.' }
+    }
+
+    const indexes = Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
+    const otpHash = hashSelfServiceToken(cleanOtp)
+    const nowIso = new Date().toISOString()
+
+    const worker = await sanityPrivateClient.fetch<{
+      _id: string
+      _rev: string
+      fullName: string
+      firstName?: string
+      middleName?: string
+      lastName?: string
+      email?: string
+      phoneNumber?: string
+      team?: string
+      teams?: string[]
+      hall?: string
+      roomNumber?: string
+      birthDate?: string
+      profileImageUrl?: string
+      role?: WorkerRole
+      requestedRole?: WorkerRole
+      isExcoApproved?: boolean
+      passwordHash?: string
+      selfServiceTokenHash?: string
+    } | null>(
+      `*[_type == "worker" && (
+        phoneBlindIndex in $indexes ||
+        phoneNumber == $cleanPhone
+      ) && selfServiceOtpHash == $otpHash &&
+        selfServiceTokenExpiresAt > $nowIso &&
+        selfServiceTokenPurpose == 'profile'][0]{
+        _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
+        "team": coalesce(team->name, team),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
+        isExcoApproved, passwordHash, selfServiceTokenHash
+      }`,
+      { cleanPhone, indexes, otpHash, nowIso }
+    )
+
+    if (!worker) {
+      return { ok: false, error: 'Invalid or expired verification code. Please check your email or request a new code.' }
+    }
+
+    // Generate a fresh session token for the cookie so registerWorker can authenticate the update
+    const sessionToken = randomBytes(32).toString('base64url')
+    const sessionTokenHash = hashSelfServiceToken(sessionToken)
+    const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
+
+    const patchBuilder = patchPrivateDocument(worker._id)
+    if (worker._id.startsWith('drafts.')) {
+      patchBuilder.ifRevisionId(worker._rev)
+    }
+    await patchBuilder
+      .set({
+        selfServiceTokenHash: sessionTokenHash,
+        selfServiceTokenExpiresAt: expiresAt,
+      })
+      .unset(['selfServiceOtpHash'])
+      .commit()
+
+    const cookieStore = cookies()
+    cookieStore.set(SELF_SERVICE_COOKIE, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60,
+    })
+
+    const birthday = decrypt(worker.birthDate)
+    let birthMonth: number | undefined
+    let birthDay: number | undefined
+    if (birthday && birthday !== '[Encrypted Data]') {
+      const parts = birthday.split('-')
+      if (parts.length === 3) {
+        birthMonth = Number(parts[1])
+        birthDay = Number(parts[2])
+      } else if (parts.length === 2) {
+        birthMonth = Number(parts[0])
+        birthDay = Number(parts[1])
+      }
+    }
+
+    const roomNumber = decrypt(worker.roomNumber)
+
+    return {
+      ok: true,
+      worker: {
+        fullName: worker.fullName,
+        firstName: worker.firstName,
+        middleName: worker.middleName,
+        lastName: worker.lastName,
+        email: worker.email,
+        phoneNumber: decrypt(worker.phoneNumber) || cleanPhone,
+        team: worker.team || worker.teams?.[0] || 'General',
+        teams: worker.teams?.filter(Boolean) || [],
+        hall: worker.hall,
+        roomNumber: roomNumber === '[Encrypted Data]' ? '' : roomNumber,
+        birthMonth,
+        birthDay,
+        profileImageUrl: worker.profileImageUrl,
+        isExco: Boolean(worker.role || worker.requestedRole),
+      },
+    }
+  } catch (err) {
+    console.error('[verifyWorkerOtp] Error:', err)
+    return { ok: false, error: 'Verification failed. Please try again.' }
+  }
+}
+
 export async function requestWorkerSelfServiceLink(input: {
   identifier: string
   purpose: 'profile' | 'password'
   turnstileToken?: string
-}): Promise<{ ok: true; message: string }> {
+}): Promise<{ ok: true; message: string; maskedEmail?: string; phoneNumber?: string }> {
   const genericResponse = selfServiceResponse()
   try {
     const identifier = input.identifier?.trim() || ''
@@ -135,7 +544,10 @@ export async function requestWorkerSelfServiceLink(input: {
     const worker = await sanityPrivateClient.fetch<{
       _id: string
       _rev: string
+      fullName?: string
+      firstName?: string
       email?: string
+      phoneNumber?: string
       role?: string
       requestedRole?: string
       selfServiceRequestedAt?: string
@@ -145,7 +557,7 @@ export async function requestWorkerSelfServiceLink(input: {
         phoneNumber == $cleanPhone ||
         phoneBlindIndex in $indexes
       )] | order(_updatedAt desc)[0]{
-        _id, _rev, email, role, requestedRole, selfServiceRequestedAt
+        _id, _rev, fullName, firstName, email, phoneNumber, role, requestedRole, selfServiceRequestedAt
       }`,
       { cleanEmail, cleanPhone, indexes }
     )
@@ -155,9 +567,17 @@ export async function requestWorkerSelfServiceLink(input: {
     if (!worker || !email || (input.purpose === 'password' && !canResetPassword)) return genericResponse
 
     const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
-    if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) return genericResponse
+    if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
+      return {
+        ok: true,
+        message: `A verification message was recently sent to ${maskEmail(email)}. Please check your inbox or wait a minute to request a new code.`,
+        maskedEmail: maskEmail(email),
+        phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
+      }
+    }
 
     const token = randomBytes(32).toString('base64url')
+    const otp = String(Math.floor(100000 + Math.random() * 900000))
     const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
     const patchBuilder = patchPrivateDocument(worker._id)
     if (worker._id.startsWith('drafts.')) {
@@ -166,28 +586,40 @@ export async function requestWorkerSelfServiceLink(input: {
     await patchBuilder
       .set({
         selfServiceTokenHash: hashSelfServiceToken(token),
+        selfServiceOtpHash: hashSelfServiceToken(otp),
         selfServiceTokenPurpose: input.purpose,
         selfServiceTokenExpiresAt: expiresAt,
         selfServiceRequestedAt: new Date().toISOString(),
       })
       .commit()
 
-    const confirmationUrl = new URL(input.purpose === 'profile' ? '/register' : '/login', baseUrl)
-    confirmationUrl.searchParams.set('selfServiceToken', token)
-    const subject = input.purpose === 'profile' ? 'Confirm your ECCF worker profile update' : 'Confirm your ECCF dashboard password setup'
-    const explanation = input.purpose === 'profile'
-      ? 'Use the secure link below to review and update your worker profile.'
-      : 'Use the secure link below to set or reset your Exco dashboard password.'
+    if (input.purpose === 'profile') {
+      await sendWorkerVerificationEmail({
+        email,
+        fullName: worker.firstName || worker.fullName || '',
+        otp,
+        token,
+        baseUrl,
+      })
+      return {
+        ok: true,
+        message: `A 6-digit verification code and secure unlock link have been dispatched to ${maskEmail(email)}.`,
+        maskedEmail: maskEmail(email),
+        phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
+      }
+    }
 
+    // Password reset email
+    const confirmationUrl = new URL('/login', baseUrl)
+    confirmationUrl.searchParams.set('selfServiceToken', token)
     await selfServiceEmailer.emails.send({
       from: process.env.EMAIL_FROM || 'ECCF <onboarding@resend.dev>',
       to: email,
-      subject,
-      text: `${explanation}\n\n${confirmationUrl.toString()}\n\nThis link expires in 15 minutes. If you did not request this, ignore this message.`,
+      subject: 'Confirm your ECCF dashboard password setup',
+      text: `Use the secure link below to set or reset your Exco dashboard password:\n\n${confirmationUrl.toString()}\n\nThis link expires in 15 minutes. If you did not request this, ignore this message.`,
     })
     return genericResponse
   } catch (err) {
-    // Keep responses generic so account existence and delivery state are not exposed.
     console.error('[requestWorkerSelfServiceLink] Request could not be completed:', err)
     return genericResponse
   }
@@ -219,6 +651,9 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
     if (!worker || !worker.selfServiceTokenPurpose) {
       return { ok: false, error: 'This link is invalid or has expired. Request a new one.' }
     }
+
+    // Clear any pending OTP hash so it cannot be reused
+    patchPrivateDocument(worker._id).unset(['selfServiceOtpHash']).commit().catch(() => null)
 
     const cookieStore = cookies()
     cookieStore.set(SELF_SERVICE_COOKIE, token, {

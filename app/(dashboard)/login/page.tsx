@@ -266,7 +266,7 @@ function LoginForm() {
 
       {/* Set / Reset Password Modal */}
       <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
-        <DialogContent className="max-w-md rounded-2xl bg-white dark:bg-stone-950 p-6 shadow-2xl">
+        <DialogContent className="max-w-md rounded-2xl bg-card border-border text-card-foreground p-6 shadow-2xl">
           <DialogHeader className="space-y-1.5 text-left">
             <div className="flex items-center gap-2 text-primary font-bold">
               <Lock className="h-5 w-5 text-primary" />
