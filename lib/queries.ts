@@ -108,6 +108,14 @@ export const GALLERY_QUERY = `
 // Operational Teams & Leadership
 // ---------------------------------------------------------------------------
 
+/** Published team units offered on /register. registerWorker re-checks the ids server-side. */
+export const REGISTRATION_TEAMS_QUERY = `
+  *[_type == "teamUnit" && !(_id in path("drafts.**")) && defined(name)] | order(order asc, name asc) {
+    "id": _id,
+    name
+  }
+`
+
 /** Fetch all operational team units */
 export const TEAMS_QUERY = `
   *[_type == "teamUnit"] | order(order asc, _createdAt asc) {

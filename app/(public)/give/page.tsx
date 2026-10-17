@@ -5,7 +5,7 @@
  */
 
 import { Metadata } from 'next'
-import { draftMode } from 'next/headers'
+import { isDraftPreview } from '@/lib/preview'
 import { getSanityClient } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
@@ -22,12 +22,8 @@ export const metadata: Metadata = {
     'Support ECCF through confirmed fellowship bank transfer details for tithes, offerings, projects, and welfare.',
 }
 
-export default async function GivePage({
-  searchParams,
-}: {
-  searchParams?: { preview?: string }
-}) {
-  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+export default async function GivePage() {
+  const isPreview = isDraftPreview()
   const client = getSanityClient(isPreview)
 
   const settings = await client

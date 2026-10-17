@@ -15,7 +15,7 @@
  */
 
 import { Metadata } from 'next'
-import { draftMode } from 'next/headers'
+import { isDraftPreview } from '@/lib/preview'
 import { getSanityClient, urlForImage } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
 import {
@@ -119,12 +119,8 @@ interface RawSanityAboutPage {
   ctaSubtitle?: string
 }
 
-export default async function AboutPage({
-  searchParams,
-}: {
-  searchParams?: { preview?: string }
-}) {
-  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+export default async function AboutPage() {
+  const isPreview = isDraftPreview()
   const client = getSanityClient(isPreview)
 
   // Concurrently fetch aboutPage, settings, teams, and excos from Sanity

@@ -1,5 +1,5 @@
 /**
- * Route-Level RBAC Guard & Preview Bridge — middleware.ts
+ * Route-Level RBAC Guard — middleware.ts
  *
  * Implements SDD §4.2, §6.2, and §7.3:
  * - Intercepts all requests to /dashboard/:path*
@@ -7,35 +7,30 @@
  * - Redirects unauthenticated requests to /login
  * - Enforces role-to-section access according to the RBAC matrix
  * - Redirects unauthorized section requests to /dashboard?denied=<section>
- * - Detects ?preview=true or draft cookies and bridges preview state to Server Components
+ *
+ * Draft preview is NOT bridged here: `?preview=true` and plain cookies can be
+ * sent by anyone. Server Components check signed Draft Mode via lib/preview.ts.
  */
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { getAuthSecret } from '@/lib/env'
 import { canAccessSection, isWorkerRole, sectionForPath, SECTION_PATHS } from '@/lib/dashboard/rbac'
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const isPreviewParam = req.nextUrl.searchParams.get('preview') === 'true'
-  const isPreviewCookie = req.cookies.get('preview')?.value === 'true' || req.cookies.has('__prerender_bypass')
-  const isPreview = isPreviewParam || isPreviewCookie
-
-  const requestHeaders = new Headers(req.headers)
-  if (isPreview) {
-    requestHeaders.set('x-preview-mode', 'true')
-  }
 
   // When DASHBOARD_MOCK_AUTH=1 is set outside production, pass through
   const isMockAuth = process.env.NODE_ENV !== 'production' && process.env.DASHBOARD_MOCK_AUTH === '1'
+  if (isMockAuth) {
+    return NextResponse.next()
+  }
 
-  if (pathname.startsWith('/dashboard') && !isMockAuth) {
+  if (pathname.startsWith('/dashboard')) {
     const token = await getToken({
       req,
-      secret:
-        process.env.NEXTAUTH_SECRET ||
-        process.env.AUTH_SECRET ||
-        'eccf-secret-session-key-production-fallback',
+      secret: getAuthSecret(),
     })
 
     if (!token) {
@@ -60,33 +55,9 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
-
-  // If preview parameter is present, set partitioned SameSite=None cookie for seamless iframe rendering
-  if (isPreviewParam && !req.cookies.has('preview')) {
-    response.cookies.set('preview', 'true', {
-      path: '/',
-      sameSite: 'none',
-      secure: true,
-      maxAge: 60 * 60 * 24, // 24 hours
-    })
-  }
-
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
-  ],
+  matcher: ['/dashboard/:path*'],
 }

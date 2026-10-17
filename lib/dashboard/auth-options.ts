@@ -13,12 +13,8 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { sanityPrivateClient } from '@/lib/sanity'
 import { decrypt, createBlindIndex, getCandidateBlindIndexes } from '@/lib/encryption'
+import { getAuthSecret } from '@/lib/env'
 import type { WorkerRole } from '@/types'
-
-const authSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
-if (process.env.NODE_ENV === 'production' && (!authSecret || Buffer.byteLength(authSecret, 'utf8') < 32)) {
-  throw new Error('NEXTAUTH_SECRET must be configured before production authentication can start.')
-}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -45,9 +41,11 @@ export const authOptions: NextAuthOptions = {
         const primaryBlindIndex = createBlindIndex(cleanPhone)
         const allBlindIndexes = Array.from(new Set([primaryBlindIndex, ...candidateBlindIndexes]))
 
-        // Look up Worker in Sanity by email, phoneNumber, or candidate phoneBlindIndexes
-        // Order by defined(passwordHash) desc, _updatedAt desc so populated credentials take priority
-        const worker = await sanityPrivateClient.fetch<{
+        // Look up Worker in Sanity by email, phoneNumber, or candidate phoneBlindIndexes.
+        // Fetch up to two (the drafts perspective already merges a draft with its
+        // published doc): an ambiguous match, e.g. a second record reusing an
+        // exco's email, must not sign anyone in as whichever record ranks first.
+        const matches = await sanityPrivateClient.fetch<{
           _id: string
           fullName: string
           email?: string
@@ -60,12 +58,12 @@ export const authOptions: NextAuthOptions = {
           team?: string | { name?: string }
           hall?: string
           teams?: (string | { name?: string })[]
-        }>(
+        }[]>(
           `*[_type == "worker" && (
             lower(email) == $cleanEmail ||
             phoneNumber == $cleanPhone ||
             phoneBlindIndex in $allBlindIndexes
-          )] | order(defined(passwordHash) desc, _updatedAt desc)[0]{
+          )] | order(defined(passwordHash) desc, _updatedAt desc)[0...2]{
             _id,
             fullName,
             email,
@@ -81,6 +79,13 @@ export const authOptions: NextAuthOptions = {
           }`,
           { cleanEmail, cleanPhone, allBlindIndexes }
         )
+
+        if (matches.length > 1) {
+          // Log ids only — never the identifier or any personal data.
+          console.error('[authorize] Ambiguous sign-in match; refusing. Worker ids:', matches.map((m) => m._id))
+          throw new Error('Sign-in failed.')
+        }
+        const worker = matches[0]
 
         if (!worker) {
           throw new Error('Sign-in failed.')
@@ -162,5 +167,9 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
     error: '/login',
   },
-  secret: authSecret,
+  // Getter: a missing or (in production) short secret fails with a clear error
+  // on first use rather than at import/build time. See lib/env.ts.
+  get secret() {
+    return getAuthSecret()
+  },
 }

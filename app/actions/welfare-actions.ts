@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { patchPrivateDocument } from '@/lib/sanity'
+import { patchPrivateDocument, sanityWriteClient } from '@/lib/sanity'
 import { requirePermission } from '@/lib/dashboard/rbac'
 import { getSession } from '@/lib/dashboard/auth'
 
@@ -10,10 +10,12 @@ import { getSession } from '@/lib/dashboard/auth'
  */
 export async function resolveWelfareRequest(requestId: string) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  // No session means refused, in every environment. Local testing uses the
+  // DASHBOARD_MOCK_AUTH mock session instead of an implicit admin.
+  if (!session) {
     return { success: false, error: 'Unauthorized' }
   }
-  const role = session?.role ?? 'admin'
+  const role = session.role
 
   try {
     requirePermission(role, 'welfare:resolve')
@@ -22,11 +24,23 @@ export async function resolveWelfareRequest(requestId: string) {
   }
 
   try {
+    // Only ever patch a published welfareRequest, never another document type.
+    const target = typeof requestId === 'string' && requestId
+      ? await sanityWriteClient.fetch<{ _type?: string } | null>(
+          '*[_id == $id][0]{ _type }',
+          { id: requestId },
+          { perspective: 'published' }
+        )
+      : null
+    if (target?._type !== 'welfareRequest') {
+      return { success: false, error: 'Request not found.' }
+    }
+
     await patchPrivateDocument(requestId)
       .set({
         status: 'Resolved',
         resolvedAt: new Date().toISOString(),
-        resolvedBy: session?.id ?? 'admin',
+        resolvedBy: session.id,
       })
       .commit()
 

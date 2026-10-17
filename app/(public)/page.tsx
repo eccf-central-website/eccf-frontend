@@ -7,7 +7,7 @@
  * and latest sermons concurrently on the Next.js server.
  */
 
-import { draftMode } from 'next/headers'
+import { isDraftPreview } from '@/lib/preview'
 import { getSanityClient, urlForImage } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
 import {
@@ -37,12 +37,8 @@ interface RawSanityGallery {
   imageUrl?: string
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: { preview?: string }
-}) {
-  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+export default async function Home() {
+  const isPreview = isDraftPreview()
   const client = getSanityClient(isPreview)
 
   // Concurrently fetch live data from Sanity on the server

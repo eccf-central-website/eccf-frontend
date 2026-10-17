@@ -21,7 +21,8 @@ const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
 /**
  * Published-content client for public site pages.
- * Includes authenticated token to read from private dataset in server-side Next.js context.
+ * Uses the read-only SANITY_READ_TOKEN (Viewer) only, never the write token (S8),
+ * so public queries cannot reach anything an editor token could.
  */
 export const sanityClient = createClient({
   projectId,
@@ -29,7 +30,7 @@ export const sanityClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'published',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN || undefined, // never the write token (S8)
 })
 
 /**
@@ -42,7 +43,7 @@ export const sanityPreviewClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN || undefined, // never the write token (S8)
 })
 
 /** Return the appropriate Sanity client based on preview / draft mode status. */

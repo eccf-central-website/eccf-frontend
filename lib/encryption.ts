@@ -1,32 +1,17 @@
 import 'server-only'
 
 import crypto from 'crypto'
+import { getEncryptionSecret, getHmacSecret } from '@/lib/env'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
 const PREFIX = 'enc:v1:'
 const BLIND_INDEX_PREFIX = 'bidx:v1:'
 
-const DEFAULT_FALLBACK_ENCRYPTION_KEY = 'eccf-production-security-salt-2026-key'
-const DEFAULT_FALLBACK_HMAC_PEPPER = 'development_secret_key_eccf_2026'
-
-const KNOWN_LEGACY_KEYS = [
-  'development_secret_key_eccf_2026',
-  'eccf-production-security-salt-2026-key',
-  'eccf-production-blind-index-pepper-2026',
-]
-
-function getSecret(name: string, fallback: string): string {
-  const secret = process.env[name]?.trim()
-  if (secret && Buffer.byteLength(secret, 'utf8') >= 16) {
-    return secret
-  }
-  const nextAuth = process.env.NEXTAUTH_SECRET?.trim()
-  if (nextAuth && Buffer.byteLength(nextAuth, 'utf8') >= 16) {
-    return nextAuth
-  }
-  return fallback
-}
+// No hardcoded keys or peppers (S1): this repo is public, so any literal here
+// is a published key. The current key comes from the env chain in lib/env.ts
+// and throws a clear error when unset. Rotation uses only explicitly
+// configured legacy values (ENCRYPTION_LEGACY_KEYS / HMAC_LEGACY_PEPPERS).
 
 function parseLegacySecrets(name: string): string[] {
   return (process.env[name] || '')
@@ -36,23 +21,22 @@ function parseLegacySecrets(name: string): string[] {
 }
 
 function getEncryptionKey(): Buffer {
-  const secret = getSecret('ENCRYPTION_KEY', DEFAULT_FALLBACK_ENCRYPTION_KEY)
+  const secret = getEncryptionSecret()
   return crypto.createHash('sha256').update(secret).digest()
 }
 
 function getHmacKey(): Buffer {
-  const secret = getSecret('HMAC_PEPPER', DEFAULT_FALLBACK_HMAC_PEPPER)
+  const secret = getHmacSecret()
   return crypto.createHash('sha256').update(secret).digest()
 }
 
-/** Explicitly configured rotation keys + known historical keys for seamless decryption. */
+/** Current key plus explicitly configured rotation keys, for decryption during a key migration. */
 function getCandidateSecrets(): string[] {
   return Array.from(
     new Set([
+      getEncryptionSecret(),
       process.env.ENCRYPTION_KEY?.trim(),
       process.env.NEXTAUTH_SECRET?.trim(),
-      DEFAULT_FALLBACK_ENCRYPTION_KEY,
-      ...KNOWN_LEGACY_KEYS,
       ...parseLegacySecrets('ENCRYPTION_LEGACY_KEYS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )
@@ -61,11 +45,10 @@ function getCandidateSecrets(): string[] {
 function getCandidateHmacPeppers(): string[] {
   return Array.from(
     new Set([
+      getHmacSecret(),
       process.env.HMAC_PEPPER?.trim(),
       process.env.ENCRYPTION_KEY?.trim(),
       process.env.NEXTAUTH_SECRET?.trim(),
-      DEFAULT_FALLBACK_HMAC_PEPPER,
-      ...KNOWN_LEGACY_KEYS,
       ...parseLegacySecrets('HMAC_LEGACY_PEPPERS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )
@@ -104,6 +87,9 @@ export function decrypt(cipherText?: string | null): string {
   if (!cipherText || typeof cipherText !== 'string') return ''
   if (!isEncrypted(cipherText)) return cipherText
 
+  // Resolve keys outside the try so a missing secret throws instead of
+  // silently returning "[Encrypted Data]".
+  const candidateSecrets = getCandidateSecrets()
   try {
     const withoutPrefix = cipherText.slice(PREFIX.length)
     const [ivHex, tagHex, encryptedHex] = withoutPrefix.split(':')
@@ -112,7 +98,7 @@ export function decrypt(cipherText?: string | null): string {
     const iv = Buffer.from(ivHex, 'hex')
     const tag = Buffer.from(tagHex, 'hex')
 
-    for (const secret of getCandidateSecrets()) {
+    for (const secret of candidateSecrets) {
       try {
         const key = crypto.createHash('sha256').update(secret).digest()
         const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
