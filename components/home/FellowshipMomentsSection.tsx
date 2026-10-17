@@ -35,7 +35,7 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
 
   return (
     <section id="moments" className="py-16 sm:py-24 bg-white relative overflow-hidden border-t border-stone-100">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28">
         
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-12 gap-4">

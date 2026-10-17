@@ -121,7 +121,7 @@ export default function SocialMediaBanner({
       aria-label="Social Media Channels"
       className="w-full bg-white text-slate-950 py-12 sm:py-16 md:py-24 lg:py-28 border-y border-stone-200/90 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-16">
           
           {/* ================================================================ */}

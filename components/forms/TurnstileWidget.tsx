@@ -25,9 +25,10 @@ declare global {
 interface Props {
   onToken: (token: string) => void
   resetSignal: number
+  hideFallbackText?: boolean
 }
 
-export default function TurnstileWidget({ onToken, resetSignal }: Props) {
+export default function TurnstileWidget({ onToken, resetSignal, hideFallbackText }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -86,10 +87,10 @@ export default function TurnstileWidget({ onToken, resetSignal }: Props) {
   }, [resetSignal, onToken, siteKey])
 
   return (
-    <div className="min-h-[66px]" aria-live="polite">
+    <div className={siteKey ? "min-h-[66px]" : ""} aria-live="polite">
       {siteKey ? (
         <div ref={containerRef} />
-      ) : process.env.NODE_ENV === 'production' ? (
+      ) : hideFallbackText ? null : process.env.NODE_ENV === 'production' ? (
         <p className="text-xs text-amber-800" role="status">The security check is not configured yet. Please contact the fellowship administrator.</p>
       ) : (
         <p className="text-xs text-slate-500">Bot-check bypass is available in local development only.</p>

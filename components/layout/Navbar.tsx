@@ -125,7 +125,7 @@ export default function Navbar() {
       }`}
     >
       <nav
-        className={`w-full flex items-center justify-between px-4 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28 transition-all ${
+        className={`w-full flex items-center justify-between px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 transition-all ${
           mobileOpen ? 'pb-3.5 sm:pb-4 lg:pb-0' : ''
         }`}
       >

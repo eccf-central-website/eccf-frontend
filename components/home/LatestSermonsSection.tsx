@@ -25,7 +25,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
 
   return (
     <section className="py-16 sm:py-24 bg-white border-t border-stone-100">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-14 gap-4 text-left items-start sm:items-end">

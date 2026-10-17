@@ -47,7 +47,7 @@ export default function PlanAVisitSection({ services, contactPerson, whatsAppNum
       <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full bg-sky-100/70 blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 rounded-full bg-emerald-50/80 blur-3xl" aria-hidden="true" />
 
-      <div className="relative mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-12 lg:gap-12 lg:px-8">
+      <div className="relative w-full grid gap-8 px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 lg:grid-cols-12 lg:gap-12">
         <div className="lg:col-span-5">
           <span className="mb-2 block font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#0077cc]">
             PLAN A VISIT
