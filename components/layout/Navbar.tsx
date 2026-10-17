@@ -61,7 +61,11 @@ export default function Navbar() {
           : 'bg-white/70 backdrop-blur-sm border-b border-slate-100 py-4'
       }`}
     >
-      <nav className="w-full flex items-center justify-between px-4 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28">
+      <nav
+        className={`w-full flex items-center justify-between px-4 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28 transition-all ${
+          mobileOpen ? 'pb-3.5 sm:pb-4 lg:pb-0' : ''
+        }`}
+      >
         {/* Brand Logo & Monogram */}
         <Link
           href="/"
@@ -142,10 +146,10 @@ export default function Navbar() {
       {/* Mobile Dropdown with Active States */}
       <div
         className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          mobileOpen ? 'max-h-96 border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
+          mobileOpen ? 'max-h-[85vh] border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
         }`}
       >
-        <ul className="flex flex-col px-6 py-4 gap-2">
+        <ul className="flex flex-col px-6 pt-3.5 pb-4 gap-2">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
             const isPending = pendingHref === link.href
