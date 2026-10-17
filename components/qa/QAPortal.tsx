@@ -111,35 +111,43 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
   // 3. Toggle Test Item (Optimistic + Server Action)
   const handleToggle = (testId: string) => {
-    const current = testItems[testId]?.checked || false
+    const cleanId = testId.trim()
+    const underscoreId = cleanId.replace(/-/g, '_')
+    const hyphenId = cleanId.replace(/_/g, '-')
+
+    const currentItem = testItems[cleanId] || testItems[underscoreId] || testItems[hyphenId]
+    const current = Boolean(currentItem?.checked)
     const nextChecked = !current
     const activeName = testerName || 'Anonymous Tester'
 
-    // Optimistic UI update
+    const newItemState: QATestItemState = {
+      checked: nextChecked,
+      testerName: activeName,
+      testedAt: new Date().toISOString(),
+    }
+
+    // Optimistic UI update for both key representations
     setTestItems((prev) => ({
       ...prev,
-      [testId]: {
-        checked: nextChecked,
-        testerName: activeName,
-        testedAt: new Date().toISOString(),
-      },
+      [cleanId]: newItemState,
+      [underscoreId]: newItemState,
+      [hyphenId]: newItemState,
     }))
 
     startTransition(async () => {
       const res = await toggleQATestItem({
-        testId,
+        testId: cleanId,
         checked: nextChecked,
         testerName: activeName,
       })
 
       if (!res.success) {
-        // Rollback
+        // Rollback only on actual server failure
         setTestItems((prev) => ({
           ...prev,
-          [testId]: {
-            ...prev[testId],
-            checked: current,
-          },
+          [cleanId]: currentItem || { checked: current },
+          [underscoreId]: currentItem || { checked: current },
+          [hyphenId]: currentItem || { checked: current },
         }))
         toast.error('Network error. Failed to save update to central database.')
       } else {
@@ -221,7 +229,10 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   // Metrics
   const totalTests = QA_TEST_CASES.length
   const completedCount = useMemo(() => {
-    return QA_TEST_CASES.filter((tc) => testItems[tc.id]?.checked).length
+    return QA_TEST_CASES.filter((tc) => {
+      const item = testItems[tc.id] || testItems[tc.id.replace(/-/g, '_')] || testItems[tc.id.replace(/_/g, '-')]
+      return Boolean(item?.checked)
+    }).length
   }, [testItems])
 
   const completionPercentage = Math.round((completedCount / totalTests) * 100)
@@ -229,8 +240,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   // Contributor Breakdown
   const contributorStats = useMemo(() => {
     const stats: Record<string, number> = {}
-    Object.values(testItems).forEach((item) => {
-      if (item.checked && item.testerName) {
+    QA_TEST_CASES.forEach((tc) => {
+      const item = testItems[tc.id] || testItems[tc.id.replace(/-/g, '_')] || testItems[tc.id.replace(/_/g, '-')]
+      if (item?.checked && item.testerName) {
         stats[item.testerName] = (stats[item.testerName] || 0) + 1
       }
     })
@@ -241,7 +253,8 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   const filteredCases = useMemo(() => {
     return QA_TEST_CASES.filter((tc) => {
       // Status filter
-      const isChecked = testItems[tc.id]?.checked || false
+      const item = testItems[tc.id] || testItems[tc.id.replace(/-/g, '_')] || testItems[tc.id.replace(/_/g, '-')]
+      const isChecked = Boolean(item?.checked)
       if (statusFilter === 'pending' && isChecked) return false
       if (statusFilter === 'completed' && !isChecked) return false
 

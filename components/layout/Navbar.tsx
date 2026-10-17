@@ -89,7 +89,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links with Persistent Active State */}
-        <ul className="hidden md:flex items-center gap-1.5 lg:gap-2.5">
+        <ul className="hidden lg:flex items-center gap-1 xl:gap-2.5">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
             const isPending = pendingHref === link.href
@@ -99,7 +99,7 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-base font-semibold transition-all duration-200 focus:outline-none ${
+                  className={`relative inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-full text-sm xl:text-base font-semibold whitespace-nowrap transition-all duration-200 focus:outline-none ${
                     active
                       ? 'bg-sky-50 text-[#0095ff] font-bold border border-sky-200/70 shadow-sm'
                       : isPending
@@ -119,10 +119,10 @@ export default function Navbar() {
         </ul>
 
         {/* Primary CTA: Plan a Visit */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
             href="/#visit"
-            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-sm font-bold px-7 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-2.5 shadow-md shadow-sky-500/20 whitespace-nowrap shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             Plan a Visit
           </Link>
@@ -132,7 +132,7 @@ export default function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="flex md:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none"
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none shrink-0"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -141,7 +141,7 @@ export default function Navbar() {
 
       {/* Mobile Dropdown with Active States */}
       <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ${
+        className={`lg:hidden overflow-hidden transition-all duration-300 ${
           mobileOpen ? 'max-h-96 border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
         }`}
       >

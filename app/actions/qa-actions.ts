@@ -15,11 +15,20 @@ export async function getQAChecklist(): Promise<QAChecklistDoc> {
     )
 
     if (doc) {
+      // Map both underscores and hyphens in testItems so any key lookup succeeds on client
+      const rawItems = (doc.testItems as Record<string, QATestItemState>) || {}
+      const normalizedItems: Record<string, QATestItemState> = {}
+      for (const [key, val] of Object.entries(rawItems)) {
+        normalizedItems[key] = val
+        normalizedItems[key.replace(/_/g, '-')] = val
+        normalizedItems[key.replace(/-/g, '_')] = val
+      }
+
       return {
         _id: doc._id,
         _type: doc._type || 'qaChecklist',
         title: doc.title || 'ECCF V1.0 Production Candidate QA Run',
-        testItems: doc.testItems || {},
+        testItems: normalizedItems,
         defects: Array.isArray(doc.defects) ? doc.defects : [],
         updatedAt: doc.updatedAt,
         updatedBy: doc.updatedBy,
@@ -61,6 +70,7 @@ export async function toggleQATestItem(input: {
   try {
     const { testId, checked, testerName, notes } = input
     const cleanTester = testerName?.trim() || 'Anonymous Tester'
+    const cleanKey = testId.trim().replace(/-/g, '_')
     const now = new Date().toISOString()
 
     const itemState: QATestItemState = {
@@ -81,8 +91,9 @@ export async function toggleQATestItem(input: {
 
     await sanityWriteClient
       .patch(QA_DOC_ID)
+      .setIfMissing({ testItems: {}, defects: [] })
       .set({
-        [`testItems.${testId}`]: itemState,
+        [`testItems.${cleanKey}`]: itemState,
         updatedAt: now,
         updatedBy: cleanTester,
       })
@@ -176,6 +187,7 @@ export async function resetAllQATests(testerName?: string): Promise<{ success: b
     const now = new Date().toISOString()
     await sanityWriteClient
       .patch(QA_DOC_ID)
+      .setIfMissing({ testItems: {}, defects: [] })
       .set({
         testItems: {},
         updatedAt: now,

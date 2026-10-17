@@ -69,6 +69,8 @@ export const metadata: Metadata = {
   },
 };
 
+import LivePreviewListener from "@/components/common/LivePreviewListener";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -82,8 +84,10 @@ export default function RootLayout({
       <body
         className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
       >
+        <LivePreviewListener />
         {children}
       </body>
     </html>
   );
 }
+
