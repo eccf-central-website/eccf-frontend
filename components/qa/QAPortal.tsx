@@ -478,7 +478,11 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
             const isCollapsed = collapsedSuites[suite.id] || false
             const suiteTotal = QA_TEST_CASES.filter((c) => c.suiteId === suite.id).length
-            const suitePassed = QA_TEST_CASES.filter((c) => c.suiteId === suite.id && testItems[c.id]?.checked).length
+            const suitePassed = QA_TEST_CASES.filter((c) => {
+              if (c.suiteId !== suite.id) return false
+              const item = testItems[c.id] || testItems[c.id.replace(/-/g, '_')] || testItems[c.id.replace(/_/g, '-')]
+              return Boolean(item?.checked)
+            }).length
             const isAllPassed = suiteTotal > 0 && suitePassed === suiteTotal
 
             return (
@@ -547,7 +551,10 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                       </div>
                     ) : (
                       suiteCases.map((tc) => {
-                        const itemState = testItems[tc.id]
+                        const itemState =
+                          testItems[tc.id] ||
+                          testItems[tc.id.replace(/-/g, '_')] ||
+                          testItems[tc.id.replace(/_/g, '-')]
                         const isChecked = Boolean(itemState?.checked)
 
                         return (
