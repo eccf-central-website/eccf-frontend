@@ -43,6 +43,8 @@ export interface SiteSettingsData {
   statsCampusLegacy?: string
   visitContactPerson?: string
   visitWhatsAppNumber?: string
+  visitPhoto?: unknown
+  visitPhotoUrl?: string
   givingBankName?: string
   givingAccountName?: string
   givingAccountNumber?: string

@@ -241,6 +241,8 @@ export const SITE_SETTINGS_QUERY = `
     statsCampusLegacy,
     visitContactPerson,
     visitWhatsAppNumber,
+    visitPhoto,
+    "visitPhotoUrl": visitPhoto.asset->url,
     givingBankName,
     givingAccountName,
     givingAccountNumber,

@@ -1,12 +1,5 @@
-import {
-  CalendarDays,
-  Clock3,
-  Mail,
-  MessageCircle,
-  Building2,
-  Navigation,
-  Users,
-} from 'lucide-react'
+import Image from 'next/image'
+import { CalendarDays, Clock3, Mail, MessageCircle, MapPin } from 'lucide-react'
 
 export interface ServiceItem {
   _id: string
@@ -23,6 +16,9 @@ interface Props {
   contactPerson?: string | null
   whatsAppNumber?: string | null
   email?: string | null
+  imageUrl?: string | null
+  venueName?: string
+  facultyName?: string
 }
 
 const FALLBACK_SERVICES: ServiceItem[] = [
@@ -31,19 +27,28 @@ const FALLBACK_SERVICES: ServiceItem[] = [
   { _id: 'friday', day: 'Friday', time: '04:50 PM', title: 'Academic & Wonder Service' },
 ]
 
-const VENUE_NAME = 'New Lecture Theatre 5 (NLT 5)'
-const VENUE_FACULTY = 'Faculty of Law Complex'
-const VENUE_CAMPUS = 'Edo State University, Iyamho (Main Campus)'
+const DEFAULT_VENUE = 'New Lecture Theatre 5 (NLT 5)'
+const DEFAULT_FACULTY = 'Faculty of Law, Edo State University, Iyamho'
 
-export default function PlanAVisitSection({ services, contactPerson, whatsAppNumber, email }: Props) {
+export default function PlanAVisitSection({
+  services,
+  contactPerson,
+  whatsAppNumber,
+  email,
+  imageUrl,
+  venueName = DEFAULT_VENUE,
+  facultyName = DEFAULT_FACULTY,
+}: Props) {
   const activeServices = (services?.length ? services : FALLBACK_SERVICES).slice(0, 3)
   const contactName = contactPerson?.trim() || 'the ECCF team'
   const phoneDigits = (whatsAppNumber || '').replace(/\D/g, '')
   const hasWhatsApp = /^\d{8,15}$/.test(phoneDigits) && phoneDigits !== '2348100000000'
   const safeEmail = email?.trim() || ''
   const whatsappUrl = hasWhatsApp
-    ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(`Hello ${contactName}, I am planning to visit ECCF. Could you please confirm the next service and guide me to NLT 5?`)}`
+    ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(`Hello ${contactName}, I am planning to visit ECCF. Could you please confirm the next service?`)}`
     : null
+
+  const displayImage = imageUrl || '/gallery/gallery-4.jpg'
 
   return (
     <section
@@ -55,7 +60,7 @@ export default function PlanAVisitSection({ services, contactPerson, whatsAppNum
       <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full bg-sky-100/70 blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 rounded-full bg-emerald-50/80 blur-3xl" aria-hidden="true" />
 
-      <div className="relative w-full grid gap-8 px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 lg:grid-cols-12 lg:gap-12 items-start">
+      <div className="relative w-full grid gap-8 px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 lg:grid-cols-12 lg:gap-12 items-stretch">
         {/* Left Column: Weekly Service Schedule & Actions */}
         <div className="lg:col-span-5 flex flex-col justify-between">
           <div>
@@ -66,7 +71,7 @@ export default function PlanAVisitSection({ services, contactPerson, whatsAppNum
               Join us this week.
             </h2>
             <p className="mt-3 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
-              You are warmly welcome at any of our weekly services. Check the schedule, follow our simple campus directions, or message our hospitality team if you need guidance.
+              You are welcome at any of our weekly gatherings. Check our service schedule, or message us if you need help planning your visit.
             </p>
 
             <div className="mt-6 space-y-3" aria-label="Weekly service times">
@@ -115,102 +120,33 @@ export default function PlanAVisitSection({ services, contactPerson, whatsAppNum
           </div>
         </div>
 
-        {/* Right Column: Campus Location, Wayfinding Stepper & Guided Assistance */}
-        <div className="lg:col-span-7">
-          <div className="overflow-hidden rounded-3xl border border-stone-200/90 bg-white shadow-xl shadow-stone-200/50">
-            {/* Header Banner */}
-            <div className="border-b border-stone-100 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/40 p-6 sm:p-7">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-[#0077cc]">
-                <Building2 className="h-4 w-4" />
-                <span>Gathering Venue & Campus Directions</span>
+        {/* Right Column: Large Fellowship Image for PC screens */}
+        <div className="lg:col-span-7 flex flex-col">
+          <div className="group relative w-full h-[360px] sm:h-[440px] lg:h-full min-h-[380px] lg:min-h-[480px] overflow-hidden rounded-3xl border border-stone-200/90 bg-stone-100 shadow-xl shadow-stone-200/50">
+            <Image
+              src={displayImage}
+              alt="ECCF Fellowship Family Community"
+              fill
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              priority
+              className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+
+            {/* Gradient overlay scrim for contrast and legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
+
+            {/* Bottom Floating Venue Details Pill */}
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 text-white z-10 flex flex-col justify-end">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-3.5 py-1 text-xs font-mono font-bold tracking-wider uppercase text-sky-200 border border-white/20 w-fit mb-2.5">
+                <MapPin className="h-3.5 w-3.5 text-sky-300" />
+                <span>Fellowship Venue</span>
               </div>
-              <h3 className="font-heading text-2xl sm:text-3xl font-bold text-slate-950 mt-2">
-                {VENUE_NAME}
+              <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight leading-snug drop-shadow-sm">
+                {venueName}
               </h3>
-              <p className="text-sm sm:text-base font-medium text-slate-600 mt-1">
-                {VENUE_FACULTY} &bull; {VENUE_CAMPUS}
+              <p className="text-xs sm:text-sm text-slate-200 mt-1 drop-shadow-sm">
+                {facultyName}
               </p>
-            </div>
-
-            {/* Step-by-Step Wayfinding */}
-            <div className="p-6 sm:p-7 space-y-5">
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
-                  <Navigation className="h-3.5 w-3.5 text-[#0077cc]" />
-                  How to locate the auditorium
-                </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  Open to all students & visitors
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {/* Step 1 */}
-                <div className="flex items-start gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-[#0077cc]">
-                    01
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 text-sm sm:text-base">Enter via Main University Gate</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-                      Arrive at Edo State University through the main campus entrance along the Auchi–Abuja Expressway.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex items-start gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-[#0077cc]">
-                    02
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 text-sm sm:text-base">Head toward Faculty of Law</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-                      Follow the central campus boulevard past the Senate/Administrative Complex towards the Faculty of Law building.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex items-start gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0077cc] text-xs font-bold text-white shadow-sm shadow-sky-500/30">
-                    03
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 text-sm sm:text-base">Locate NLT 5 (Ground Wing)</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-                      New Lecture Theatre 5 is right on the ground floor. Look out for the ECCF welcoming team stationed at the entrance!
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Hospitality Card */}
-              <div className="mt-6 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50/70 to-blue-50/30 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-[#0077cc]">
-                    <Users className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-slate-900 text-sm">Need someone to walk in with you?</h5>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      First time visiting? Our Protocol team will gladly meet you at the hostel gate or Law faculty entrance.
-                    </p>
-                  </div>
-                </div>
-
-                {whatsappUrl && (
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#0077cc] hover:bg-[#0066ad] text-white text-xs font-bold px-4 py-2.5 transition-colors shadow-sm"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Request a Guide
-                  </a>
-                )}
-              </div>
             </div>
           </div>
         </div>

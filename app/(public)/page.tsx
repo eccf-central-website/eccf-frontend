@@ -134,6 +134,12 @@ export default async function Home({
         contactPerson={settings?.visitContactPerson || undefined}
         whatsAppNumber={settings?.visitWhatsAppNumber || undefined}
         email={settings?.fellowshipEmail || undefined}
+        imageUrl={
+          urlForImage(settings?.visitPhoto) ||
+          settings?.visitPhotoUrl ||
+          audiencePhoto ||
+          '/gallery/gallery-4.jpg'
+        }
       />
 
       {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/" />}
