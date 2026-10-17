@@ -26,6 +26,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState<string>('')
+  const [clickedHref, setClickedHref] = useState<string | null>(null)
 
   // Sync active section based on URL hash
   useEffect(() => {
@@ -40,8 +41,9 @@ export default function Navbar() {
     return () => window.removeEventListener('hashchange', syncHash)
   }, [])
 
-  // Sync section hash on route change
+  // Sync section hash on route change and reset clicked state
   useEffect(() => {
+    setClickedHref(null)
     if (typeof window !== 'undefined') {
       setActiveSection(window.location.hash)
     }
@@ -84,6 +86,8 @@ export default function Navbar() {
   }, [pathname])
 
   const handleLinkClick = (href: string) => {
+    setClickedHref(href)
+
     if (href.includes('#')) {
       const hash = '#' + href.split('#')[1]
       setActiveSection(hash)
@@ -102,6 +106,12 @@ export default function Navbar() {
   }
 
   const isLinkActive = (href: string) => {
+    if (clickedHref) {
+      if (clickedHref === href) return true
+      if (clickedHref === '/#giving' && href === '/give') return true
+      if (clickedHref === '/give' && href === '/#giving') return true
+      return false
+    }
     if (href === '/#giving' || href === '/give') {
       return pathname === '/give' || (pathname === '/' && activeSection === '#giving')
     }
@@ -149,7 +159,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links with Persistent Active State & Hover Line Animation */}
+        {/* Desktop Navigation Links with Persistent Active State */}
         <ul className="hidden lg:flex items-center gap-1 xl:gap-2.5">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
@@ -166,12 +176,12 @@ export default function Navbar() {
                   }`}
                 >
                   <span>{link.label}</span>
-                  {/* Underline indicator: stays visible when active, animates drawn from left to right on hover */}
+                  {/* Underline indicator: visible ONLY on active/clicked state */}
                   <span
-                    className={`absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
+                    className={`absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-200 ease-out origin-center ${
                       active
                         ? 'scale-x-100 opacity-100'
-                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                        : 'scale-x-0 opacity-0 pointer-events-none'
                     }`}
                     aria-hidden="true"
                   />
@@ -224,14 +234,6 @@ export default function Navbar() {
                   }`}
                 >
                   <span>{link.label}</span>
-                  <span
-                    className={`absolute bottom-0 left-4 right-4 h-[2px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
-                      active
-                        ? 'scale-x-0 opacity-0'
-                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
-                    }`}
-                    aria-hidden="true"
-                  />
                 </Link>
               </li>
             )
