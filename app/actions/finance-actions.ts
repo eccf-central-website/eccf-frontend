@@ -82,6 +82,17 @@ export async function deleteFinanceEntry(entryId: string) {
 
   try {
     const targetId = privateDocumentId(entryId)
+    // Only ever delete a published financeLedger entry, never another document type.
+    const target = typeof targetId === 'string' && targetId
+      ? await sanityWriteClient.fetch<{ _type?: string } | null>(
+          '*[_id == $id][0]{ _type }',
+          { id: targetId },
+          { perspective: 'published' }
+        )
+      : null
+    if (target?._type !== 'financeLedger') {
+      return { success: false, error: 'Entry not found.' }
+    }
     await sanityWriteClient.delete(targetId)
     revalidatePath('/dashboard/finance')
     revalidatePath('/dashboard')

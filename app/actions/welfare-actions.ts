@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { patchPrivateDocument } from '@/lib/sanity'
+import { patchPrivateDocument, sanityWriteClient } from '@/lib/sanity'
 import { requirePermission } from '@/lib/dashboard/rbac'
 import { getSession } from '@/lib/dashboard/auth'
 
@@ -22,6 +22,18 @@ export async function resolveWelfareRequest(requestId: string) {
   }
 
   try {
+    // Only ever patch a published welfareRequest, never another document type.
+    const target = typeof requestId === 'string' && requestId
+      ? await sanityWriteClient.fetch<{ _type?: string } | null>(
+          '*[_id == $id][0]{ _type }',
+          { id: requestId },
+          { perspective: 'published' }
+        )
+      : null
+    if (target?._type !== 'welfareRequest') {
+      return { success: false, error: 'Request not found.' }
+    }
+
     await patchPrivateDocument(requestId)
       .set({
         status: 'Resolved',
