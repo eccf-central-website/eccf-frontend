@@ -10,7 +10,7 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import TheLauncher from "@/components/layout/TheLauncher";
 import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
-import { draftMode } from "next/headers";
+import { draftMode, headers, cookies } from "next/headers";
 import { getSanityClient } from "@/lib/sanity";
 import { SITE_SETTINGS_QUERY } from "@/lib/queries";
 import type { SiteSettingsData } from "@/components/home/HeroSection";
@@ -23,8 +23,16 @@ export default async function PublicLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isPreview = draftMode().isEnabled;
-  const client = getSanityClient(isPreview);
+  const headerList = headers();
+  const cookieStore = cookies();
+  const isPreview =
+    draftMode().isEnabled ||
+    headerList.get('x-preview-mode') === 'true' ||
+    cookieStore.get('preview')?.value === 'true' ||
+    cookieStore.has('__prerender_bypass') ||
+    headerList.get('referer')?.includes('preview=true');
+
+  const client = getSanityClient(Boolean(isPreview));
   const settings = await client
     .fetch<SiteSettingsData>(SITE_SETTINGS_QUERY)
     .catch((err) => {
