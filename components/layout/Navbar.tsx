@@ -41,7 +41,7 @@ export default function Navbar() {
     return () => window.removeEventListener('hashchange', syncHash)
   }, [])
 
-  // Sync section hash and reset pending on route change
+  // Sync section hash on route change
   useEffect(() => {
     setPendingHref(null)
     if (typeof window !== 'undefined') {
@@ -86,10 +86,6 @@ export default function Navbar() {
   }, [pathname])
 
   const handleLinkClick = (href: string) => {
-    if (href.startsWith('/') && !href.startsWith('/#') && href !== pathname) {
-      setPendingHref(href)
-    }
-
     if (href.includes('#')) {
       const hash = '#' + href.split('#')[1]
       setActiveSection(hash)

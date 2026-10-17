@@ -703,87 +703,204 @@ export function WorkerRegistrationForm() {
           {/* ========================================================================= */}
           {/* STEP 1: Phone Number Gateway                                              */}
           {/* ========================================================================= */}
+          {/* ========================================================================= */}
+          {/* STEP 1: Phone Number Gateway or Verification State                        */}
+          {/* ========================================================================= */}
           {step === 1 && (
-            <motion.div
-              key="step-1"
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.28 }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Worker Registration
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
-                  Start with your phone number
-                </h2>
-              </div>
-
-              <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                <div>
-                  <input
-                    type="tel"
-                    required
-                    autoFocus
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="0801 234 5678"
-                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                  />
+            verificationPending ? (
+              <motion.div
+                key="step-1-otp-verify"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.28 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold uppercase tracking-wider mb-1">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>SECURITY VERIFICATION</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
+                    Enter Verification Code
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                    A workforce profile matching <strong className="text-slate-950 font-mono">{phoneNumber}</strong> was found.
+                    For your privacy and security, personal details are locked until verified.
+                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={phoneNumber.trim().length < 8}
-                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    Continue <ArrowRight className="h-5 w-5" />
-                  </span>
-                </button>
-              </form>
-
-              <div className="border-t border-slate-200 pt-5 space-y-3">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Already have a worker profile?</h3>
-                  <p className="text-xs text-slate-600 mt-1">Enter the email or phone number on your record. We’ll send a secure link to your saved email address.</p>
+                <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/80 border border-sky-200/90 flex items-start gap-3.5">
+                  <Mail className="h-5 w-5 text-[#0077cc] shrink-0 mt-0.5" />
+                  <div className="text-sm text-slate-700 leading-relaxed">
+                    <p>
+                      We have sent a <strong>6-digit security code</strong> and a <strong>direct unlock link</strong> to your email on file:
+                    </p>
+                    <p className="font-mono font-bold text-slate-950 text-base mt-1">{maskedEmail}</p>
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  autoComplete="username"
-                  value={updateIdentifier}
-                  onChange={(event) => setUpdateIdentifier(event.target.value)}
-                  placeholder="Registered email or phone number"
-                  aria-label="Email or phone number on your worker profile"
-                  className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
-                />
-                {Boolean(updateIdentifier.trim()) && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to receive your link:</p>
-                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+
+                {verificationNotice && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800 flex items-start gap-2">
+                    <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>{verificationNotice}</span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleRequestUpdateLink}
-                  disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-[#0077cc] hover:text-[#0077cc] disabled:opacity-50"
-                >
-                  {requestingUpdateLink ? 'Sending secure link…' : 'Email me a profile update link'}
-                </button>
-                {updateLinkMessage && (
-                  <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
-                    {updateLinkMessage}
+
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  <div>
+                    <label htmlFor="otp-input" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2 font-mono">
+                      6-Digit Security Code
+                    </label>
+                    <input
+                      id="otp-input"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      autoFocus
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="• • • • • •"
+                      className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-center text-3xl font-mono font-bold tracking-[14px] text-slate-900 placeholder:text-slate-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={otpCode.length !== 6 || verifyingOtp}
+                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-6 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  >
+                    {verifyingOtp ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" /> Verifying Code...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        Verify Code &amp; Unlock Profile <ArrowRight className="h-5 w-5" />
+                      </span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="text-center py-1 border-t border-slate-100 pt-4">
+                  <p className="text-xs text-slate-400 font-mono uppercase tracking-wider">
+                    &mdash; Alternative Option &mdash;
                   </p>
-                )}
-                <p className="text-xs text-slate-500">
-                  If you no longer have access to the email on file, contact an ECCF administrator to verify and update your contact details. You can still use this same form after opening the secure link; no dashboard account is required.
-                </p>
-              </div>
-            </motion.div>
+                  <p className="text-xs text-slate-600 mt-1">
+                    You can also tap the <strong className="text-[#0077cc]">“Unlock My Worker Profile”</strong> button in your email to open the form directly.
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || checkingPhone}
+                    className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
+                  >
+                    {resendCooldown > 0 ? `Resend verification code (${resendCooldown}s)` : 'Resend verification code'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleChangePhone}
+                    className="text-slate-500 hover:text-slate-900 underline"
+                  >
+                    Use a different phone number
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="step-1-phone"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.28 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
+                    Worker Registration
+                  </span>
+                  <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
+                    Start with your phone number
+                  </h2>
+                </div>
+
+                <form onSubmit={handlePhoneSubmit} className="space-y-6">
+                  <div>
+                    <input
+                      type="tel"
+                      required
+                      autoFocus
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="0801 234 5678"
+                      className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={phoneNumber.trim().length < 8 || checkingPhone}
+                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  >
+                    {checkingPhone ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" /> Checking Records...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        Continue <ArrowRight className="h-5 w-5" />
+                      </span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="border-t border-slate-200 pt-5 space-y-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Already have a worker profile?</h3>
+                    <p className="text-xs text-slate-600 mt-1">Enter the email or phone number on your record. We’ll send a secure link and code to your saved email address.</p>
+                  </div>
+                  <input
+                    type="text"
+                    autoComplete="username"
+                    value={updateIdentifier}
+                    onChange={(event) => setUpdateIdentifier(event.target.value)}
+                    placeholder="Registered email or phone number"
+                    aria-label="Email or phone number on your worker profile"
+                    className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
+                  />
+                  {Boolean(updateIdentifier.trim()) && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to receive your link:</p>
+                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleRequestUpdateLink}
+                    disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-[#0077cc] hover:text-[#0077cc] disabled:opacity-50"
+                  >
+                    {requestingUpdateLink ? 'Sending secure code…' : 'Email me a profile update code & link'}
+                  </button>
+                  {updateLinkMessage && (
+                    <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
+                      {updateLinkMessage}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500">
+                    If you no longer have access to the email on file, contact an ECCF administrator to verify and update your contact details. You can still use this same form after opening the secure link; no dashboard account is required.
+                  </p>
+                </div>
+              </motion.div>
+            )
           )}
 
           {/* ========================================================================= */}
