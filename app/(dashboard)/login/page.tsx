@@ -21,6 +21,7 @@ import {
   requestWorkerSelfServiceLink,
   setupExcoPassword,
 } from '@/app/actions/worker-registration'
+import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
 
 function LoginForm() {
   const router = useRouter()
@@ -156,6 +157,7 @@ function LoginForm() {
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-16 sm:py-24">
+      <PwaPromptSuppressor />
       <div className="w-full max-w-sm sm:max-w-md space-y-6">
         {/* Header */}
         <div className="space-y-2 text-center">

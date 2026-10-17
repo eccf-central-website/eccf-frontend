@@ -1,13 +1,16 @@
-import { MetadataRoute } from 'next'
+import { NextResponse } from 'next/server'
 
-export default function manifest(): MetadataRoute.Manifest {
-  return {
+export const dynamic = 'force-static'
+export const revalidate = 86400 // Cache for 24 hours
+
+export async function GET() {
+  const manifestData = {
     name: 'ECCF Executive Management Portal',
     short_name: 'ECCF Portal',
     description:
       'Official Management & Operational Portal for Edo State University Christian Campus Fellowship Exco Members.',
     start_url: '/dashboard',
-    scope: '/',
+    scope: '/dashboard',
     display: 'standalone',
     orientation: 'portrait-primary',
     background_color: '#020617',
@@ -64,4 +67,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
   }
+
+  return NextResponse.json(manifestData, {
+    headers: {
+      'Content-Type': 'application/manifest+json',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
+  })
 }

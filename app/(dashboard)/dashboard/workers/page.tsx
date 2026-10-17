@@ -7,6 +7,7 @@
  * error states exercise loading.tsx, SectionEmpty and error.tsx here.
  */
 
+import PageContainer from '@/components/dashboard/shell/PageContainer'
 import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
 import WorkersClient from '@/components/dashboard/workers/WorkersClient'
 import { requireSection } from '@/lib/dashboard/auth'
@@ -26,5 +27,9 @@ export default async function WorkersPage() {
     )
   }
 
-  return <WorkersClient rows={rows} session={session} />
+  return (
+    <PageContainer>
+      <WorkersClient rows={rows} session={session} />
+    </PageContainer>
+  )
 }

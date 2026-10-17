@@ -20,6 +20,18 @@ import SkipLink from '@/components/dashboard/shell/SkipLink'
 import TopBar from '@/components/dashboard/shell/TopBar'
 import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Exco Dashboard — ECCF',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ECCF Portal',
+  },
+}
+
 // Per-request session for every /dashboard/* page. Without this, production
 // builds (no mock session, no auth yet) prerender pages as static redirects.
 export const dynamic = 'force-dynamic'

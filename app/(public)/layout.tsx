@@ -10,6 +10,7 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import TheLauncher from "@/components/layout/TheLauncher";
 import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
+import PwaPromptSuppressor from "@/components/common/PwaPromptSuppressor";
 import { draftMode, headers, cookies } from "next/headers";
 import { getSanityClient } from "@/lib/sanity";
 import { SITE_SETTINGS_QUERY } from "@/lib/queries";
@@ -42,6 +43,7 @@ export default async function PublicLayout({
 
   return (
     <>
+      <PwaPromptSuppressor />
       <Suspense fallback={null}>
         <NavigationProgressBar />
       </Suspense>

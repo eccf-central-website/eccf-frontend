@@ -248,7 +248,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* SECTION HEADER                                                       */}
       {/* ==================================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">

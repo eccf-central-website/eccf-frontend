@@ -45,12 +45,7 @@ export const metadata: Metadata = {
   title: "ESUI Christian Campus Fellowship: Raising Spiritual Dynamites and Academic Giants",
   description:
     "Official Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
-  applicationName: "ECCF Portal",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "ECCF Portal",
-  },
+  applicationName: "ECCF Family",
   formatDetection: {
     telephone: false,
   },
