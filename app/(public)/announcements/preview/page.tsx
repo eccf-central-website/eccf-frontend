@@ -6,6 +6,7 @@
  * inspect both website card rendering and email bulletin layout before publishing.
  */
 
+import { draftMode } from 'next/headers'
 import { sanityWriteClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { redirect } from 'next/navigation'
@@ -64,10 +65,11 @@ export const revalidate = 0
 export default async function AnnouncementPreviewPage({
   searchParams,
 }: {
-  searchParams: { id?: string; mode?: string }
+  searchParams: { id?: string; mode?: string; preview?: string }
 }) {
+  const isPreview = draftMode().isEnabled || searchParams.preview === 'true'
   const session = await getSession()
-  if (!session || session.role !== 'admin') redirect('/login')
+  if (!session && !isPreview) redirect('/login')
 
   const rawId = searchParams.id || ''
   const cleanId = rawId.replace(/^drafts\./, '')

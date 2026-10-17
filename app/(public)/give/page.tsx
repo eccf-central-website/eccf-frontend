@@ -5,7 +5,9 @@
  */
 
 import { Metadata } from 'next'
-import { sanityClient } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import { SiteSettingsData } from '@/components/home/HeroSection'
 import GivingHubSection from '@/components/home/GivingHubSection'
@@ -20,8 +22,15 @@ export const metadata: Metadata = {
     'Support ECCF through confirmed fellowship bank transfer details for tithes, offerings, projects, and welfare.',
 }
 
-export default async function GivePage() {
-  const settings = await sanityClient
+export default async function GivePage({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
+
+  const settings = await client
     .fetch<SiteSettingsData>(SITE_SETTINGS_QUERY)
     .catch(() => null)
 
@@ -36,6 +45,8 @@ export default async function GivePage() {
         tiktokUrl={settings?.socialTikTok}
         telegramUrl={settings?.socialTelegram}
       />
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/give" />}
     </div>
   )
 }
+

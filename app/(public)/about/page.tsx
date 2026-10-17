@@ -15,7 +15,9 @@
  */
 
 import { Metadata } from 'next'
-import { sanityClient, urlForImage } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient, urlForImage } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import {
   ABOUT_PAGE_QUERY,
   SITE_SETTINGS_QUERY,
@@ -117,22 +119,29 @@ interface RawSanityAboutPage {
   ctaSubtitle?: string
 }
 
-export default async function AboutPage() {
+export default async function AboutPage({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
+
   // Concurrently fetch aboutPage, settings, teams, and excos from Sanity
   const [aboutData, settings, rawTeams, rawExcos] = await Promise.all([
-    sanityClient.fetch<RawSanityAboutPage>(ABOUT_PAGE_QUERY).catch((err) => {
+    client.fetch<RawSanityAboutPage>(ABOUT_PAGE_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch aboutPage:', err)
       return null
     }),
-    sanityClient.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
+    client.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch siteSettings:', err)
       return null
     }),
-    sanityClient.fetch<RawSanityTeam[]>(TEAMS_QUERY).catch((err) => {
+    client.fetch<RawSanityTeam[]>(TEAMS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch teams:', err)
       return []
     }),
-    sanityClient.fetch<RawSanityExco[]>(EXCOS_QUERY).catch((err) => {
+    client.fetch<RawSanityExco[]>(EXCOS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch excos:', err)
       return []
     }),
@@ -265,6 +274,8 @@ export default async function AboutPage() {
         headline={aboutData?.ctaHeadline}
         subtitle={aboutData?.ctaSubtitle}
       />
+
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/about" />}
     </div>
   )
 }
