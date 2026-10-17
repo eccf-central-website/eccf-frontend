@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useTransition } from 'react'
+import React, { useState, useEffect, useMemo, useTransition, useRef } from 'react'
 import {
   CheckCircle2,
   Circle,
@@ -43,6 +43,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   const [defects, setDefects] = useState<QADefect[]>(initialData.defects || [])
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
 
+  // In-flight mutation tracking to prevent background polling from clobbering active clicks
+  const pendingMutationsRef = useRef<Map<string, { targetChecked: boolean; timestamp: number }>>(new Map())
+
   // Tester identity
   const [testerName, setTesterName] = useState<string>('')
   const [isNameModalOpen, setIsNameModalOpen] = useState<boolean>(false)
@@ -84,13 +87,43 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     toast.success(`Welcome, ${clean}! Your test actions will be recorded under your name.`)
   }
 
-  // 2. Poll for updates every 15s to keep all phones/devices in sync
+  // 2. Poll for updates every 15s to keep all phones/devices in sync without overwriting in-flight actions
   const refreshLiveState = async (showToast = false) => {
     setIsSyncing(true)
     try {
       const fresh = await getQAChecklist()
       if (fresh) {
-        setTestItems(fresh.testItems || {})
+        setTestItems((prev) => {
+          const merged: Record<string, QATestItemState> = { ...fresh.testItems }
+          const pending = pendingMutationsRef.current
+
+          // Preserve any item currently in flight or updated locally more recently
+          for (const [key, localItem] of Object.entries(prev)) {
+            const cleanKey = key.trim().replace(/-/g, '_')
+            const isPending = pending.has(cleanKey) || pending.has(key)
+
+            if (isPending) {
+              // Active in-flight local click wins
+              merged[key] = localItem
+              merged[cleanKey] = localItem
+              continue
+            }
+
+            const serverItem = merged[cleanKey] || merged[key]
+            if (!serverItem) {
+              merged[key] = localItem
+            } else {
+              const localTime = new Date(localItem.testedAt || 0).getTime()
+              const serverTime = new Date(serverItem.testedAt || 0).getTime()
+              // If local action occurred more recently than this server snapshot, preserve local
+              if (localTime > serverTime) {
+                merged[key] = localItem
+                merged[cleanKey] = localItem
+              }
+            }
+          }
+          return merged
+        })
         setDefects(fresh.defects || [])
         setLastSyncTime(new Date())
         if (showToast) toast.success('Checklist synced with team updates!')
@@ -109,7 +142,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     return () => clearInterval(interval)
   }, [])
 
-  // 3. Toggle Test Item (Optimistic + Server Action)
+  // 3. Toggle Test Item (Optimistic + Direct Server Action + Retries)
   const handleToggle = (testId: string) => {
     const cleanId = testId.trim()
     const underscoreId = cleanId.replace(/-/g, '_')
@@ -119,14 +152,19 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     const current = Boolean(currentItem?.checked)
     const nextChecked = !current
     const activeName = testerName || 'Anonymous Tester'
+    const now = new Date().toISOString()
 
     const newItemState: QATestItemState = {
       checked: nextChecked,
       testerName: activeName,
-      testedAt: new Date().toISOString(),
+      testedAt: now,
     }
 
-    // Optimistic UI update for both key representations
+    // Register this mutation as in-flight
+    pendingMutationsRef.current.set(underscoreId, { targetChecked: nextChecked, timestamp: Date.now() })
+    pendingMutationsRef.current.set(cleanId, { targetChecked: nextChecked, timestamp: Date.now() })
+
+    // Optimistic UI update immediately for all key representations
     setTestItems((prev) => ({
       ...prev,
       [cleanId]: newItemState,
@@ -134,26 +172,37 @@ export default function QAPortal({ initialData }: QAPortalProps) {
       [hyphenId]: newItemState,
     }))
 
-    startTransition(async () => {
-      const res = await toggleQATestItem({
-        testId: cleanId,
-        checked: nextChecked,
-        testerName: activeName,
-      })
+    // Execute server action asynchronously
+    ;(async () => {
+      try {
+        const res = await toggleQATestItem({
+          testId: cleanId,
+          checked: nextChecked,
+          testerName: activeName,
+        })
 
-      if (!res.success) {
-        // Rollback only on actual server failure
-        setTestItems((prev) => ({
-          ...prev,
-          [cleanId]: currentItem || { checked: current },
-          [underscoreId]: currentItem || { checked: current },
-          [hyphenId]: currentItem || { checked: current },
-        }))
-        toast.error('Network error. Failed to save update to central database.')
-      } else {
-        toast.success(nextChecked ? 'Test passed!' : 'Test reset to pending')
+        if (!res.success) {
+          // Check if the user hasn't clicked again in the meantime
+          const pending = pendingMutationsRef.current.get(underscoreId)
+          if (pending && pending.targetChecked === nextChecked) {
+            // Rollback only on confirmed server failure
+            setTestItems((prev) => ({
+              ...prev,
+              [cleanId]: currentItem || { checked: current },
+              [underscoreId]: currentItem || { checked: current },
+              [hyphenId]: currentItem || { checked: current },
+            }))
+            toast.error('Sync issue saving checkmark. Please click again.')
+          }
+        }
+      } catch (err) {
+        console.error('[handleToggle] Error during QA toggle:', err)
+      } finally {
+        // Clear pending registration
+        pendingMutationsRef.current.delete(underscoreId)
+        pendingMutationsRef.current.delete(cleanId)
       }
-    })
+    })()
   }
 
   // 4. Submit Defect

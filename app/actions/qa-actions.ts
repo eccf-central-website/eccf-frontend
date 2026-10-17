@@ -80,29 +80,35 @@ export async function toggleQATestItem(input: {
       notes: notes?.trim() || '',
     }
 
-    // Ensure document exists first
-    await sanityWriteClient.createIfNotExists({
-      _id: QA_DOC_ID,
-      _type: 'qaChecklist',
-      title: 'ECCF V1.0 Production Candidate QA Run',
-      testItems: {},
-      defects: [],
-    })
+    // Exponential backoff retry logic for concurrent mutations
+    let attempts = 0
+    let lastError: unknown = null
+    while (attempts < 4) {
+      try {
+        await sanityWriteClient
+          .patch(QA_DOC_ID)
+          .setIfMissing({ testItems: {}, defects: [] })
+          .set({
+            [`testItems.${cleanKey}`]: itemState,
+            updatedAt: now,
+            updatedBy: cleanTester,
+          })
+          .commit({ autoGenerateArrayKeys: true })
 
-    await sanityWriteClient
-      .patch(QA_DOC_ID)
-      .setIfMissing({ testItems: {}, defects: [] })
-      .set({
-        [`testItems.${cleanKey}`]: itemState,
-        updatedAt: now,
-        updatedBy: cleanTester,
-      })
-      .commit()
+        return { success: true, item: itemState }
+      } catch (err) {
+        lastError = err
+        attempts++
+        if (attempts >= 4) break
+        // Random jittered backoff between 50ms and 250ms
+        await new Promise((r) => setTimeout(r, 60 * attempts + Math.random() * 50))
+      }
+    }
 
-    revalidatePath('/qa')
-    return { success: true, item: itemState }
+    console.error('[toggleQATestItem] Error updating test item in Sanity after retries:', lastError)
+    return { success: false, error: 'Failed to update test state in Sanity database.' }
   } catch (error) {
-    console.error('[toggleQATestItem] Error updating test item in Sanity:', error)
+    console.error('[toggleQATestItem] Unexpected error:', error)
     return { success: false, error: 'Failed to update test state in Sanity database.' }
   }
 }
