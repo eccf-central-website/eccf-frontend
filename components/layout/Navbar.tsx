@@ -25,7 +25,6 @@ export default function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<string>('')
 
   // Sync active section based on URL hash
@@ -43,7 +42,6 @@ export default function Navbar() {
 
   // Sync section hash on route change
   useEffect(() => {
-    setPendingHref(null)
     if (typeof window !== 'undefined') {
       setActiveSection(window.location.hash)
     }
