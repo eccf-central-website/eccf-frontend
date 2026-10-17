@@ -1,13 +1,18 @@
 import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
+import { isValidPreviewSecret, safePreviewSlug } from '@/lib/preview'
 
+/**
+ * Enables Draft Mode for the Sanity Studio preview pane.
+ * Requires ?secret=<SANITY_PREVIEW_SECRET>; anything else is refused (S13).
+ */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const slug = searchParams.get('slug') || '/'
+  if (!isValidPreviewSecret(searchParams.get('secret'))) {
+    return NextResponse.json({ error: 'Invalid preview token' }, { status: 401 })
+  }
 
-  // Enable Draft Mode by setting the cookie
   draftMode().enable()
-
-  // Redirect to the path from the fetched url
-  redirect(slug)
+  redirect(safePreviewSlug(searchParams.get('slug')))
 }

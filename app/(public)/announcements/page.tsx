@@ -6,7 +6,7 @@
  * Interactive search/filter lives in AnnouncementsFeed (client component).
  */
 
-import { draftMode } from 'next/headers'
+import { isDraftPreview } from '@/lib/preview'
 import { getSanityClient } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
 import { ANNOUNCEMENTS_QUERY } from '@/lib/queries'
@@ -59,12 +59,8 @@ function parseDate(dateStr?: string) {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function AnnouncementsPage({
-  searchParams,
-}: {
-  searchParams?: { preview?: string }
-}) {
-  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+export default async function AnnouncementsPage() {
+  const isPreview = isDraftPreview()
   const client = getSanityClient(isPreview)
   let announcements: AnnouncementItem[] = []
 

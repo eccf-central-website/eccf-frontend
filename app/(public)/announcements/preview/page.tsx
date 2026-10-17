@@ -6,10 +6,10 @@
  * inspect both website card rendering and email bulletin layout before publishing.
  */
 
-import { draftMode } from 'next/headers'
+import { isDraftPreview } from '@/lib/preview'
 import { sanityWriteClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
-import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
 import { toPlainText } from '@portabletext/react'
 import type { PortableTextBlock } from '@portabletext/types'
@@ -62,14 +62,21 @@ function parseDate(dateStr?: string) {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+async function canPreviewAnnouncements(): Promise<boolean> {
+  if (isDraftPreview()) return true
+  const session = await getSession()
+  return session?.role === 'admin'
+}
+
 export default async function AnnouncementPreviewPage({
   searchParams,
 }: {
-  searchParams: { id?: string; mode?: string; preview?: string }
+  searchParams: { id?: string; mode?: string }
 }) {
-  const isPreview = draftMode().isEnabled || searchParams.preview === 'true'
-  const session = await getSession()
-  if (!session && !isPreview) redirect('/login')
+  // Drafts are read with the write token, so access is gated (S13): signed
+  // Draft Mode (enabled via the secret-checked /api/preview) or an admin
+  // dashboard session. `?preview=true` is not trusted. Anything else 404s.
+  if (!(await canPreviewAnnouncements())) notFound()
 
   const rawId = searchParams.id || ''
   const cleanId = rawId.replace(/^drafts\./, '')
