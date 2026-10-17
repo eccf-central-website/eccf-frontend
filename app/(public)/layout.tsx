@@ -10,12 +10,28 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import TheLauncher from "@/components/layout/TheLauncher";
 import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
+import { draftMode } from "next/headers";
+import { getSanityClient } from "@/lib/sanity";
+import { SITE_SETTINGS_QUERY } from "@/lib/queries";
+import type { SiteSettingsData } from "@/components/home/HeroSection";
 
-export default function PublicLayout({
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function PublicLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isPreview = draftMode().isEnabled;
+  const client = getSanityClient(isPreview);
+  const settings = await client
+    .fetch<SiteSettingsData>(SITE_SETTINGS_QUERY)
+    .catch((err) => {
+      console.error('[PublicLayout] Failed to fetch settings for footer:', err);
+      return null;
+    });
+
   return (
     <>
       <Suspense fallback={null}>
@@ -23,7 +39,7 @@ export default function PublicLayout({
       </Suspense>
       <Navbar />
       <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
-      <Footer />
+      <Footer settings={settings} />
       <TheLauncher />
       <ScrollToTop />
     </>
