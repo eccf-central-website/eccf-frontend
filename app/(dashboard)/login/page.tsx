@@ -255,15 +255,7 @@ function LoginForm() {
           </Button>
         </form>
 
-        <div className="pt-4 border-t border-slate-200 dark:border-stone-800 text-center space-y-2">
-          <p className="text-sm">
-            <a
-              href="/register"
-              className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
-            >
-              Not Registered?
-            </a>
-          </p>
+        <div className="pt-4 border-t border-slate-200 dark:border-stone-800 text-center">
           <p className="text-xs text-muted-foreground">
             <a href="/" className="hover:underline text-slate-500 dark:text-stone-400">
               &larr; Return to main fellowship website

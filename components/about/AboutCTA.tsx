@@ -3,7 +3,7 @@
  *
  * Implements:
  * - High-energy, contrast-rich call-to-action banner
- * - Direct paths: Join a Team (/register), Connect & Welfare (/connect), Plan a Visit (/#visit)
+ * - Direct paths: Connect & Get Involved (/connect), Plan a Visit (/#visit)
  * - Residence hall reach reinforcement (Halls 1 to 8)
  */
 
@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Sparkles, UserPlus, HeartHandshake, MapPin, ArrowRight } from 'lucide-react'
+import { Sparkles, HeartHandshake, MapPin, ArrowRight } from 'lucide-react'
 
 export interface AboutCTAProps {
   tag?: string
@@ -66,34 +66,26 @@ export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
             'Whether you want to join an operational team, need academic guidance and student welfare, or are planning your very first visit — we are ready to welcome you home.'}
         </motion.p>
 
-        {/* Action Button Grid — Redesigned for crisp typography, aligned icons & zero awkward wrapping */}
+        {/* Action Button Grid — Streamlined for public visitors without internal /register route */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 max-w-4xl mx-auto w-full"
+          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto w-full"
         >
           <Link
-            href="/register"
-            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] hover:from-[#0066b3] hover:to-[#0080e0] text-white font-bold text-sm sm:text-base shadow-lg shadow-sky-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+            href="/connect"
+            className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] hover:from-[#0066b3] hover:to-[#0080e0] text-white font-bold text-sm sm:text-base shadow-lg shadow-sky-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
           >
-            <UserPlus className="h-5 w-5 text-sky-100 shrink-0" />
-            <span>Join an Operational Team</span>
+            <HeartHandshake className="h-5 w-5 text-sky-100 shrink-0" />
+            <span>Connect &amp; Get Involved</span>
             <ArrowRight className="h-4 w-4 text-sky-200 transition-transform duration-200 group-hover:translate-x-1 shrink-0 ml-0.5" />
           </Link>
 
           <Link
-            href="/connect"
-            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-100 font-semibold text-sm sm:text-base border border-slate-700/80 hover:border-slate-600 shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
-          >
-            <HeartHandshake className="h-5 w-5 text-sky-400 shrink-0" />
-            <span>Connect &amp; Welfare Care</span>
-          </Link>
-
-          <Link
             href="/#visit"
-            className="group w-full max-w-xs sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-slate-900/50 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold text-sm sm:text-base border border-slate-800 hover:border-slate-700 transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+            className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-100 font-semibold text-sm sm:text-base border border-slate-700/80 hover:border-slate-600 shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
           >
             <MapPin className="h-5 w-5 text-amber-400 shrink-0" />
             <span>Plan a Visit</span>

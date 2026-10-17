@@ -7,7 +7,6 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Lock } from 'lucide-react'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -173,15 +172,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 sm:mt-14 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+        <div className="mt-12 sm:mt-14 pt-8 border-t border-slate-100 text-center text-sm text-slate-500">
           <p>&copy; {currentYear} ECCF &mdash; ESUI Christian Campus Fellowship. All rights reserved.</p>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 text-slate-700 hover:text-[#0095ff] font-bold transition-colors"
-          >
-            <Lock className="h-4 w-4 text-slate-500" />
-            <span>Exco Dashboard Login</span>
-          </Link>
         </div>
       </div>
     </footer>
