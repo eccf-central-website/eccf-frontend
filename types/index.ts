@@ -119,6 +119,7 @@ export interface ECCFSession {
   team: string
   /** All operational teams this worker belongs to */
   teams?: string[]
+  leadingTeam?: string
   excoPosition?: string
   hall?: string
 }

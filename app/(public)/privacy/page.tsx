@@ -1,19 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  ShieldCheck,
-  Heart,
-  Lock,
-  Home,
-  Phone,
-  Calendar,
-  Sparkles,
-  Users,
-  CheckCircle2,
-  Mail,
-  ArrowLeft,
-  UserCheck,
-} from 'lucide-react'
+import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react'
 import { getSanityClient } from '@/lib/sanity'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import type { SiteSettingsData } from '@/components/home/HeroSection'
@@ -22,9 +9,9 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'Privacy & Data Care | ECCF Edo State University Fellowship',
+  title: 'Privacy & Data Care Charter | ECCF Edo State University Fellowship',
   description:
-    'A friendly, plain-English explanation of how ECCF protects your personal information, room number, contact details, and prayers.',
+    'Official Charter on Personal Data Care, Privacy, and Student Trust for Edo State University Christian Campus Fellowship (ECCF).',
 }
 
 export default async function PrivacyPage() {
@@ -36,329 +23,328 @@ export default async function PrivacyPage() {
   const fellowshipEmail = settings?.fellowshipEmail || 'contact@eccf.org'
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-slate-950 pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
-      <div className="max-w-4xl mx-auto px-6 sm:px-10 lg:px-12">
+    <div className="min-h-screen bg-[#fafaf9] text-slate-900 pt-28 sm:pt-32 md:pt-36 pb-24 sm:pb-32">
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10">
         {/* Navigation Breadcrumb */}
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-[#0077cc] transition-colors"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 hover:text-[#0077cc] transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Homepage</span>
+            <span>Back to Fellowship Home</span>
           </Link>
         </div>
 
-        {/* Page Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold tracking-wider uppercase mb-4">
-            <ShieldCheck className="h-4 w-4" />
-            <span>DATA CARE &amp; TRUST</span>
-          </div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
-            How We Care For Your Information
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            We are a campus fellowship family, not a big tech corporation. We believe loving God and caring for each
-            other means treating your personal information with absolute respect, confidentiality, and care.
-          </p>
-        </div>
-
         {/* ==================================================================== */}
-        {/* SECTION 1: THE SHORT VERSION (TL;DR)                                 */}
+        {/* THE OFFICIAL DOCUMENT CONTAINER                                     */}
         {/* ==================================================================== */}
-        <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-sky-50/80 via-white to-blue-50/50 border-2 border-sky-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0077cc] text-white shadow-xs">
-              <Heart className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-950">
-                The Quick Summary (In Plain English)
-              </h2>
-              <span className="text-xs text-slate-500 font-mono">No confusing legal jargon. Here is our promise to you:</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 text-sm">
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-sky-100 shadow-xs">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="text-slate-700 leading-snug">
-                <strong>We never sell your data:</strong> Your details stay in ECCF and are never shared with outside companies or advertisers.
-              </p>
+        <article className="bg-white border border-slate-200/90 shadow-sm rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-16">
+          {/* Document Header */}
+          <header className="border-b border-slate-200 pb-8 sm:pb-10 mb-10 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold tracking-wider uppercase mb-4">
+              <ShieldCheck className="h-4 w-4" />
+              <span>OFFICIAL CHARTER &bull; DATA CARE</span>
             </div>
 
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-sky-100 shadow-xs">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="text-slate-700 leading-snug">
-                <strong>Digital locks on private details:</strong> Sensitive items like your phone number and room number are encrypted.
-              </p>
-            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-slate-950 tracking-tight leading-tight">
+              Charter on Personal Data Care, Privacy &amp; Student Trust
+            </h1>
 
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-sky-100 shadow-xs">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="text-slate-700 leading-snug">
-                <strong>Strict need-to-know access:</strong> Leaders only see the specific slice of info needed to care for you in fellowship.
-              </p>
-            </div>
-
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-sky-100 shadow-xs">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="text-slate-700 leading-snug">
-                <strong>You are in control:</strong> You can update your room number, phone, or request deletion anytime without hassle.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================================== */}
-        {/* SECTION 2: WHAT WE ASK FOR & WHY                                     */}
-        {/* ==================================================================== */}
-        <div className="space-y-6 mb-12">
-          <div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950">
-              What We Collect &amp; Why We Need It
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 mt-1">
-              Every detail we ask for has a clear pastoral or operational purpose on campus.
+            <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-sans">
+              Edo State University Christian Campus Fellowship (ECCF) &mdash; Uzairue / Iyamho, Edo State, Nigeria.
             </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Card 1: Room & Hall */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#0077cc]">
-                <Home className="h-5 w-5" />
+            {/* Document Metadata Table / Registry Details */}
+            <div className="mt-8 pt-6 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono text-slate-500">
+              <div>
+                <span className="block text-slate-400 uppercase tracking-wider">Document Ref</span>
+                <span className="font-semibold text-slate-800">ECCF-DCP-2026</span>
               </div>
-              <h3 className="font-serif font-bold text-lg text-slate-950">
-                Your Hall &amp; Room Number
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Campus hostels are busy and it’s easy to feel lost in the crowd. When you register or fill a connect card,
-                our <strong>Hall Representatives</strong> use your room number to drop by for friendly visits, check on your
-                welfare, bring exam-season care, or pray with you.
-              </p>
-              <div className="pt-1 text-xs text-slate-400 font-mono">
-                🔒 Protected by AES-256 field-level encryption.
+              <div>
+                <span className="block text-slate-400 uppercase tracking-wider">Status</span>
+                <span className="font-semibold text-emerald-700">Active &amp; Enforced</span>
               </div>
-            </div>
-
-            {/* Card 2: Phone & Email */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-                <Phone className="h-5 w-5" />
+              <div>
+                <span className="block text-slate-400 uppercase tracking-wider">Scope</span>
+                <span className="font-semibold text-slate-800">Campus-Wide</span>
               </div>
-              <h3 className="font-serif font-bold text-lg text-slate-950">
-                Your Phone Number &amp; Email
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                We use your phone number and email to keep you informed about service timings, special fellowship programmes,
-                and prayer meetings. We do not blast you with spam or share your number with outsiders.
-              </p>
-              <div className="pt-1 text-xs text-slate-400 font-mono">
-                🔒 Phone numbers are masked &amp; encrypted at rest.
+              <div>
+                <span className="block text-slate-400 uppercase tracking-wider">Last Revised</span>
+                <span className="font-semibold text-slate-800">October 2026</span>
               </div>
             </div>
+          </header>
 
-            {/* Card 3: Birthday & Photo */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-slate-950">
-                Your Birthday &amp; Celebratory Photo
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                For workforce members, we celebrate you! We only ask for your <strong>birth month and day</strong> (we deliberately
-                do not collect your birth year). Our Media Team uses your photo to design a special birthday flyer to honor you
-                on your special day.
-              </p>
-              <div className="pt-1 text-xs text-slate-400 font-mono">
-                🎂 Month &amp; Day only — no birth year collected.
-              </div>
-            </div>
-
-            {/* Card 4: Welfare & Prayer */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-700">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-slate-950">
-                Welfare &amp; Prayer Requests
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                University life comes with academic, emotional, and physical demands. When you share a welfare need or prayer request,
-                it is held in strict confidence. Only our appointed Welfare Secretary and Prayer Coordinator handle these matters.
-              </p>
-              <div className="pt-1 text-xs text-slate-400 font-mono">
-                🕊️ Confidential pastoral care &amp; intercession.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================================== */}
-        {/* SECTION 3: WHO ACTUALLY SEES YOUR DETAILS?                           */}
-        {/* ==================================================================== */}
-        <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-mono font-bold tracking-wider uppercase mb-2">
-              <Users className="h-3.5 w-3.5 text-[#0077cc]" />
-              <span>ROLE-BASED ACCESS CONTROL</span>
-            </div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950">
-              Who Actually Sees Your Details?
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 mt-1">
-              We don&apos;t allow just any executive or member to view everyone&apos;s personal records. Everything is strictly segmented:
-            </p>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-              <span className="font-serif font-black text-sm px-2.5 py-1 rounded-lg bg-blue-100 text-[#0077cc] shrink-0 mt-0.5">
-                Hall Reps
-              </span>
-              <p className="text-slate-700 leading-relaxed">
-                Can <strong>only</strong> see the workers and students residing in their specific hall (e.g. Hall 1 Reps only see Hall 1).
-                They cannot see students in other halls.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-              <span className="font-serif font-black text-sm px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 shrink-0 mt-0.5">
-                Team Leads
-              </span>
-              <p className="text-slate-700 leading-relaxed">
-                Can <strong>only</strong> see workers who belong to or have applied to their operational unit (e.g. Choir Lead only sees Choir;
-                Ushering Lead only sees Ushering).
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-              <span className="font-serif font-black text-sm px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 shrink-0 mt-0.5">
-                Media Team
-              </span>
-              <p className="text-slate-700 leading-relaxed">
-                Can see worker names, birthdays, and profile pictures for the sole purpose of designing celebratory birthday flyers.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-              <span className="font-serif font-black text-sm px-2.5 py-1 rounded-lg bg-purple-100 text-purple-900 shrink-0 mt-0.5">
-                CSGB Admin
-              </span>
-              <p className="text-slate-700 leading-relaxed">
-                Central executive oversight to verify ministerial appointments, manage fellowship rosters, and resolve urgent escalations.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/80 flex items-start gap-3 text-rose-950 font-medium">
-              <span className="font-serif font-black text-sm px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 shrink-0 mt-0.5">
-                Public View
-              </span>
-              <p className="leading-relaxed">
-                General members, students, and website visitors have <strong>zero access</strong> to your contact information, room numbers,
-                or registration details.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================================== */}
-        {/* SECTION 4: HOW WE KEEP IT SAFE (THE DIGITAL LOCKS)                  */}
-        {/* ==================================================================== */}
-        <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-slate-900 text-white space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-500 text-slate-950">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-white">
-                How We Protect It (The Digital Locks)
+          {/* Document Body */}
+          <div className="space-y-12 text-slate-700 text-base sm:text-[17px] leading-relaxed font-sans">
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 1: PREAMBLE                                              */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-4">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                1. Preamble &amp; Pastoral Covenant
               </h2>
-              <span className="text-xs text-sky-300 font-mono">Modern cryptography behind the scenes</span>
-            </div>
-          </div>
+              <p>
+                The Edo State University Christian Campus Fellowship (ECCF) is a covenant spiritual family dedicated to
+                raising spiritual dynamites and academic giants. We operate as a body of Christ, not a commercial enterprise
+                or data aggregator.
+              </p>
+              <p>
+                We recognize that when students, campus workers, and visitors share their details with us, they are extending
+                sacred trust. We believe that loving God and shepherding His people includes protecting their privacy with
+                unwavering diligence, integrity, and biblical discretion.
+              </p>
+              <div className="p-4 sm:p-5 rounded-xl bg-slate-50 border-l-4 border-[#0077cc] text-slate-800 text-sm sm:text-base italic">
+                &ldquo;A talebearer reveals secrets, but he who is of a faithful spirit conceals a matter.&rdquo;
+                <span className="block not-italic text-xs font-mono text-slate-500 mt-1 font-bold">
+                  &mdash; Proverbs 11:13 (NKJV)
+                </span>
+              </div>
+              <p>
+                We hold a simple, non-negotiable standard: <strong>We never sell, rent, monetize, or trade your personal data.</strong> Your
+                information stays strictly within the fellowship stewardship and is never distributed to third-party commercial vendors,
+                advertisers, or external tracking services.
+              </p>
+            </section>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Whenever you submit your phone number or room number, our server immediately scrambles that text into an unreadable
-            code before storing it in our database (using <strong>AES-256-GCM encryption</strong>).
-          </p>
+            <hr className="border-t border-slate-200" />
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Even if an attacker somehow managed to inspect the database directly, your phone number and hostel room would look like
-            random strings of scrambled gibberish. Only authorized fellowship leaders logging in with authenticated credentials can
-            decrypt what they need to serve you.
-          </p>
-        </div>
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 2: INFORMATION COLLECTED & PURPOSES                     */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-6">
+              <div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                  2. Information We Collect and Why
+                </h2>
+                <p className="mt-2 text-slate-600">
+                  Every piece of information requested across our web portal serves a clearly defined pastoral or operational purpose:
+                </p>
+              </div>
 
-        {/* ==================================================================== */}
-        {/* SECTION 5: YOU ARE IN CONTROL (YOUR RIGHTS)                          */}
-        {/* ==================================================================== */}
-        <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
-              <UserCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-950">
-                You Are Always In Control
+              <div className="space-y-5">
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-900">
+                    2.1 Full Name and Identity
+                  </h3>
+                  <p className="mt-1">
+                    We collect your first name, surname, and initials so that fellowship leaders, pastors, and unit heads can address you
+                    personally with dignity. Your name is also used to maintain ministerial rosters and verify appointments across our 14
+                    operational service units.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-900">
+                    2.2 Contact Coordinates (Phone Number and Email)
+                  </h3>
+                  <p className="mt-1">
+                    Your phone number and email address allow us to send timely notices regarding worship services, spiritual conferences,
+                    emergency welfare announcements, and audio sermon releases. We respect your schedule and do not send unsolicited promotional
+                    spam.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-900">
+                    2.3 Hostel Residence and Room Coordinates
+                  </h3>
+                  <p className="mt-1">
+                    University life in campus halls (Halls 1 through 8) can be rigorous and isolating. When you provide your hall and room
+                    number, appointed Hall Pastors and Representatives use this coordinate solely to pay friendly pastoral visits, check on
+                    your physical and academic well-being, provide comfort during illness, and pray with you prior to university examinations.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-900">
+                    2.4 Milestone Dates (Birth Month &amp; Day) and Celebratory Portraits
+                  </h3>
+                  <p className="mt-1">
+                    We love to honor God&apos;s grace in our workers&apos; lives on their birthdays. To safeguard your privacy, we intentionally collect
+                    <strong> only your birth month and day</strong> &mdash; we never collect, store, or display your birth year or chronological age.
+                    Our Media Ministry uses this information, alongside your portrait photograph, exclusively to design celebratory birthday flyers.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-900">
+                    2.5 Pastoral Prayers and Welfare Submissions
+                  </h3>
+                  <p className="mt-1">
+                    Requests submitted for academic intervention, financial aid, emotional counseling, or private intercessory prayer are treated
+                    under strict pastoral confidence. They are routed directly to the Welfare Secretary, Prayer Coordinator, or Resident Pastor, and
+                    are never made accessible to the wider student body.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-t border-slate-200" />
+
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 3: ROLE-BASED ACCESS CONTROL                             */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-6">
+              <div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                  3. Role-Based Access: Who Sees Your Information
+                </h2>
+                <p className="mt-2 text-slate-600">
+                  We enforce strict segmentation of records. Fellowship executives do not have unrestricted access to all worker files; each
+                  leader&apos;s access is bounded strictly by their pastoral jurisdiction:
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="pl-4 sm:pl-6 border-l-2 border-slate-200">
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Clause 3.1 &mdash; Hall Pastors &amp; Representatives
+                  </h3>
+                  <p className="mt-1 text-sm sm:text-base">
+                    Hall Representatives are strictly restricted to members residing within their assigned hostel (for example, Hall 1
+                    Representatives can only access Hall 1 residents). They cannot view students residing in other halls or opposite wings.
+                  </p>
+                </div>
+
+                <div className="pl-4 sm:pl-6 border-l-2 border-slate-200">
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Clause 3.2 &mdash; Operational Unit &amp; Team Leaders
+                  </h3>
+                  <p className="mt-1 text-sm sm:text-base">
+                    Team leads (such as Choir, Ushering, Protocol, or Academic Distinction) may only view workers who are active members of their
+                    specific unit or applicants who have explicitly requested to join.
+                  </p>
+                </div>
+
+                <div className="pl-4 sm:pl-6 border-l-2 border-slate-200">
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Clause 3.3 &mdash; Media &amp; Digital Production Team
+                  </h3>
+                  <p className="mt-1 text-sm sm:text-base">
+                    Media personnel are granted read-only visibility into worker names, birth dates (month and day only), and profile photographs
+                    strictly for the purpose of scheduling and designing celebratory birthday publications.
+                  </p>
+                </div>
+
+                <div className="pl-4 sm:pl-6 border-l-2 border-slate-200">
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Clause 3.4 &mdash; Central Executive Body (CSGB Admin)
+                  </h3>
+                  <p className="mt-1 text-sm sm:text-base">
+                    The Central Student Governing Body maintains administrative oversight to coordinate fellowship-wide rosters, verify
+                    leadership appointments, and handle urgent pastoral escalations.
+                  </p>
+                </div>
+
+                <div className="pl-4 sm:pl-6 border-l-2 border-rose-300">
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Clause 3.5 &mdash; General Public &amp; Website Visitors
+                  </h3>
+                  <p className="mt-1 text-sm sm:text-base">
+                    Website visitors, non-executive students, search engines, and outside parties have <strong>zero access</strong> to personal contact
+                    numbers, room locations, or fellowship membership files.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <hr className="border-t border-slate-200" />
+
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 4: TECHNICAL SAFEGUARDS & ENCRYPTION                     */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-4">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                4. Technical Safeguards and Cryptographic Locks
               </h2>
-              <span className="text-xs text-slate-500 font-mono">Simple, student-friendly rights</span>
-            </div>
+              <p>
+                To provide genuine defense against data breaches or snooping, our digital infrastructure implements field-level
+                cryptographic protection using <strong>AES-256-GCM encryption</strong>.
+              </p>
+              <p>
+                In plain terms, when you submit your telephone number or hostel room on our registration portal, our application server
+                scrambles that plain text into an unintelligible, mathematically encrypted cipher before it ever touches database storage.
+              </p>
+              <p>
+                Even in the improbable scenario where an unauthorized individual gained raw access to our backend database, your telephone
+                digits and room numbers would look like random strings of meaningless characters. Only authenticated fellowship leaders with
+                valid, cryptographically verified session credentials can momentarily decrypt what is necessary to serve you.
+              </p>
+            </section>
+
+            <hr className="border-t border-slate-200" />
+
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 5: STUDENT RIGHTS & CONTROL                              */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-5">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                5. Your Rights as a Student and Fellowship Member
+              </h2>
+              <p>
+                You retain ultimate ownership and control over your personal records at all times. Specifically:
+              </p>
+
+              <ul className="space-y-4 pl-5 list-disc marker:text-[#0077cc]">
+                <li>
+                  <strong>The Right to Update Residence and Units:</strong> Moving to a new hostel or allocated a different room next semester?
+                  You do not need to fill out endless paperwork. Simply re-enter your registered phone number on our intake portal; the system
+                  will securely verify you and let you update your room or team preferences in seconds.
+                </li>
+                <li>
+                  <strong>The Right to Notification Preferences:</strong> You can pause or opt out of broadcast emails, SMS updates, or birthday
+                  flyer publication at any time by speaking to your unit lead or sending a short note to our secretariat.
+                </li>
+                <li>
+                  <strong>The Right to Erasure (The &ldquo;Clean Slate&rdquo;):</strong> When you graduate, transfer institutions, or choose to step
+                  aside, you may request that your details be permanently and irreversibly purged from our fellowship records. We honor all
+                  deletion requests promptly without questioning.
+                </li>
+              </ul>
+            </section>
+
+            <hr className="border-t border-slate-200" />
+
+            {/* ---------------------------------------------------------------- */}
+            {/* SECTION 6: GOVERNANCE & CONTACTS                                 */}
+            {/* ---------------------------------------------------------------- */}
+            <section className="space-y-4">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
+                6. Inquiries, Corrections and Pastoral Care
+              </h2>
+              <p>
+                If you have questions about how your personal details are being stewarded, wish to report an inaccuracy, or desire pastoral
+                guidance regarding your privacy preferences, please reach out to the Central Secretariat:
+              </p>
+
+              <div className="mt-4 p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="font-semibold text-slate-900">
+                  Edo State University Christian Campus Fellowship (ECCF)
+                </div>
+                <div className="text-sm text-slate-600 space-y-1">
+                  <p>Central Student Governing Body (CSGB) &bull; Secretariat</p>
+                  <p>Meeting Venue: Lecture Theatre 5 (NLT 5), Faculty of Law</p>
+                  <p>Edo State University Uzairue, Iyamho, Edo State, Nigeria</p>
+                </div>
+                <div className="pt-2">
+                  <a
+                    href={`mailto:${fellowshipEmail}`}
+                    className="inline-flex items-center gap-2 text-sm font-bold text-[#0077cc] hover:underline"
+                  >
+                    <Mail className="h-4 w-4" />
+                    <span>Direct Inquiries: {fellowshipEmail}</span>
+                  </a>
+                </div>
+              </div>
+
+              <div className="pt-6 text-xs text-slate-400 font-mono text-center sm:text-left">
+                Ratified by the Central Student Governing Body (CSGB) in consultation with the Pastoral Advisory Directorate.
+              </div>
+            </section>
           </div>
-
-          <ul className="space-y-3 text-sm text-slate-700 leading-relaxed pt-2">
-            <li className="flex items-start gap-2">
-              <span className="text-[#0077cc] font-bold">•</span>
-              <span>
-                <strong>Moved to a new room or hall?</strong> Simply visit our registration page and enter your phone number.
-                The system will automatically recognize you and let you update your hostel room and operational teams in seconds.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#0077cc] font-bold">•</span>
-              <span>
-                <strong>Want to pause notifications?</strong> You can opt out of fellowship email digests or SMS broadcasts at any time.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#0077cc] font-bold">•</span>
-              <span>
-                <strong>Need your record deleted?</strong> If you graduate, relocate, or wish to have your details completely erased from our
-                database, just contact us and we will delete your record with no questions asked.
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        {/* ==================================================================== */}
-        {/* SECTION 6: QUESTIONS OR NEED HELP?                                  */}
-        {/* ==================================================================== */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-sky-50 border border-sky-200 text-center space-y-4">
-          <h2 className="font-serif text-2xl font-bold text-slate-950">
-            Have Questions or Concerns?
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
-            If you ever have a question about how your information is handled, or if you want to update your pastoral preferences,
-            feel free to reach out to our General Secretary or any CSGB Executive.
-          </p>
-
-          <div className="pt-2">
-            <a
-              href={`mailto:${fellowshipEmail}`}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0077cc] hover:bg-[#0066b3] text-white text-sm font-bold shadow-sm transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              <span>Contact Us: {fellowshipEmail}</span>
-            </a>
-          </div>
-
-          <p className="text-xs text-slate-500 pt-2 font-mono">
-            Edo State University Christian Campus Fellowship (ECCF) &bull; Iyamho, Edo State, Nigeria.
-          </p>
-        </div>
+        </article>
       </div>
     </div>
   )

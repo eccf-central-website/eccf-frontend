@@ -17,8 +17,11 @@ import {
   Loader2,
   Calendar,
   Download,
+  Mail,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
+import SendWorkerEmailDialog from './SendWorkerEmailDialog'
+import SendWorkerEmailCard from './SendWorkerEmailCard'
 import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
@@ -100,6 +103,8 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
   const [teamFilter, setTeamFilter] = useState('all')
   const [hallFilter, setHallFilter] = useState('all')
   const [activeWorkerDetail, setActiveWorkerDetail] = useState<WorkerRow | null>(null)
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [emailPreselectedWorker, setEmailPreselectedWorker] = useState<WorkerRow | null>(null)
   const [, startTransition] = useTransition()
   const [processingId, setProcessingId] = useState<string | null>(null)
 
@@ -282,8 +287,20 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           </p>
         </div>
 
-        {/* Quick Stats Counter Pills */}
-        <div className="flex items-center gap-2">
+        {/* Quick Actions & Counter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setEmailPreselectedWorker(null)
+              setIsEmailDialogOpen(true)
+            }}
+            className="h-10 px-3.5 rounded-xl bg-[#0077cc] hover:bg-[#0060aa] text-white font-bold text-xs shadow-xs"
+          >
+            <Mail className="h-4 w-4 mr-1.5" />
+            {isAdmin ? 'Broadcast Mail' : 'Email Workers'}
+          </Button>
+
           <div className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-center">
             <span className="block text-xs font-mono uppercase text-slate-500 font-bold">Total</span>
             <span className="font-serif font-black text-lg text-slate-900">{rows.length}</span>
@@ -300,6 +317,11 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           )}
         </div>
       </div>
+
+      {/* ==================================================================== */}
+      {/* WORKFORCE EMAIL DISPATCH INPUT BOX                                   */}
+      {/* ==================================================================== */}
+      <SendWorkerEmailCard session={session} workers={rows} defaultExpanded={false} />
 
       {/* ==================================================================== */}
       {/* PENDING APPROVALS ALERT CAROUSEL / CALLOUT BANNER                    */}
@@ -641,6 +663,20 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                           <Eye className="h-3.5 w-3.5 mr-1" /> View Profile
                         </Button>
 
+                        {/* Send direct email to worker */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEmailPreselectedWorker(worker)
+                            setIsEmailDialogOpen(true)
+                          }}
+                          title={`Send email to ${worker.fullName}`}
+                          className="h-8 px-2.5 rounded-lg text-slate-600 hover:text-[#0077cc] hover:bg-sky-50 text-xs font-semibold"
+                        >
+                          <Mail className="h-3.5 w-3.5 mr-1" /> Email
+                        </Button>
+
                         {/* If Pending & Authorized: Show 1-Tap Approve/Decline */}
                         {status === 'pending' && (isAdmin || (isTeamLead && !isMedia)) && (
                           <>
@@ -808,6 +844,15 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Send Email to Workers Dialog */}
+      <SendWorkerEmailDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        session={session}
+        workers={rows}
+        preselectedWorker={emailPreselectedWorker}
+      />
     </div>
   )
 }

@@ -83,7 +83,7 @@ export default function Footer({ settings }: FooterProps = {}) {
   }
 
   return (
-    <footer className="relative bg-[#070b18] text-slate-300 border-t border-slate-800/80 overflow-hidden font-sans">
+    <footer className="relative bg-slate-950 text-slate-300 border-t border-slate-800/80 overflow-hidden font-sans">
       {/* Background Crowd Atmosphere (Overlaying subtle congregation photo) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
         <Image
@@ -92,7 +92,7 @@ export default function Footer({ settings }: FooterProps = {}) {
           fill
           className="object-cover object-top opacity-10 mix-blend-luminosity brightness-75 scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#070b18]/85 via-[#070b18]/95 to-[#070b18]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/95 to-slate-950" />
       </div>
 
       <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 pt-16 sm:pt-20 pb-12 relative z-10">
@@ -109,10 +109,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                 SUBSCRIBE FOR NEWS, UPDATES, AND EVENTS
               </h3>
 
-              <form onSubmit={handleSubscribe} className="mt-3.5 space-y-2.5 max-w-md">
+              <form onSubmit={handleSubscribe} className="mt-3.5 space-y-3 max-w-md">
                 <div>
-                  <label htmlFor="footer-email" className="block text-xs font-semibold text-slate-300 mb-1">
-                    Email<span className="text-red-500">*</span>
+                  <label htmlFor="footer-email" className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Email<span className="text-[#0095ff] ml-0.5">*</span>
                   </label>
                   <input
                     id="footer-email"
@@ -122,7 +122,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
-                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-[2px] px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0095ff] focus:border-transparent transition"
+                    className="w-full bg-white text-slate-900 border border-stone-200 rounded-full px-5 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0095ff] focus:border-transparent transition shadow-sm"
                   />
                 </div>
 
@@ -130,7 +130,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-[#c8102e] hover:bg-[#a50d26] active:bg-[#8b0b20] disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-7 rounded-[2px] shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="bg-[#0095ff] hover:bg-[#0080e0] active:bg-[#0070c9] disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider py-3 px-8 rounded-full shadow-md shadow-sky-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {loading ? (
                       <>
@@ -153,16 +153,16 @@ export default function Footer({ settings }: FooterProps = {}) {
                 {/* Inline Status Feedback */}
                 {status && (
                   <div
-                    className={`p-3 rounded-[2px] text-xs font-medium flex items-start gap-2 ${
+                    className={`p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
                       status.success
                         ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-300'
-                        : 'bg-red-950/70 border border-red-500/40 text-red-300'
+                        : 'bg-rose-950/70 border border-rose-500/40 text-rose-300'
                     }`}
                   >
                     {status.success ? (
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
                     )}
                     <span>{status.message}</span>
                   </div>
@@ -199,36 +199,22 @@ export default function Footer({ settings }: FooterProps = {}) {
             </div>
 
             {/* Social Channels (Follow Us) */}
-            <div className="pt-1">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 font-mono">
+            <div className="pt-2">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-300 mb-3.5 font-mono">
                 FOLLOW US
               </h4>
-              <div className="flex items-center gap-3 text-slate-300 flex-wrap">
+              <div className="flex items-center gap-3 text-white flex-wrap">
                 {/* Facebook */}
                 <a
                   href={facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  title="Facebook"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  title="Follow ECCF on Facebook"
+                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
                 >
-                  <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </a>
-
-                {/* X (formerly Twitter) */}
-                <a
-                  href={settings?.socialInstagram ? `https://x.com` : 'https://x.com'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="X (formerly Twitter)"
-                  title="X"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
-                >
-                  <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                 </a>
 
@@ -238,10 +224,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  title="Instagram"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  title="Follow ECCF on Instagram"
+                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
                 >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
@@ -254,10 +240,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube"
-                  title="YouTube"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  title="Watch ECCF sermons on YouTube"
+                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
                 >
-                  <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </a>
@@ -268,10 +254,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="TikTok"
-                  title="TikTok"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  title="Follow ECCF on TikTok"
+                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
                 >
-                  <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3 15.28 6.34 6.34 0 0 0 9.34 21.6a6.34 6.34 0 0 0 6.34-6.32V8.75a8.28 8.28 0 0 0 4.81 1.54V6.84a4.8 4.8 0 0 1-.9-.15z"/>
                   </svg>
                 </a>
@@ -282,10 +268,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Telegram"
-                  title="Telegram"
-                  className="h-9 w-9 rounded-full border border-slate-700/80 hover:border-slate-300 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  title="Join ECCF Telegram channel"
+                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
                 >
-                  <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                     <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.693c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
                   </svg>
                 </a>

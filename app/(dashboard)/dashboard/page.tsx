@@ -14,6 +14,8 @@
  */
 
 import { Suspense } from 'react'
+import Link from 'next/link'
+import { Mail } from 'lucide-react'
 import { requireSession } from '@/lib/dashboard/auth'
 import { canAccessSection, hasPermission, ROLE_LABELS, SECTION_PATHS } from '@/lib/dashboard/rbac'
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
@@ -45,23 +47,35 @@ export default async function DashboardOverviewPage() {
       <Suspense fallback={null}>
         <DeniedToast />
       </Suspense>
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-serif text-2xl text-foreground">Welcome back</h2>
-          <Badge>{ROLE_LABELS[session.role]}</Badge>
-          {session.teams && session.teams.length > 0 ? (
-            session.teams.map((t) => (
-              <Badge key={t} variant="outline" className="text-xs">
-                {t}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-serif text-2xl text-foreground">Welcome back</h2>
+            <Badge>{ROLE_LABELS[session.role]}</Badge>
+            {session.teams && session.teams.length > 0 ? (
+              session.teams.map((t) => (
+                <Badge key={t} variant="outline" className="text-xs">
+                  {t}
+                </Badge>
+              ))
+            ) : session.team ? (
+              <Badge variant="outline" className="text-xs">
+                {session.team}
               </Badge>
-            ))
-          ) : session.team ? (
-            <Badge variant="outline" className="text-xs">
-              {session.team}
-            </Badge>
-          ) : null}
+            ) : null}
+          </div>
+          <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across the fellowship.</p>
         </div>
-        <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across the fellowship.</p>
+
+        <div>
+          <Link
+            href="/dashboard/workers"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[#0077cc] hover:bg-[#0060aa] text-white font-bold text-xs shadow-xs transition-colors"
+          >
+            <Mail className="h-4 w-4 mr-1" />
+            {session.role === 'admin' ? 'Broadcast Mail to Workers' : `Send Mail to ${session.team}`}
+          </Link>
+        </div>
       </div>
       <BlockErrorBoundary title="Statistics couldn't load">
         <Suspense fallback={<OverviewStatsSkeleton people={showPeople} finance={showFinance} />}>

@@ -166,19 +166,22 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-full text-sm xl:text-base font-semibold whitespace-nowrap transition-all duration-200 focus:outline-none ${
+                  className={`relative inline-flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm xl:text-base whitespace-nowrap transition-colors duration-200 focus:outline-none ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-bold border border-sky-200/70 shadow-sm'
+                      ? 'text-[#0095ff] font-bold'
                       : isPending
-                      ? 'bg-sky-50/60 text-[#0095ff] animate-pulse'
-                      : 'text-slate-600 hover:text-[#0095ff] hover:bg-slate-50'
+                      ? 'text-[#0095ff] animate-pulse font-semibold'
+                      : 'text-slate-600 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
-                  {isPending && <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />}
-                  {active && !isPending && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#0095ff] shrink-0" />
-                  )}
+                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff] shrink-0" />}
                   <span>{link.label}</span>
+                  {active && !isPending && (
+                    <span
+                      className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-200"
+                      aria-hidden="true"
+                    />
+                  )}
                 </Link>
               </li>
             )
@@ -222,20 +225,16 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-base sm:text-lg font-semibold transition-colors ${
+                  className={`flex items-center justify-between rounded-r-xl px-4 py-3 text-base sm:text-lg transition-colors ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-bold border border-sky-200/60'
+                      ? 'text-[#0095ff] font-bold border-l-4 border-[#0095ff] bg-sky-50/60 pl-3.5'
                       : isPending
-                      ? 'bg-sky-50/50 text-[#0095ff]'
-                      : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff]'
+                      ? 'text-[#0095ff] bg-sky-50/30 font-semibold'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
                   <span>{link.label}</span>
-                  {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />
-                  ) : active ? (
-                    <span className="h-2 w-2 rounded-full bg-[#0095ff]" />
-                  ) : null}
+                  {isPending && <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />}
                 </Link>
               </li>
             )
