@@ -22,7 +22,6 @@ export interface SocialMediaBannerProps {
   headlineLine3?: string
   youtubeUrl?: string
   instagramUrl?: string
-  xUrl?: string
   facebookUrl?: string
   tiktokUrl?: string
   telegramUrl?: string
@@ -35,7 +34,6 @@ export default function SocialMediaBanner({
   headlineLine3 = 'CONTENT',
   youtubeUrl = 'https://youtube.com',
   instagramUrl = 'https://instagram.com',
-  xUrl = 'https://x.com',
   facebookUrl = 'https://facebook.com',
   tiktokUrl = 'https://tiktok.com',
   telegramUrl = 'https://t.me',
@@ -70,20 +68,6 @@ export default function SocialMediaBanner({
           <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
           <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-        </svg>
-      ),
-    },
-    {
-      name: 'X (Twitter)',
-      href: xUrl,
-      ariaLabel: 'Follow ECCF on X for live service highlights and prophetic declarations',
-      icon: (
-        <svg
-          className="h-3.5 w-3.5 min-[375px]:h-4 min-[375px]:w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 fill-current"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       ),
     },
@@ -137,7 +121,7 @@ export default function SocialMediaBanner({
       aria-label="Social Media Channels"
       className="w-full bg-white text-slate-950 py-12 sm:py-16 md:py-24 lg:py-28 border-y border-stone-200/90 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-16">
           
           {/* ================================================================ */}
@@ -173,7 +157,7 @@ export default function SocialMediaBanner({
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="grid grid-cols-6 gap-2 sm:gap-3.5 md:flex md:items-center md:justify-end md:gap-4 lg:gap-5 w-full max-w-[340px] sm:max-w-[420px] md:max-w-none self-start md:self-center"
+            className="grid grid-cols-5 gap-2.5 sm:gap-4 md:flex md:items-center md:justify-end md:gap-4 lg:gap-5 w-full max-w-[320px] sm:max-w-[400px] md:max-w-none self-start md:self-center"
           >
             {socialPlatforms.map((platform, idx) => (
               <motion.a

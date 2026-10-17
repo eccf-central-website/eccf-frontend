@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sanityClient, sanityWriteClient } from '@/lib/sanity'
+import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
 import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 
@@ -64,15 +64,14 @@ function blocksToHtml(blocks: unknown): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Sanity signed webhook (S6). Fail closed when the secret is unset, and
-    // never accept the secret in the URL (it ends up in access logs).
     const secret = process.env.SANITY_WEBHOOK_SECRET
-    if (!secret) {
-      console.error('[announcement webhook] SANITY_WEBHOOK_SECRET is not set; rejecting request.')
-      return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 })
+    if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
+      console.error('[announcement-webhook] SANITY_WEBHOOK_SECRET is not configured; refusing to run.')
+      return NextResponse.json({ error: 'Announcement webhook is not configured.' }, { status: 503 })
     }
-
-    // Verify against the raw body: re-encoded JSON can differ byte-for-byte.
+    // Sanity signed webhook (S6): verify the sanity-webhook-signature header
+    // over the raw body (re-encoded JSON can differ byte-for-byte). The secret
+    // is never accepted as a bearer header or URL param.
     const rawBody = await req.text()
     const signature = req.headers.get(SIGNATURE_HEADER_NAME) || ''
     if (!signature || !(await isValidSignature(rawBody, signature, secret).catch(() => false))) {
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
     })()
     const docId = payload._id || payload.id
 
-    if (!docId) {
+    if (typeof docId !== 'string' || docId.length > 256) {
       return NextResponse.json({ error: 'No announcement ID provided in payload' }, { status: 400 })
     }
 
@@ -138,7 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch all active subscribers
-    const subscribers = await sanityWriteClient.fetch<string[]>(
+    const subscribers = await sanityPrivateClient.fetch<string[]>(
       `*[_type == "subscriber" && isActive != false && defined(email) && email != ""].email`
     )
 

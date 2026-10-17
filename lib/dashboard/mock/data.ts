@@ -47,6 +47,7 @@ const LAST_NAMES = [
 
 function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
   const fullName = `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[(i * 7) % LAST_NAMES.length]}`
+  const email = `${fullName.toLowerCase().replace(/\s+/g, '.')}@example.com`
   const team = TEAMS[i % TEAMS.length]
   const secondTeam = i % 3 === 0 ? TEAMS[(i + 4) % TEAMS.length] : undefined
   const teams = secondTeam ? [team, secondTeam] : [team]
@@ -56,6 +57,7 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
   return {
     _id: `mock-worker-${String(i + 1).padStart(3, '0')}`,
     fullName,
+    email,
     team,
     teams,
     hall: MOCK_HALLS[i % MOCK_HALLS.length],
@@ -72,10 +74,10 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
 }
 
 const sessionWorkers: WorkerRow[] = [
-  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President', isExcoApproved: true, verificationStatus: 'verified' }),
-  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', team: 'Media', leadingTeam: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator', isExcoApproved: true, verificationStatus: 'verified' }),
-  makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', team: 'Welfare', hall: 'Hall B', role: 'hall_rep', isExcoApproved: true, verificationStatus: 'verified' }),
-  makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', email: 'osaro.igbinedion@example.com', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', email: 'tobi.adebayo@example.com', team: 'Media', leadingTeam: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', email: 'ivie.aigbe@example.com', team: 'Welfare', hall: 'Hall B', role: 'hall_rep', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', email: 'efosa.osagie@example.com', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary', isExcoApproved: true, verificationStatus: 'verified' }),
 ]
 
 export const MOCK_WORKERS: WorkerRow[] = [

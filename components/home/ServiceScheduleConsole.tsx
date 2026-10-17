@@ -113,8 +113,8 @@ export default function ServiceScheduleConsole({ services }: Props) {
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-sky-100/50 rounded-full blur-3xl pointer-events-none -z-0" />
       <div className="absolute top-1/2 right-0 -translate-y-1/2 w-96 h-96 bg-amber-50/60 rounded-full blur-3xl pointer-events-none -z-0" />
 
-      {/* Main Container — Widened to max-w-7xl matching Hero & Who We Are */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10 w-full">
+      {/* Main Container — Full width matching Hero & Who We Are margins */}
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 relative z-10">
         
         {/* Section Header: Wide & Authoritative */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 sm:mb-12 gap-6 text-left">

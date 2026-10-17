@@ -5,18 +5,26 @@
  * Zero hardcoded fallback data. Supports podcast links, topic filtering, and search.
  */
 
-import { sanityClient } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import { SERMONS_QUERY } from '@/lib/queries'
 import SermonsFeed, { SermonItem } from '@/components/sermons/SermonsFeed'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function SermonsPage() {
+export default async function SermonsPage({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
   let sermons: SermonItem[] = []
 
   try {
-    const raw = await sanityClient.fetch<SermonItem[]>(SERMONS_QUERY)
+    const raw = await client.fetch<SermonItem[]>(SERMONS_QUERY)
     if (raw && raw.length > 0) {
       sermons = raw
     }
@@ -42,6 +50,8 @@ export default async function SermonsPage() {
 
         <SermonsFeed sermons={sermons} />
       </div>
+
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/sermons" />}
     </div>
   )
-}
+}

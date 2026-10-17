@@ -344,10 +344,10 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                 <div className="px-6 pb-6 pt-3 flex items-center justify-between border-t border-stone-100">
                   <span className="text-[11px] font-semibold text-slate-400">Open to all students</span>
                   <Link
-                    href={`/register?team=${encodeURIComponent(team.name)}`}
+                    href="/connect"
                     className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] group-hover:text-sky-800 transition-colors"
                   >
-                    <span>Join Team</span>
+                    <span>Get Involved</span>
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
                 </div>

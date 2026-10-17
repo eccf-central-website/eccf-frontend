@@ -7,7 +7,9 @@
  * and latest sermons concurrently on the Next.js server.
  */
 
-import { sanityClient, urlForImage } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient, urlForImage } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import {
   SITE_SETTINGS_QUERY,
   SERVICES_QUERY,
@@ -35,22 +37,29 @@ interface RawSanityGallery {
   imageUrl?: string
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
+
   // Concurrently fetch live data from Sanity on the server
   const [settings, services, rawGallery, latestSermons] = await Promise.all([
-    sanityClient.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
+    client.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch siteSettings:', err)
       return null
     }),
-    sanityClient.fetch<ServiceItem[]>(SERVICES_QUERY).catch((err) => {
+    client.fetch<ServiceItem[]>(SERVICES_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch services:', err)
       return []
     }),
-    sanityClient.fetch<RawSanityGallery[]>(GALLERY_QUERY).catch((err) => {
+    client.fetch<RawSanityGallery[]>(GALLERY_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch gallery:', err)
       return []
     }),
-    sanityClient.fetch<SermonItem[]>(LATEST_SERMONS_QUERY).catch((err) => {
+    client.fetch<SermonItem[]>(LATEST_SERMONS_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch latestSermons:', err)
       return []
     }),
@@ -108,13 +117,12 @@ export default async function Home() {
       <FellowshipMomentsSection gallery={gallery || []} />
 
       {/* 6. Giving Hub Section */}
-      <GivingHubSection />
+      <GivingHubSection settings={settings} />
 
       {/* 7. High-Impact Social Media Banner (Follow Us for Exclusive Content) */}
       <SocialMediaBanner
         youtubeUrl={settings?.socialYouTube}
         instagramUrl={settings?.socialInstagram}
-        xUrl={settings?.socialX}
         facebookUrl={settings?.socialFacebook}
         tiktokUrl={settings?.socialTikTok}
         telegramUrl={settings?.socialTelegram}
@@ -126,7 +134,15 @@ export default async function Home() {
         contactPerson={settings?.visitContactPerson || undefined}
         whatsAppNumber={settings?.visitWhatsAppNumber || undefined}
         email={settings?.fellowshipEmail || undefined}
+        imageUrl={
+          urlForImage(settings?.visitPhoto) ||
+          settings?.visitPhotoUrl ||
+          audiencePhoto ||
+          '/gallery/gallery-4.jpg'
+        }
       />
+
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/" />}
     </div>
   )
 }

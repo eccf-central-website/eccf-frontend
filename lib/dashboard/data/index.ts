@@ -19,7 +19,8 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
-import { sanityWriteClient } from '@/lib/sanity'
+import { sanityPrivateClient } from '@/lib/sanity'
+import { decrypt } from '@/lib/encryption'
 import type {
   AttendanceRow,
   ECCFSession,
@@ -54,7 +55,6 @@ import {
 } from '../mock/data'
 import { stripPII } from './pii'
 import { lagosDaysAgo, lagosMonthStart } from '../dates'
-import { decrypt } from '@/lib/encryption'
 
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
 
@@ -87,14 +87,14 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
   const hall =
     dataSource() === 'mock'
       ? mockHallForWorker(session.id)
-      : await sanityWriteClient.fetch<string | null>(WORKER_HALL_BY_ID_QUERY, { id: session.id })
+      : await sanityPrivateClient.fetch<string | null>(WORKER_HALL_BY_ID_QUERY, { id: session.id })
   // A hall_rep without a hall on record must not fall through to "all halls".
   return hall ?? '__no-hall__'
 }
 
 /** Team used to scope team_lead reads; null means all teams. */
 function teamScope(session: ECCFSession): string | null {
-  if (!isTeamScoped(session.role)) return null
+  if (!isTeamScoped(session.role, session)) return null
   return session.team || '__no-team__'
 }
 
@@ -163,27 +163,81 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
   }
 
   const [people, finance] = await Promise.all([
-    showPeople ? sanityWriteClient.fetch<PeopleStats>(PEOPLE_STATS_QUERY, params) : undefined,
-    showFinance ? sanityWriteClient.fetch<FinanceStats>(FINANCE_STATS_QUERY, params) : undefined,
+    showPeople ? sanityPrivateClient.fetch<PeopleStats>(PEOPLE_STATS_QUERY, params) : undefined,
+    showFinance ? sanityPrivateClient.fetch<FinanceStats>(FINANCE_STATS_QUERY, params) : undefined,
   ])
   return { people, finance }
 }
 
 // ---------------------------------------------------------------------------
-// Worker CRM
-// ---------------------------------------------------------------------------
+function matchesHall(workerHall: string | undefined, targetHall: string | null): boolean {
+  if (targetHall === null) return true
+  if (!workerHall) return false
+  return workerHall.toLowerCase().trim() === targetHall.toLowerCase().trim()
+}
+
+function matchesTeam(
+  workerTeam: string | undefined,
+  workerTeams: string[] | undefined,
+  targetTeam: string | null
+): boolean {
+  if (targetTeam === null) return true
+  const normTarget = targetTeam.toLowerCase().trim()
+  const cleanTarget = normTarget.replace(/\s+team$/, '')
+
+  const allWorkerTeams = [workerTeam, ...(workerTeams || [])].filter(Boolean) as string[]
+  return allWorkerTeams.some((wt) => {
+    const normWt = wt.toLowerCase().trim()
+    const cleanWt = normWt.replace(/\s+team$/, '')
+    return (
+      normWt === normTarget ||
+      cleanWt === cleanTarget ||
+      normWt.includes(cleanTarget) ||
+      cleanTarget.includes(cleanWt)
+    )
+  })
+}
 
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const hall = await hallScope(session)
   const team = teamScope(session)
-  const rows =
+  const rawRows =
     dataSource() === 'mock'
       ? (await fromMock(MOCK_WORKERS, [])).filter(
-          (w) =>
-            (hall === null || w.hall === hall) &&
-            (team === null || w.team === team || (w.teams && w.teams.includes(team)))
+          (w) => matchesHall(w.hall, hall) && matchesTeam(w.team, w.teams, team)
         )
-      : await sanityWriteClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
+      : await sanityPrivateClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
+
+  const rows = rawRows.map((w) => {
+    const decryptedBirthDate = decrypt(w.birthDate)
+    let birthMonth = w.birthMonth
+    let birthDay = w.birthDay
+    if ((!birthMonth || !birthDay) && decryptedBirthDate && decryptedBirthDate.includes('-')) {
+      const parts = decryptedBirthDate.split('-')
+      if (parts.length === 3) {
+        const m = parseInt(parts[1], 10)
+        const d = parseInt(parts[2], 10)
+        if (!isNaN(m) && !isNaN(d)) {
+          birthMonth = m
+          birthDay = d
+        }
+      } else if (parts.length === 2) {
+        const m = parseInt(parts[0], 10)
+        const d = parseInt(parts[1], 10)
+        if (!isNaN(m) && !isNaN(d)) {
+          birthMonth = m
+          birthDay = d
+        }
+      }
+    }
+    return {
+      ...w,
+      birthDate: decryptedBirthDate,
+      birthMonth,
+      birthDay,
+    }
+  })
+
   return stripPII(rows)
 }
 
@@ -206,7 +260,7 @@ export async function fetchWorkersForAttendance(
     "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall
   }`
-  const rows = await sanityWriteClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
+  const rows = await sanityPrivateClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
   return stripPII(rows)
 }
 
@@ -221,7 +275,7 @@ export async function listAttendance(session?: ECCFSession): Promise<AttendanceR
       ? (await fromMock(MOCK_ATTENDANCE, [])).filter(
           (a) => team === null || a.teamName === team || a.serviceType !== 'Team Meeting'
         )
-      : await sanityWriteClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY, { team })
+      : await sanityPrivateClient.fetch<AttendanceRow[]>(DASHBOARD_ATTENDANCE_QUERY, { team })
   return stripPII(rows)
 }
 
@@ -229,7 +283,7 @@ export async function listFinance(): Promise<FinanceRow[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_FINANCE, [])
-      : await sanityWriteClient.fetch<FinanceRow[]>(DASHBOARD_FINANCE_QUERY)
+      : await sanityPrivateClient.fetch<FinanceRow[]>(DASHBOARD_FINANCE_QUERY)
   return stripPII(rows)
 }
 
@@ -247,7 +301,7 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
     return raw
   }
 
-  const rows = await sanityWriteClient.fetch<FirstTimerRow[]>(DASHBOARD_FIRST_TIMERS_QUERY, {
+  const rows = await sanityPrivateClient.fetch<FirstTimerRow[]>(DASHBOARD_FIRST_TIMERS_QUERY, {
     hall: hall && hall !== '__no-hall__' ? hall : null,
   })
 
@@ -262,7 +316,7 @@ export async function listWelfare(): Promise<SafeWelfareRequest[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_WELFARE, [])
-      : await sanityWriteClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
+      : await sanityPrivateClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
   return stripPII(rows).map((row) => ({
     ...row,
     requestDetails: decrypt(row.requestDetails),
@@ -273,7 +327,7 @@ export async function listPrayerRequests(): Promise<PrayerRequest[]> {
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_PRAYER_REQUESTS, [])
-      : await sanityWriteClient.fetch<PrayerRequest[]>(DASHBOARD_PRAYER_REQUESTS_QUERY)
+      : await sanityPrivateClient.fetch<PrayerRequest[]>(DASHBOARD_PRAYER_REQUESTS_QUERY)
   return stripPII(rows).map((row) => ({
     ...row,
     request: decrypt(row.request),

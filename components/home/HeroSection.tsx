@@ -13,7 +13,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { urlForImage } from '@/lib/sanity'
+import { urlForImage } from '@/lib/sanity-image'
 
 export interface CollagePhotoItem {
   _key?: string
@@ -24,6 +24,7 @@ export interface CollagePhotoItem {
 }
 
 export interface SiteSettingsData {
+  heroHeadline?: string
   heroHeadlineStart?: string
   heroAccentWord?: string
   heroHeadlineEnd?: string
@@ -42,13 +43,39 @@ export interface SiteSettingsData {
   statsCampusLegacy?: string
   visitContactPerson?: string
   visitWhatsAppNumber?: string
+  visitPhoto?: unknown
+  visitPhotoUrl?: string
+  givingBankName?: string
+  givingAccountName?: string
+  givingAccountNumber?: string
+  givingInstructions?: string
   fellowshipEmail?: string
   socialYouTube?: string
   socialInstagram?: string
-  socialX?: string
   socialFacebook?: string
   socialTikTok?: string
   socialTelegram?: string
+  socialTwitter?: string
+  socialWhatsApp?: string
+  footerNewsletterHeading?: string
+  footerNewsletterDescription?: string
+  footerBrandTitle?: string
+  footerBrandSubtitle?: string
+  footerMissionStatement?: string
+  footerLogo?: unknown
+  footerLogoUrl?: string
+  footerMeetingVenue?: string
+  footerActiveMinistry?: string
+  footerCopyright?: string
+  footerNavColumns?: {
+    title: string
+    links?: {
+      label: string
+      url: string
+      isExternal?: boolean
+      highlight?: boolean
+    }[]
+  }[]
 }
 
 interface Props {
@@ -82,9 +109,10 @@ export default function HeroSection({ settings }: Props) {
   const topLabel = settings?.heroTopPill || 'Join us this week'
 
   const headline =
-    settings?.heroHeadlineStart && settings?.heroHeadlineEnd
+    settings?.heroHeadline ||
+    (settings?.heroHeadlineStart && settings?.heroHeadlineEnd
       ? `${settings.heroHeadlineStart} ${settings?.heroAccentWord || ''} ${settings.heroHeadlineEnd}`.trim()
-      : 'An Assembly of Spiritual Dynamites & Academic Giants'
+      : 'An Assembly of Spiritual Dynamites & Academic Giants')
 
   const bodyText =
     settings?.heroParagraph ||

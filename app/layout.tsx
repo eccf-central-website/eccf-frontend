@@ -45,12 +45,7 @@ export const metadata: Metadata = {
   title: "ESUI Christian Campus Fellowship: Raising Spiritual Dynamites and Academic Giants",
   description:
     "Official Website & Management Portal for Edo State University Christian Campus Fellowship (ECCF). Raising leaders for God's kingdom on campus and beyond.",
-  applicationName: "ECCF Portal",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "ECCF Portal",
-  },
+  applicationName: "ECCF Family",
   formatDetection: {
     telephone: false,
   },
@@ -69,6 +64,8 @@ export const metadata: Metadata = {
   },
 };
 
+import LivePreviewListener from "@/components/common/LivePreviewListener";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -82,8 +79,10 @@ export default function RootLayout({
       <body
         className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
       >
+        <LivePreviewListener />
         {children}
       </body>
     </html>
   );
 }
+

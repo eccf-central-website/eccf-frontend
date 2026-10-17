@@ -21,9 +21,14 @@ export function requireEnv(names: readonly string[], purpose: string): string {
   )
 }
 
-/** NextAuth JWT signing secret. */
+/** NextAuth JWT signing secret. Must be 32+ bytes in production. */
 export function getAuthSecret(): string {
-  return requireEnv(['NEXTAUTH_SECRET', 'AUTH_SECRET'], 'NextAuth session signing')
+  const secret = requireEnv(['NEXTAUTH_SECRET', 'AUTH_SECRET'], 'NextAuth session signing')
+  // TextEncoder rather than Buffer: this also runs in Edge middleware.
+  if (process.env.NODE_ENV === 'production' && new TextEncoder().encode(secret).length < 32) {
+    throw new Error('[env] NEXTAUTH_SECRET must be at least 32 bytes in production.')
+  }
+  return secret
 }
 
 /** AES-256-GCM field encryption secret (lib/encryption.ts). */

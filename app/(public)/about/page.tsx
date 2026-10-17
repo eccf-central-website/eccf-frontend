@@ -2,7 +2,7 @@
  * About Us Page — /about
  *
  * Turning Point USA (tpusa.com)-inspired comprehensive About Page.
- * Server component fetching live Sanity data (aboutPage, siteSettings, teamUnits, workers)
+ * Server component fetching live Sanity data (aboutPage, siteSettings, teamUnits, public leaders)
  * with robust canonical fallbacks.
  *
  * Features:
@@ -15,7 +15,9 @@
  */
 
 import { Metadata } from 'next'
-import { sanityClient, urlForImage } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient, urlForImage } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import {
   ABOUT_PAGE_QUERY,
   SITE_SETTINGS_QUERY,
@@ -56,16 +58,11 @@ interface RawSanityExco {
   fullName: string
   excoPosition?: string
   role?: string
-  team?: {
-    name?: string
-  }
-  leadingTeam?: {
-    name?: string
-  }
-  headshot?: unknown
-  headshotUrl?: string
+  teamName?: string
+  profileImage?: unknown
   profileImageUrl?: string
-  hall?: string
+  bio?: string
+  badgeLabel?: string
 }
 
 interface RawSanityAboutPage {
@@ -122,22 +119,29 @@ interface RawSanityAboutPage {
   ctaSubtitle?: string
 }
 
-export default async function AboutPage() {
+export default async function AboutPage({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
+
   // Concurrently fetch aboutPage, settings, teams, and excos from Sanity
   const [aboutData, settings, rawTeams, rawExcos] = await Promise.all([
-    sanityClient.fetch<RawSanityAboutPage>(ABOUT_PAGE_QUERY).catch((err) => {
+    client.fetch<RawSanityAboutPage>(ABOUT_PAGE_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch aboutPage:', err)
       return null
     }),
-    sanityClient.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
+    client.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch siteSettings:', err)
       return null
     }),
-    sanityClient.fetch<RawSanityTeam[]>(TEAMS_QUERY).catch((err) => {
+    client.fetch<RawSanityTeam[]>(TEAMS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch teams:', err)
       return []
     }),
-    sanityClient.fetch<RawSanityExco[]>(EXCOS_QUERY).catch((err) => {
+    client.fetch<RawSanityExco[]>(EXCOS_QUERY).catch((err) => {
       console.error('[AboutPage] Failed to fetch excos:', err)
       return []
     }),
@@ -159,12 +163,12 @@ export default async function AboutPage() {
     fullName: e.fullName,
     excoPosition: e.excoPosition,
     role: e.role,
-    teamName: e.leadingTeam?.name || e.team?.name || 'Executive Council',
+    teamName: e.teamName || 'Executive Council',
     profileImageUrl:
-      urlForImage(e.headshot) ||
-      e.headshotUrl ||
+      urlForImage(e.profileImage) ||
       e.profileImageUrl,
-    hall: e.hall,
+    bio: e.bio,
+    badgeLabel: e.badgeLabel,
   }))
 
   const heroImage =
@@ -270,6 +274,8 @@ export default async function AboutPage() {
         headline={aboutData?.ctaHeadline}
         subtitle={aboutData?.ctaSubtitle}
       />
+
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/about" />}
     </div>
   )
 }

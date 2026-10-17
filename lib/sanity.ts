@@ -10,42 +10,45 @@
  * Docs: https://www.sanity.io/docs/js-client
  */
 
+import 'server-only'
+
+import { randomUUID } from 'crypto'
 import {createClient} from '@sanity/client'
-import {createImageUrlBuilder} from '@sanity/image-url'
+export { urlForImage } from '@/lib/sanity-image'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'ynnot4j0'
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
 /**
- * Read client for PUBLIC page content. Uses a read-only (Viewer) token when
- * SANITY_READ_TOKEN is set, otherwise anonymous. It must never fall back to the
- * write token (S8): that would let public queries see drafts and private docs.
- * Reads of private data (workers, subscribers, …) go through sanityWriteClient
- * in server-only code instead.
+ * Published-content client for public site pages.
+ * Uses the read-only SANITY_READ_TOKEN (Viewer) only, never the write token (S8),
+ * so public queries cannot reach anything an editor token could.
  */
 export const sanityClient = createClient({
   projectId,
   dataset,
-  apiVersion: '2024-01-01',
-  useCdn: false, // Set false for immediate live preview of Sanity Studio edits
-  token: process.env.SANITY_READ_TOKEN || undefined,
+  apiVersion: '2025-02-19',
+  perspective: 'published',
+  useCdn: false,
+  token: process.env.SANITY_READ_TOKEN || undefined, // never the write token (S8)
 })
 
-/** Image URL builder with automatic hotspot and crop support */
-const imageBuilder = createImageUrlBuilder({
+/**
+ * Preview client for Draft Mode and Sanity Studio live preview.
+ * Queries unpublished drafts in real-time, falling back to published content.
+ */
+export const sanityPreviewClient = createClient({
   projectId,
   dataset,
+  apiVersion: '2025-02-19',
+  perspective: 'drafts',
+  useCdn: false,
+  token: process.env.SANITY_READ_TOKEN || undefined, // never the write token (S8)
 })
 
-export function urlForImage(source: unknown): string | undefined {
-  if (!source) return undefined
-  if (typeof source === 'string') return source
-  try {
-    return imageBuilder.image(source as Parameters<typeof imageBuilder.image>[0]).auto('format').fit('max').url()
-  } catch (err) {
-    console.error('[urlForImage] Failed to generate URL:', err)
-    return undefined
-  }
+/** Return the appropriate Sanity client based on preview / draft mode status. */
+export function getSanityClient(preview?: boolean) {
+  return preview ? sanityPreviewClient : sanityClient
 }
 
 /**
@@ -56,7 +59,36 @@ export function urlForImage(source: unknown): string | undefined {
 export const sanityWriteClient = createClient({
   projectId,
   dataset,
-  apiVersion: '2024-01-01',
+  apiVersion: '2025-02-19',
   useCdn: false,
   token: process.env.SANITY_WRITE_TOKEN, // ⚠️ Server-side only — never prefix with NEXT_PUBLIC_
 })
+
+/**
+ * Authenticated view for operational documents.
+ * Queries with drafts perspective to access both published and pending draft edits.
+ */
+export const sanityPrivateClient = createClient({
+  projectId,
+  dataset,
+  apiVersion: '2025-02-19',
+  perspective: 'drafts',
+  useCdn: false,
+  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+})
+
+/** Document ID helper for private operational document mutations. */
+export function privateDocumentId(id: string): string {
+  return id
+}
+
+/** Create operational documents in the private dataset. */
+export async function createPrivateDocument<T extends Record<string, unknown> & { _type: string }>(doc: T) {
+  const id = doc._id || randomUUID().replace(/-/g, '')
+  return sanityWriteClient.create({ ...doc, _id: id })
+}
+
+/** Patch operational documents in the private dataset. */
+export function patchPrivateDocument(id: string) {
+  return sanityWriteClient.patch(id)
+}

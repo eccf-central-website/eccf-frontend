@@ -8,10 +8,11 @@
  */
 
 import type { NextAuthOptions } from 'next-auth'
+import 'server-only'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
-import { sanityWriteClient } from '@/lib/sanity'
-import { decrypt, createBlindIndex } from '@/lib/encryption'
+import { sanityPrivateClient } from '@/lib/sanity'
+import { decrypt, createBlindIndex, getCandidateBlindIndexes } from '@/lib/encryption'
 import { getAuthSecret } from '@/lib/env'
 import type { WorkerRole } from '@/types'
 
@@ -30,18 +31,21 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
-          throw new Error('Please enter both your email/phone number and password.')
+          throw new Error('Sign-in failed.')
         }
 
         const rawIdentifier = credentials.identifier.trim()
         const cleanEmail = rawIdentifier.toLowerCase()
         const cleanPhone = rawIdentifier.replace(/\s+/g, '')
-        const phoneBlindIndex = createBlindIndex(cleanPhone)
+        const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
+        const primaryBlindIndex = createBlindIndex(cleanPhone)
+        const allBlindIndexes = Array.from(new Set([primaryBlindIndex, ...candidateBlindIndexes]))
 
-        // Look up Worker in Sanity by email, phoneNumber, or phoneBlindIndex.
-        // Fetch up to two: an ambiguous match (e.g. one record reusing another's
-        // email) must not sign anyone in as whichever record happens to be first.
-        const matches = await sanityWriteClient.fetch<{
+        // Look up Worker in Sanity by email, phoneNumber, or candidate phoneBlindIndexes.
+        // Fetch up to two (the drafts perspective already merges a draft with its
+        // published doc): an ambiguous match, e.g. a second record reusing an
+        // exco's email, must not sign anyone in as whichever record ranks first.
+        const matches = await sanityPrivateClient.fetch<{
           _id: string
           fullName: string
           email?: string
@@ -55,7 +59,11 @@ export const authOptions: NextAuthOptions = {
           hall?: string
           teams?: (string | { name?: string })[]
         }[]>(
-          `*[_type == "worker" && (lower(email) == $cleanEmail || phoneNumber == $cleanPhone || phoneBlindIndex == $phoneBlindIndex) && !(_id in path("drafts.**"))][0...2]{
+          `*[_type == "worker" && (
+            lower(email) == $cleanEmail ||
+            phoneNumber == $cleanPhone ||
+            phoneBlindIndex in $allBlindIndexes
+          )] | order(defined(passwordHash) desc, _updatedAt desc)[0...2]{
             _id,
             fullName,
             email,
@@ -69,38 +77,38 @@ export const authOptions: NextAuthOptions = {
             hall,
             "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
           }`,
-          { cleanEmail, cleanPhone, phoneBlindIndex }
+          { cleanEmail, cleanPhone, allBlindIndexes }
         )
 
         if (matches.length > 1) {
           // Log ids only — never the identifier or any personal data.
           console.error('[authorize] Ambiguous sign-in match; refusing. Worker ids:', matches.map((m) => m._id))
-          throw new Error('Unable to sign in with those details. Please contact an administrator.')
+          throw new Error('Sign-in failed.')
         }
         const worker = matches[0]
 
         if (!worker) {
-          throw new Error('No worker account found matching those credentials.')
+          throw new Error('Sign-in failed.')
         }
 
         if (!worker.passwordHash) {
-          throw new Error('This account does not have a dashboard password set up.')
+          throw new Error('Sign-in failed.')
         }
 
         const storedHash = decrypt(worker.passwordHash)
         const isValid = await bcrypt.compare(credentials.password, storedHash)
         if (!isValid) {
-          throw new Error('Incorrect password. Please try again.')
+          throw new Error('Sign-in failed.')
         }
 
         // Admin Approval Gate (SDD §7.3)
         if (worker.isExcoApproved === false) {
-          throw new Error('Your Exco account is awaiting administrator approval.')
+          throw new Error('Sign-in failed.')
         }
 
         const effectiveRole = worker.role || (worker.isExcoApproved ? worker.requestedRole : undefined)
         if (!effectiveRole) {
-          throw new Error('This account does not have active Exco dashboard privileges.')
+          throw new Error('Sign-in failed.')
         }
 
         const rawTeams = Array.isArray(worker.teams) ? worker.teams : []
@@ -159,7 +167,8 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
     error: '/login',
   },
-  // Getter: a missing secret fails with a clear error on first use rather than at build time.
+  // Getter: a missing or (in production) short secret fails with a clear error
+  // on first use rather than at import/build time. See lib/env.ts.
   get secret() {
     return getAuthSecret()
   },

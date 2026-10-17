@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   AlertCircle,
   Upload,
   UserCheck,
@@ -19,17 +18,31 @@ import {
   ShieldAlert,
   RotateCcw,
   Loader2,
-  Lock,
-  KeyRound,
+  Mail,
 } from 'lucide-react'
-import { registerWorker } from '@/app/actions/worker-registration'
-import type { WorkerRole } from '@/types'
+import {
+  checkWorkerPhoneAndInitiateVerification,
+  confirmWorkerSelfServiceLink,
+  registerWorker,
+  requestWorkerSelfServiceLink,
+  verifyWorkerOtp,
+} from '@/app/actions/worker-registration'
 
 /** A published teamUnit, loaded on the server. `id` is what registerWorker accepts. */
 export interface TeamOption {
   id: string
   name: string
 }
+
+/** A verified worker's teams come back by name; map them to option ids. */
+function teamIdsForNames(options: TeamOption[], names: string[]): string[] {
+  return names
+    .map((n) => options.find((o) => o.name.toLowerCase() === n.trim().toLowerCase())?.id)
+    .filter((id): id is string => Boolean(id))
+}
+import { compressImage } from '@/lib/image-compression'
+import type { WorkerRole } from '@/types'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 const HALLS_OF_RESIDENCE = [
   'Hall 1',
@@ -64,62 +77,36 @@ function getDaysInMonth(monthStr: string): number {
   return 31
 }
 
-const VALID_WORKFORCE_CODES = [
-  'ECCFWORKERS',
-  'ECCFWORKERS2026',
-  'ECCF2026',
-  'WORKFORCE',
-  'ECCF-WORKFORCE',
-  (process.env.NEXT_PUBLIC_WORKER_ACCESS_CODE || '').toUpperCase().trim(),
-].filter(Boolean)
-
 export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOption[] }) {
   const searchParams = useSearchParams()
-  const codeParam = searchParams.get('code') || searchParams.get('passcode') || searchParams.get('key') || ''
-
-  // Access Gate Security
-  const [isUnlocked, setIsUnlocked] = useState(false)
-  const [enteredCode, setEnteredCode] = useState('')
-  const [gateError, setGateError] = useState<string | null>(null)
-
-  useEffect(() => {
-    // 1. Auto-unlock if code provided via URL (e.g. from WhatsApp group link)
-    if (codeParam && VALID_WORKFORCE_CODES.includes(codeParam.toUpperCase())) {
-      setIsUnlocked(true)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('eccf_worker_passcode', codeParam.toUpperCase())
-      }
-      return
-    }
-
-    // 2. Check stored passcode in localStorage
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('eccf_worker_passcode')
-      if (stored && VALID_WORKFORCE_CODES.includes(stored.toUpperCase())) {
-        setIsUnlocked(true)
-      }
-    }
-  }, [codeParam])
-
-  function handleUnlock(e: React.FormEvent) {
-    e.preventDefault()
-    const clean = enteredCode.trim().toUpperCase()
-    if (VALID_WORKFORCE_CODES.includes(clean)) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('eccf_worker_passcode', clean)
-      }
-      setIsUnlocked(true)
-      setGateError(null)
-    } else {
-      setGateError('Incorrect workforce passcode. Please confirm the key shared on the WhatsApp group.')
-    }
-  }
+  const selfServiceToken = searchParams.get('selfServiceToken') || ''
 
   // Step & Flow State
   const [step, setStep] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
-  const [checkingPhone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [requestingUpdateLink, setRequestingUpdateLink] = useState(false)
+  const [updateLinkMessage, setUpdateLinkMessage] = useState<string | null>(null)
+  const [updateIdentifier, setUpdateIdentifier] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+
+  // Existing Worker Detection & OTP Verification State
+  const [checkingPhone, setCheckingPhone] = useState(false)
+  const [verificationPending, setVerificationPending] = useState(false)
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [verificationNotice, setVerificationNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -130,6 +117,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
   const [email, setEmail] = useState('')
   // Selected teamUnit _ids
   const [teams, setTeams] = useState<string[]>([])
+  // Display names for the selected teamUnit _ids
   const teamNames = teams.map((id) => teamOptions.find((o) => o.id === id)?.name || id)
 
   const toggleTeam = (t: string) => {
@@ -142,12 +130,11 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
   const [roomNumber, setRoomNumber] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
-  const [birthDate] = useState('')
   const effectiveBirthDate =
     birthMonth && birthDay
-      ? `2000-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
-      : birthDate
-  const [existingPhotoUrl] = useState<string | null>(null)
+      ? `${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+      : ''
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
 
@@ -169,12 +156,56 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    setTurnstileToken('')
+  }, [step])
+
+  useEffect(() => {
+    if (!selfServiceToken) return
+    let active = true
+
+    void confirmWorkerSelfServiceLink(selfServiceToken).then((result) => {
+      if (!active) return
+      if (result.ok && result.purpose === 'profile' && result.worker) {
+        const worker = result.worker
+        setIsReturning(true)
+        setPhoneNumber(worker.phoneNumber || '')
+        setFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || '')
+        setMiddleName(worker.middleName || '')
+        setLastName(worker.lastName || '')
+        setEmail(worker.email || '')
+        setTeams(teamIdsForNames(teamOptions, worker.teams.length > 0 ? worker.teams : [worker.team]))
+        setHall(worker.hall || '')
+        setRoomNumber(worker.roomNumber || '')
+        setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
+        setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
+        setExistingPhotoUrl(worker.profileImageUrl || null)
+        setIsExco(worker.isExco || false)
+        setStep(2)
+        setError(null)
+      } else {
+        setError(result.error || 'This secure link is invalid or has expired. Request a new one.')
+      }
+
+      const url = new URL(window.location.href)
+      url.searchParams.delete('selfServiceToken')
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    }).catch(() => {
+      if (active) setError('This secure link is invalid or has expired. Request a new one.')
+    })
+
+    return () => {
+      active = false
+    }
+  }, [selfServiceToken, teamOptions])
+
+
   // Total steps based on flow
   // Returning flow: Step 1 (Phone) -> Step 2 (Location) -> Step 3 (Photo) -> Step 4 (Confirm)
   // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Exco) -> Step 9 (Review)
   const totalSteps = isReturning ? 4 : 9
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -183,49 +214,201 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Please select a photo smaller than 5MB.')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = () => {
-      const res = reader.result as string
-      setImagePreview(res)
-      const rawBase64 = res.split(',')[1] || res
-      setBase64Image(rawBase64)
+    try {
+      const compressed = await compressImage(
+        file,
+        { maxWidth: 1200, maxHeight: 1200, quality: 0.82 },
+        { fullName, team: teamNames[0] || 'General' }
+      )
+      setImagePreview(compressed.dataUrl)
+      setBase64Image(compressed.base64)
       setError(null)
+    } catch {
+      // Fallback to FileReader if Canvas compression fails
+      const reader = new FileReader()
+      reader.onload = () => {
+        const res = reader.result as string
+        setImagePreview(res)
+        const rawBase64 = res.split(',')[1] || res
+        setBase64Image(rawBase64)
+        setError(null)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
-  // Gateway: Phone Check (Step 1)
-  function handlePhoneSubmit(e: React.FormEvent) {
+  // Phone submit: checks if worker already exists; sends OTP/magic link if existing
+  async function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setVerificationNotice(null)
 
     const clean = phoneNumber.trim().replace(/\s+/g, '')
     if (clean.length < 8) {
-      setError('Please enter a valid phone number.')
+      setError('Please enter a valid phone number (at least 8 digits).')
       return
     }
 
-    // No lookup by phone: it exposed other workers' details to anyone (S2).
-    // Step 1 always continues to a new registration; registerWorker refuses
-    // to touch an existing record until sign-in lands (Phase 3).
-    setIsReturning(false)
-    setIsExco(false)
-    setTeams([])
-    setStep(2)
+    setCheckingPhone(true)
+    try {
+      const result = await checkWorkerPhoneAndInitiateVerification({
+        phoneNumber: clean,
+        turnstileToken: turnstileToken || undefined,
+      })
+
+      if (!result.ok) {
+        setError(result.error || 'Unable to check phone number. Please try again.')
+        return
+      }
+
+      // If worker does NOT exist -> Proceed as new registration
+      if (!result.exists) {
+        setIsReturning(false)
+        setIsExco(false)
+        setTeams([])
+        setStep(2)
+        return
+      }
+
+      // Existing worker detected! Do NOT display details right away.
+      // Transition to security verification state
+      setVerificationPending(true)
+      setMaskedEmail(result.maskedEmail || 'your registered email')
+      setVerificationNotice(
+        result.message ||
+          `A 6-digit verification code and secure unlock link have been dispatched to ${result.maskedEmail || 'your email'}.`
+      )
+      setResendCooldown(60)
+    } catch {
+      setError('An unexpected error occurred while checking your phone number. Please try again.')
+    } finally {
+      setCheckingPhone(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
   }
 
+  // Verifies the 6-digit OTP code entered on the page
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    const clean = otpCode.trim().replace(/\s+/g, '')
+    if (clean.length !== 6 || !/^\d{6}$/.test(clean)) {
+      setError('Please enter the 6-digit verification code sent to your email.')
+      return
+    }
+
+    setVerifyingOtp(true)
+    try {
+      const result = await verifyWorkerOtp({
+        phoneNumber,
+        otp: clean,
+      })
+
+      if (!result.ok || !result.worker) {
+        setError(result.error || 'Invalid or expired verification code. Please check your email or request a new code.')
+        return
+      }
+
+      const worker = result.worker
+      setIsReturning(true)
+      setPhoneNumber(worker.phoneNumber || phoneNumber)
+      setFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || '')
+      setMiddleName(worker.middleName || '')
+      setLastName(worker.lastName || '')
+      setEmail(worker.email || '')
+      setTeams(teamIdsForNames(teamOptions, worker.teams.length > 0 ? worker.teams : [worker.team]))
+      setHall(worker.hall || '')
+      setRoomNumber(worker.roomNumber || '')
+      setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
+      setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
+      setExistingPhotoUrl(worker.profileImageUrl || null)
+      setIsExco(worker.isExco || false)
+
+      setVerificationPending(false)
+      setOtpCode('')
+      setStep(2) // Jump straight to Returning Worker Step 2 (Location / Room update)
+      setError(null)
+    } catch {
+      setError('An error occurred during verification. Please try again.')
+    } finally {
+      setVerifyingOtp(false)
+    }
+  }
+
+  // Resend verification code / link with cooldown
+  async function handleResendCode() {
+    if (resendCooldown > 0) return
+    setError(null)
+    setVerificationNotice(null)
+    setCheckingPhone(true)
+    try {
+      const result = await checkWorkerPhoneAndInitiateVerification({
+        phoneNumber,
+        turnstileToken: turnstileToken || undefined,
+      })
+      if (result.ok) {
+        setVerificationNotice(`A fresh 6-digit verification code and link were sent to ${result.maskedEmail || maskedEmail}.`)
+        setResendCooldown(60)
+      } else {
+        setError(result.error || 'Failed to resend code. Please try again.')
+      }
+    } catch {
+      setError('Could not resend code. Please try again.')
+    } finally {
+      setCheckingPhone(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
+  // Back from OTP verification to edit the phone number
+  function handleChangePhone() {
+    setVerificationPending(false)
+    setOtpCode('')
+    setError(null)
+    setVerificationNotice(null)
+  }
+
+  async function handleRequestUpdateLink() {
+    setError(null)
+    setUpdateLinkMessage(null)
+    setRequestingUpdateLink(true)
+    try {
+      const result = await requestWorkerSelfServiceLink({
+        identifier: updateIdentifier,
+        purpose: 'profile',
+        turnstileToken,
+      })
+      setUpdateLinkMessage(result.message)
+      if (result.maskedEmail) {
+        setMaskedEmail(result.maskedEmail)
+        if (result.phoneNumber) {
+          setPhoneNumber(result.phoneNumber)
+        }
+        setVerificationPending(true)
+        setResendCooldown(60)
+      }
+    } catch {
+      setUpdateLinkMessage('If those details match a worker account with an email on file, a secure link and code have been sent.')
+    } finally {
+      setRequestingUpdateLink(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((value) => value + 1)
+    }
+  }
   // Final Submission
   async function handleFinalSubmit() {
     setError(null)
+    if (!turnstileToken) {
+      setError('Complete the security check before submitting the form.')
+      return
+    }
     setSubmitting(true)
 
     try {
-      const res = await registerWorker({
+      const registrationResult = await registerWorker({
         fullName,
         firstName,
         middleName,
@@ -238,22 +421,46 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
         birthDate: effectiveBirthDate,
         birthMonth,
         birthDay,
-        birthdayPictureBase64: base64Image || undefined,
+        profileImageUrl: base64Image ? undefined : existingPhotoUrl || undefined,
+        requestPhotoUpload: Boolean(base64Image),
+        turnstileToken,
         isExco,
         requestedRole: isExco ? requestedRole : undefined,
         password: isExco && password ? password : undefined,
         ndprConsent,
       })
 
-      if (res.ok) {
-        setSuccessResult(res)
+      if (registrationResult.ok) {
+        let finalResult = registrationResult
+        if (base64Image && registrationResult.uploadGrant) {
+          try {
+            const uploadRes = await fetch('/api/upload-drive', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                base64: base64Image,
+                fullName,
+                team: teamNames[0] || 'General',
+                uploadGrant: registrationResult.uploadGrant,
+              }),
+            })
+            if (!uploadRes.ok) {
+              finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+            }
+          } catch {
+            finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+          }
+        }
+        setSuccessResult(finalResult)
       } else {
-        setError(res.error || 'Failed to submit registration. Please check your fields.')
+        setError(registrationResult.error || 'Failed to submit registration. Please check your fields.')
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setSubmitting(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((value) => value + 1)
     }
   }
 
@@ -267,14 +474,14 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
   // Render Success Screen
   if (successResult?.ok) {
     return (
-      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-4">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 border-2 border-emerald-300 shadow-sm">
-          <CheckCircle2 className="h-10 w-10" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
-            {isReturning ? 'Location Updated! 🎉' : 'Welcome to the Workforce! 🎉'}
-          </h2>
+      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-6">
+        <div className="space-y-2.5">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] font-mono block">
+            REGISTRATION CONFIRMED
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
+            {isReturning ? 'Profile Updated!' : 'Welcome to the Workforce!'}
+          </h1>
           <p className="text-base sm:text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
             {successResult.message}
           </p>
@@ -333,92 +540,8 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
     )
   }
 
-  // Access Gate: Require workforce passcode if not unlocked
-  if (!isUnlocked) {
-    return (
-      <div className="w-full max-w-md mx-auto rounded-3xl bg-white border border-stone-200/90 p-7 sm:p-9 shadow-sm text-center space-y-6">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 text-[#0077cc] border border-sky-100 shadow-2xs">
-          <Lock className="h-8 w-8 text-[#0095ff]" />
-        </div>
-
-        <div className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc] font-mono block">
-            RESTRICTED PORTAL
-          </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
-            Workforce Passkey Required
-          </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            This registration portal is reserved exclusively for inducted volunteer workers and leaders of ECCF.
-          </p>
-        </div>
-
-        <form onSubmit={handleUnlock} className="space-y-4 text-left">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 font-mono mb-1.5">
-              Enter Workforce Passcode
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={enteredCode}
-                onChange={(e) => {
-                  setEnteredCode(e.target.value)
-                  setGateError(null)
-                }}
-                placeholder="e.g. ECCFWORKERS"
-                className="w-full h-12 rounded-xl border border-stone-300 pl-4 pr-10 text-sm font-mono tracking-wider uppercase focus:border-[#0077cc] focus:outline-none focus:ring-2 focus:ring-sky-100 transition-all"
-                autoFocus
-              />
-              <KeyRound className="h-4 w-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-            {gateError && (
-              <p className="text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                <span>{gateError}</span>
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full h-12 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-sm uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
-          >
-            Unlock Registration Form
-          </button>
-        </form>
-
-        <div className="pt-2 border-t border-stone-100 text-xs text-slate-500 leading-relaxed">
-          <p>
-            Are you an ECCF worker? The access passkey is available in the pinned message of the official <strong>ECCF Workforce WhatsApp Group</strong>.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
-      {/* Workforce Security Badge */}
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-900 shadow-2xs">
-        <span className="flex items-center gap-2 font-bold font-mono">
-          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-          <span>VERIFIED WORKFORCE LINK &bull; AUTHORIZED SESSION</span>
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('eccf_worker_passcode')
-            }
-            setIsUnlocked(false)
-          }}
-          className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-950 underline transition-colors"
-        >
-          Lock
-        </button>
-      </div>
-
       {/* Visual Progress Bar Header */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-600 font-mono">
@@ -439,6 +562,12 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
 
       {/* Main Interactive Container */}
       <div className="space-y-6">
+        {((isReturning && step === 4) || (!isReturning && step === 9)) && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to continue.</p>
+            <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+          </div>
+        )}
         {/* Error Notification */}
         {error && (
           <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 text-sm font-semibold flex items-start gap-3 shadow-xs">
@@ -451,56 +580,204 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
           {/* ========================================================================= */}
           {/* STEP 1: Phone Number Gateway                                              */}
           {/* ========================================================================= */}
+          {/* ========================================================================= */}
+          {/* STEP 1: Phone Number Gateway or Verification State                        */}
+          {/* ========================================================================= */}
           {step === 1 && (
-            <motion.div
-              key="step-1"
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.28 }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Identity Verification
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
-                  What is your phone number?
-                </h2>
-              </div>
-
-              <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                <div>
-                  <input
-                    type="tel"
-                    required
-                    autoFocus
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="0801 234 5678"
-                    className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                  />
+            verificationPending ? (
+              <motion.div
+                key="step-1-otp-verify"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.28 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold uppercase tracking-wider mb-1">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>SECURITY VERIFICATION</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
+                    Enter Verification Code
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                    A workforce profile matching <strong className="text-slate-950 font-mono">{phoneNumber}</strong> was found.
+                    For your privacy and security, personal details are locked until verified.
+                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={checkingPhone || phoneNumber.trim().length < 8}
-                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
-                >
-                  {checkingPhone ? (
-                    <span className="inline-flex items-center justify-center gap-2.5">
-                      <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Checking Fellowship Records…</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      Continue <ArrowRight className="h-5 w-5" />
-                    </span>
+                <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/80 border border-sky-200/90 flex items-start gap-3.5">
+                  <Mail className="h-5 w-5 text-[#0077cc] shrink-0 mt-0.5" />
+                  <div className="text-sm text-slate-700 leading-relaxed">
+                    <p>
+                      We have sent a <strong>6-digit security code</strong> and a <strong>direct unlock link</strong> to your email on file:
+                    </p>
+                    <p className="font-mono font-bold text-slate-950 text-base mt-1">{maskedEmail}</p>
+                  </div>
+                </div>
+
+                {verificationNotice && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800 flex items-start gap-2">
+                    <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>{verificationNotice}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  <div>
+                    <label htmlFor="otp-input" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2 font-mono">
+                      6-Digit Security Code
+                    </label>
+                    <input
+                      id="otp-input"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      autoFocus
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="• • • • • •"
+                      className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-center text-3xl font-mono font-bold tracking-[14px] text-slate-900 placeholder:text-slate-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={otpCode.length !== 6 || verifyingOtp}
+                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-6 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  >
+                    {verifyingOtp ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" /> Verifying Code...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        Verify Code &amp; Unlock Profile <ArrowRight className="h-5 w-5" />
+                      </span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="text-center py-1 border-t border-slate-100 pt-4">
+                  <p className="text-xs text-slate-400 font-mono uppercase tracking-wider">
+                    &mdash; Alternative Option &mdash;
+                  </p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    You can also tap the <strong className="text-[#0077cc]">“Unlock My Worker Profile”</strong> button in your email to open the form directly.
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || checkingPhone}
+                    className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
+                  >
+                    {resendCooldown > 0 ? `Resend verification code (${resendCooldown}s)` : 'Resend verification code'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleChangePhone}
+                    className="text-slate-500 hover:text-slate-900 underline"
+                  >
+                    Use a different phone number
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="step-1-phone"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.28 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
+                    Worker Registration
+                  </span>
+                  <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
+                    Start with your phone number
+                  </h2>
+                </div>
+
+                <form onSubmit={handlePhoneSubmit} className="space-y-6">
+                  <div>
+                    <input
+                      type="tel"
+                      required
+                      autoFocus
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="0801 234 5678"
+                      className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={phoneNumber.trim().length < 8 || checkingPhone}
+                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                  >
+                    {checkingPhone ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" /> Checking Records...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        Continue <ArrowRight className="h-5 w-5" />
+                      </span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="border-t border-slate-200 pt-5 space-y-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Already have a worker profile?</h3>
+                    <p className="text-xs text-slate-600 mt-1">Enter the email or phone number on your record. We’ll send a secure link and code to your saved email address.</p>
+                  </div>
+                  <input
+                    type="text"
+                    autoComplete="username"
+                    value={updateIdentifier}
+                    onChange={(event) => setUpdateIdentifier(event.target.value)}
+                    placeholder="Registered email or phone number"
+                    aria-label="Email or phone number on your worker profile"
+                    className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
+                  />
+                  {Boolean(updateIdentifier.trim()) && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to receive your link:</p>
+                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                    </div>
                   )}
-                </button>
-              </form>
-            </motion.div>
+                  <button
+                    type="button"
+                    onClick={handleRequestUpdateLink}
+                    disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-[#0077cc] hover:text-[#0077cc] disabled:opacity-50"
+                  >
+                    {requestingUpdateLink ? 'Sending secure code…' : 'Email me a profile update code & link'}
+                  </button>
+                  {updateLinkMessage && (
+                    <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
+                      {updateLinkMessage}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500">
+                    If you no longer have access to the email on file, contact an ECCF administrator to verify and update your contact details. You can still use this same form after opening the secure link; no dashboard account is required.
+                  </p>
+                </div>
+              </motion.div>
+            )
           )}
 
           {/* ========================================================================= */}
@@ -533,15 +810,48 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                 </div>
               </div>
 
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
+                <h3 className="text-sm font-bold text-slate-900">Update your profile details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <input aria-label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  <input aria-label="Middle name" value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name (optional)" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  <input aria-label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" className="h-12 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Email on file
+                    <input type="email" value={email} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Phone on file
+                    <input type="tel" value={phoneNumber} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500">To change your email or phone number, contact an ECCF administrator so the new contact can be verified.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Birthday month
+                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]">
+                      <option value="">Select month</option>
+                      {MONTHS.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Birthday day
+                    <input type="number" min="1" max={birthMonth ? getDaysInMonth(birthMonth) : 31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
                   Session Update
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Where are you staying this session?
+                  What details have changed?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Update your hostel, room allocation, and operational teams for the current session.
+                  Review your profile, current residence, operational teams, and birthday details.
                 </p>
               </div>
 
@@ -788,7 +1098,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                 </button>
                 <button
                   type="button"
-                  disabled={submitting}
+                  disabled={submitting || !turnstileToken}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -798,7 +1108,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                       <span>Saving Location…</span>
                     </span>
                   ) : (
-                    'Confirm & Update Location 🎉'
+                    'Save Profile Updates'
                   )}
                 </button>
               </div>
@@ -841,7 +1151,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                     autoFocus
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="e.g. Ransom"
+                    placeholder="Michael"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -854,7 +1164,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                     type="text"
                     value={middleName}
                     onChange={(e) => setMiddleName(e.target.value)}
-                    placeholder="e.g. Samuel"
+                    placeholder="Christopher"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -868,7 +1178,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                     required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="e.g. Akpan"
+                    placeholder="Akan"
                     className="flex h-14 sm:h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 sm:px-6 text-lg sm:text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   />
                 </div>
@@ -1509,7 +1819,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                 </button>
                 <button
                   type="button"
-                  disabled={submitting || !ndprConsent}
+                  disabled={submitting || !ndprConsent || !turnstileToken}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -1519,7 +1829,7 @@ export function WorkerRegistrationForm({ teamOptions }: { teamOptions: TeamOptio
                       <span>Submitting Registration…</span>
                     </span>
                   ) : (
-                    'Complete Registration 🎉'
+                    'Complete Registration'
                   )}
                 </button>
               </div>

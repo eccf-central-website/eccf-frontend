@@ -1,8 +1,8 @@
 /**
  * FellowshipMomentsSection — Photo Stream & Campus Highlights
  *
- * Replaces the old TeamsSection on the homepage, preserving the photo gallery
- * and lightbox modal while directing visitors to the About Page for the 14 operational units.
+ * Displays the fellowship photo stream in view-only mode.
+ * Modal/lightbox click-on feature is removed per user specification.
  */
 
 'use client'
@@ -10,8 +10,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Maximize2, X, ArrowRight, Users } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, Users } from 'lucide-react'
 
 export interface GalleryItem {
   _id: string
@@ -25,7 +25,6 @@ interface Props {
 }
 
 export default function FellowshipMomentsSection({ gallery }: Props) {
-  const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null)
   const [showAllGallery, setShowAllGallery] = useState(false)
 
   const safeGallery = gallery || []
@@ -35,7 +34,7 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
 
   return (
     <section id="moments" className="py-16 sm:py-24 bg-white relative overflow-hidden border-t border-stone-100">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28">
         
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 sm:mb-12 gap-4">
@@ -61,7 +60,7 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
           </Link>
         </div>
 
-        {/* Photo Grid */}
+        {/* Photo Grid — View Only, No Click-On Lightbox */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {displayedGallery.map((img, idx) => (
             <motion.div
@@ -70,9 +69,7 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.3) }}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedImage(img)}
-              className="group relative h-48 sm:h-64 overflow-hidden rounded-[20px] shadow-sm cursor-pointer bg-slate-900 border border-stone-200/60"
+              className="group relative h-48 sm:h-64 overflow-hidden rounded-[20px] shadow-sm bg-slate-900 border border-stone-200/60"
             >
               <Image
                 src={img.src}
@@ -81,9 +78,6 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Maximize2 className="h-6 w-6 text-white" />
-              </div>
             </motion.div>
           ))}
         </div>
@@ -104,53 +98,6 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
         )}
 
       </div>
-
-      {/* Lightbox Modal */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedImage(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 sm:p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full bg-slate-900 rounded-[28px] overflow-hidden shadow-2xl"
-            >
-              <div className="relative h-80 sm:h-[500px] w-full bg-black">
-                <Image
-                  src={selectedImage.src}
-                  alt={selectedImage.title}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="p-6 bg-slate-900 flex items-center justify-between border-t border-slate-800">
-                <div>
-                  <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block">
-                    {selectedImage.category}
-                  </span>
-                  <h4 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                    {selectedImage.title}
-                  </h4>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedImage(null)}
-                  className="h-11 w-11 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   )
 }

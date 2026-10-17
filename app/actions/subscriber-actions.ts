@@ -1,7 +1,8 @@
 'use server'
 
-import { sanityWriteClient } from '@/lib/sanity'
+import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { Resend } from 'resend'
+import { verifyTurnstileToken } from '@/lib/security/turnstile'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -19,6 +20,9 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
   message: string
 }> {
   try {
+    if (!(await verifyTurnstileToken(formData.get('turnstileToken')))) {
+      return { success: false, message: 'Complete the security check and try again.' }
+    }
     const rawEmail = formData.get('email') as string
     const rawName = formData.get('name') as string
 
@@ -35,7 +39,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
     }
 
     // Check for existing subscriber
-    const existing = await sanityWriteClient.fetch<{
+    const existing = await sanityPrivateClient.fetch<{
       _id: string
       email: string
       isActive?: boolean
@@ -53,8 +57,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
       }
 
       // Reactivate subscription
-      await sanityWriteClient
-        .patch(existing._id)
+      await patchPrivateDocument(existing._id)
         .set({
           isActive: true,
           subscribedAt: new Date().toISOString(),
@@ -63,7 +66,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
         .commit()
     } else {
       // Create new subscriber
-      await sanityWriteClient.create({
+      await createPrivateDocument({
         _type: 'subscriber',
         email,
         name: name || undefined,

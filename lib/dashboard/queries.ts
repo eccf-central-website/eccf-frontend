@@ -16,9 +16,10 @@
 
 /** $hall: null for all halls; $team: null for all teams */
 export const DASHBOARD_WORKERS_QUERY = `
-  *[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams)] | order(fullName asc) {
+  *[_type == "worker" && ($hall == null || hall == $hall || lower(hall) == lower($hall)) && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams || lower(team->name) == lower($team) || lower(team) == lower($team))] | order(fullName asc) {
     _id,
     fullName,
+    email,
     "team": coalesce(team->name, team),
     "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall,
@@ -31,6 +32,8 @@ export const DASHBOARD_WORKERS_QUERY = `
     verifiedBy,
     "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
     birthDate,
+    birthMonth,
+    birthDay,
     profileImageUrl,
     createdAt,
     updatedAt,

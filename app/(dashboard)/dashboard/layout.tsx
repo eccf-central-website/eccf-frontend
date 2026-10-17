@@ -11,13 +11,26 @@
 import { cookies } from 'next/headers'
 import { isMockAuthEnabled, requireSession } from '@/lib/dashboard/auth'
 import { DEV_MOCK_STATE_COOKIE } from '@/lib/dashboard/data'
-import { canAccessSection } from '@/lib/dashboard/rbac'
+import { canAccessSection, hasPermission } from '@/lib/dashboard/rbac'
 import { isDevMockState, SIDEBAR_COOKIE } from '@/lib/dashboard/shell'
 import { NAV_ITEMS } from '@/components/dashboard/shell/nav-items'
 import DevSwitcher from '@/components/dashboard/shell/DevSwitcher'
 import AppSidebar from '@/components/dashboard/shell/AppSidebar'
 import SkipLink from '@/components/dashboard/shell/SkipLink'
 import TopBar from '@/components/dashboard/shell/TopBar'
+import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
+
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Exco Dashboard — ECCF',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ECCF Portal',
+  },
+}
 
 // Per-request session for every /dashboard/* page. Without this, production
 // builds (no mock session, no auth yet) prerender pages as static redirects.
@@ -53,6 +66,7 @@ export default async function DashboardShellLayout({
           team={session.team}
           teams={session.teams}
           excoPosition={session.excoPosition}
+          actions={hasPermission(session.role, 'sermons:sync') ? <SyncSermonsButton /> : undefined}
           devTools={devTools}
         />
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">

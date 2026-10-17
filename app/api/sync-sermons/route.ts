@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { sanityWriteClient } from '@/lib/sanity'
+import { constantTimeStringEqual } from '@/lib/security/constant-time'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,13 +20,12 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get('authorization')
     const secret = process.env.CRON_SECRET
 
-    // Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. Fail closed when
-    // the secret is unset (S6). GET delegates here, so it is guarded too.
-    if (!secret) {
-      console.error('[sync-sermons] CRON_SECRET is not set; rejecting request.')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
+      console.error('[sync-sermons] CRON_SECRET is not configured; refusing to run.')
+      return NextResponse.json({ error: 'Sermon sync is not configured.' }, { status: 503 })
     }
-    if (authHeader !== `Bearer ${secret}`) {
+
+    if (!authHeader || !constantTimeStringEqual(authHeader, `Bearer ${secret}`)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

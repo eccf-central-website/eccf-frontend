@@ -11,7 +11,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Loader2 } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 const navLinks = [
   { label: 'Sermons', href: '/sermons' },
@@ -25,30 +25,87 @@ export default function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [pendingHref, setPendingHref] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<string>('')
 
-  // Reset pending state on route change
+  // Sync active section based on URL hash
   useEffect(() => {
-    setPendingHref(null)
+    const syncHash = () => {
+      if (typeof window !== 'undefined') {
+        setActiveSection(window.location.hash)
+      }
+    }
+
+    syncHash()
+    window.addEventListener('hashchange', syncHash)
+    return () => window.removeEventListener('hashchange', syncHash)
+  }, [])
+
+  // Sync section hash on route change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setActiveSection(window.location.hash)
+    }
   }, [pathname])
 
+  // Track scroll position to update navbar styling
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 15)
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Observe #giving section when on homepage to reflect active state while scrolling
+  useEffect(() => {
+    if (pathname !== '/') return
+
+    const givingEl = document.getElementById('giving')
+    if (!givingEl) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection('#giving')
+          } else {
+            setActiveSection((prev) => (prev === '#giving' ? '' : prev))
+          }
+        })
+      },
+      {
+        rootMargin: '-20% 0px -40% 0px',
+        threshold: 0.1,
+      }
+    )
+
+    observer.observe(givingEl)
+    return () => observer.disconnect()
+  }, [pathname])
+
   const handleLinkClick = (href: string) => {
-    if (href.startsWith('/') && !href.startsWith('/#') && href !== pathname) {
-      setPendingHref(href)
+    if (href.includes('#')) {
+      const hash = '#' + href.split('#')[1]
+      setActiveSection(hash)
+      if (pathname === '/') {
+        const id = href.split('#')[1]
+        const el = document.getElementById(id)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
+    } else {
+      setActiveSection('')
     }
+
     setMobileOpen(false)
   }
 
   const isLinkActive = (href: string) => {
-    if (href === '/') return pathname === '/'
+    if (href === '/#giving' || href === '/give') {
+      return pathname === '/give' || (pathname === '/' && activeSection === '#giving')
+    }
+    if (href === '/') return pathname === '/' && !activeSection
     if (href.startsWith('/#')) return false
     return pathname.startsWith(href)
   }
@@ -61,7 +118,11 @@ export default function Navbar() {
           : 'bg-white/70 backdrop-blur-sm border-b border-slate-100 py-4'
       }`}
     >
-      <nav className="w-full flex items-center justify-between px-4 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28">
+      <nav
+        className={`w-full flex items-center justify-between px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 transition-all ${
+          mobileOpen ? 'pb-3.5 sm:pb-4 lg:pb-0' : ''
+        }`}
+      >
         {/* Brand Logo & Monogram */}
         <Link
           href="/"
@@ -79,8 +140,8 @@ export default function Navbar() {
             />
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <span className="block text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-none">
-              ECCF
+            <span className="block text-xl sm:text-2xl font-serif font-normal text-slate-950 tracking-tight leading-none">
+              ECCF Family
             </span>
             <span className="block text-xs sm:text-sm font-bold text-slate-700 tracking-normal leading-none mt-0.5 truncate max-w-[calc(100vw-130px)] sm:max-w-none">
               ESUI Christian Campus Fellowship
@@ -88,30 +149,32 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links with Persistent Active State */}
-        <ul className="hidden md:flex items-center gap-2 lg:gap-3">
+        {/* Desktop Navigation Links with Persistent Active State & Hover Line Animation */}
+        <ul className="hidden lg:flex items-center gap-1 xl:gap-2.5">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
-            const isPending = pendingHref === link.href
 
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-200 focus:outline-none ${
+                  className={`group relative inline-flex items-center px-3 xl:px-4 py-2 text-sm xl:text-base whitespace-nowrap transition-colors duration-200 focus:outline-none ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/70 shadow-sm'
-                      : isPending
-                      ? 'bg-sky-50/60 text-[#0095ff] animate-pulse'
-                      : 'text-slate-600 hover:text-[#0095ff] hover:bg-slate-50'
+                      ? 'text-[#0095ff] font-bold'
+                      : 'text-slate-600 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
-                  {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0095ff]" />}
-                  {active && !isPending && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#0095ff] shrink-0" />
-                  )}
                   <span>{link.label}</span>
+                  {/* Underline indicator: stays visible when active, animates drawn from left to right on hover */}
+                  <span
+                    className={`absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
+                      active
+                        ? 'scale-x-100 opacity-100'
+                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                    }`}
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             )
@@ -119,10 +182,10 @@ export default function Navbar() {
         </ul>
 
         {/* Primary CTA: Plan a Visit */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
             href="/#visit"
-            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-sm font-bold px-7 py-2.5 shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center justify-center rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-2.5 shadow-md shadow-sky-500/20 whitespace-nowrap shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             Plan a Visit
           </Link>
@@ -132,7 +195,7 @@ export default function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="flex md:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none"
+            className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none shrink-0"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -141,34 +204,34 @@ export default function Navbar() {
 
       {/* Mobile Dropdown with Active States */}
       <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ${
-          mobileOpen ? 'max-h-96 border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
+        className={`lg:hidden overflow-hidden transition-all duration-300 ${
+          mobileOpen ? 'max-h-[85vh] border-t border-slate-100 bg-white/95 backdrop-blur-lg' : 'max-h-0'
         }`}
       >
-        <ul className="flex flex-col px-6 py-4 gap-2">
+        <ul className="flex flex-col px-6 pt-3.5 pb-4 gap-2">
           {navLinks.map((link) => {
             const active = isLinkActive(link.href)
-            const isPending = pendingHref === link.href
 
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm sm:text-base font-bold uppercase tracking-wider transition-colors ${
+                  className={`group relative flex items-center justify-between rounded-r-xl px-4 py-3 text-base sm:text-lg transition-colors overflow-hidden ${
                     active
-                      ? 'bg-sky-50 text-[#0095ff] font-black border border-sky-200/60'
-                      : isPending
-                      ? 'bg-sky-50/50 text-[#0095ff]'
-                      : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff]'
+                      ? 'text-[#0095ff] font-bold border-l-4 border-[#0095ff] bg-sky-50/60 pl-3.5'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-[#0095ff] font-semibold'
                   }`}
                 >
                   <span>{link.label}</span>
-                  {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[#0095ff]" />
-                  ) : active ? (
-                    <span className="h-2 w-2 rounded-full bg-[#0095ff]" />
-                  ) : null}
+                  <span
+                    className={`absolute bottom-0 left-4 right-4 h-[2px] bg-[#0095ff] rounded-full transition-all duration-300 ease-out origin-left ${
+                      active
+                        ? 'scale-x-0 opacity-0'
+                        : 'scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100'
+                    }`}
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             )
@@ -176,7 +239,7 @@ export default function Navbar() {
           <li className="mt-2 pt-2 border-t border-slate-100">
             <Link
               href="/#visit"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => handleLinkClick('/#visit')}
               className="flex items-center justify-center rounded-full bg-[#0095ff] text-white text-center text-sm font-bold py-3.5 shadow-md shadow-sky-500/20"
             >
               Plan a Visit

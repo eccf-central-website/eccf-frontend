@@ -1,7 +1,7 @@
 'use server'
 
-import { sanityClient, sanityWriteClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
+import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -68,10 +68,9 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
   message: string
   recipientCount?: number
 }> {
-  // Emails every subscriber, so only a signed-in admin (CSGB) may trigger it (S5).
   const session = await getSession()
   if (!session || session.role !== 'admin') {
-    return { success: false, message: 'Not authorised to broadcast announcements.' }
+    return { success: false, message: 'You do not have permission to send announcements.' }
   }
 
   try {
@@ -101,7 +100,7 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
       return { success: false, message: 'Cannot broadcast draft announcement. Please publish it first.' }
     }
 
-    const subscribers = await sanityWriteClient.fetch<string[]>(
+    const subscribers = await sanityPrivateClient.fetch<string[]>(
       `*[_type == "subscriber" && isActive != false && defined(email) && email != ""].email`
     )
 

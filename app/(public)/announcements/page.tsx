@@ -6,7 +6,9 @@
  * Interactive search/filter lives in AnnouncementsFeed (client component).
  */
 
-import { sanityClient } from '@/lib/sanity'
+import { draftMode } from 'next/headers'
+import { getSanityClient } from '@/lib/sanity'
+import PreviewBanner from '@/components/common/PreviewBanner'
 import { ANNOUNCEMENTS_QUERY } from '@/lib/queries'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
 import AnnouncementsSubscriptionCard from '@/components/announcements/AnnouncementsSubscriptionCard'
@@ -57,11 +59,17 @@ function parseDate(dateStr?: string) {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function AnnouncementsPage() {
+export default async function AnnouncementsPage({
+  searchParams,
+}: {
+  searchParams?: { preview?: string }
+}) {
+  const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  const client = getSanityClient(isPreview)
   let announcements: AnnouncementItem[] = []
 
   try {
-    const raw = await sanityClient.fetch<SanityAnnouncement[]>(ANNOUNCEMENTS_QUERY)
+    const raw = await client.fetch<SanityAnnouncement[]>(ANNOUNCEMENTS_QUERY)
     if (raw && raw.length > 0) {
       announcements = raw.map((item) => {
         // Event date is prominently displayed in the left badge (falls back to publishDate if not specified)
@@ -113,6 +121,8 @@ export default async function AnnouncementsPage() {
         <AnnouncementsSubscriptionCard />
 
       </div>
+
+      {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/announcements" />}
     </div>
   )
-}
+}

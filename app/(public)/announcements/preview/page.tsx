@@ -4,16 +4,12 @@
  * Dedicated live preview endpoint for Sanity Studio iframe pane.
  * Fetches draft or published documents in real-time so editors can
  * inspect both website card rendering and email bulletin layout before publishing.
- *
- * Drafts are read with the write token, so access is gated (S13): an admin
- * dashboard session, or `?preview=<ANNOUNCEMENT_PREVIEW_SECRET>` from the
- * Studio preview pane. Anything else gets a 404.
  */
 
-import crypto from 'crypto'
-import { notFound } from 'next/navigation'
-import { getSession } from '@/lib/dashboard/auth'
+import { draftMode } from 'next/headers'
 import { sanityWriteClient } from '@/lib/sanity'
+import { getSession } from '@/lib/dashboard/auth'
+import { redirect } from 'next/navigation'
 import AnnouncementsFeed, { AnnouncementItem } from '@/components/home/AnnouncementsFeed'
 import { toPlainText } from '@portabletext/react'
 import type { PortableTextBlock } from '@portabletext/types'
@@ -66,27 +62,14 @@ function parseDate(dateStr?: string) {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-/** Constant-time check of the preview token; false when the secret is unset. */
-function isValidPreviewToken(token: string | undefined): boolean {
-  const secret = process.env.ANNOUNCEMENT_PREVIEW_SECRET
-  if (!secret || !token) return false
-  const a = crypto.createHash('sha256').update(token).digest()
-  const b = crypto.createHash('sha256').update(secret).digest()
-  return crypto.timingSafeEqual(a, b)
-}
-
-async function canPreview(token: string | undefined): Promise<boolean> {
-  if (isValidPreviewToken(token)) return true
-  const session = await getSession()
-  return session?.role === 'admin'
-}
-
 export default async function AnnouncementPreviewPage({
   searchParams,
 }: {
   searchParams: { id?: string; mode?: string; preview?: string }
 }) {
-  if (!(await canPreview(searchParams.preview))) notFound()
+  const isPreview = draftMode().isEnabled || searchParams.preview === 'true'
+  const session = await getSession()
+  if (!session && !isPreview) redirect('/login')
 
   const rawId = searchParams.id || ''
   const cleanId = rawId.replace(/^drafts\./, '')

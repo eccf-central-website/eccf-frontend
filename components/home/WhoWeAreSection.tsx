@@ -47,7 +47,7 @@ export default function WhoWeAreSection({
 
   return (
     <section id="about" className="w-full bg-[#fcfbf9] border-b border-stone-200 py-10 sm:py-14 lg:py-20 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 xl:gap-20 items-center">
           
           {/* ================================================================ */}

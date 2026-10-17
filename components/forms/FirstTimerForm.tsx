@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import { submitFirstTimer } from '@/app/actions/intake-actions'
+import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 export function FirstTimerForm() {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setStatus(null)
+    formData.set('turnstileToken', turnstileToken)
     
     try {
       const result = await submitFirstTimer(formData)
@@ -17,6 +21,8 @@ export function FirstTimerForm() {
       if (result.success) {
         const form = document.getElementById('first-timer-form') as HTMLFormElement
         if (form) form.reset()
+        setTurnstileToken('')
+        setTurnstileResetSignal((signal) => signal + 1)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -135,6 +141,8 @@ export function FirstTimerForm() {
             placeholder="100L"
           />
         </div>
+
+        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
 
         <button
           type="submit"

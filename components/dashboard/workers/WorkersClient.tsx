@@ -15,8 +15,13 @@ import {
   Users,
   Building,
   Loader2,
+  Calendar,
+  Download,
+  Mail,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
+import SendWorkerEmailDialog from './SendWorkerEmailDialog'
+import SendWorkerEmailCard from './SendWorkerEmailCard'
 import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
@@ -43,8 +48,46 @@ import {
   SelectValue,
 } from '@/components/dashboard/ui/select'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import { isMediaTeam } from '@/lib/dashboard/rbac'
 import { verifyWorkerMembership, toggleExcoApproval } from '@/app/actions/worker-actions'
 import { toastSuccess, toastError } from '@/lib/dashboard/toast'
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
+function formatBirthday(dateStr?: string, monthNum?: number, dayNum?: number): string {
+  if (monthNum && dayNum) {
+    return `${MONTH_NAMES[monthNum - 1] || 'Month ' + monthNum} ${dayNum}`
+  }
+  if (!dateStr) return 'Not set'
+  const parts = dateStr.split('-')
+  if (parts.length === 3) {
+    const m = parseInt(parts[1], 10)
+    const d = parseInt(parts[2], 10)
+    if (!isNaN(m) && !isNaN(d) && m >= 1 && m <= 12) {
+      return `${MONTH_NAMES[m - 1]} ${d}`
+    }
+  } else if (parts.length === 2) {
+    const m = parseInt(parts[0], 10)
+    const d = parseInt(parts[1], 10)
+    if (!isNaN(m) && !isNaN(d) && m >= 1 && m <= 12) {
+      return `${MONTH_NAMES[m - 1]} ${d}`
+    }
+  }
+  return dateStr
+}
 
 interface WorkersClientProps {
   rows: WorkerRow[]
@@ -60,11 +103,15 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
   const [teamFilter, setTeamFilter] = useState('all')
   const [hallFilter, setHallFilter] = useState('all')
   const [activeWorkerDetail, setActiveWorkerDetail] = useState<WorkerRow | null>(null)
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [emailPreselectedWorker, setEmailPreselectedWorker] = useState<WorkerRow | null>(null)
   const [, startTransition] = useTransition()
   const [processingId, setProcessingId] = useState<string | null>(null)
 
   const isTeamLead = session.role === 'team_lead'
   const isAdmin = session.role === 'admin'
+  const isHallRep = session.role === 'hall_rep'
+  const isMedia = isMediaTeam(session)
 
   // Summary counts
   const pendingWorkers = useMemo(
@@ -201,66 +248,103 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* SECTION HEADER                                                       */}
       {/* ==================================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0077cc]">
-              {isTeamLead ? `${session.team} Team Roster` : 'Central Workforce CRM'}
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
+              {isAdmin
+                ? 'Central Workforce CRM'
+                : isMedia
+                ? 'Media & Celebrations Directory'
+                : isHallRep
+                ? `${session.hall || 'Hall'} Workers Roster`
+                : `${session.team} Team Roster`}
             </span>
             {pendingWorkers.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
                 <Clock className="h-3 w-3" />
                 {pendingWorkers.length} Pending
               </span>
             )}
           </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
-            {isTeamLead ? `${session.team} Members` : 'Workforce & Leadership Roster'}
+          <h1 className="font-serif text-2xl sm:text-3xl font-black text-foreground tracking-tight mt-1">
+            {isAdmin
+              ? 'Workforce & Leadership Roster'
+              : isMedia
+              ? 'Fellowship Workers & Birthday Directory'
+              : isHallRep
+              ? `${session.hall || 'Hall'} Resident Workers`
+              : `${session.team} Members & Applicants`}
           </h1>
-          <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-            {isTeamLead
-              ? `Approve or review newly registered members in ${session.team}. Only verified members appear on your attendance sheets and ministerial ledgers.`
-              : 'Govern all ~250 fellowship workers across all 14 operational teams. Approve departmental rosters and grant Exco dashboard credentials.'}
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+            {isAdmin
+              ? 'Govern all fellowship workers across all operational teams and halls. Approve departmental rosters and grant Exco dashboard credentials.'
+              : isMedia
+              ? 'Full directory of all fellowship workers across all teams and halls for designing birthday flyers, celebratory graphics, and media coverage.'
+              : isHallRep
+              ? `View and care for all fellowship workers living in ${session.hall || 'your hall'} across all operational units.`
+              : `Review and approve workers requesting to join ${session.team}. Once accepted, they become verified members on your team roster.`}
           </p>
         </div>
 
-        {/* Quick Stats Counter Pills */}
-        <div className="flex items-center gap-2">
-          <div className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-center">
-            <span className="block text-xs font-mono uppercase text-slate-500 font-bold">Total</span>
-            <span className="font-serif font-black text-lg text-slate-900">{rows.length}</span>
+        {/* Quick Actions & Counter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setEmailPreselectedWorker(null)
+              setIsEmailDialogOpen(true)
+            }}
+            className="h-10 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs"
+          >
+            <Mail className="h-4 w-4 mr-1.5" />
+            {isAdmin ? 'Broadcast Mail' : 'Email Workers'}
+          </Button>
+
+          <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-center">
+            <span className="block text-xs font-mono uppercase text-muted-foreground font-bold">Total</span>
+            <span className="font-serif font-black text-lg text-foreground">{rows.length}</span>
           </div>
-          <div className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 shadow-xs text-center">
-            <span className="block text-xs font-mono uppercase text-emerald-700 font-bold">Verified</span>
-            <span className="font-serif font-black text-lg text-emerald-800">{verifiedWorkers.length}</span>
+          <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 shadow-xs text-center">
+            <span className="block text-xs font-mono uppercase text-emerald-600 dark:text-emerald-400 font-bold">Verified</span>
+            <span className="font-serif font-black text-lg text-emerald-700 dark:text-emerald-300">{verifiedWorkers.length}</span>
           </div>
           {pendingWorkers.length > 0 && (
-            <div className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 shadow-xs text-center">
-              <span className="block text-xs font-mono uppercase text-amber-700 font-bold">Pending</span>
-              <span className="font-serif font-black text-lg text-amber-800">{pendingWorkers.length}</span>
+            <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 shadow-xs text-center">
+              <span className="block text-xs font-mono uppercase text-amber-600 dark:text-amber-400 font-bold">Pending</span>
+              <span className="font-serif font-black text-lg text-amber-700 dark:text-amber-300">{pendingWorkers.length}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* ==================================================================== */}
+      {/* WORKFORCE EMAIL DISPATCH INPUT BOX                                   */}
+      {/* ==================================================================== */}
+      <SendWorkerEmailCard session={session} workers={rows} defaultExpanded={false} />
+
+      {/* ==================================================================== */}
       {/* PENDING APPROVALS ALERT CAROUSEL / CALLOUT BANNER                    */}
       {/* ==================================================================== */}
       {pendingWorkers.length > 0 && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-50 via-amber-50/80 to-white border-2 border-amber-300 shadow-sm space-y-3">
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-card border border-amber-500/30 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-200 text-amber-900 font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold">
                 <Clock className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="font-serif font-bold text-base text-amber-950">
-                  {isTeamLead
+                <h3 className="font-serif font-bold text-base text-foreground">
+                  {isTeamLead && !isMedia
                     ? `${pendingWorkers.length} Membership Request${pendingWorkers.length > 1 ? 's' : ''} Awaiting Your Approval`
+                    : isHallRep
+                    ? `${pendingWorkers.length} Pending Worker Registration${pendingWorkers.length > 1 ? 's' : ''} in ${session.hall || 'Your Hall'}`
                     : `${pendingWorkers.length} Worker Registration${pendingWorkers.length > 1 ? 's' : ''} Pending Departmental Approval`}
                 </h3>
-                <p className="text-xs text-amber-800 font-medium">
-                  Confirm genuine workers so they can be marked present during services and inducted into fellowship care.
+                <p className="text-xs text-muted-foreground font-medium">
+                  {isTeamLead && !isMedia
+                    ? `Review applicants who requested to join ${session.team}. Once you accept them, they become verified members.`
+                    : 'Confirm genuine workers so they can be marked present during services and inducted into fellowship care.'}
                 </p>
               </div>
             </div>
@@ -268,7 +352,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               variant="outline"
               size="sm"
               onClick={() => setStatusFilter('pending')}
-              className="hidden sm:inline-flex text-xs font-bold border-amber-300 text-amber-900 hover:bg-amber-100"
+              className="hidden sm:inline-flex text-xs font-bold border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
             >
               Filter Pending Only
             </Button>
@@ -278,42 +362,66 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
             {pendingWorkers.slice(0, 6).map((worker) => {
               const isBusy = processingId === worker._id
+              const canApprove = isAdmin || (isTeamLead && !isMedia)
+
               return (
                 <div
                   key={worker._id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white border border-amber-200 shadow-xs hover:border-amber-400 transition-all"
+                  className="flex items-center justify-between p-3 rounded-xl bg-card border border-amber-500/25 shadow-xs hover:border-amber-500/50 transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 font-serif font-bold text-sm">
-                      {worker.fullName.slice(0, 2).toUpperCase()}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 font-serif font-bold text-sm overflow-hidden">
+                      {worker.profileImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={worker.profileImageUrl}
+                          alt={worker.fullName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        worker.fullName.slice(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-sm text-slate-900 truncate">{worker.fullName}</p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="font-bold text-sm text-foreground truncate">{worker.fullName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {worker.hall || 'No Hall'} • {worker.team}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      size="sm"
-                      disabled={isBusy}
-                      onClick={() => handleVerification(worker, 'approve')}
-                      className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
-                    >
-                      {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 mr-1" />}
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={isBusy}
-                      onClick={() => handleVerification(worker, 'reject')}
-                      className="h-8 px-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs"
-                    >
-                      <UserX className="h-3.5 w-3.5" />
-                    </Button>
+                    {canApprove ? (
+                      <>
+                        <Button
+                          size="sm"
+                          disabled={isBusy}
+                          onClick={() => handleVerification(worker, 'approve')}
+                          className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                        >
+                          {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 mr-1" />}
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={isBusy}
+                          onClick={() => handleVerification(worker, 'reject')}
+                          className="h-8 px-2 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 text-xs"
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setActiveWorkerDetail(worker)}
+                        className="h-8 px-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent text-xs font-semibold"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                    )}
                   </div>
                 </div>
               )
@@ -325,42 +433,49 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* FILTER & SEARCH BAR                                                  */}
       {/* ==================================================================== */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+      <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search by worker name, hall, or operational team..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white text-sm"
+              className="pl-10 h-11 rounded-xl bg-muted/40 border-input focus:bg-background text-sm text-foreground"
             />
           </div>
 
-          {/* Hall Filter */}
-          <div className="w-full md:w-44">
-            <Select value={hallFilter} onValueChange={setHallFilter}>
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 text-sm">
-                <SelectValue placeholder="All Halls" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Halls</SelectItem>
-                {['Hall 1', 'Hall 2', 'Hall 3', 'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8'].map((h) => (
-                  <SelectItem key={h} value={h}>
-                    {h}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Hall Filter (hidden for Hall Reps whose view is locked to their assigned hall) */}
+          {isHallRep ? (
+            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-primary/10 border border-primary/25 text-primary text-xs font-bold shrink-0">
+              <Building className="h-4 w-4 text-primary" />
+              <span>{session.hall || 'Assigned Hall'}</span>
+            </div>
+          ) : (
+            <div className="w-full md:w-44">
+              <Select value={hallFilter} onValueChange={setHallFilter}>
+                <SelectTrigger className="h-11 rounded-xl border-input bg-background/50 text-sm">
+                  <SelectValue placeholder="All Halls" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Halls</SelectItem>
+                  {['Hall 1', 'Hall 2', 'Hall 3', 'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8'].map((h) => (
+                    <SelectItem key={h} value={h}>
+                      {h}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {/* Team Filter (Admins Only) */}
-          {isAdmin && (
+          {/* Team Filter (Admins & Media Team see all teams) */}
+          {(isAdmin || isMedia) && (
             <div className="w-full md:w-56">
               <Select value={teamFilter} onValueChange={setTeamFilter}>
-                <SelectTrigger className="h-11 rounded-xl border-slate-200 text-sm">
+                <SelectTrigger className="h-11 rounded-xl border-input bg-background/50 text-sm">
                   <SelectValue placeholder="All Teams" />
                 </SelectTrigger>
                 <SelectContent>
@@ -374,11 +489,19 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               </Select>
             </div>
           )}
+
+          {/* Fixed Team Badge for Unit Leaders */}
+          {isTeamLead && !isMedia && (
+            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-muted/40 border border-border text-foreground text-xs font-bold shrink-0">
+              <Users className="h-4 w-4 text-primary" />
+              <span>{session.team}</span>
+            </div>
+          )}
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
-          <span className="text-xs font-mono font-bold text-slate-400 uppercase mr-1">Status:</span>
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border">
+          <span className="text-xs font-mono font-bold text-muted-foreground uppercase mr-1">Status:</span>
           {[
             { id: 'all', label: `All (${rows.length})` },
             { id: 'verified', label: `Verified (${verifiedWorkers.length})` },
@@ -393,10 +516,10 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 onClick={() => setStatusFilter(tab.id as StatusFilter)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   isActive
-                    ? 'bg-[#0077cc] text-white shadow-xs'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : tab.alert
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-extrabold'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 <span>{tab.label}</span>
@@ -409,25 +532,25 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* WORKERS TABLE                                                        */}
       {/* ==================================================================== */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-              <TableHead className="font-mono text-xs font-bold uppercase text-slate-600">Member</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-slate-600">Team(s)</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-slate-600">Residence</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-slate-600">Status</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-slate-600 text-right">Actions</TableHead>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Member</TableHead>
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Team(s)</TableHead>
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Residence</TableHead>
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Status</TableHead>
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-44 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2 text-slate-500">
-                    <Users className="h-8 w-8 text-slate-400 stroke-1" />
+                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <Users className="h-8 w-8 text-muted-foreground/50 stroke-1" />
                     <p className="font-semibold text-sm">No workers found matching your filter criteria.</p>
-                    <p className="text-xs text-slate-400">Try clearing search keywords or switching status tabs.</p>
+                    <p className="text-xs text-muted-foreground/70">Try clearing search keywords or switching status tabs.</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -438,25 +561,42 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 const allTeams = worker.teams && worker.teams.length > 0 ? worker.teams : [worker.team]
 
                 return (
-                  <TableRow key={worker._id} className="hover:bg-slate-50/60 transition-colors">
+                  <TableRow key={worker._id} className="hover:bg-muted/30 transition-colors">
                     {/* Member Name + Photo */}
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-serif font-bold text-sm overflow-hidden">
-                          {worker.fullName.slice(0, 2).toUpperCase()}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-foreground font-serif font-bold text-sm overflow-hidden">
+                          {worker.profileImageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={worker.profileImageUrl}
+                              alt={worker.fullName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            worker.fullName.slice(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm text-slate-950">{worker.fullName}</span>
+                            <span className="font-bold text-sm text-foreground">{worker.fullName}</span>
                             {worker.role && worker.role !== 'team_lead' && (
-                              <Badge variant="outline" className="text-[10px] uppercase font-mono bg-sky-50 text-sky-700 border-sky-300">
+                              <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-primary/30">
                                 {worker.role}
                               </Badge>
                             )}
                           </div>
-                          {worker.excoPosition && (
-                            <p className="text-xs font-semibold text-[#0077cc]">{worker.excoPosition}</p>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {worker.excoPosition && (
+                              <span className="text-xs font-semibold text-primary">{worker.excoPosition}</span>
+                            )}
+                            {worker.birthDate && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                                <Calendar className="h-3 w-3 text-primary" />
+                                {formatBirthday(worker.birthDate, worker.birthMonth, worker.birthDay)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -469,11 +609,11 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                             key={t + idx}
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
                               t === worker.leadingTeam
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300 font-bold'
-                                : 'bg-slate-100 text-slate-800'
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold'
+                                : 'bg-muted text-muted-foreground border border-border/50'
                             }`}
                           >
-                            {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 mr-1 text-amber-600" />}
+                            {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 mr-1 text-amber-500" />}
                             {t}
                           </span>
                         ))}
@@ -482,8 +622,8 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
                     {/* Hall */}
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                        <Building className="h-3.5 w-3.5 text-slate-400" />
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                        <Building className="h-3.5 w-3.5 text-muted-foreground" />
                         <span>{worker.hall || 'Not set'}</span>
                       </div>
                     </TableCell>
@@ -491,20 +631,20 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                     {/* Verification Status */}
                     <TableCell>
                       {status === 'verified' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                           Verified
                         </span>
                       )}
                       {status === 'pending' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
-                          <Clock className="h-3.5 w-3.5 text-amber-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                          <Clock className="h-3.5 w-3.5 text-amber-500" />
                           Pending Review
                         </span>
                       )}
                       {status === 'rejected' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                          <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                          <XCircle className="h-3.5 w-3.5 text-rose-500" />
                           Declined
                         </span>
                       )}
@@ -513,8 +653,32 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                     {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* If Pending: Show 1-Tap Approve/Decline */}
-                        {status === 'pending' && (
+                        {/* Always allow viewing full profile & birthday details / downloading picture */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setActiveWorkerDetail(worker)}
+                          className="h-8 px-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground text-xs font-semibold"
+                        >
+                          <Eye className="h-3.5 w-3.5 mr-1" /> View Profile
+                        </Button>
+
+                        {/* Send direct email to worker */}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEmailPreselectedWorker(worker)
+                            setIsEmailDialogOpen(true)
+                          }}
+                          title={`Send email to ${worker.fullName}`}
+                          className="h-8 px-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 text-xs font-semibold"
+                        >
+                          <Mail className="h-3.5 w-3.5 mr-1" /> Email
+                        </Button>
+
+                        {/* If Pending & Authorized: Show 1-Tap Approve/Decline */}
+                        {status === 'pending' && (isAdmin || (isTeamLead && !isMedia)) && (
                           <>
                             <Button
                               size="sm"
@@ -530,23 +694,11 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                               variant="outline"
                               disabled={isBusy}
                               onClick={() => handleVerification(worker, 'reject')}
-                              className="h-8 px-2.5 rounded-lg text-rose-600 border-rose-200 hover:bg-rose-50 text-xs font-bold"
+                              className="h-8 px-2.5 rounded-lg text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 text-xs font-bold"
                             >
                               Decline
                             </Button>
                           </>
-                        )}
-
-                        {/* If Verified: Quick link to view profile or change status */}
-                        {status === 'verified' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setActiveWorkerDetail(worker)}
-                            className="h-8 px-2.5 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold"
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" /> View Profile
-                          </Button>
                         )}
 
                         {/* Admin Exco Approval Switch */}
@@ -555,7 +707,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                             size="sm"
                             disabled={isBusy}
                             onClick={() => handleExcoToggle(worker, true)}
-                            className="h-8 px-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs"
+                            className="h-8 px-2.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs"
                           >
                             <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Grant Exco
                           </Button>
@@ -576,49 +728,99 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       <Dialog open={!!activeWorkerDetail} onOpenChange={(open) => !open && setActiveWorkerDetail(null)}>
         <DialogContent className="max-w-md rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl font-black text-slate-950">
+            <DialogTitle className="font-serif text-2xl font-black text-foreground">
               Worker Profile
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               Verified fellowship records &amp; audit delta history.
             </DialogDescription>
           </DialogHeader>
 
           {activeWorkerDetail && (
             <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-[#0077cc] font-serif font-black text-base">
-                  {activeWorkerDetail.fullName.slice(0, 2).toUpperCase()}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden border border-border">
+                  {activeWorkerDetail.profileImageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={activeWorkerDetail.profileImageUrl}
+                      alt={activeWorkerDetail.fullName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    activeWorkerDetail.fullName.slice(0, 2).toUpperCase()
+                  )}
                 </div>
-                <div>
-                  <h4 className="font-bold text-base text-slate-950">{activeWorkerDetail.fullName}</h4>
-                  <p className="text-xs text-slate-500">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-base text-foreground truncate">{activeWorkerDetail.fullName}</h4>
+                  <p className="text-xs text-muted-foreground truncate">
                     {activeWorkerDetail.hall || 'No Hall'} • {activeWorkerDetail.team}
                   </p>
                 </div>
               </div>
 
+              {/* Birthday Banner & Media Flyer Download */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-card border border-primary/20 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary block">
+                        Birthday (For Media &amp; Welfare)
+                      </span>
+                      <span className="text-sm font-bold text-foreground">
+                        {formatBirthday(activeWorkerDetail.birthDate, activeWorkerDetail.birthMonth, activeWorkerDetail.birthDay)}
+                      </span>
+                    </div>
+                  </div>
+                  {activeWorkerDetail.profileImageUrl && (
+                    <a
+                      href={activeWorkerDetail.profileImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download Picture
+                    </a>
+                  )}
+                </div>
+
+                {activeWorkerDetail.profileImageUrl && (
+                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-background border border-primary/25">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={activeWorkerDetail.profileImageUrl}
+                      alt={`${activeWorkerDetail.fullName} Celebratory Birthday Photo`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-1">Operational Teams</span>
-                  <span className="font-semibold text-slate-900">
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                  <span className="text-muted-foreground font-bold block mb-1">Operational Teams</span>
+                  <span className="font-semibold text-foreground">
                     {(activeWorkerDetail.teams && activeWorkerDetail.teams.length > 0
                       ? activeWorkerDetail.teams
                       : [activeWorkerDetail.team]
                     ).join(', ')}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 font-bold block mb-1">Verification Status</span>
-                  <span className="font-bold text-emerald-700 capitalize">
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                  <span className="text-muted-foreground font-bold block mb-1">Verification Status</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
                     {activeWorkerDetail.verificationStatus || 'Verified'}
                   </span>
                 </div>
               </div>
 
               {activeWorkerDetail.verifiedBy && (
-                <div className="text-xs text-slate-500 flex items-center justify-between px-1">
-                  <span>Verified by: <strong>{activeWorkerDetail.verifiedBy}</strong></span>
+                <div className="text-xs text-muted-foreground flex items-center justify-between px-1">
+                  <span>Verified by: <strong className="text-foreground">{activeWorkerDetail.verifiedBy}</strong></span>
                   {activeWorkerDetail.verifiedAt && (
                     <span>{new Date(activeWorkerDetail.verifiedAt).toLocaleDateString()}</span>
                   )}
@@ -627,11 +829,11 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
               {/* Audit Delta History */}
               {activeWorkerDetail.updateLog && activeWorkerDetail.updateLog.length > 0 && (
-                <div className="pt-2 border-t border-slate-100">
-                  <h5 className="font-mono text-xs font-bold uppercase text-slate-400 mb-2">Audit History</h5>
+                <div className="pt-2 border-t border-border">
+                  <h5 className="font-mono text-xs font-bold uppercase text-muted-foreground mb-2">Audit History</h5>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                     {activeWorkerDetail.updateLog.map((log, idx) => (
-                      <p key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      <p key={idx} className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border/60">
                         {log}
                       </p>
                     ))}
@@ -642,6 +844,15 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Send Email to Workers Dialog */}
+      <SendWorkerEmailDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        session={session}
+        workers={rows}
+        preselectedWorker={emailPreselectedWorker}
+      />
     </div>
   )
 }
