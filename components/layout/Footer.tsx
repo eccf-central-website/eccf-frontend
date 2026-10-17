@@ -1,13 +1,13 @@
 /**
  * Footer — Global Footer Component
  *
- * Implements a high-end, professional dark footer layout inspired by the
- * Turning Point USA design system (TPUSA):
- * - Atmospheric dark backdrop with subtle congregation overlay
- * - Direct email bulletin subscription with server action integration
- * - ECCF Family branding in Belleza font
- * - Direct links to Operational Teams, Leadership, Pastors, and CSGB
- * - Pixel-perfect social media icons (Facebook, X, Instagram, YouTube, TikTok, Telegram)
+ * Implements ECCF's authentic brand palette:
+ * - Warm site background (--site-bg: #fafaf9) with refined stone border
+ * - Compact, inline bulletin subscription form with integrated Cloudflare Turnstile
+ * - Brand-aligned primary submit button in ECCF Sky Blue (#0095ff)
+ * - Clean naked social media vector icons (no circular containers)
+ * - ECCF Family branding with Belleza serif typography and official identity
+ * - Full navigation directory for Teams, Leadership, Pastors, and Ministry
  * - Strict compliance: No /register route exposure, no exco dashboard button
  */
 
@@ -83,54 +83,46 @@ export default function Footer({ settings }: FooterProps = {}) {
   }
 
   return (
-    <footer className="relative bg-slate-950 text-slate-300 border-t border-slate-800/80 overflow-hidden font-sans">
-      {/* Background Crowd Atmosphere (Overlaying subtle congregation photo) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-        <Image
-          src="/gallery/gallery-1.jpg"
-          alt="Congregation background"
-          fill
-          className="object-cover object-top opacity-10 mix-blend-luminosity brightness-75 scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/95 to-slate-950" />
-      </div>
-
-      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 pt-16 sm:pt-20 pb-12 relative z-10">
+    <footer className="relative bg-[#fafaf9] text-slate-700 border-t border-stone-200/90 font-sans">
+      <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 pt-16 sm:pt-20 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14">
           
           {/* ============================================================= */}
           {/* LEFT COLUMN: Newsletter Subscription + Mission + Follow Us     */}
           {/* ============================================================= */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-7">
             
             {/* Subscription Card */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-200 font-mono">
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono">
                 SUBSCRIBE FOR NEWS, UPDATES, AND EVENTS
               </h3>
 
-              <form onSubmit={handleSubscribe} className="mt-3.5 space-y-3 max-w-md">
-                <div>
-                  <label htmlFor="footer-email" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Email<span className="text-[#0095ff] ml-0.5">*</span>
-                  </label>
-                  <input
-                    id="footer-email"
-                    type="email"
-                    name="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full bg-white text-slate-900 border border-stone-200 rounded-full px-5 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0095ff] focus:border-transparent transition shadow-sm"
-                  />
-                </div>
+              <form onSubmit={handleSubscribe} className="mt-3.5 max-w-md">
+                <label htmlFor="footer-email" className="block text-xs font-semibold text-slate-700 mb-2">
+                  Email<span className="text-[#0095ff] ml-0.5">*</span>
+                </label>
 
-                <div className="flex items-center gap-3">
+                {/* Inline unified input + submit button */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      id="footer-email"
+                      type="email"
+                      name="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      aria-label="Email address for announcements"
+                      className="w-full bg-white text-slate-900 border border-stone-300 rounded-full px-5 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0095ff] focus:border-transparent transition shadow-xs"
+                    />
+                  </div>
+
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-[#0095ff] hover:bg-[#0080e0] active:bg-[#0070c9] disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider py-3 px-8 rounded-full shadow-md shadow-sky-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    className="h-11 px-7 rounded-full bg-[#0095ff] hover:bg-[#0080e0] active:bg-[#0070c9] disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider shadow-sm shadow-sky-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {loading ? (
                       <>
@@ -143,26 +135,28 @@ export default function Footer({ settings }: FooterProps = {}) {
                   </button>
                 </div>
 
-                {/* Turnstile Security Check (Suppresses text in dev when unconfigured) */}
-                <TurnstileWidget
-                  onToken={setTurnstileToken}
-                  resetSignal={turnstileResetSignal}
-                  hideFallbackText={true}
-                />
+                {/* Cloudflare Turnstile Security Check */}
+                <div className="mt-2.5">
+                  <TurnstileWidget
+                    onToken={setTurnstileToken}
+                    resetSignal={turnstileResetSignal}
+                    hideFallbackText={true}
+                  />
+                </div>
 
                 {/* Inline Status Feedback */}
                 {status && (
                   <div
-                    className={`p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
+                    className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
                       status.success
-                        ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-300'
-                        : 'bg-rose-950/70 border border-rose-500/40 text-rose-300'
+                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                        : 'bg-rose-50 border border-rose-200 text-rose-800'
                     }`}
                   >
                     {status.success ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
                     )}
                     <span>{status.message}</span>
                   </div>
@@ -171,7 +165,7 @@ export default function Footer({ settings }: FooterProps = {}) {
             </div>
 
             {/* Brand Title & Official Identity */}
-            <div className="pt-2">
+            <div className="pt-1">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative h-10 w-10 shrink-0">
                   <Image
@@ -179,31 +173,31 @@ export default function Footer({ settings }: FooterProps = {}) {
                     alt="ECCF Logo"
                     width={40}
                     height={40}
-                    className="h-full w-full object-contain brightness-110"
+                    className="h-full w-full object-contain"
                   />
                 </div>
                 <div>
-                  <span className="text-2xl sm:text-3xl font-serif font-normal text-white tracking-tight block">
+                  <span className="text-2xl sm:text-3xl font-serif font-normal text-[#0095ff] tracking-tight block">
                     ECCF Family
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-400 tracking-normal block mt-0.5">
+                  <span className="text-xs sm:text-sm font-semibold text-slate-600 tracking-normal block mt-0.5">
                     ESUI Christian Campus Fellowship
                   </span>
                 </div>
               </div>
 
               {/* Fellowship Mission Statement */}
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md">
                 Edo State University Christian Campus Fellowship is an interdenominational student assembly dedicated to raising spiritual dynamites and academic giants for God&apos;s kingdom. Anchored on Christ, nurturing students across all residence halls into purpose, prayer, academic excellence, and Kingdom leadership.
               </p>
             </div>
 
-            {/* Social Channels (Follow Us) */}
-            <div className="pt-2">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-300 mb-3.5 font-mono">
+            {/* Social Channels (Follow Us — Naked Vector SVGs without background discs) */}
+            <div className="pt-1">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-3 font-mono">
                 FOLLOW US
               </h4>
-              <div className="flex items-center gap-3 text-white flex-wrap">
+              <div className="flex items-center gap-5 text-slate-500 flex-wrap">
                 {/* Facebook */}
                 <a
                   href={facebookUrl}
@@ -211,9 +205,9 @@ export default function Footer({ settings }: FooterProps = {}) {
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                   title="Follow ECCF on Facebook"
-                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                 >
-                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
@@ -225,9 +219,9 @@ export default function Footer({ settings }: FooterProps = {}) {
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                   title="Follow ECCF on Instagram"
-                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                 >
-                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
@@ -241,9 +235,9 @@ export default function Footer({ settings }: FooterProps = {}) {
                   rel="noopener noreferrer"
                   aria-label="YouTube"
                   title="Watch ECCF sermons on YouTube"
-                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                 >
-                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </a>
@@ -255,9 +249,9 @@ export default function Footer({ settings }: FooterProps = {}) {
                   rel="noopener noreferrer"
                   aria-label="TikTok"
                   title="Follow ECCF on TikTok"
-                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                 >
-                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3 15.28 6.34 6.34 0 0 0 9.34 21.6a6.34 6.34 0 0 0 6.34-6.32V8.75a8.28 8.28 0 0 0 4.81 1.54V6.84a4.8 4.8 0 0 1-.9-.15z"/>
                   </svg>
                 </a>
@@ -269,9 +263,9 @@ export default function Footer({ settings }: FooterProps = {}) {
                   rel="noopener noreferrer"
                   aria-label="Telegram"
                   title="Join ECCF Telegram channel"
-                  className="h-10 w-10 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white shadow-md shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                 >
-                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                     <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.693c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
                   </svg>
                 </a>
@@ -287,42 +281,42 @@ export default function Footer({ settings }: FooterProps = {}) {
 
             {/* Column 1: About & Leaders */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-white font-mono mb-4 pb-1 border-b border-slate-800">
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
                 About &amp; Leaders
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-sm">
                 <li>
-                  <Link href="/about" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     About ECCF
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#leadership" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Leadership &amp; Pastors
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#leadership" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Resident Pastor &amp; Patrons
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#leadership" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Central Executive Body (CSGB)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#leadership" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Hall Pastors (Halls 1&ndash;8)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#pillars" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#pillars" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Spiritual &amp; Academic Pillars
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#story" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#story" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Fellowship History &amp; Story
                   </Link>
                 </li>
@@ -331,47 +325,47 @@ export default function Footer({ settings }: FooterProps = {}) {
 
             {/* Column 2: Operational Teams */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-white font-mono mb-4 pb-1 border-b border-slate-800">
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
                 Our Teams
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-sm">
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white font-semibold transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-[#0095ff] hover:text-[#0080e0] font-semibold transition-colors inline-block py-0.5">
                     All 14 Operational Units &rarr;
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Choir &amp; Music Ministry
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Prayer &amp; Intercession
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Media &amp; Digital Production
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Academic Distinction Unit
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Welfare &amp; Medical Team
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Protocol &amp; Ushering
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about#teams" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Bible Study &amp; Outreach
                   </Link>
                 </li>
@@ -380,57 +374,57 @@ export default function Footer({ settings }: FooterProps = {}) {
 
             {/* Column 3: Get Involved & Ministry Resources */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-white font-mono mb-4 pb-1 border-b border-slate-800">
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
                 Get Involved
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-sm">
                 <li>
-                  <Link href="/connect" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/connect" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Connect &amp; Support
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#visit" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/#visit" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Plan a Visit
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#services" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/#services" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Service Encounters
                   </Link>
                 </li>
                 <li>
-                  <Link href="/connect?tab=first-timer" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/connect?tab=first-timer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     First Timers Welcome
                   </Link>
                 </li>
                 <li>
-                  <Link href="/connect?tab=welfare" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/connect?tab=welfare" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Student Welfare Aid
                   </Link>
                 </li>
                 <li>
-                  <Link href="/connect?tab=prayer" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/connect?tab=prayer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Submit Prayer Request
                   </Link>
                 </li>
                 <li>
-                  <Link href="/give" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/give" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Give Tithes &amp; Offerings
                   </Link>
                 </li>
                 <li>
-                  <Link href="/sermons" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/sermons" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Audio Sermons
                   </Link>
                 </li>
                 <li>
-                  <Link href="/announcements" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/announcements" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Announcements
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="text-slate-300 hover:text-white transition-colors inline-block py-0.5">
+                  <Link href="/privacy" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
                     Privacy Policy
                   </Link>
                 </li>
@@ -444,23 +438,23 @@ export default function Footer({ settings }: FooterProps = {}) {
         {/* ============================================================= */}
         {/* BOTTOM BAR: Copyright & Campus Details                         */}
         {/* ============================================================= */}
-        <div className="mt-14 pt-8 border-t border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="mt-14 pt-8 border-t border-stone-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p className="text-center md:text-left">
             &copy; {currentYear} ECCF Family &mdash; ESUI Christian Campus Fellowship. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center text-slate-400">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center text-slate-500">
             <span>Meeting Venue: NLT 5, Faculty of Law</span>
             <span>&bull;</span>
             <span>Halls 1&ndash;8 Active Ministry</span>
             <span>&bull;</span>
-            <Link href="/privacy" className="text-slate-400 hover:text-sky-400 transition-colors">
+            <Link href="/privacy" className="text-slate-500 hover:text-[#0095ff] transition-colors">
               Privacy &amp; Data Care
             </Link>
             <span>&bull;</span>
             <a
               href={`mailto:${fellowshipEmail}`}
-              className="text-slate-400 hover:text-sky-400 transition-colors"
+              className="text-slate-500 hover:text-[#0095ff] transition-colors"
             >
               {fellowshipEmail}
             </a>
