@@ -21,15 +21,41 @@ import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { subscribeToAnnouncements } from '@/app/actions/subscriber-actions'
 import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
+export interface FooterNavLink {
+  label: string
+  url: string
+  isExternal?: boolean
+  highlight?: boolean
+}
+
+export interface FooterNavColumn {
+  title: string
+  links?: FooterNavLink[]
+}
+
+export interface FooterSettings {
+  socialYouTube?: string
+  socialInstagram?: string
+  socialFacebook?: string
+  socialTikTok?: string
+  socialTelegram?: string
+  socialTwitter?: string
+  socialWhatsApp?: string
+  fellowshipEmail?: string
+  footerNewsletterHeading?: string
+  footerNewsletterDescription?: string
+  footerBrandTitle?: string
+  footerBrandSubtitle?: string
+  footerMissionStatement?: string
+  footerLogoUrl?: string
+  footerMeetingVenue?: string
+  footerActiveMinistry?: string
+  footerCopyright?: string
+  footerNavColumns?: FooterNavColumn[]
+}
+
 export interface FooterProps {
-  settings?: {
-    socialYouTube?: string
-    socialInstagram?: string
-    socialFacebook?: string
-    socialTikTok?: string
-    socialTelegram?: string
-    fellowshipEmail?: string
-  } | null
+  settings?: FooterSettings | null
 }
 
 export default function Footer({ settings }: FooterProps = {}) {
@@ -41,7 +67,22 @@ export default function Footer({ settings }: FooterProps = {}) {
   const facebookUrl = settings?.socialFacebook || 'https://facebook.com'
   const tiktokUrl = settings?.socialTikTok || 'https://tiktok.com'
   const telegramUrl = settings?.socialTelegram || 'https://t.me'
+  const twitterUrl = settings?.socialTwitter || null
+  const whatsappUrl = settings?.socialWhatsApp || null
   const fellowshipEmail = settings?.fellowshipEmail || 'edsuchristiancampusfellowship@gmail.com'
+
+  // Dynamic editorial & identity fields from Sanity Studio
+  const newsletterHeading = settings?.footerNewsletterHeading || 'SUBSCRIBE FOR NEWS, UPDATES, AND EVENTS'
+  const newsletterDescription = settings?.footerNewsletterDescription || null
+  const brandTitle = settings?.footerBrandTitle || 'ECCF Family'
+  const brandSubtitle = settings?.footerBrandSubtitle || 'EDSU Christian Campus Fellowship'
+  const missionStatement =
+    settings?.footerMissionStatement ||
+    "Edo State University Christian Campus Fellowship is an interdenominational student assembly dedicated to raising spiritual dynamites and academic giants for God's kingdom. Anchored on Christ, nurturing students across all residence halls into purpose, prayer, academic excellence, and Kingdom leadership."
+  const logoUrl = settings?.footerLogoUrl || '/logos/ECCF LOGO.png'
+  const meetingVenue = settings?.footerMeetingVenue || 'Meeting Venue: NLT 5, Faculty of Law'
+  const activeMinistry = settings?.footerActiveMinistry || 'Halls 1–8 Active Ministry'
+  const copyrightText = settings?.footerCopyright || 'ECCF Family — EDSU Christian Campus Fellowship. All rights reserved.'
 
   // Newsletter subscription state
   const [email, setEmail] = useState('')
@@ -95,8 +136,11 @@ export default function Footer({ settings }: FooterProps = {}) {
             {/* Subscription Card */}
             <div>
               <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono">
-                SUBSCRIBE FOR NEWS, UPDATES, AND EVENTS
+                {newsletterHeading}
               </h3>
+              {newsletterDescription && (
+                <p className="text-xs text-slate-600 mt-1">{newsletterDescription}</p>
+              )}
 
               <form onSubmit={handleSubscribe} className="mt-3.5 max-w-md">
                 <label htmlFor="footer-email" className="block text-xs font-semibold text-slate-700 mb-2">
@@ -169,8 +213,8 @@ export default function Footer({ settings }: FooterProps = {}) {
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative h-10 w-10 shrink-0">
                   <Image
-                    src="/logos/ECCF LOGO.png"
-                    alt="ECCF Logo"
+                    src={logoUrl}
+                    alt={`${brandTitle} Logo`}
                     width={40}
                     height={40}
                     className="h-full w-full object-contain"
@@ -178,17 +222,17 @@ export default function Footer({ settings }: FooterProps = {}) {
                 </div>
                 <div>
                   <span className="text-2xl sm:text-3xl font-serif font-normal text-[#0095ff] tracking-tight block">
-                    ECCF Family
+                    {brandTitle}
                   </span>
                   <span className="text-xs sm:text-sm font-semibold text-slate-600 tracking-normal block mt-0.5">
-                    ESUI Christian Campus Fellowship
+                    {brandSubtitle}
                   </span>
                 </div>
               </div>
 
               {/* Fellowship Mission Statement */}
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md">
-                Edo State University Christian Campus Fellowship is an interdenominational student assembly dedicated to raising spiritual dynamites and academic giants for God&apos;s kingdom. Anchored on Christ, nurturing students across all residence halls into purpose, prayer, academic excellence, and Kingdom leadership.
+                {missionStatement}
               </p>
             </div>
 
@@ -199,238 +243,321 @@ export default function Footer({ settings }: FooterProps = {}) {
               </h4>
               <div className="flex items-center gap-5 text-slate-500 flex-wrap">
                 {/* Facebook */}
-                <a
-                  href={facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  title="Follow ECCF on Facebook"
-                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </a>
+                {facebookUrl && (
+                  <a
+                    href={facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    title="Follow ECCF on Facebook"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* Instagram */}
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  title="Follow ECCF on Instagram"
-                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                  </svg>
-                </a>
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    title="Follow ECCF on Instagram"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* YouTube */}
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube"
-                  title="Watch ECCF sermons on YouTube"
-                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                </a>
+                {youtubeUrl && (
+                  <a
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube"
+                    title="Watch ECCF sermons on YouTube"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* TikTok */}
-                <a
-                  href={tiktokUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="TikTok"
-                  title="Follow ECCF on TikTok"
-                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3 15.28 6.34 6.34 0 0 0 9.34 21.6a6.34 6.34 0 0 0 6.34-6.32V8.75a8.28 8.28 0 0 0 4.81 1.54V6.84a4.8 4.8 0 0 1-.9-.15z"/>
-                  </svg>
-                </a>
+                {tiktokUrl && (
+                  <a
+                    href={tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="TikTok"
+                    title="Follow ECCF on TikTok"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3 15.28 6.34 6.34 0 0 0 9.34 21.6a6.34 6.34 0 0 0 6.34-6.32V8.75a8.28 8.28 0 0 0 4.81 1.54V6.84a4.8 4.8 0 0 1-.9-.15z"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* Telegram */}
-                <a
-                  href={telegramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Telegram"
-                  title="Join ECCF Telegram channel"
-                  className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
-                >
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
-                    <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.693c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
-                  </svg>
-                </a>
+                {telegramUrl && (
+                  <a
+                    href={telegramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Telegram"
+                    title="Join ECCF Telegram channel"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.693c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
+                    </svg>
+                  </a>
+                )}
+
+                {/* X (formerly Twitter) */}
+                {twitterUrl && (
+                  <a
+                    href={twitterUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="X (formerly Twitter)"
+                    title="Follow ECCF on X"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  </a>
+                )}
+
+                {/* WhatsApp Community / Channel */}
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="WhatsApp Community"
+                    title="Join ECCF WhatsApp Channel / Community"
+                    className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
+                  >
+                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                      <path d="M12.031 0C5.397 0 .007 5.39.007 12.023c0 2.118.553 4.186 1.606 6.01L0 24l6.167-1.618a12.012 12.012 0 0 0 5.864 1.517h.005c6.632 0 12.023-5.391 12.023-12.024A11.96 11.96 0 0 0 12.031 0zm0 21.996h-.004a9.98 9.98 0 0 1-5.088-1.39l-.365-.216-3.774.99 1.008-3.678-.238-.378a9.974 9.974 0 0 1-1.536-5.299c0-5.518 4.49-10.008 10.01-10.008a9.94 9.94 0 0 1 7.078 2.932 9.94 9.94 0 0 1 2.932 7.078c0 5.518-4.49 10.008-10.021 10.008zm5.487-7.498c-.3-.15-1.776-.876-2.051-.976-.276-.1-.476-.15-.676.15s-.776.976-.951 1.176-.35.225-.65.075a8.214 8.214 0 0 1-2.418-1.492 9.066 9.066 0 0 1-1.674-2.083c-.176-.3-.019-.462.131-.611.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525s-.676-1.63-.926-2.233c-.244-.588-.492-.508-.676-.517l-.576-.01c-.2 0-.525.075-.8.375s-1.05 1.026-1.05 2.503 1.075 2.903 1.225 3.103c.15.2 2.115 3.23 5.124 4.53 3.01 1.3 3.01.867 3.56.817.55-.05 1.776-.726 2.026-1.427.25-.7.25-1.301.175-1.426-.075-.125-.275-.2-.575-.35z" />
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
 
           </div>
 
           {/* ============================================================= */}
-          {/* RIGHT COLUMNS: Navigation Directory (Teams, Leaders, Ministry)  */}
+          {/* RIGHT COLUMNS: Navigation Directory                            */}
           {/* ============================================================= */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10">
+            {settings?.footerNavColumns && settings.footerNavColumns.length > 0 ? (
+              settings.footerNavColumns.map((col, idx) => (
+                <div key={idx}>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
+                    {col.title}
+                  </h3>
+                  <ul className="space-y-2.5 text-xs sm:text-sm">
+                    {col.links?.map((link, lIdx) => (
+                      <li key={lIdx}>
+                        {link.isExternal ? (
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${
+                              link.highlight
+                                ? 'text-[#0095ff] hover:text-[#0080e0] font-semibold'
+                                : 'text-slate-600 hover:text-[#0095ff]'
+                            } transition-colors inline-block py-0.5`}
+                          >
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link
+                            href={link.url}
+                            className={`${
+                              link.highlight
+                                ? 'text-[#0095ff] hover:text-[#0080e0] font-semibold'
+                                : 'text-slate-600 hover:text-[#0095ff]'
+                            } transition-colors inline-block py-0.5`}
+                          >
+                            {link.label}
+                          </Link>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <>
+                {/* Default Column 1: About & Leaders */}
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
+                    About &amp; Leaders
+                  </h3>
+                  <ul className="space-y-2.5 text-xs sm:text-sm">
+                    <li>
+                      <Link href="/about" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        About ECCF
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Leadership &amp; Pastors
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Resident Pastor &amp; Patrons
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Central Executive Body (CSGB)
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Hall Pastors (Halls 1&ndash;8)
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#pillars" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Spiritual &amp; Academic Pillars
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#story" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Fellowship History &amp; Story
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
 
-            {/* Column 1: About & Leaders */}
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
-                About &amp; Leaders
-              </h3>
-              <ul className="space-y-2.5 text-xs sm:text-sm">
-                <li>
-                  <Link href="/about" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    About ECCF
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Leadership &amp; Pastors
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Resident Pastor &amp; Patrons
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Central Executive Body (CSGB)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#leadership" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Hall Pastors (Halls 1&ndash;8)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#pillars" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Spiritual &amp; Academic Pillars
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#story" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Fellowship History &amp; Story
-                  </Link>
-                </li>
-              </ul>
-            </div>
+                {/* Default Column 2: Operational Teams */}
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
+                    Our Teams
+                  </h3>
+                  <ul className="space-y-2.5 text-xs sm:text-sm">
+                    <li>
+                      <Link href="/about#teams" className="text-[#0095ff] hover:text-[#0080e0] font-semibold transition-colors inline-block py-0.5">
+                        All 14 Operational Units &rarr;
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Choir &amp; Music Ministry
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Prayer &amp; Intercession
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Media &amp; Digital Production
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Academic Distinction Unit
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Welfare &amp; Medical Team
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Protocol &amp; Ushering
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Bible Study &amp; Outreach
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
 
-            {/* Column 2: Operational Teams */}
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
-                Our Teams
-              </h3>
-              <ul className="space-y-2.5 text-xs sm:text-sm">
-                <li>
-                  <Link href="/about#teams" className="text-[#0095ff] hover:text-[#0080e0] font-semibold transition-colors inline-block py-0.5">
-                    All 14 Operational Units &rarr;
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Choir &amp; Music Ministry
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Prayer &amp; Intercession
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Media &amp; Digital Production
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Academic Distinction Unit
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Welfare &amp; Medical Team
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Protocol &amp; Ushering
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#teams" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Bible Study &amp; Outreach
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Get Involved & Ministry Resources */}
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
-                Get Involved
-              </h3>
-              <ul className="space-y-2.5 text-xs sm:text-sm">
-                <li>
-                  <Link href="/connect" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Connect &amp; Support
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/#visit" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Plan a Visit
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/#services" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Service Encounters
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/connect?tab=first-timer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    First Timers Welcome
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/connect?tab=welfare" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Student Welfare Aid
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/connect?tab=prayer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Submit Prayer Request
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/give" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Give Tithes &amp; Offerings
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/sermons" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Audio Sermons
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/announcements" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Announcements
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
-                    Privacy Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
+                {/* Default Column 3: Get Involved & Ministry Resources */}
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-900 font-mono mb-4 pb-1 border-b border-stone-200">
+                    Get Involved
+                  </h3>
+                  <ul className="space-y-2.5 text-xs sm:text-sm">
+                    <li>
+                      <Link href="/connect" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Connect &amp; Support
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/#visit" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Plan a Visit
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/#services" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Service Encounters
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/connect?tab=first-timer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        First Timers Welcome
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/connect?tab=welfare" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Student Welfare Aid
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/connect?tab=prayer" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Submit Prayer Request
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/give" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Give Tithes &amp; Offerings
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/sermons" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Audio Sermons
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/announcements" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Announcements
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/privacy" className="text-slate-600 hover:text-[#0095ff] transition-colors inline-block py-0.5">
+                        Privacy Policy
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </>
+            )}
           </div>
 
         </div>
@@ -440,13 +567,13 @@ export default function Footer({ settings }: FooterProps = {}) {
         {/* ============================================================= */}
         <div className="mt-14 pt-8 border-t border-stone-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p className="text-center md:text-left">
-            &copy; {currentYear} ECCF Family &mdash; ESUI Christian Campus Fellowship. All rights reserved.
+            &copy; {currentYear} {copyrightText}
           </p>
 
           <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center text-slate-500">
-            <span>Meeting Venue: NLT 5, Faculty of Law</span>
+            <span>{meetingVenue}</span>
             <span>&bull;</span>
-            <span>Halls 1&ndash;8 Active Ministry</span>
+            <span>{activeMinistry}</span>
             <span>&bull;</span>
             <Link href="/privacy" className="text-slate-500 hover:text-[#0095ff] transition-colors">
               Privacy &amp; Data Care

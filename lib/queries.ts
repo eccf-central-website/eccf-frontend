@@ -253,6 +253,27 @@ export const SITE_SETTINGS_QUERY = `
     socialFacebook,
     socialTikTok,
     socialTelegram,
+    socialTwitter,
+    socialWhatsApp,
+    footerNewsletterHeading,
+    footerNewsletterDescription,
+    footerBrandTitle,
+    footerBrandSubtitle,
+    footerMissionStatement,
+    footerLogo,
+    "footerLogoUrl": footerLogo.asset->url,
+    footerMeetingVenue,
+    footerActiveMinistry,
+    footerCopyright,
+    footerNavColumns[] {
+      title,
+      links[] {
+        label,
+        url,
+        isExternal,
+        highlight
+      }
+    },
     heroTopPill,
     heroCollagePhotos[] {
       _key,

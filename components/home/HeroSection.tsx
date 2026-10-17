@@ -55,6 +55,27 @@ export interface SiteSettingsData {
   socialFacebook?: string
   socialTikTok?: string
   socialTelegram?: string
+  socialTwitter?: string
+  socialWhatsApp?: string
+  footerNewsletterHeading?: string
+  footerNewsletterDescription?: string
+  footerBrandTitle?: string
+  footerBrandSubtitle?: string
+  footerMissionStatement?: string
+  footerLogo?: unknown
+  footerLogoUrl?: string
+  footerMeetingVenue?: string
+  footerActiveMinistry?: string
+  footerCopyright?: string
+  footerNavColumns?: {
+    title: string
+    links?: {
+      label: string
+      url: string
+      isExternal?: boolean
+      highlight?: boolean
+    }[]
+  }[]
 }
 
 interface Props {
