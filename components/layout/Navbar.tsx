@@ -26,29 +26,92 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<string>('')
+
+  // Sync active section based on URL hash
+  useEffect(() => {
+    const syncHash = () => {
+      if (typeof window !== 'undefined') {
+        setActiveSection(window.location.hash)
+      }
+    }
+
+    syncHash()
+    window.addEventListener('hashchange', syncHash)
+    return () => window.removeEventListener('hashchange', syncHash)
+  }, [])
 
   // Reset pending state on route change
   useEffect(() => {
     setPendingHref(null)
+    if (typeof window !== 'undefined') {
+      setActiveSection(window.location.hash)
+    }
   }, [pathname])
 
+  // Track scroll position to update navbar styling
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 15)
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Observe #giving section when on homepage to reflect active state while scrolling
+  useEffect(() => {
+    if (pathname !== '/') return
+
+    const givingEl = document.getElementById('giving')
+    if (!givingEl) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection('#giving')
+          } else {
+            setActiveSection((prev) => (prev === '#giving' ? '' : prev))
+          }
+        })
+      },
+      {
+        rootMargin: '-20% 0px -40% 0px',
+        threshold: 0.1,
+      }
+    )
+
+    observer.observe(givingEl)
+    return () => observer.disconnect()
+  }, [pathname])
 
   const handleLinkClick = (href: string) => {
     if (href.startsWith('/') && !href.startsWith('/#') && href !== pathname) {
       setPendingHref(href)
     }
+
+    if (href.includes('#')) {
+      const hash = '#' + href.split('#')[1]
+      setActiveSection(hash)
+      if (pathname === '/') {
+        const id = href.split('#')[1]
+        const el = document.getElementById(id)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
+    } else {
+      setActiveSection('')
+    }
+
     setMobileOpen(false)
   }
 
   const isLinkActive = (href: string) => {
-    if (href === '/') return pathname === '/'
+    if (href === '/#giving' || href === '/give') {
+      return pathname === '/give' || (pathname === '/' && activeSection === '#giving')
+    }
+    if (href === '/') return pathname === '/' && !activeSection
     if (href.startsWith('/#')) return false
     return pathname.startsWith(href)
   }
@@ -180,7 +243,7 @@ export default function Navbar() {
           <li className="mt-2 pt-2 border-t border-slate-100">
             <Link
               href="/#visit"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => handleLinkClick('/#visit')}
               className="flex items-center justify-center rounded-full bg-[#0095ff] text-white text-center text-sm font-bold py-3.5 shadow-md shadow-sky-500/20"
             >
               Plan a Visit
