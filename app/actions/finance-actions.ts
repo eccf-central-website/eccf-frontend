@@ -19,10 +19,12 @@ export interface RecordFinanceInput {
  */
 export async function recordFinanceEntry(formData: RecordFinanceInput) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  // No session means refused, in every environment. Local testing uses the
+  // DASHBOARD_MOCK_AUTH mock session instead of an implicit admin.
+  if (!session) {
     return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
+  const role = session.role
 
   try {
     requirePermission(role, 'finance:create')
@@ -69,10 +71,12 @@ export async function recordFinanceEntry(formData: RecordFinanceInput) {
  */
 export async function deleteFinanceEntry(entryId: string) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  // No session means refused, in every environment. Local testing uses the
+  // DASHBOARD_MOCK_AUTH mock session instead of an implicit admin.
+  if (!session) {
     return { success: false, error: 'Unauthorized' }
   }
-  const role = session?.role ?? 'admin'
+  const role = session.role
 
   try {
     requirePermission(role, 'finance:create')

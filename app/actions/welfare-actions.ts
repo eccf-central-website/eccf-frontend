@@ -10,10 +10,12 @@ import { getSession } from '@/lib/dashboard/auth'
  */
 export async function resolveWelfareRequest(requestId: string) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  // No session means refused, in every environment. Local testing uses the
+  // DASHBOARD_MOCK_AUTH mock session instead of an implicit admin.
+  if (!session) {
     return { success: false, error: 'Unauthorized' }
   }
-  const role = session?.role ?? 'admin'
+  const role = session.role
 
   try {
     requirePermission(role, 'welfare:resolve')
@@ -38,7 +40,7 @@ export async function resolveWelfareRequest(requestId: string) {
       .set({
         status: 'Resolved',
         resolvedAt: new Date().toISOString(),
-        resolvedBy: session?.id ?? 'admin',
+        resolvedBy: session.id,
       })
       .commit()
 

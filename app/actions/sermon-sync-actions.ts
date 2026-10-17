@@ -6,10 +6,12 @@ import { getSession } from '@/lib/dashboard/auth'
 
 export async function syncSermonsAction() {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  // No session means refused, in every environment. Local testing uses the
+  // DASHBOARD_MOCK_AUTH mock session instead of an implicit admin.
+  if (!session) {
     return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
+  const role = session.role
 
   try {
     requirePermission(role, 'sermons:sync')
