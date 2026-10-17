@@ -248,7 +248,6 @@ export const SITE_SETTINGS_QUERY = `
     fellowshipEmail,
     socialYouTube,
     socialInstagram,
-    socialX,
     socialFacebook,
     socialTikTok,
     socialTelegram,

@@ -50,7 +50,6 @@ export interface SiteSettingsData {
   fellowshipEmail?: string
   socialYouTube?: string
   socialInstagram?: string
-  socialX?: string
   socialFacebook?: string
   socialTikTok?: string
   socialTelegram?: string

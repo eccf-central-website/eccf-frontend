@@ -123,7 +123,6 @@ export default async function Home({
       <SocialMediaBanner
         youtubeUrl={settings?.socialYouTube}
         instagramUrl={settings?.socialInstagram}
-        xUrl={settings?.socialX}
         facebookUrl={settings?.socialFacebook}
         tiktokUrl={settings?.socialTikTok}
         telegramUrl={settings?.socialTelegram}
