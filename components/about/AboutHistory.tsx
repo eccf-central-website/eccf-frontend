@@ -37,7 +37,7 @@ const DEFAULT_MILESTONES: MilestoneItem[] = [
   {
     year: '2016',
     title: 'Founding Prayer Altars',
-    desc: 'The pioneer Christian students at Edo State University (EDSU/ESUI), Iyamho, began gathering in intimate prayer and fellowship circles, laying the spiritual altar for campus revival.',
+    desc: 'The pioneer Christian students at Edo State University (ESUI), Iyamho, began gathering in intimate prayer and fellowship circles, laying the spiritual altar for campus revival.',
     badge: 'GENESIS',
     bgImage: '/gallery/gallery-2.jpg',
   },

@@ -11,8 +11,17 @@ export interface QATestCase {
 export interface QATestItemState {
   checked: boolean
   testerName?: string
+  testerId?: string
+  testerTokenHash?: string
   testedAt?: string
   notes?: string
+}
+
+export interface QATesterPublic {
+  id: string
+  name: string
+  createdAt?: string
+  lastActiveAt?: string
 }
 
 export interface QADefect {
@@ -34,6 +43,7 @@ export interface QAChecklistDoc {
   updatedBy?: string
   testItems: Record<string, QATestItemState>
   defects: QADefect[]
+  testers?: QATesterPublic[]
 }
 
 export const QA_TEST_SUITES: { id: number; name: string }[] = [

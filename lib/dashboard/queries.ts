@@ -14,9 +14,33 @@
 // Worker CRM
 // ---------------------------------------------------------------------------
 
-/** $hall: null for all halls; $team: null for all teams */
+/** $hall: null for all halls; $team: null for all teams; $cleanTeam: normalized team prefix/keyword */
 export const DASHBOARD_WORKERS_QUERY = `
-  *[_type == "worker" && ($hall == null || hall == $hall || lower(hall) == lower($hall)) && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams || lower(team->name) == lower($team) || lower(team) == lower($team))] | order(fullName asc) {
+  *[_type == "worker" && (
+    $hall == null || hall == $hall || lower(hall) == lower($hall)
+  ) && (
+    $team == null ||
+    team->name == $team ||
+    team == $team ||
+    lower(team->name) == lower($team) ||
+    lower(team) == lower($team) ||
+    team->name match $team ||
+    team match $team ||
+    $team in teams[]->name ||
+    $team in teams ||
+    count((teams[]->name)[@ match $team || lower(@) == lower($team)]) > 0 ||
+    count(teams[@ match $team || lower(@) == lower($team)]) > 0 ||
+    ($cleanTeam != null && (
+      team->name match $cleanTeam ||
+      team match $cleanTeam ||
+      lower(team->name) == lower($cleanTeam) ||
+      lower(team) == lower($cleanTeam) ||
+      $cleanTeam in teams[]->name ||
+      $cleanTeam in teams ||
+      count((teams[]->name)[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0 ||
+      count(teams[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0
+    ))
+  )] | order(fullName asc) {
     _id,
     fullName,
     email,
@@ -127,7 +151,29 @@ export const PEOPLE_STATS_QUERY = `{
   "firstTimersThisMonth": count(*[_type == "firstTimer" && ($hall == null || hall == $hall) && dateVisited >= $monthStart]),
   "pendingWelfare": count(*[_type == "welfareRequest" && status == "Pending"]),
   "prayerRequestsThisWeek": count(*[_type == "prayerRequest" && coalesce(dateSubmitted, _createdAt) >= $weekStart]),
-  "workers": count(*[_type == "worker" && ($hall == null || hall == $hall) && ($team == null || team->name == $team || team == $team)]),
+  "workers": count(*[_type == "worker" && ($hall == null || hall == $hall || lower(hall) == lower($hall)) && (
+    $team == null ||
+    team->name == $team ||
+    team == $team ||
+    lower(team->name) == lower($team) ||
+    lower(team) == lower($team) ||
+    team->name match $team ||
+    team match $team ||
+    $team in teams[]->name ||
+    $team in teams ||
+    count((teams[]->name)[@ match $team || lower(@) == lower($team)]) > 0 ||
+    count(teams[@ match $team || lower(@) == lower($team)]) > 0 ||
+    ($cleanTeam != null && (
+      team->name match $cleanTeam ||
+      team match $cleanTeam ||
+      lower(team->name) == lower($cleanTeam) ||
+      lower(team) == lower($cleanTeam) ||
+      $cleanTeam in teams[]->name ||
+      $cleanTeam in teams ||
+      count((teams[]->name)[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0 ||
+      count(teams[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0
+    ))
+  )]),
   "lastService": *[_type == "attendanceLedger" && ($team == null || team->name == $team || team == $team)] | order(date desc)[0] { date, serviceType, meetingTitle, totalCount }
 }`
 

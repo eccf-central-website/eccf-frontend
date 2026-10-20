@@ -104,14 +104,14 @@ export default function Footer({ settings }: FooterProps = {}) {
   const newsletterHeading = settings?.footerNewsletterHeading || 'SUBSCRIBE FOR NEWS, UPDATES, AND EVENTS'
   const newsletterDescription = settings?.footerNewsletterDescription || null
   const brandTitle = settings?.footerBrandTitle || 'ECCF Family'
-  const brandSubtitle = settings?.footerBrandSubtitle || 'EDSU Christian Campus Fellowship'
+  const brandSubtitle = settings?.footerBrandSubtitle || 'ESUI Christian Campus Fellowship'
   const missionStatement =
     settings?.footerMissionStatement ||
     "Edo State University Christian Campus Fellowship is an interdenominational student assembly dedicated to raising spiritual dynamites and academic giants for God's kingdom. Anchored on Christ, nurturing students across all residence halls into purpose, prayer, academic excellence, and Kingdom leadership."
   const logoUrl = settings?.footerLogoUrl || '/logos/ECCF LOGO.png'
   const meetingVenue = settings?.footerMeetingVenue || 'Meeting Venue: NLT 5, Faculty of Law'
   const activeMinistry = settings?.footerActiveMinistry || 'Halls 1–8 Active Ministry'
-  const copyrightText = settings?.footerCopyright || 'ECCF Family — EDSU Christian Campus Fellowship. All rights reserved.'
+  const copyrightText = settings?.footerCopyright || 'ECCF Family — ESUI Christian Campus Fellowship. All rights reserved.'
   const navColumns =
     settings?.footerNavColumns && settings.footerNavColumns.length > 0
       ? settings.footerNavColumns

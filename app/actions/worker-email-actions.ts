@@ -443,7 +443,7 @@ export async function sendWorkerEmailAction(
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 28px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
       <!-- Header Brand -->
       <div style="border-bottom: 2px solid #0095ff; padding-bottom: 16px; margin-bottom: 20px;">
-        <h2 style="color: #0077cc; margin: 0 0 4px 0; font-size: 21px; font-weight: 800; letter-spacing: -0.01em;">EDSU Christian Campus Fellowship</h2>
+        <h2 style="color: #0077cc; margin: 0 0 4px 0; font-size: 21px; font-weight: 800; letter-spacing: -0.01em;">ESUI Christian Campus Fellowship</h2>
         <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Fellowship Leadership &amp; Workforce Portal</p>
       </div>
 

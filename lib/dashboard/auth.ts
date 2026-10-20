@@ -33,7 +33,7 @@ export const DEV_ROLE_COOKIE = 'eccf-dev-role'
 /** Mock identities — ids match workers in lib/dashboard/mock/data.ts. */
 const MOCK_SESSIONS: Record<WorkerRole, ECCFSession> = {
   admin: { id: 'mock-worker-admin', role: 'admin', team: 'Exco', teams: ['Executive Council'], excoPosition: 'President', hall: 'Hall A' },
-  team_lead: { id: 'mock-worker-teamlead', role: 'team_lead', team: 'Media', teams: ['Media', 'Technical'], excoPosition: 'Media Coordinator', hall: 'Hall D' },
+  team_lead: { id: 'mock-worker-teamlead', role: 'team_lead', team: 'Media', teams: ['Media', 'Technical'], leadingTeam: 'Media', excoPosition: 'Media Coordinator', hall: 'Hall D' },
   hall_rep: { id: 'mock-worker-hallrep', role: 'hall_rep', team: 'Welfare', teams: ['Welfare'], hall: 'Hall B' },
   finance: { id: 'mock-worker-finance', role: 'finance', team: 'Finance', teams: ['Finance'], excoPosition: 'Financial Secretary', hall: 'Hall C' },
 }
@@ -51,7 +51,15 @@ export async function getSession(): Promise<ECCFSession | null> {
   const session = await getServerSession(authOptions)
   if (!session?.user) return null
 
-  const user = session.user as unknown as { id?: string; role?: WorkerRole; team?: string; teams?: string[]; excoPosition?: string; hall?: string }
+  const user = session.user as unknown as {
+    id?: string
+    role?: WorkerRole
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+    hall?: string
+  }
   if (!user.id || !user.role) return null
 
   return {
@@ -59,6 +67,7 @@ export async function getSession(): Promise<ECCFSession | null> {
     role: user.role,
     team: user.team || 'Exco',
     teams: user.teams,
+    leadingTeam: user.leadingTeam,
     excoPosition: user.excoPosition,
     hall: user.hall,
   }

@@ -108,15 +108,15 @@ export default function GivingHubSection({ settings }: Props) {
                       <dd className="font-serif font-bold text-base sm:text-lg text-white text-right">{accountName}</dd>
                     </div>
                     <div className="pt-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2">Account Number</dt>
-                      <dd className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <span className="font-mono font-bold text-2xl sm:text-3xl text-sky-400 tracking-wider sm:tracking-widest select-all break-all">
+                      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2 text-center lg:text-left">Account Number</dt>
+                      <dd className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 sm:p-5 lg:p-4 xl:p-5 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-3.5 sm:gap-4 lg:gap-3">
+                        <span className="font-mono font-bold text-xl sm:text-2xl xl:text-3xl text-sky-400 tracking-wider xl:tracking-widest select-all text-center lg:text-left">
                           {accountNumber}
                         </span>
                         <button
                           type="button"
                           onClick={handleCopy}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-6 py-2.5 text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-5 sm:px-6 lg:px-4 xl:px-6 py-2.5 text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                           aria-label={copied ? 'Account number copied' : 'Copy account number'}
                         >
                           {copied ? <CheckCheck className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}

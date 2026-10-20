@@ -97,7 +97,7 @@ export default function AboutHero({
 
             <p className="text-base sm:text-xl text-slate-700 leading-relaxed font-normal max-w-2xl">
               {subtitle ||
-                'We are the non-denominational student family on the campus of Edo State University (EDSU/ESUI), dedicated to eliminating the false compromise between spiritual power and first-class scholarship.'}
+                'We are the non-denominational student family on the campus of Edo State University (ESUI), dedicated to eliminating the false compromise between spiritual power and first-class scholarship.'}
             </p>
 
             {/* Mission Manifesto Card (TPUSA Style) */}

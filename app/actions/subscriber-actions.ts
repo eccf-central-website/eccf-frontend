@@ -81,7 +81,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
       const welcomeHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 14px; background-color: #ffffff;">
           <div style="border-bottom: 2px solid #0095ff; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="color: #0077cc; margin: 0 0 4px 0; font-size: 20px;">EDSU Christian Campus Fellowship</h2>
+            <h2 style="color: #0077cc; margin: 0 0 4px 0; font-size: 20px;">ESUI Christian Campus Fellowship</h2>
             <p style="color: #64748b; margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Campus Bulletins &amp; Notices</p>
           </div>
 

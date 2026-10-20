@@ -15,6 +15,12 @@ import {
   Bug,
   Sparkles,
   ExternalLink,
+  Lock,
+  ShieldCheck,
+  KeyRound,
+  Eye,
+  EyeOff,
+  AlertCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -31,6 +37,9 @@ import {
   updateQADefectStatus,
   resetAllQATests,
   getQAChecklist,
+  registerOrVerifyTester,
+  validateTesterSession,
+  verifyLeadPin,
 } from '@/app/actions/qa-actions'
 
 interface QAPortalProps {
@@ -46,10 +55,29 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   // In-flight mutation tracking to prevent background polling from clobbering active clicks
   const pendingMutationsRef = useRef<Map<string, { targetChecked: boolean; timestamp: number }>>(new Map())
 
-  // Tester identity
+  // Tester identity & session
   const [testerName, setTesterName] = useState<string>('')
+  const [testerToken, setTesterToken] = useState<string>('')
+  const [, setTesterId] = useState<string>('')
   const [isNameModalOpen, setIsNameModalOpen] = useState<boolean>(false)
   const [tempNameInput, setTempNameInput] = useState<string>('')
+  const [tempPinInput, setTempPinInput] = useState<string>('')
+  const [showPin, setShowPin] = useState<boolean>(false)
+  const [regError, setRegError] = useState<string>('')
+  const [isRegistering, setIsRegistering] = useState<boolean>(false)
+
+  // QA Lead Override
+  const [isLeadOverride, setIsLeadOverride] = useState<boolean>(false)
+  const [leadPin, setLeadPin] = useState<string>('')
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState<boolean>(false)
+  const [leadModalPinInput, setLeadModalPinInput] = useState<string>('')
+  const [leadModalError, setLeadModalError] = useState<string>('')
+
+  // Reset Modal
+  const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false)
+  const [resetLeadPinInput, setResetLeadPinInput] = useState<string>('')
+  const [resetError, setResetError] = useState<string>('')
+  const [isResetting, setIsResetting] = useState<boolean>(false)
 
   // UI Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all')
@@ -68,23 +96,76 @@ export default function QAPortal({ initialData }: QAPortalProps) {
   const [, startTransition] = useTransition()
   const [isSyncing, setIsSyncing] = useState(false)
 
-  // 1. Initialize Tester Name from LocalStorage
+  // 1. Initialize Tester Session from LocalStorage
   useEffect(() => {
     const savedName = localStorage.getItem('eccf_qa_tester_name')
-    if (savedName) {
+    const savedToken = localStorage.getItem('eccf_qa_tester_token')
+    const savedId = localStorage.getItem('eccf_qa_tester_id')
+
+    if (savedName && savedToken) {
       setTesterName(savedName)
+      setTesterToken(savedToken)
+      if (savedId) setTesterId(savedId)
+
+      // Silently validate session in background
+      validateTesterSession({ testerName: savedName, testerToken: savedToken }).then((res) => {
+        if (!res.valid) {
+          toast.error(`Session for ${savedName} needs verification. Please enter your 4-digit PIN.`)
+          setTempNameInput(savedName)
+          setIsNameModalOpen(true)
+        }
+      })
     } else {
       setIsNameModalOpen(true)
     }
   }, [])
 
-  const handleSaveName = (name: string) => {
-    const clean = name.trim()
-    if (!clean) return
-    localStorage.setItem('eccf_qa_tester_name', clean)
-    setTesterName(clean)
-    setIsNameModalOpen(false)
-    toast.success(`Welcome, ${clean}! Your test actions will be recorded under your name.`)
+  // Handle Register or Verify Name + PIN
+  const handleRegisterOrVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRegError('')
+
+    const cleanName = tempNameInput.trim()
+    const cleanPin = tempPinInput.trim()
+
+    if (!cleanName || cleanName.length < 2) {
+      setRegError('Please enter a valid name (at least 2 letters).')
+      return
+    }
+    if (!/^\d{4}$/.test(cleanPin)) {
+      setRegError('Please enter a 4-digit numeric PIN (e.g. 1234).')
+      return
+    }
+
+    setIsRegistering(true)
+    try {
+      const res = await registerOrVerifyTester({ name: cleanName, pin: cleanPin })
+      if (res.success && res.testerName && res.testerToken) {
+        localStorage.setItem('eccf_qa_tester_name', res.testerName)
+        localStorage.setItem('eccf_qa_tester_token', res.testerToken)
+        if (res.testerId) localStorage.setItem('eccf_qa_tester_id', res.testerId)
+
+        setTesterName(res.testerName)
+        setTesterToken(res.testerToken)
+        if (res.testerId) setTesterId(res.testerId)
+
+        setIsNameModalOpen(false)
+        setTempPinInput('')
+        setRegError('')
+
+        if (res.isNew) {
+          toast.success(`Welcome, ${res.testerName}! Your 4-digit PIN is set and your test ticks are protected.`)
+        } else {
+          toast.success(`Welcome back, ${res.testerName}! Verified successfully.`)
+        }
+      } else {
+        setRegError(res.error || 'Failed to register. Please try again.')
+      }
+    } catch {
+      setRegError('Connection error. Please try again.')
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   // 2. Poll for updates every 15s to keep all phones/devices in sync without overwriting in-flight actions
@@ -142,7 +223,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     return () => clearInterval(interval)
   }, [])
 
-  // 3. Toggle Test Item (Optimistic + Direct Server Action + Retries)
+  // 3. Toggle Test Item (Optimistic + Direct Server Action + Retries + Tamper Protection)
   const handleToggle = (testId: string) => {
     const cleanId = testId.trim()
     const underscoreId = cleanId.replace(/-/g, '_')
@@ -150,8 +231,26 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
     const currentItem = testItems[cleanId] || testItems[underscoreId] || testItems[hyphenId]
     const current = Boolean(currentItem?.checked)
+    const ownerName = currentItem?.testerName?.trim() || ''
+
+    // Require tester registration
+    if (!testerName || !testerToken) {
+      setIsNameModalOpen(true)
+      toast.error('Please enter your name and 4-digit PIN to start testing.')
+      return
+    }
+
+    // STRICT TAMPER PROTECTION:
+    // If test is currently checked by another person, prevent editing/unchecking
+    if (current && ownerName && ownerName.toLowerCase() !== testerName.toLowerCase() && !isLeadOverride) {
+      toast.error(`🔒 Locked: Verified by ${ownerName}`, {
+        description: `Only ${ownerName} (or a QA Lead) can change or untick this test report.`,
+      })
+      return
+    }
+
     const nextChecked = !current
-    const activeName = testerName || 'Anonymous Tester'
+    const activeName = isLeadOverride ? `Lead Override (${testerName})` : testerName
     const now = new Date().toISOString()
 
     const newItemState: QATestItemState = {
@@ -178,25 +277,34 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         const res = await toggleQATestItem({
           testId: cleanId,
           checked: nextChecked,
-          testerName: activeName,
+          testerName,
+          testerToken,
+          leadPin: isLeadOverride ? leadPin : undefined,
         })
 
         if (!res.success) {
-          // Check if the user hasn't clicked again in the meantime
+          // Rollback on server failure
           const pending = pendingMutationsRef.current.get(underscoreId)
           if (pending && pending.targetChecked === nextChecked) {
-            // Rollback only on confirmed server failure
             setTestItems((prev) => ({
               ...prev,
               [cleanId]: currentItem || { checked: current },
               [underscoreId]: currentItem || { checked: current },
               [hyphenId]: currentItem || { checked: current },
             }))
-            toast.error('Sync issue saving checkmark. Please click again.')
+            toast.error(res.error || 'Sync issue saving checkmark. Please click again.')
           }
         }
       } catch (err) {
         console.error('[handleToggle] Error during QA toggle:', err)
+        // Rollback
+        setTestItems((prev) => ({
+          ...prev,
+          [cleanId]: currentItem || { checked: current },
+          [underscoreId]: currentItem || { checked: current },
+          [hyphenId]: currentItem || { checked: current },
+        }))
+        toast.error('Network error. Check connection and retry.')
       } finally {
         // Clear pending registration
         pendingMutationsRef.current.delete(underscoreId)
@@ -263,16 +371,67 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     })
   }
 
-  // 6. Reset Checklist
-  const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset all test checkboxes for the entire team?')) return
-    setTestItems({})
-    startTransition(async () => {
-      const res = await resetAllQATests(testerName)
+  // 6. Reset Checklist (Protected with QA Lead Passcode)
+  const handleConfirmReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setResetError('')
+    const cleanPin = resetLeadPinInput.trim()
+
+    if (!cleanPin) {
+      setResetError('Please enter the QA Lead Passcode to confirm reset.')
+      return
+    }
+
+    setIsResetting(true)
+    try {
+      const res = await resetAllQATests({
+        testerName,
+        leadPin: cleanPin,
+      })
+
       if (res.success) {
+        setTestItems({})
+        setIsResetModalOpen(false)
+        setResetLeadPinInput('')
         toast.success('Checklist reset for all testers.')
+        refreshLiveState(false)
+      } else {
+        setResetError(res.error || 'Incorrect Lead Passcode.')
       }
-    })
+    } catch {
+      setResetError('Connection error during reset.')
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  // 7. Toggle Lead Override Mode
+  const handleLeadOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLeadModalError('')
+    const cleanPin = leadModalPinInput.trim()
+
+    if (!cleanPin) {
+      setLeadModalError('Please enter the QA Lead Passcode.')
+      return
+    }
+
+    const res = await verifyLeadPin(cleanPin)
+    if (res.success) {
+      setIsLeadOverride(true)
+      setLeadPin(cleanPin)
+      setIsLeadModalOpen(false)
+      setLeadModalPinInput('')
+      toast.success('QA Lead Override enabled! You can now modify any test.')
+    } else {
+      setLeadModalError('Incorrect QA Lead Passcode.')
+    }
+  }
+
+  const handleDeactivateLeadOverride = () => {
+    setIsLeadOverride(false)
+    setLeadPin('')
+    toast.info('QA Lead Override deactivated.')
   }
 
   // Metrics
@@ -292,7 +451,8 @@ export default function QAPortal({ initialData }: QAPortalProps) {
     QA_TEST_CASES.forEach((tc) => {
       const item = testItems[tc.id] || testItems[tc.id.replace(/-/g, '_')] || testItems[tc.id.replace(/_/g, '-')]
       if (item?.checked && item.testerName) {
-        stats[item.testerName] = (stats[item.testerName] || 0) + 1
+        const clean = item.testerName.replace(/^Lead Override \((.*?)\)$/, '$1')
+        stats[clean] = (stats[clean] || 0) + 1
       }
     })
     return Object.entries(stats).sort((a, b) => b[1] - a[1])
@@ -382,18 +542,48 @@ export default function QAPortal({ initialData }: QAPortalProps) {
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
+              {/* Active Tester Pill with Lock Icon */}
               <button
                 type="button"
-                onClick={() => setIsNameModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                title="Change active tester name"
+                onClick={() => {
+                  setTempNameInput(testerName)
+                  setTempPinInput('')
+                  setRegError('')
+                  setIsNameModalOpen(true)
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                  testerName
+                    ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900 hover:bg-emerald-100/70'
+                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Tap to switch tester or update PIN"
               >
-                <User className="h-3.5 w-3.5 text-blue-600" />
-                <span className="max-w-[85px] sm:max-w-[140px] truncate">
+                {testerName ? (
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                ) : (
+                  <User className="h-3.5 w-3.5 text-blue-600" />
+                )}
+                <span className="max-w-[85px] sm:max-w-[130px] truncate">
                   {testerName ? testerName : 'Set Name'}
                 </span>
+                {testerName && <Lock className="h-2.5 w-2.5 text-emerald-600/70 shrink-0" />}
               </button>
 
+              {/* Lead Override Indicator if Active */}
+              {isLeadOverride && (
+                <button
+                  type="button"
+                  onClick={handleDeactivateLeadOverride}
+                  className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-purple-300 bg-purple-100 text-purple-900 text-xs font-bold shadow-2xs hover:bg-purple-200"
+                  title="Click to turn off QA Lead Override"
+                >
+                  <KeyRound className="h-3 w-3 text-purple-700" />
+                  <span>Lead Mode</span>
+                  <span className="text-[10px] text-purple-600">✕</span>
+                </button>
+              )}
+
+              {/* Refresh / Sync Button */}
               <button
                 type="button"
                 onClick={() => refreshLiveState(true)}
@@ -413,7 +603,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
               <span className="flex items-center gap-1.5">
                 <span>Team QA Readiness</span>
                 <span className="text-[10px] font-normal text-slate-500">
-                  (Auto-syncs live)
+                  (Auto-syncs live · Protected reports)
                 </span>
               </span>
               <span className="text-blue-700 font-mono">
@@ -501,20 +691,34 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         {/* Live Contributor Avatars / Stats */}
         {contributorStats.length > 0 && (
           <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 sm:p-4 text-xs">
-            <div className="font-bold text-blue-950 mb-1 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-              <span>Active Testing Team Contributors:</span>
+            <div className="font-bold text-blue-950 mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                <span>Active Testing Team Contributors:</span>
+              </div>
+              <span className="text-[11px] font-normal text-blue-700">
+                Ticks are locked to whoever verified them
+              </span>
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
-              {contributorStats.map(([name, count]) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-blue-200 text-blue-900 font-medium shadow-2xs"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  <strong>{name}:</strong> {count} tests verified
-                </span>
-              ))}
+              {contributorStats.map(([name, count]) => {
+                const isCurrent = testerName && name.toLowerCase() === testerName.toLowerCase()
+                return (
+                  <span
+                    key={name}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shadow-2xs border transition-all ${
+                      isCurrent
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold ring-1 ring-emerald-400/50'
+                        : 'bg-white border-blue-200 text-blue-900'
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                    <span>{name}:</span>
+                    <strong>{count} tests</strong>
+                    {isCurrent && <span className="text-[10px] text-emerald-700 font-normal">(You)</span>}
+                  </span>
+                )
+              })}
             </div>
           </div>
         )}
@@ -605,21 +809,40 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                           testItems[tc.id.replace(/-/g, '_')] ||
                           testItems[tc.id.replace(/_/g, '-')]
                         const isChecked = Boolean(itemState?.checked)
+                        const rawOwner = itemState?.testerName?.trim() || ''
+                        const isMine =
+                          isChecked &&
+                          Boolean(testerName) &&
+                          rawOwner.toLowerCase() === testerName.trim().toLowerCase()
+                        const isLockedByOther = isChecked && !isMine && !isLeadOverride
 
                         return (
                           <div
                             key={tc.id}
                             onClick={() => handleToggle(tc.id)}
-                            className={`flex items-start gap-3 p-3 sm:p-3.5 rounded-xl cursor-pointer transition-all active:scale-[0.99] select-none ${
-                              isChecked
-                                ? 'bg-emerald-50/60 border border-emerald-100/70 hover:bg-emerald-50'
-                                : 'hover:bg-slate-50'
+                            className={`flex items-start gap-3 p-3 sm:p-3.5 rounded-xl transition-all select-none ${
+                              isLockedByOther
+                                ? 'bg-slate-50/90 border border-slate-200/80 cursor-not-allowed hover:bg-slate-100/80 opacity-90'
+                                : isMine
+                                ? 'bg-emerald-50/70 border border-emerald-200/80 hover:bg-emerald-100/50 cursor-pointer active:scale-[0.99]'
+                                : isChecked && isLeadOverride
+                                ? 'bg-purple-50/70 border border-purple-200/80 hover:bg-purple-100/50 cursor-pointer active:scale-[0.99]'
+                                : 'hover:bg-slate-50 cursor-pointer active:scale-[0.99]'
                             }`}
                           >
-                            {/* Tap Target (44x44 safe zone) */}
+                            {/* Tap Target / Indicator */}
                             <div className="flex h-8 w-8 items-center justify-center shrink-0 mt-0.5">
-                              {isChecked ? (
+                              {isLockedByOther ? (
+                                <div
+                                  className="h-7 w-7 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 shadow-2xs"
+                                  title={`Verified by ${rawOwner}. Only they can untick.`}
+                                >
+                                  <Lock className="h-4 w-4" />
+                                </div>
+                              ) : isMine ? (
                                 <CheckCircle2 className="h-6 w-6 text-emerald-600 fill-emerald-100 transition-transform scale-110" />
+                              ) : isChecked && isLeadOverride ? (
+                                <ShieldCheck className="h-6 w-6 text-purple-600 fill-purple-100 transition-transform scale-110" />
                               ) : (
                                 <Circle className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors" />
                               )}
@@ -651,7 +874,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                               <h3
                                 className={`text-sm sm:text-base font-bold transition-colors ${
                                   isChecked
-                                    ? 'text-emerald-950 line-through opacity-80'
+                                    ? isMine
+                                      ? 'text-emerald-950 font-semibold'
+                                      : 'text-slate-800'
                                     : 'text-slate-900'
                                 }`}
                               >
@@ -662,11 +887,27 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                                 {tc.description}
                               </p>
 
-                              {/* Tester Stamp */}
-                              {isChecked && itemState?.testerName && (
-                                <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-white/80 border border-emerald-200 px-2 py-0.5 rounded-md shadow-2xs">
-                                  <User className="h-3 w-3 text-emerald-600" />
-                                  <span>Passed by {itemState.testerName}</span>
+                              {/* Tester Stamp / Lock Status Badges */}
+                              {isChecked && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  {isMine ? (
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-white border border-emerald-200 px-2 py-0.5 rounded-md shadow-2xs">
+                                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                      <span>Passed by you ({rawOwner})</span>
+                                      <span className="text-[10px] text-emerald-600 font-normal">· Click to uncheck</span>
+                                    </span>
+                                  ) : isLockedByOther ? (
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs">
+                                      <Lock className="h-3 w-3 text-slate-500" />
+                                      <span>Passed by <strong>{rawOwner}</strong></span>
+                                      <span className="text-[10px] text-slate-400 font-normal">· Locked against edits</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-purple-900 bg-white border border-purple-200 px-2 py-0.5 rounded-md shadow-2xs">
+                                      <ShieldCheck className="h-3 w-3 text-purple-600" />
+                                      <span>Passed by {rawOwner} (Lead Override Mode)</span>
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -773,9 +1014,37 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 text-xs">
           <div className="flex items-center gap-2 text-slate-500">
             <span>Last synced: {lastSyncTime.toLocaleTimeString()}</span>
+            <span>·</span>
+            <span>Active tester: <strong>{testerName || 'Unregistered'}</strong></span>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* QA Lead Override Trigger */}
+            {!isLeadOverride ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLeadModalError('')
+                  setLeadModalPinInput('')
+                  setIsLeadModalOpen(true)
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-white text-purple-700 font-semibold hover:bg-purple-50 transition-colors"
+                title="Authorize QA Lead Override to unlock/edit any test"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                <span>Lead Override</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleDeactivateLeadOverride}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-300 bg-purple-100 text-purple-900 font-bold hover:bg-purple-200 transition-colors"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-purple-700" />
+                <span>Exit Lead Mode</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => window.print()}
@@ -785,10 +1054,16 @@ export default function QAPortal({ initialData }: QAPortalProps) {
               <span>Print / PDF</span>
             </button>
 
+            {/* Protected Reset Button */}
             <button
               type="button"
-              onClick={handleReset}
+              onClick={() => {
+                setResetError('')
+                setResetLeadPinInput('')
+                setIsResetModalOpen(true)
+              }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-white text-red-600 font-semibold hover:bg-red-50 transition-colors"
+              title="Reset team checklist (Requires QA Lead Passcode)"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset Checklist</span>
@@ -810,29 +1085,81 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         </button>
       </div>
 
-      {/* Modal: Set Tester Name */}
+      {/* Modal: Tester Identity & 4-Digit PIN Registration */}
       {isNameModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 text-blue-600">
-              <User className="h-5 w-5" />
-              <h3 className="text-base font-bold text-slate-900">Your Tester Identity</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <form
+            onSubmit={handleRegisterOrVerify}
+            className="w-full max-w-sm rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center gap-2.5 text-blue-600 border-b border-slate-100 pb-3">
+              <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                <ShieldCheck className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Tester Registration</h3>
+                <p className="text-[11px] text-slate-500">Protected QA reports · No complex login</p>
+              </div>
             </div>
-            <p className="text-xs text-slate-600">
-              Please enter your first name or nickname. It will be recorded alongside tests you verify so the team knows who tested what.
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Enter your name and a <strong>4-digit PIN</strong>. Your PIN protects your test tick reports so other teammates cannot accidentally uncheck or overwrite your work.
             </p>
-            <input
-              type="text"
-              autoFocus
-              defaultValue={testerName}
-              placeholder="e.g. Ransom, Faith, Samuel"
-              onChange={(e) => setTempNameInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveName(tempNameInput || testerName)
-              }}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            />
-            <div className="flex justify-end gap-2">
+
+            {regError && (
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                <span className="leading-tight">{regError}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Your First Name or Nickname *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={tempNameInput}
+                  onChange={(e) => setTempNameInput(e.target.value)}
+                  placeholder="e.g. Ransom, Faith, Samuel"
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    4-Digit Secret PIN *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="text-[11px] text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                  >
+                    {showPin ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    <span>{showPin ? 'Hide' : 'Show'}</span>
+                  </button>
+                </div>
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  inputMode="numeric"
+                  maxLength={4}
+                  required
+                  value={tempPinInput}
+                  onChange={(e) => setTempPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="e.g. 1234"
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm tracking-widest text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-2xs"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Remember this 4-digit PIN to access your ticks across devices.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               {testerName && (
                 <button
                   type="button"
@@ -843,14 +1170,137 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 </button>
               )}
               <button
-                type="button"
-                onClick={() => handleSaveName(tempNameInput || testerName)}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 shadow-xs"
+                type="submit"
+                disabled={isRegistering}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 shadow-xs disabled:opacity-50 transition-all"
               >
-                Save & Continue
+                {isRegistering ? 'Verifying...' : 'Save & Continue'}
               </button>
             </div>
-          </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal: QA Lead Override Login */}
+      {isLeadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <form
+            onSubmit={handleLeadOverrideSubmit}
+            className="w-full max-w-sm rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center gap-2.5 text-purple-700 border-b border-slate-100 pb-3">
+              <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <KeyRound className="h-5 w-5 text-purple-700" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">QA Lead Override</h3>
+                <p className="text-[11px] text-slate-500">Override lock on any test</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Enter the <strong>QA Lead Passcode</strong> to temporarily enable override mode. This allows you to edit or uncheck test reports created by any tester.
+            </p>
+
+            {leadModalError && (
+              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                {leadModalError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                QA Lead Passcode *
+              </label>
+              <input
+                type="password"
+                required
+                autoFocus
+                value={leadModalPinInput}
+                onChange={(e) => setLeadModalPinInput(e.target.value)}
+                placeholder="Enter lead passcode"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsLeadModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-purple-700 text-xs font-bold text-white hover:bg-purple-800 shadow-xs"
+              >
+                Enable Override
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal: Protected Reset Confirmation */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <form
+            onSubmit={handleConfirmReset}
+            className="w-full max-w-sm rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center gap-2.5 text-red-600 border-b border-slate-100 pb-3">
+              <div className="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <RotateCcw className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Reset All Test Checkboxes</h3>
+                <p className="text-[11px] text-red-600 font-semibold">Destructive Action</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              This action will clear all verified checkboxes for the entire team across all 6 test suites. To prevent accidental wipes, enter the <strong>QA Lead Passcode</strong> below.
+            </p>
+
+            {resetError && (
+              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                {resetError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                QA Lead Passcode *
+              </label>
+              <input
+                type="password"
+                required
+                autoFocus
+                value={resetLeadPinInput}
+                onChange={(e) => setResetLeadPinInput(e.target.value)}
+                placeholder="Enter lead passcode to wipe"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsResetModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isResetting}
+                className="px-5 py-2 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 shadow-xs disabled:opacity-50"
+              >
+                {isResetting ? 'Resetting...' : 'Confirm Reset'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

@@ -93,9 +93,9 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
 }
 
 /** Team used to scope team_lead reads; null means all teams. */
-function teamScope(session: ECCFSession): string | null {
+export function teamScope(session: ECCFSession): string | null {
   if (!isTeamScoped(session.role, session)) return null
-  return session.team || '__no-team__'
+  return session.leadingTeam || session.team || (session.teams && session.teams[0]) || '__no-team__'
 }
 
 /** Boundaries follow the fellowship's calendar (Africa/Lagos), not UTC; see ../dates. */
@@ -117,7 +117,8 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
   const showFinance = hasPermission(session.role, 'stats:finance')
   const hall = await hallScope(session)
   const team = teamScope(session)
-  const params = { monthStart: monthStart(), weekStart: weekStart(), hall, team }
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
+  const params = { monthStart: monthStart(), weekStart: weekStart(), hall, team, cleanTeam }
 
   if (dataSource() === 'mock') {
     const [firstTimers, welfare, prayer, workers, attendance, finance] = await Promise.all([
@@ -149,7 +150,7 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
             workers: workers.filter(
               (w) =>
                 (params.hall === null || w.hall === params.hall) &&
-                (params.team === null || w.team === params.team)
+                (params.team === null || matchesTeam(w.team, w.teams, params.team))
             ).length,
             lastService: lastService
               ? { date: lastService.date, serviceType: lastService.serviceType, totalCount: lastService.totalCount }
@@ -176,39 +177,61 @@ function matchesHall(workerHall: string | undefined, targetHall: string | null):
   return workerHall.toLowerCase().trim() === targetHall.toLowerCase().trim()
 }
 
-function matchesTeam(
+export function matchesTeam(
   workerTeam: string | undefined,
   workerTeams: string[] | undefined,
-  targetTeam: string | null
+  targetTeam: string | string[] | null
 ): boolean {
   if (targetTeam === null) return true
-  const normTarget = targetTeam.toLowerCase().trim()
-  const cleanTarget = normTarget.replace(/\s+team$/, '')
+  const targets = (Array.isArray(targetTeam) ? targetTeam : [targetTeam])
+    .flatMap((t) => (t ? t.split(',') : []))
+    .map((t) => t.trim())
+    .filter((t) => Boolean(t) && t !== '__no-team__')
 
-  const allWorkerTeams = [workerTeam, ...(workerTeams || [])].filter(Boolean) as string[]
+  if (targets.length === 0) return false
+
+  const allWorkerTeams = [workerTeam, ...(workerTeams || [])]
+    .flatMap((t) => (t ? t.split(',') : []))
+    .map((t) => t.trim())
+    .filter(Boolean)
+
   return allWorkerTeams.some((wt) => {
-    const normWt = wt.toLowerCase().trim()
-    const cleanWt = normWt.replace(/\s+team$/, '')
-    return (
-      normWt === normTarget ||
-      cleanWt === cleanTarget ||
-      normWt.includes(cleanTarget) ||
-      cleanTarget.includes(cleanWt)
-    )
+    const normWt = wt.toLowerCase()
+    const cleanWt = normWt.replace(/\s+team$/, '').trim()
+    return targets.some((target) => {
+      const normTarget = target.toLowerCase()
+      const cleanTarget = normTarget.replace(/\s+team$/, '').trim()
+      return (
+        normWt === normTarget ||
+        cleanWt === cleanTarget ||
+        normWt.includes(cleanTarget) ||
+        cleanTarget.includes(cleanWt)
+      )
+    })
   })
 }
 
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const hall = await hallScope(session)
   const team = teamScope(session)
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
   const rawRows =
     dataSource() === 'mock'
       ? (await fromMock(MOCK_WORKERS, [])).filter(
           (w) => matchesHall(w.hall, hall) && matchesTeam(w.team, w.teams, team)
         )
-      : await sanityPrivateClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, { hall, team })
+      : await sanityPrivateClient.fetch<WorkerRow[]>(DASHBOARD_WORKERS_QUERY, {
+          hall,
+          team,
+          cleanTeam,
+        })
 
-  const rows = rawRows.map((w) => {
+  // Apply in-memory scoping filter defensively on Sanity results as well
+  const scopedRows = rawRows.filter(
+    (w) => matchesHall(w.hall, hall) && matchesTeam(w.team, w.teams, team)
+  )
+
+  const rows = scopedRows.map((w) => {
     const decryptedBirthDate = decrypt(w.birthDate)
     let birthMonth = w.birthMonth
     let birthDay = w.birthDay
@@ -245,23 +268,43 @@ export async function fetchWorkersForAttendance(
   session: ECCFSession,
   targetTeam?: string
 ): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]> {
-  const team = session.role === 'team_lead' ? session.team : (targetTeam || null)
+  const team = session.role === 'team_lead' ? (session.leadingTeam || session.team) : (targetTeam || null)
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
   if (dataSource() === 'mock') {
     const all = await fromMock(MOCK_WORKERS, [])
     return all
-      .filter((w) => (team === null || w.team === team || (w.teams && w.teams.includes(team))) && w.verificationStatus !== 'rejected')
+      .filter((w) => (team === null || matchesTeam(w.team, w.teams, team)) && w.verificationStatus !== 'rejected')
       .map(({ _id, fullName, team, teams, hall }) => ({ _id, fullName, team, teams, hall }))
   }
 
-  const query = `*[_type == "worker" && ($team == null || team->name == $team || team == $team || $team in teams[]->name || $team in teams) && coalesce(verificationStatus, 'verified') != 'rejected'] | order(fullName asc) {
+  const query = `*[_type == "worker" && (
+    $team == null ||
+    team->name == $team ||
+    team == $team ||
+    lower(team->name) == lower($team) ||
+    lower(team) == lower($team) ||
+    team->name match $team ||
+    team match $team ||
+    $team in teams[]->name ||
+    $team in teams ||
+    ($cleanTeam != null && (
+      team->name match $cleanTeam ||
+      team match $cleanTeam ||
+      lower(team->name) == lower($cleanTeam) ||
+      lower(team) == lower($cleanTeam) ||
+      $cleanTeam in teams[]->name ||
+      $cleanTeam in teams
+    ))
+  ) && coalesce(verificationStatus, 'verified') != 'rejected'] | order(fullName asc) {
     _id,
     fullName,
     "team": coalesce(team->name, team),
     "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
     hall
   }`
-  const rows = await sanityPrivateClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team })
-  return stripPII(rows)
+  const rawRows = await sanityPrivateClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team, cleanTeam })
+  const filtered = rawRows.filter((w) => team === null || matchesTeam(w.team, w.teams, team))
+  return stripPII(filtered)
 }
 
 // ---------------------------------------------------------------------------

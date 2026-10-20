@@ -89,6 +89,37 @@ function formatBirthday(dateStr?: string, monthNum?: number, dayNum?: number): s
   return dateStr
 }
 
+function normalizeTeam(t?: string | null): string {
+  if (!t) return ''
+  return t
+    .toLowerCase()
+    .trim()
+    .replace(/\s+team$/, '')
+    .trim()
+}
+
+function matchesWorkerTeam(
+  worker: { team?: string; teams?: string[] },
+  targetTeamOrTeams: string | string[] | null | undefined
+): boolean {
+  if (!targetTeamOrTeams || targetTeamOrTeams === 'all') return true
+  const targets = (Array.isArray(targetTeamOrTeams) ? targetTeamOrTeams : [targetTeamOrTeams])
+    .flatMap((t) => (t ? t.split(',') : []))
+    .map(normalizeTeam)
+    .filter(Boolean)
+
+  if (targets.length === 0) return true
+
+  const workerTeams = [worker.team, ...(worker.teams || [])]
+    .flatMap((t) => (t ? t.split(',') : []))
+    .map(normalizeTeam)
+    .filter(Boolean)
+
+  return workerTeams.some((wt) =>
+    targets.some((tgt) => wt === tgt || wt.includes(tgt) || tgt.includes(wt))
+  )
+}
+
 interface WorkersClientProps {
   rows: WorkerRow[]
   session: ECCFSession
@@ -113,36 +144,54 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
   const isHallRep = session.role === 'hall_rep'
   const isMedia = isMediaTeam(session)
 
+  // Operational team target for non-media team leads
+  const targetLeaderTeams = useMemo(() => {
+    if (!isTeamLead || isMedia) return null
+    if (session.leadingTeam) return [session.leadingTeam]
+    const list: string[] = []
+    if (session.team) {
+      list.push(...session.team.split(',').map((s) => s.trim()))
+    }
+    if (session.teams && session.teams.length > 0) {
+      list.push(...session.teams)
+    }
+    return Array.from(new Set(list.filter(Boolean)))
+  }, [isTeamLead, isMedia, session.leadingTeam, session.team, session.teams])
+
+  // Scope workers for non-media team leads
+  const scopedWorkers = useMemo(() => {
+    if (targetLeaderTeams && targetLeaderTeams.length > 0) {
+      return rows.filter((r) => matchesWorkerTeam(r, targetLeaderTeams))
+    }
+    return rows
+  }, [rows, targetLeaderTeams])
+
   // Summary counts
   const pendingWorkers = useMemo(
-    () => rows.filter((r) => r.verificationStatus === 'pending'),
-    [rows]
+    () => scopedWorkers.filter((r) => r.verificationStatus === 'pending'),
+    [scopedWorkers]
   )
   const verifiedWorkers = useMemo(
-    () => rows.filter((r) => r.verificationStatus === 'verified'),
-    [rows]
+    () => scopedWorkers.filter((r) => r.verificationStatus === 'verified'),
+    [scopedWorkers]
   )
   const rejectedWorkers = useMemo(
-    () => rows.filter((r) => r.verificationStatus === 'rejected'),
-    [rows]
+    () => scopedWorkers.filter((r) => r.verificationStatus === 'rejected'),
+    [scopedWorkers]
   )
 
   // Filtered rows
   const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
+    return scopedWorkers.filter((row) => {
       // Status filter
       if (statusFilter !== 'all') {
         const rowStatus = row.verificationStatus || 'verified'
         if (rowStatus !== statusFilter) return false
       }
 
-      // Team filter (admins can filter by team)
+      // Team filter (admins & media can filter by team)
       if (teamFilter !== 'all') {
-        const matchesPrimary = row.team?.toLowerCase() === teamFilter.toLowerCase()
-        const matchesSecondary = row.teams?.some(
-          (t) => t.toLowerCase() === teamFilter.toLowerCase()
-        )
-        if (!matchesPrimary && !matchesSecondary) return false
+        if (!matchesWorkerTeam(row, teamFilter)) return false
       }
 
       // Hall filter
@@ -152,7 +201,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
       // Search query (name, hall, team)
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
+        const q = searchQuery.toLowerCase().trim()
         const matchName = row.fullName.toLowerCase().includes(q)
         const matchHall = (row.hall || '').toLowerCase().includes(q)
         const matchTeam = (row.team || '').toLowerCase().includes(q)
@@ -162,7 +211,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
       return true
     })
-  }, [rows, statusFilter, teamFilter, hallFilter, searchQuery])
+  }, [scopedWorkers, statusFilter, teamFilter, hallFilter, searchQuery])
 
   // Handle Team Lead / Admin verification action
   function handleVerification(worker: WorkerRow, decision: 'approve' | 'reject') {
@@ -185,7 +234,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                     verifiedBy:
                       session.role === 'admin'
                         ? 'CSGB Admin'
-                        : `${session.team} Team Lead`,
+                        : `${session.leadingTeam || session.team} Team Lead`,
                     verifiedAt: new Date().toISOString(),
                   }
                 : r
@@ -258,7 +307,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 ? 'Media & Celebrations Directory'
                 : isHallRep
                 ? `${session.hall || 'Hall'} Workers Roster`
-                : `${session.team} Team Roster`}
+                : `${session.leadingTeam || session.team} Team Roster`}
             </span>
             {pendingWorkers.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
@@ -274,7 +323,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               ? 'Fellowship Workers & Birthday Directory'
               : isHallRep
               ? `${session.hall || 'Hall'} Resident Workers`
-              : `${session.team} Members & Applicants`}
+              : `${session.leadingTeam || session.team} Members & Applicants`}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
             {isAdmin
@@ -283,7 +332,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               ? 'Full directory of all fellowship workers across all teams and halls for designing birthday flyers, celebratory graphics, and media coverage.'
               : isHallRep
               ? `View and care for all fellowship workers living in ${session.hall || 'your hall'} across all operational units.`
-              : `Review and approve workers requesting to join ${session.team}. Once accepted, they become verified members on your team roster.`}
+              : `Review and approve workers requesting to join ${session.leadingTeam || session.team}. Once accepted, they become verified members on your team roster.`}
           </p>
         </div>
 
@@ -303,7 +352,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
           <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-center">
             <span className="block text-xs font-mono uppercase text-muted-foreground font-bold">Total</span>
-            <span className="font-serif font-black text-lg text-foreground">{rows.length}</span>
+            <span className="font-serif font-black text-lg text-foreground">{scopedWorkers.length}</span>
           </div>
           <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 shadow-xs text-center">
             <span className="block text-xs font-mono uppercase text-emerald-600 dark:text-emerald-400 font-bold">Verified</span>
@@ -321,7 +370,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* WORKFORCE EMAIL DISPATCH INPUT BOX                                   */}
       {/* ==================================================================== */}
-      <SendWorkerEmailCard session={session} workers={rows} defaultExpanded={false} />
+      <SendWorkerEmailCard session={session} workers={scopedWorkers} defaultExpanded={false} />
 
       {/* ==================================================================== */}
       {/* PENDING APPROVALS ALERT CAROUSEL / CALLOUT BANNER                    */}
@@ -343,7 +392,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 </h3>
                 <p className="text-xs text-muted-foreground font-medium">
                   {isTeamLead && !isMedia
-                    ? `Review applicants who requested to join ${session.team}. Once you accept them, they become verified members.`
+                    ? `Review applicants who requested to join ${session.leadingTeam || session.team}. Once you accept them, they become verified members.`
                     : 'Confirm genuine workers so they can be marked present during services and inducted into fellowship care.'}
                 </p>
               </div>
@@ -494,7 +543,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           {isTeamLead && !isMedia && (
             <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-muted/40 border border-border text-foreground text-xs font-bold shrink-0">
               <Users className="h-4 w-4 text-primary" />
-              <span>{session.team}</span>
+              <span>{session.leadingTeam || session.team}</span>
             </div>
           )}
         </div>
@@ -503,7 +552,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
         <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border">
           <span className="text-xs font-mono font-bold text-muted-foreground uppercase mr-1">Status:</span>
           {[
-            { id: 'all', label: `All (${rows.length})` },
+            { id: 'all', label: `All (${scopedWorkers.length})` },
             { id: 'verified', label: `Verified (${verifiedWorkers.length})` },
             { id: 'pending', label: `Pending Review (${pendingWorkers.length})`, alert: pendingWorkers.length > 0 },
             { id: 'rejected', label: `Declined (${rejectedWorkers.length})` },
@@ -850,7 +899,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
         session={session}
-        workers={rows}
+        workers={scopedWorkers}
         preselectedWorker={emailPreselectedWorker}
       />
     </div>

@@ -14,6 +14,7 @@ import { revalidatePath } from 'next/cache'
 import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
+import { matchesTeam } from '@/lib/dashboard/data'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
 
@@ -47,7 +48,10 @@ export async function verifyWorkerMembership(
   const today = now.toLocaleDateString('en-CA')
   const newStatus = input.decision === 'approve' ? 'verified' : 'rejected'
   const actionLabel = input.decision === 'approve' ? 'Membership verified' : 'Membership declined'
-  const approverRole = session.role === 'admin' ? 'CSGB Admin' : `${session.team} Team Lead`
+  const approverRole =
+    session.role === 'admin'
+      ? 'CSGB Admin'
+      : `${session.leadingTeam || session.team} Team Lead`
   const logMessage = `${actionLabel} by ${approverRole} on ${today}${input.reason ? ` (${input.reason})` : ''}`
 
   // Check data source: if mock mode, update in-memory mock workers
@@ -63,13 +67,16 @@ export async function verifyWorkerMembership(
 
     // Role check: if team_lead, ensure worker belongs to their team
     if (session.role === 'team_lead') {
-      const belongsToTeam =
-        worker.team === session.team ||
-        (worker.teams && worker.teams.includes(session.team))
+      const allowedTeams = [
+        session.leadingTeam,
+        session.team,
+        ...(session.teams || []),
+      ].filter(Boolean) as string[]
+      const belongsToTeam = matchesTeam(worker.team, worker.teams, allowedTeams)
       if (!belongsToTeam) {
         return {
           ok: false,
-          error: `You can only verify workers belonging to your team (${session.team}).`,
+          error: `You can only verify workers belonging to your team (${session.leadingTeam || session.team}).`,
         }
       }
     }
@@ -115,14 +122,17 @@ export async function verifyWorkerMembership(
 
     // RBAC Scope Check: Team Lead can only verify their own team's workers!
     if (session.role === 'team_lead') {
-      const belongsToTeam =
-        existing.team === session.team ||
-        (existing.teams && existing.teams.includes(session.team))
+      const allowedTeams = [
+        session.leadingTeam,
+        session.team,
+        ...(session.teams || []),
+      ].filter(Boolean) as string[]
+      const belongsToTeam = matchesTeam(existing.team, existing.teams, allowedTeams)
 
       if (!belongsToTeam) {
         return {
           ok: false,
-          error: `Permission denied: You can only verify workers belonging to your team (${session.team}).`,
+          error: `Permission denied: You can only verify workers belonging to your team (${session.leadingTeam || session.team}).`,
         }
       }
     }

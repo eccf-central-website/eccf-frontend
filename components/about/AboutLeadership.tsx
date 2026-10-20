@@ -625,7 +625,7 @@ export default function AboutLeadership({
 
                   <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
                     <span>{patron.teamName}</span>
-                    <span className="text-amber-400 font-bold">EDSU Iyamho</span>
+                    <span className="text-amber-400 font-bold">ESUI Iyamho</span>
                   </div>
                 </motion.div>
               ))}

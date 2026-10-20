@@ -59,6 +59,7 @@ export const authOptions: NextAuthOptions = {
           passwordHash?: string
           team?: string | { name?: string }
           hall?: string
+          leadingTeam?: string | { name?: string }
           teams?: (string | { name?: string })[]
         }>(
           `*[_type == "worker" && (
@@ -75,8 +76,9 @@ export const authOptions: NextAuthOptions = {
             excoPosition,
             isExcoApproved,
             passwordHash,
-            team,
+            "team": coalesce(team->name, team),
             hall,
+            "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
             "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])
           }`,
           { cleanEmail, cleanPhone, allBlindIndexes }
@@ -118,8 +120,15 @@ export const authOptions: NextAuthOptions = {
               ? worker.team
               : ''
 
+        const resolvedLeadingTeam =
+          typeof worker.leadingTeam === 'object' && worker.leadingTeam !== null && 'name' in worker.leadingTeam
+            ? worker.leadingTeam.name || ''
+            : typeof worker.leadingTeam === 'string'
+              ? worker.leadingTeam
+              : ''
+
         const finalTeams = resolvedTeams.length > 0 ? resolvedTeams : (singleTeam ? [singleTeam] : ['General'])
-        const resolvedTeam = finalTeams.join(', ')
+        const resolvedTeam = resolvedLeadingTeam || singleTeam || (finalTeams.length > 0 ? finalTeams[0] : 'General')
 
         return {
           id: worker._id,
@@ -128,6 +137,7 @@ export const authOptions: NextAuthOptions = {
           role: effectiveRole,
           team: resolvedTeam,
           teams: finalTeams,
+          leadingTeam: resolvedLeadingTeam || undefined,
           excoPosition: worker.excoPosition || '',
           hall: worker.hall || '',
         }
@@ -141,6 +151,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as unknown as { role: WorkerRole }).role
         token.team = (user as unknown as { team: string }).team
         token.teams = (user as unknown as { teams?: string[] }).teams
+        token.leadingTeam = (user as unknown as { leadingTeam?: string }).leadingTeam
         token.excoPosition = (user as unknown as { excoPosition?: string }).excoPosition
         token.hall = (user as unknown as { hall?: string }).hall
       }
@@ -152,6 +163,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as unknown as { role: WorkerRole }).role = token.role as WorkerRole
         ;(session.user as unknown as { team: string }).team = token.team as string
         ;(session.user as unknown as { teams?: string[] }).teams = token.teams as string[] | undefined
+        ;(session.user as unknown as { leadingTeam?: string }).leadingTeam = token.leadingTeam as string | undefined
         ;(session.user as unknown as { excoPosition?: string }).excoPosition = token.excoPosition as string
         ;(session.user as unknown as { hall?: string }).hall = token.hall as string
       }
