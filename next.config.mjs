@@ -29,6 +29,15 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/login',
+        destination: '/login',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;

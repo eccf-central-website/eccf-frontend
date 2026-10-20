@@ -111,6 +111,7 @@ export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHa
 /** JWT token shape — exactly {id, role, team}. Do not extend without updating CLAUDE.md */
 export interface ECCFSession {
   id: string
+  name?: string
   role: WorkerRole
   /**
    * Operational team name of the authenticated worker, resolved to a plain

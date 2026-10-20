@@ -148,6 +148,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.name = user.name
         token.role = (user as unknown as { role: WorkerRole }).role
         token.team = (user as unknown as { team: string }).team
         token.teams = (user as unknown as { teams?: string[] }).teams
@@ -160,6 +161,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         ;(session.user as unknown as { id: string }).id = token.id as string
+        session.user.name = token.name as string
         ;(session.user as unknown as { role: WorkerRole }).role = token.role as WorkerRole
         ;(session.user as unknown as { team: string }).team = token.team as string
         ;(session.user as unknown as { teams?: string[] }).teams = token.teams as string[] | undefined
