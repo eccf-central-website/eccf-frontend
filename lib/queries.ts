@@ -24,6 +24,7 @@ export const SERMONS_QUERY = `
     youtubeMusicUrl,
     spotifyEmbedId,
     youtubeVideoId,
+    thumbnailUrl,
     isAutoSynced,
     mediaUrl
   }
@@ -43,7 +44,8 @@ export const LATEST_SERMONS_QUERY = `
     youtubeUrl,
     youtubeMusicUrl,
     spotifyEmbedId,
-    youtubeVideoId
+    youtubeVideoId,
+    thumbnailUrl
   }
 `
 
@@ -63,6 +65,7 @@ export const SERMON_BY_ID_QUERY = `
     youtubeMusicUrl,
     spotifyEmbedId,
     youtubeVideoId,
+    thumbnailUrl,
     isAutoSynced,
     mediaUrl
   }

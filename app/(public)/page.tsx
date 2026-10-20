@@ -25,6 +25,7 @@ import GivingHubSection from '@/components/home/GivingHubSection'
 import SocialMediaBanner from '@/components/home/SocialMediaBanner'
 import PlanAVisitSection from '@/components/home/PlanAVisitSection'
 import { SermonItem } from '@/components/sermons/SermonsFeed'
+import { triggerBackgroundSyncIfNeeded } from '@/lib/sermonSync'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -43,6 +44,7 @@ export default async function Home({
   searchParams?: { preview?: string }
 }) {
   const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  triggerBackgroundSyncIfNeeded()
   const client = getSanityClient(isPreview)
 
   // Concurrently fetch live data from Sanity on the server

@@ -132,9 +132,6 @@ export default function AboutHero({
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
               
               <div className="absolute bottom-5 left-5 right-5 text-white">
-                <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 inline-block mb-1.5">
-                  CAMPUS REVIVAL &amp; SCHOLARSHIP
-                </span>
                 <p className="font-serif text-lg sm:text-xl font-bold leading-tight">
                   One Family Across All 8 Halls of Residence
                 </p>

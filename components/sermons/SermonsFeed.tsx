@@ -12,7 +12,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Search, Clock, BookOpen, Calendar, Filter, Radio, Disc3, Play } from 'lucide-react'
 import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/PlatformIcons'
-import { SermonPlayerItem as SermonItem, getYoutubeVideoId, getSpotifyEmbedUrl } from '@/lib/sermonUtils'
+import { SermonPlayerItem as SermonItem, getYoutubeVideoId, getSpotifyEmbedUrl, getSermonThumbnailUrl } from '@/lib/sermonUtils'
 export type { SermonPlayerItem as SermonItem } from '@/lib/sermonUtils'
 
 interface Props {
@@ -111,6 +111,7 @@ export default function SermonsFeed({ sermons }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filtered.map((sermon, idx) => {
             const youtubeId = getYoutubeVideoId(sermon)
+            const thumbnailUrl = getSermonThumbnailUrl(sermon)
             const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
             const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.mediaUrl || sermon.youtubeUrl || sermon.spotifyUrl)
 
@@ -126,10 +127,10 @@ export default function SermonsFeed({ sermons }: Props) {
                 <div>
                   {/* Thumbnail / Media Header */}
                   <div className="relative h-48 sm:h-56 w-full bg-slate-900 overflow-hidden flex items-center justify-center">
-                    {youtubeId ? (
+                    {thumbnailUrl ? (
                       <>
                         <Image
-                          src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+                          src={thumbnailUrl}
                           alt={sermon.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"

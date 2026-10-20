@@ -10,6 +10,7 @@ import { getSanityClient } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
 import { SERMONS_QUERY } from '@/lib/queries'
 import SermonsFeed, { SermonItem } from '@/components/sermons/SermonsFeed'
+import { triggerBackgroundSyncIfNeeded } from '@/lib/sermonSync'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -20,6 +21,7 @@ export default async function SermonsPage({
   searchParams?: { preview?: string }
 }) {
   const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
+  triggerBackgroundSyncIfNeeded()
   const client = getSanityClient(isPreview)
   let sermons: SermonItem[] = []
 

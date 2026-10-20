@@ -312,20 +312,8 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent pointer-events-none" />
 
-                    {/* Tag Badge */}
-                    <div className="absolute top-4 left-4">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10">
-                        {team.tag || 'MINISTRY TEAM'}
-                      </span>
-                    </div>
-
-                    {/* Bottom overlay titles */}
+                    {/* Bottom overlay title: Team Name only */}
                     <div className="absolute bottom-4 left-5 right-5 text-white">
-                      {team.role && (
-                        <span className="text-xs font-semibold text-sky-300 block uppercase tracking-wider mb-0.5">
-                          {team.role}
-                        </span>
-                      )}
                       <h3 className="font-serif font-bold text-xl sm:text-2xl text-white leading-tight">
                         {team.name}
                       </h3>

@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { CalendarDays, Clock3, Mail, MessageCircle, MapPin } from 'lucide-react'
+import { CalendarDays, Clock3, Mail, MessageCircle } from 'lucide-react'
 
 export interface ServiceItem {
   _id: string
@@ -137,10 +137,6 @@ export default function PlanAVisitSection({
 
             {/* Bottom Floating Venue Details Pill */}
             <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 text-white z-10 flex flex-col justify-end">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-3.5 py-1 text-xs font-mono font-bold tracking-wider uppercase text-sky-200 border border-white/20 w-fit mb-2.5">
-                <MapPin className="h-3.5 w-3.5 text-sky-300" />
-                <span>Fellowship Venue</span>
-              </div>
               <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight leading-snug drop-shadow-sm">
                 {venueName}
               </h3>

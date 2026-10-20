@@ -13,6 +13,7 @@ export interface SermonPlayerItem {
   spotifyEmbedId?: string
   youtubeVideoId?: string
   mediaUrl?: string
+  thumbnailUrl?: string
 }
 
 export function getYoutubeVideoId(sermon: { youtubeVideoId?: string; youtubeUrl?: string } | null | undefined): string | null {
@@ -21,6 +22,22 @@ export function getYoutubeVideoId(sermon: { youtubeVideoId?: string; youtubeUrl?
   if (!sermon.youtubeUrl) return null
   const match = sermon.youtubeUrl.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/)
   return match ? match[1] : null
+}
+
+export function getSermonThumbnailUrl(sermon: {
+  thumbnailUrl?: string
+  youtubeVideoId?: string
+  youtubeUrl?: string
+} | null | undefined): string | null {
+  if (!sermon) return null
+  const ytid = getYoutubeVideoId(sermon)
+  if (ytid) {
+    return `https://img.youtube.com/vi/${ytid}/hqdefault.jpg`
+  }
+  if (sermon.thumbnailUrl) {
+    return sermon.thumbnailUrl
+  }
+  return null
 }
 
 export function getSpotifyEmbedUrl(sermon: { spotifyUrl?: string; spotifyEmbedId?: string } | null | undefined): string | null {
@@ -39,4 +56,3 @@ export function getSpotifyEmbedUrl(sermon: { spotifyUrl?: string; spotifyEmbedId
   }
   return null
 }
-

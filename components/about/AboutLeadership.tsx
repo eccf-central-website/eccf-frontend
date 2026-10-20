@@ -21,7 +21,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Shield, Sparkles, BookOpen, Users, Church, Compass, Award } from 'lucide-react'
+import { Shield, BookOpen, Users, Church, Compass, Award } from 'lucide-react'
 
 export interface LeaderCard {
   _id?: string
@@ -506,8 +506,13 @@ export default function AboutLeadership({
           </div>
         )}
 
-        {/* Gradient Overlay with Name Only (No oval badge, no blue position, no bottom team name) */}
+        {/* Gradient Overlay with Position and Name only */}
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-transparent flex flex-col justify-end p-3.5 sm:p-5 text-left pointer-events-none">
+          {(leader.excoPosition || leader.role) && (
+            <span className="text-[11px] sm:text-xs font-semibold text-sky-400 block mb-1 uppercase tracking-wide line-clamp-1">
+              {leader.excoPosition || leader.role}
+            </span>
+          )}
           <h4 className="font-serif font-bold text-sm sm:text-lg text-white leading-tight line-clamp-2">
             {leader.fullName}
           </h4>
@@ -606,11 +611,6 @@ export default function AboutLeadership({
                   transition={{ duration: 0.4, delay: idx * 0.05 }}
                   className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 border border-amber-500/30 p-6 sm:p-8 text-left shadow-xl"
                 >
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider mb-4">
-                    <Sparkles className="h-3 w-3" />
-                    <span>{patron.badgeLabel}</span>
-                  </div>
-
                   <h4 className="font-serif font-bold text-2xl sm:text-3xl text-white leading-tight mb-2">
                     {patron.fullName}
                   </h4>
@@ -682,11 +682,6 @@ export default function AboutLeadership({
 
                 {/* Pastor Bio & Mandate */}
                 <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 space-y-4 sm:space-y-6 text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-mono font-bold uppercase tracking-wider">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                    <span>SPIRITUAL HEAD &bull; RESIDENT PASTOR</span>
-                  </div>
-
                   <div>
                     <h3 className="font-serif font-black text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
                       {RESIDENT_PASTOR.fullName}
