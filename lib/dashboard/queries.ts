@@ -186,3 +186,28 @@ export const FINANCE_STATS_QUERY = `{
   "incomeThisMonth": coalesce(math::sum(*[_type == "financeLedger" && type == "Income" && transactionDate >= $monthStart].amount), 0),
   "expenseThisMonth": coalesce(math::sum(*[_type == "financeLedger" && type == "Expense" && transactionDate >= $monthStart].amount), 0)
 }`
+
+// ---------------------------------------------------------------------------
+// Announcements Engine (Dashboard view — both published and drafts)
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_ANNOUNCEMENTS_QUERY = `
+  *[_type == "announcement"] | order(coalesce(isPinned, false) desc, coalesce(eventDate, publishDate) desc, _createdAt desc) {
+    _id,
+    title,
+    category,
+    isPinned,
+    time,
+    location,
+    eventDate,
+    publishDate,
+    content,
+    isPublished,
+    sendBroadcastOnPublish,
+    sentToSubscribers,
+    sentAt,
+    _createdAt,
+    _updatedAt
+  }
+`
+

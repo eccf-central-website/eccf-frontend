@@ -11,7 +11,7 @@
 import { cookies } from 'next/headers'
 import { isMockAuthEnabled, requireSession } from '@/lib/dashboard/auth'
 import { DEV_MOCK_STATE_COOKIE } from '@/lib/dashboard/data'
-import { canAccessSection, hasPermission } from '@/lib/dashboard/rbac'
+import { canAccessSection, isMediaLeader } from '@/lib/dashboard/rbac'
 import { isDevMockState, SIDEBAR_COOKIE } from '@/lib/dashboard/shell'
 import { NAV_ITEMS } from '@/components/dashboard/shell/nav-items'
 import DevSwitcher from '@/components/dashboard/shell/DevSwitcher'
@@ -67,7 +67,8 @@ export default async function DashboardShellLayout({
           team={session.team}
           teams={session.teams}
           excoPosition={session.excoPosition}
-          actions={hasPermission(session.role, 'sermons:sync') ? <SyncSermonsButton /> : undefined}
+          leadingTeam={session.leadingTeam}
+          actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
           devTools={devTools}
         />
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">

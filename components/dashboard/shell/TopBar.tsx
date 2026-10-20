@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import type { WorkerRole } from '@/types'
-import { SECTION_PATHS, sectionForPath, type DashboardSection } from '@/lib/dashboard/rbac'
+import { SECTION_PATHS, sectionForPath, isMediaTeam, type DashboardSection } from '@/lib/dashboard/rbac'
 import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
@@ -26,15 +26,17 @@ interface TopBarProps {
   team: string
   teams?: string[]
   excoPosition?: string
+  leadingTeam?: string
   /** Right-side page/global actions, e.g. "Sync sermons" (later feature). */
   actions?: React.ReactNode
   devTools?: React.ReactNode
 }
 
-export default function TopBar({ sections, name, role, team, teams, excoPosition, actions, devTools }: TopBarProps) {
+export default function TopBar({ sections, name, role, team, teams, excoPosition, leadingTeam, actions, devTools }: TopBarProps) {
   const pathname = usePathname()
   const section = sectionForPath(pathname) ?? 'overview'
   const title = navItemForSection(section).label
+  const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:px-4 lg:h-16 lg:px-6">
@@ -68,7 +70,7 @@ export default function TopBar({ sections, name, role, team, teams, excoPosition
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {actions}
+        {isMediaLeaderUser && actions}
         <InstallPwaButton />
         <ThemeToggle />
         <UserMenu name={name} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />

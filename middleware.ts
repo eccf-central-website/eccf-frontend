@@ -44,12 +44,14 @@ export async function middleware(req: NextRequest) {
   }
 
   if (pathname.startsWith('/dashboard') && !isMockAuth) {
+    const authSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+    if (!authSecret && process.env.NODE_ENV === 'production') {
+      throw new Error('[SECURITY FATAL] NEXTAUTH_SECRET is not configured in production.')
+    }
+
     const token = await getToken({
       req,
-      secret:
-        process.env.NEXTAUTH_SECRET ||
-        process.env.AUTH_SECRET ||
-        'eccf-secret-session-key-production-fallback',
+      secret: authSecret || 'dev-only-secret-key-32-characters-long!',
     })
 
     if (!token) {
@@ -67,7 +69,16 @@ export async function middleware(req: NextRequest) {
 
     // Check RBAC section boundary
     const section = sectionForPath(pathname)
-    if (section && !canAccessSection(role, section, { team: token.team as string, excoPosition: token.excoPosition as string })) {
+    if (
+      section &&
+      !canAccessSection(role, section, {
+        role,
+        team: token.team as string,
+        teams: token.teams as string[] | undefined,
+        leadingTeam: token.leadingTeam as string | undefined,
+        excoPosition: token.excoPosition as string | undefined,
+      })
+    ) {
       const deniedUrl = new URL(SECTION_PATHS.overview, req.url)
       deniedUrl.searchParams.set('denied', section)
       return NextResponse.redirect(deniedUrl)

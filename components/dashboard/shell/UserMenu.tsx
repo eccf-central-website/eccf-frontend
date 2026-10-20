@@ -2,9 +2,8 @@
  * UserMenu — top-bar account menu: role badge and team, a link to the
  * public site, and Sign out (disabled until feature/dashboard-auth).
  *
- * The session only carries { id, role, team }, so nothing personal is
- * shown or sent to the browser. `devTools` renders the dev-only switcher
- * section; the server layout passes it only when mock auth is enabled.
+ * Displays the authenticated user's name, role badge, official leadership
+ * title ([excoPosition] without em-dash), and operational teams.
  */
 
 'use client'
@@ -72,10 +71,16 @@ export default function UserMenu({ name, role, team, teams, excoPosition, devToo
           )}
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{ROLE_LABELS[role]}</Badge>
-            <span className="truncate text-sm font-medium text-foreground">
-              {excoPosition || `${displayTeam} team`}
-            </span>
-          </span>
+            {excoPosition ? (
+              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+                [{excoPosition}]
+              </span>
+            ) : (
+              <span className="truncate text-xs font-medium text-muted-foreground">
+                {displayTeam} team
+              </span>
+            )}
+          </div>
           {excoPosition && (
             <span className="text-xs text-muted-foreground">{displayTeam} team</span>
           )}

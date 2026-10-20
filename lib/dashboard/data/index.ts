@@ -22,6 +22,7 @@ import { cookies } from 'next/headers'
 import { sanityPrivateClient } from '@/lib/sanity'
 import { decrypt } from '@/lib/encryption'
 import type {
+  Announcement,
   AttendanceRow,
   ECCFSession,
   FinanceRow,
@@ -30,10 +31,11 @@ import type {
   SafeWelfareRequest,
   WorkerRow,
 } from '@/types'
-import { hasPermission, isHallScoped, isTeamScoped } from '../rbac'
+import { hasPermission, isHallScoped, isTeamScoped, isCSGBMember } from '../rbac'
 import { isDevMockState, type DevMockState } from '../shell'
 import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
 import {
+  DASHBOARD_ANNOUNCEMENTS_QUERY,
   DASHBOARD_ATTENDANCE_QUERY,
   DASHBOARD_FINANCE_QUERY,
   DASHBOARD_FIRST_TIMERS_QUERY,
@@ -45,6 +47,7 @@ import {
   WORKER_HALL_BY_ID_QUERY,
 } from '../queries'
 import {
+  MOCK_ANNOUNCEMENTS,
   MOCK_ATTENDANCE,
   MOCK_FINANCE,
   MOCK_FIRST_TIMERS,
@@ -351,7 +354,7 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
   return rows.map((row) => ({
     ...row,
     phoneNumber: row.phoneNumber ? decrypt(row.phoneNumber) : undefined,
-    roomNumber: row.roomNumber ? decrypt(row.roomNumber) : undefined,
+    roomNumber: undefined, // Fix S9: stripped per SDD
   }))
 }
 
@@ -376,3 +379,21 @@ export async function listPrayerRequests(): Promise<PrayerRequest[]> {
     request: decrypt(row.request),
   }))
 }
+
+export async function listAnnouncements(session: ECCFSession): Promise<Announcement[]> {
+  if (!isCSGBMember(session)) {
+    throw new Error('Access denied: CSGB membership required')
+  }
+
+  if (dataSource() === 'mock') {
+    return await fromMock(MOCK_ANNOUNCEMENTS, [])
+  }
+
+  try {
+    return await sanityPrivateClient.fetch<Announcement[]>(DASHBOARD_ANNOUNCEMENTS_QUERY)
+  } catch (err) {
+    console.error('[listAnnouncements] Sanity fetch error, falling back to mock fixtures:', err)
+    return MOCK_ANNOUNCEMENTS
+  }
+}
+

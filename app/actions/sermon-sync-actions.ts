@@ -1,19 +1,22 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requirePermission } from '@/lib/dashboard/rbac'
+import { requirePermission, isMediaLeader } from '@/lib/dashboard/rbac'
 import { getSession } from '@/lib/dashboard/auth'
 import { runSermonSync } from '@/lib/sermonSync'
 
 export async function syncSermonsAction() {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  if (!session) {
     return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
+
+  if (!isMediaLeader(session) && session.role !== 'admin' && process.env.NODE_ENV === 'production') {
+    return { success: false, error: 'Permission denied: CSGB or Media Team leaders only.' }
+  }
 
   try {
-    requirePermission(role, 'sermons:sync')
+    requirePermission(session.role, 'sermons:sync')
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -23,6 +26,7 @@ export async function syncSermonsAction() {
     revalidatePath('/')
     revalidatePath('/sermons')
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/sermons')
 
     return { success: true, ...data }
   } catch (err) {

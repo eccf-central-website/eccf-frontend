@@ -7,6 +7,7 @@
  */
 
 import type {
+  Announcement,
   AttendanceRow,
   FinanceRow,
   FirstTimerRow,
@@ -162,4 +163,121 @@ export const MOCK_FINANCE: FinanceRow[] = [
   { _id: 'mock-fin-08', transactionDate: isoDate(15), type: 'Income', amount: 25000, category: 'Project Levy', description: 'Sound equipment levy' },
   { _id: 'mock-fin-09', transactionDate: isoDate(29), type: 'Expense', amount: 4000, category: 'Miscellaneous', description: 'Printing of programme sheets' },
   { _id: 'mock-fin-10', transactionDate: isoDate(40), type: 'Income', amount: 81000, category: 'Offering', description: 'Sunday service offering' },
+]
+
+export const MOCK_ANNOUNCEMENTS: Announcement[] = [
+  {
+    _id: 'mock-ann-01',
+    _type: 'announcement',
+    title: 'Sunday Worship Encounter & Spiritual Awakening',
+    category: 'WEEKLY SERVICES',
+    isPinned: true,
+    time: '08:00 AM',
+    location: 'NLT 5, Faculty of Law, ESUI',
+    eventDate: isoDate(-4),
+    publishDate: isoDate(0),
+    content: [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [
+          {
+            _type: 'span',
+            _key: 's1',
+            text: 'Join us for a transformational encounter with God in His presence. Come expecting miracles, uplifting worship, and the undiluted Word.',
+          },
+        ],
+      },
+    ],
+    isPublished: true,
+    sendBroadcastOnPublish: true,
+    sentToSubscribers: true,
+    sentAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    _id: 'mock-ann-02',
+    _type: 'announcement',
+    title: 'Pre-Exam Academic Tutorials & Special Prayer Clinic',
+    category: 'ACADEMIC & EXAMS',
+    isPinned: false,
+    time: '04:50 PM',
+    location: 'NLT 5, Faculty of Law, ESUI',
+    eventDate: isoDate(-7),
+    publishDate: isoDate(1),
+    content: [
+      {
+        _type: 'block',
+        _key: 'b2',
+        style: 'normal',
+        children: [
+          {
+            _type: 'span',
+            _key: 's2',
+            text: 'The Academic & Tutorial Committee invites all students to our intensive revision sessions in GST, Science, and Law courses followed by a dedicated session of prayer for academic excellence.',
+          },
+        ],
+      },
+    ],
+    isPublished: true,
+    sendBroadcastOnPublish: true,
+    sentToSubscribers: false,
+  },
+  {
+    _id: 'mock-ann-03',
+    _type: 'announcement',
+    title: 'Wednesday Midweek Bible Study: Walking in Dominion',
+    category: 'BIBLE STUDY',
+    isPinned: false,
+    time: '04:50 PM',
+    location: 'NLT 5, Faculty of Law, ESUI',
+    eventDate: isoDate(-2),
+    publishDate: isoDate(2),
+    content: [
+      {
+        _type: 'block',
+        _key: 'b3',
+        style: 'normal',
+        children: [
+          {
+            _type: 'span',
+            _key: 's3',
+            text: 'Diving deep into practical Christian living and foundational doctrines. Bring your Bible, journal, and a friend.',
+          },
+        ],
+      },
+    ],
+    isPublished: true,
+    sendBroadcastOnPublish: false,
+    sentToSubscribers: true,
+    sentAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    _id: 'mock-ann-04',
+    _type: 'announcement',
+    title: 'CSGB Quarterly Strategic Exco Planning Retreat',
+    category: 'EXCO UPDATES',
+    isPinned: false,
+    time: '02:00 PM',
+    location: 'ECCF Secretariat, Hall A',
+    eventDate: isoDate(-12),
+    publishDate: isoDate(3),
+    content: [
+      {
+        _type: 'block',
+        _key: 'b4',
+        style: 'normal',
+        children: [
+          {
+            _type: 'span',
+            _key: 's4',
+            text: 'Internal draft review of fellowship spiritual calendar, mission outreach budget, and team leadership performance evaluations.',
+          },
+        ],
+      },
+    ],
+    isPublished: false,
+    sendBroadcastOnPublish: false,
+    sentToSubscribers: false,
+  },
 ]

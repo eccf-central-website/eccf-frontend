@@ -152,6 +152,14 @@ export interface AttendanceLedger {
   loggedBy: Pick<Worker, '_id' | 'fullName'>
 }
 
+export interface AttendanceWorkerItem {
+  _id: string
+  fullName: string
+  team: string
+  teams?: string[]
+  hall: string
+}
+
 // ---------------------------------------------------------------------------
 // Finance Ledger
 // ---------------------------------------------------------------------------
@@ -195,6 +203,15 @@ export interface SermonVault {
   scriptureReference: string
   /** Direct URL to audio/video. Streams from source — never proxied through Vercel */
   mediaUrl?: string
+  duration?: string
+  spotifyUrl?: string
+  youtubeUrl?: string
+  youtubeMusicUrl?: string
+  spotifyEmbedId?: string
+  youtubeVideoId?: string
+  thumbnailUrl?: string
+  isAutoSynced?: boolean
+  notes?: string
 }
 
 // ---------------------------------------------------------------------------

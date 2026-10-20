@@ -7,25 +7,19 @@ const IV_LENGTH = 12
 const PREFIX = 'enc:v1:'
 const BLIND_INDEX_PREFIX = 'bidx:v1:'
 
-const DEFAULT_FALLBACK_ENCRYPTION_KEY = 'eccf-production-security-salt-2026-key'
-const DEFAULT_FALLBACK_HMAC_PEPPER = 'development_secret_key_eccf_2026'
-
-const KNOWN_LEGACY_KEYS = [
-  'development_secret_key_eccf_2026',
-  'eccf-production-security-salt-2026-key',
-  'eccf-production-blind-index-pepper-2026',
-]
-
-function getSecret(name: string, fallback: string): string {
+function getSecret(name: string): string {
   const secret = process.env[name]?.trim()
   if (secret && Buffer.byteLength(secret, 'utf8') >= 16) {
     return secret
   }
-  const nextAuth = process.env.NEXTAUTH_SECRET?.trim()
+  const nextAuth = process.env.NEXTAUTH_SECRET?.trim() || process.env.AUTH_SECRET?.trim()
   if (nextAuth && Buffer.byteLength(nextAuth, 'utf8') >= 16) {
     return nextAuth
   }
-  return fallback
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`[SECURITY FATAL] Neither ${name} nor NEXTAUTH_SECRET is configured in environment.`)
+  }
+  return 'development_only_secret_key_32_bytes_min!'
 }
 
 function parseLegacySecrets(name: string): string[] {
@@ -36,23 +30,22 @@ function parseLegacySecrets(name: string): string[] {
 }
 
 function getEncryptionKey(): Buffer {
-  const secret = getSecret('ENCRYPTION_KEY', DEFAULT_FALLBACK_ENCRYPTION_KEY)
+  const secret = getSecret('ENCRYPTION_KEY')
   return crypto.createHash('sha256').update(secret).digest()
 }
 
 function getHmacKey(): Buffer {
-  const secret = getSecret('HMAC_PEPPER', DEFAULT_FALLBACK_HMAC_PEPPER)
+  const secret = getSecret('HMAC_PEPPER')
   return crypto.createHash('sha256').update(secret).digest()
 }
 
-/** Explicitly configured rotation keys + known historical keys for seamless decryption. */
+/** Explicitly configured rotation keys for seamless decryption without repository hardcoded secrets. */
 function getCandidateSecrets(): string[] {
   return Array.from(
     new Set([
       process.env.ENCRYPTION_KEY?.trim(),
       process.env.NEXTAUTH_SECRET?.trim(),
-      DEFAULT_FALLBACK_ENCRYPTION_KEY,
-      ...KNOWN_LEGACY_KEYS,
+      process.env.AUTH_SECRET?.trim(),
       ...parseLegacySecrets('ENCRYPTION_LEGACY_KEYS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )
@@ -64,8 +57,7 @@ function getCandidateHmacPeppers(): string[] {
       process.env.HMAC_PEPPER?.trim(),
       process.env.ENCRYPTION_KEY?.trim(),
       process.env.NEXTAUTH_SECRET?.trim(),
-      DEFAULT_FALLBACK_HMAC_PEPPER,
-      ...KNOWN_LEGACY_KEYS,
+      process.env.AUTH_SECRET?.trim(),
       ...parseLegacySecrets('HMAC_LEGACY_PEPPERS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )
@@ -112,7 +104,12 @@ export function decrypt(cipherText?: string | null): string {
     const iv = Buffer.from(ivHex, 'hex')
     const tag = Buffer.from(tagHex, 'hex')
 
-    for (const secret of getCandidateSecrets()) {
+    const candidateSecrets = getCandidateSecrets()
+    if (candidateSecrets.length === 0) {
+      candidateSecrets.push(getSecret('ENCRYPTION_KEY'))
+    }
+
+    for (const secret of candidateSecrets) {
       try {
         const key = crypto.createHash('sha256').update(secret).digest()
         const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
@@ -170,8 +167,13 @@ export function getCandidateBlindIndexes(phone?: string | null): string[] {
   const normalized = normalizePhone(phone)
   if (!normalized) return []
 
+  const candidatePeppers = getCandidateHmacPeppers()
+  if (candidatePeppers.length === 0) {
+    candidatePeppers.push(getSecret('HMAC_PEPPER'))
+  }
+
   const indexes = new Set<string>()
-  for (const pepper of getCandidateHmacPeppers()) {
+  for (const pepper of candidatePeppers) {
     const key = crypto.createHash('sha256').update(pepper).digest()
     const hmac = crypto.createHmac('sha256', key)
     hmac.update(normalized)
@@ -220,8 +222,13 @@ export function getCandidateBirthdayBlindIndexes(dateStr?: string | null): strin
     mmdd = trimmed
   }
 
+  const candidatePeppers = getCandidateHmacPeppers()
+  if (candidatePeppers.length === 0) {
+    candidatePeppers.push(getSecret('HMAC_PEPPER'))
+  }
+
   const indexes = new Set<string>()
-  for (const pepper of getCandidateHmacPeppers()) {
+  for (const pepper of candidatePeppers) {
     const key = crypto.createHash('sha256').update(pepper).digest()
     const hmac = crypto.createHmac('sha256', key)
     hmac.update(`birthday:${mmdd}`)

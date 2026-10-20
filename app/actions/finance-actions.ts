@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createPrivateDocument, sanityWriteClient, privateDocumentId } from '@/lib/sanity'
+import { createPrivateDocument, sanityWriteClient, sanityPrivateClient, privateDocumentId } from '@/lib/sanity'
 import { requirePermission } from '@/lib/dashboard/rbac'
 import { getSession } from '@/lib/dashboard/auth'
 
@@ -19,13 +19,12 @@ export interface RecordFinanceInput {
  */
 export async function recordFinanceEntry(formData: RecordFinanceInput) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
+  if (!session) {
     return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
 
   try {
-    requirePermission(role, 'finance:create')
+    requirePermission(session.role, 'finance:create')
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -66,22 +65,30 @@ export async function recordFinanceEntry(formData: RecordFinanceInput) {
 
 /**
  * Delete a finance ledger entry.
+ * Enforces strict _type verification (Fix R5).
  */
 export async function deleteFinanceEntry(entryId: string) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
-    return { success: false, error: 'Unauthorized' }
+  if (!session) {
+    return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
 
   try {
-    requirePermission(role, 'finance:create')
+    requirePermission(session.role, 'finance:create')
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
 
   try {
     const targetId = privateDocumentId(entryId)
+    const existing = await sanityPrivateClient.fetch<{ _type: string } | null>(
+      `*[_id == $id][0]{ _type }`,
+      { id: targetId }
+    )
+    if (!existing || existing._type !== 'financeLedger') {
+      return { success: false, error: 'Invalid document: only financeLedger records can be deleted.' }
+    }
+
     await sanityWriteClient.delete(targetId)
     revalidatePath('/dashboard/finance')
     revalidatePath('/dashboard')

@@ -31,6 +31,7 @@ export type DashboardPermission =
   | 'finance:create'
   | 'welfare:resolve'
   | 'sermons:sync'
+  | 'sermons:manage'
   | 'announcements:manage'
   /** Overview cards that show money totals */
   | 'stats:finance'
@@ -75,8 +76,10 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'attendance:create': ['admin', 'team_lead', 'hall_rep'],
   'finance:create': ['admin', 'finance'],
   'welfare:resolve': ['admin', 'team_lead', 'hall_rep'],
-  // ADR-002 §5.2.1: manual sync is admin, media team_lead, or hall_rep
-  'sermons:sync': ['admin', 'team_lead', 'hall_rep'],
+  // ADR-002: manual sync & management is strictly for media team leaders
+  'sermons:sync': ['admin', 'team_lead'],
+  'sermons:manage': ['admin', 'team_lead'],
+  'announcements:manage': ['admin', 'team_lead'],
   'stats:finance': ['admin', 'finance'],
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
 }
@@ -84,17 +87,27 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
 export function isCSGBMember(
   session?: {
     role?: string
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
     excoPosition?: string
   } | null
 ): boolean {
   if (!session) return false
   if (session.role === 'admin') return true
   const position = (session.excoPosition || '').toLowerCase()
+  const team = (session.team || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const hasPrayerInTeams = session.teams?.some((t) => t.toLowerCase().includes('prayer')) ?? false
+
   return (
     position.includes('president') ||
     position.includes('vice president') ||
-    position.includes('general secretary') ||
-    position.includes('prayer')
+    (position.includes('general secretary') && !position.includes('financial')) ||
+    position.includes('prayer') ||
+    team.includes('prayer') ||
+    leadingTeam.includes('prayer') ||
+    hasPrayerInTeams
   )
 }
 
@@ -119,8 +132,10 @@ export function isMediaLeader(
 
   return (
     team.includes('media') ||
+    team.includes('publicity') ||
     leadingTeam.includes('media') ||
     position.includes('media') ||
+    position.includes('publicity') ||
     hasMediaInTeams
   )
 }

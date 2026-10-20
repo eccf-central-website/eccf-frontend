@@ -1,32 +1,42 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { patchPrivateDocument } from '@/lib/sanity'
+import { patchPrivateDocument, sanityPrivateClient, privateDocumentId } from '@/lib/sanity'
 import { requirePermission } from '@/lib/dashboard/rbac'
 import { getSession } from '@/lib/dashboard/auth'
 
 /**
  * Resolve a welfare request — mark as Resolved in private draft storage.
+ * Enforces authenticated session and strict _type verification (Fix R5).
  */
 export async function resolveWelfareRequest(requestId: string) {
   const session = await getSession()
-  if (!session && process.env.NODE_ENV === 'production') {
-    return { success: false, error: 'Unauthorized' }
+  if (!session) {
+    return { success: false, error: 'Unauthorized: Authentication required.' }
   }
-  const role = session?.role ?? 'admin'
 
   try {
-    requirePermission(role, 'welfare:resolve')
+    requirePermission(session.role, 'welfare:resolve')
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
 
   try {
-    await patchPrivateDocument(requestId)
+    const targetId = privateDocumentId(requestId)
+    const existing = await sanityPrivateClient.fetch<{ _type: string } | null>(
+      `*[_id == $id][0]{ _type }`,
+      { id: targetId }
+    )
+
+    if (!existing || existing._type !== 'welfareRequest') {
+      return { success: false, error: 'Invalid document: only welfareRequest documents can be resolved.' }
+    }
+
+    await patchPrivateDocument(targetId)
       .set({
         status: 'Resolved',
         resolvedAt: new Date().toISOString(),
-        resolvedBy: session?.id ?? 'admin',
+        resolvedBy: session.name || session.id,
       })
       .commit()
 

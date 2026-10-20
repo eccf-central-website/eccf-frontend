@@ -317,11 +317,39 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-                    Individual worker attendee references were not saved on this entry, or record was logged as aggregate headcount ({activeAttendeeRecord.totalCount} attendees).
+                  <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground space-y-2">
+                    <p>
+                      Logged as general service headcount ({activeAttendeeRecord.totalCount} attendees) without individual worker names.
+                    </p>
+                    {(activeAttendeeRecord.menCount !== undefined ||
+                      activeAttendeeRecord.womenCount !== undefined ||
+                      activeAttendeeRecord.childrenCount !== undefined ||
+                      activeAttendeeRecord.firstTimersCount !== undefined) && (
+                      <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                        {activeAttendeeRecord.menCount !== undefined && (
+                          <Badge variant="outline" className="text-[10px]">Men: {activeAttendeeRecord.menCount}</Badge>
+                        )}
+                        {activeAttendeeRecord.womenCount !== undefined && (
+                          <Badge variant="outline" className="text-[10px]">Women: {activeAttendeeRecord.womenCount}</Badge>
+                        )}
+                        {activeAttendeeRecord.childrenCount !== undefined && (
+                          <Badge variant="outline" className="text-[10px]">Children: {activeAttendeeRecord.childrenCount}</Badge>
+                        )}
+                        {activeAttendeeRecord.firstTimersCount !== undefined && (
+                          <Badge variant="outline" className="text-[10px]">First-Timers: {activeAttendeeRecord.firstTimersCount}</Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+
+              {activeAttendeeRecord.notes && (
+                <div className="rounded-md bg-muted/30 p-2.5 text-xs">
+                  <span className="font-semibold text-muted-foreground">Notes: </span>
+                  <span className="text-foreground">{activeAttendeeRecord.notes}</span>
+                </div>
+              )}
 
               {activeAttendeeRecord.loggedBy?.fullName && (
                 <div className="text-[11px] text-muted-foreground text-right italic">

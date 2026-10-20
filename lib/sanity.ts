@@ -29,7 +29,7 @@ export const sanityClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'published',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN,
 })
 
 /**
@@ -42,7 +42,7 @@ export const sanityPreviewClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN,
 })
 
 /** Return the appropriate Sanity client based on preview / draft mode status. */
@@ -73,7 +73,7 @@ export const sanityPrivateClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
-  token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
+  token: process.env.SANITY_READ_TOKEN,
 })
 
 /** Document ID helper for private operational document mutations. */

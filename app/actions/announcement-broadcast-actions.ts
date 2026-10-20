@@ -1,6 +1,8 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/dashboard/auth'
+import { isCSGBMember } from '@/lib/dashboard/rbac'
 import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { Resend } from 'resend'
 
@@ -69,7 +71,7 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
   recipientCount?: number
 }> {
   const session = await getSession()
-  if (!session || session.role !== 'admin') {
+  if (!session || !isCSGBMember(session)) {
     return { success: false, message: 'You do not have permission to send announcements.' }
   }
 
@@ -204,6 +206,8 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
         sentAt: new Date().toISOString(),
       })
       .commit()
+
+    revalidatePath('/dashboard/announcements')
 
     return {
       success: true,

@@ -67,11 +67,7 @@ export async function verifyWorkerMembership(
 
     // Role check: if team_lead, ensure worker belongs to their team
     if (session.role === 'team_lead') {
-      const allowedTeams = [
-        session.leadingTeam,
-        session.team,
-        ...(session.teams || []),
-      ].filter(Boolean) as string[]
+      const allowedTeams = [session.leadingTeam || session.team].filter(Boolean) as string[]
       const belongsToTeam = matchesTeam(worker.team, worker.teams, allowedTeams)
       if (!belongsToTeam) {
         return {
@@ -122,11 +118,7 @@ export async function verifyWorkerMembership(
 
     // RBAC Scope Check: Team Lead can only verify their own team's workers!
     if (session.role === 'team_lead') {
-      const allowedTeams = [
-        session.leadingTeam,
-        session.team,
-        ...(session.teams || []),
-      ].filter(Boolean) as string[]
+      const allowedTeams = [session.leadingTeam || session.team].filter(Boolean) as string[]
       const belongsToTeam = matchesTeam(existing.team, existing.teams, allowedTeams)
 
       if (!belongsToTeam) {
