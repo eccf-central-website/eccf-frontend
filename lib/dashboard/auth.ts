@@ -32,10 +32,10 @@ export const DEV_ROLE_COOKIE = 'eccf-dev-role'
 
 /** Mock identities — ids match workers in lib/dashboard/mock/data.ts. */
 const MOCK_SESSIONS: Record<WorkerRole, ECCFSession> = {
-  admin: { id: 'mock-worker-admin', role: 'admin', team: 'Exco', teams: ['Executive Council'], excoPosition: 'President', hall: 'Hall A' },
-  team_lead: { id: 'mock-worker-teamlead', role: 'team_lead', team: 'Media', teams: ['Media', 'Technical'], leadingTeam: 'Media', excoPosition: 'Media Coordinator', hall: 'Hall D' },
-  hall_rep: { id: 'mock-worker-hallrep', role: 'hall_rep', team: 'Welfare', teams: ['Welfare'], hall: 'Hall B' },
-  finance: { id: 'mock-worker-finance', role: 'finance', team: 'Finance', teams: ['Finance'], excoPosition: 'Financial Secretary', hall: 'Hall C' },
+  admin: { id: 'mock-worker-admin', name: 'Osaro Igbinedion', role: 'admin', team: 'Exco', teams: ['Executive Council'], excoPosition: 'President', hall: 'Hall A' },
+  team_lead: { id: 'mock-worker-teamlead', name: 'Tobi Adebayo', role: 'team_lead', team: 'Media', teams: ['Media', 'Technical'], leadingTeam: 'Media', excoPosition: 'Media Coordinator', hall: 'Hall D' },
+  hall_rep: { id: 'mock-worker-hallrep', name: 'Ivie Aigbe', role: 'hall_rep', team: 'Welfare', teams: ['Welfare'], hall: 'Hall B' },
+  finance: { id: 'mock-worker-finance', name: 'Efosa Osagie', role: 'finance', team: 'Finance', teams: ['Finance'], excoPosition: 'Financial Secretary', hall: 'Hall C' },
 }
 
 export function isMockAuthEnabled(): boolean {
@@ -53,6 +53,7 @@ export async function getSession(): Promise<ECCFSession | null> {
 
   const user = session.user as unknown as {
     id?: string
+    name?: string
     role?: WorkerRole
     team?: string
     teams?: string[]
@@ -64,6 +65,7 @@ export async function getSession(): Promise<ECCFSession | null> {
 
   return {
     id: user.id,
+    name: user.name || (session.user as { name?: string | null })?.name || undefined,
     role: user.role,
     team: user.team || 'Exco',
     teams: user.teams,
