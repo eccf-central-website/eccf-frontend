@@ -24,8 +24,17 @@ export const SERVICE_TYPES = [
   'Team Meeting',
   'Sunday Service',
   'Wednesday Bible Study',
+  'Academic Service',
   'Exco Meeting',
   'Special Programme',
 ] as const
 
+export const GENERAL_SERVICE_TYPES = [
+  'Sunday Service',
+  'Wednesday Bible Study',
+  'Academic Service',
+  'Special Programme',
+] as const
+
 export type ServiceType = (typeof SERVICE_TYPES)[number]
+export type GeneralServiceType = (typeof GENERAL_SERVICE_TYPES)[number]

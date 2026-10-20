@@ -29,6 +29,20 @@ export async function middleware(req: NextRequest) {
   // When DASHBOARD_MOCK_AUTH=1 is set outside production, pass through
   const isMockAuth = process.env.NODE_ENV !== 'production' && process.env.DASHBOARD_MOCK_AUTH === '1'
 
+  // Fix 5: Explicit redirect from /dashboard/login to /login preserving search parameters
+  if (pathname === '/dashboard/login' || pathname === '/dashboard/login/') {
+    const loginUrl = new URL('/login', req.url)
+    req.nextUrl.searchParams.forEach((value, key) => {
+      // Prevent callbackUrl loop if it pointed back to /dashboard/login
+      if (key === 'callbackUrl' && (value === '/dashboard/login' || value === '/dashboard/login/')) {
+        loginUrl.searchParams.set(key, '/dashboard')
+      } else {
+        loginUrl.searchParams.set(key, value)
+      }
+    })
+    return NextResponse.redirect(loginUrl)
+  }
+
   if (pathname.startsWith('/dashboard') && !isMockAuth) {
     const token = await getToken({
       req,

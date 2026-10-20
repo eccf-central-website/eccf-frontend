@@ -136,12 +136,18 @@ export interface AttendanceLedger {
   serviceType:
     | 'Sunday Service'
     | 'Wednesday Bible Study'
+    | 'Academic Service'
     | 'Team Meeting'
     | 'Exco Meeting'
     | 'Special Programme'
   meetingTitle?: string
   team?: FellowshipTeam
   totalCount: number
+  menCount?: number
+  womenCount?: number
+  childrenCount?: number
+  firstTimersCount?: number
+  notes?: string
   attendees?: Pick<Worker, '_id' | 'fullName' | 'team'>[]
   loggedBy: Pick<Worker, '_id' | 'fullName'>
 }

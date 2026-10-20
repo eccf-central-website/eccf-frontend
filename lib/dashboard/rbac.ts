@@ -23,6 +23,8 @@ export type DashboardSection =
   | 'firstTimers'
   | 'welfare'
   | 'prayerRequests'
+  | 'announcements'
+  | 'sermons'
 
 export type DashboardPermission =
   | 'attendance:create'
@@ -52,6 +54,8 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
   firstTimers: '/dashboard/first-timers',
   welfare: '/dashboard/welfare',
   prayerRequests: '/dashboard/prayer-requests',
+  announcements: '/dashboard/announcements',
+  sermons: '/dashboard/sermons',
 }
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
@@ -62,6 +66,8 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   firstTimers: ['admin', 'hall_rep'],
   welfare: ['admin', 'team_lead', 'hall_rep'],
   prayerRequests: ['admin', 'team_lead', 'hall_rep'],
+  announcements: ['admin', 'team_lead'],
+  sermons: ['admin', 'team_lead'],
 }
 
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
@@ -74,29 +80,129 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
 }
 
-export function isOutreachLeader(session?: { team?: string; excoPosition?: string } | null): boolean {
+export function isCSGBMember(
+  session?: {
+    role?: string
+    excoPosition?: string
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.role === 'admin') return true
+  const position = (session.excoPosition || '').toLowerCase()
+  return (
+    position.includes('president') ||
+    position.includes('vice president') ||
+    position.includes('general secretary') ||
+    position.includes('prayer')
+  )
+}
+
+export function isMediaLeader(
+  session?: {
+    role?: string
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+  } | null
+): boolean {
+  if (!session) return false
+  const role = session.role
+  const isLeaderOrAdmin = role === 'team_lead' || role === 'admin'
+  if (!isLeaderOrAdmin) return false
+
+  const team = (session.team || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const position = (session.excoPosition || '').toLowerCase()
+  const hasMediaInTeams = session.teams?.some((t) => t.toLowerCase().includes('media')) ?? false
+
+  return (
+    team.includes('media') ||
+    leadingTeam.includes('media') ||
+    position.includes('media') ||
+    hasMediaInTeams
+  )
+}
+
+export function isUsheringTeam(
+  session?: {
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+  } | null
+): boolean {
+  if (!session) return false
+  const team = (session.team || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const position = (session.excoPosition || '').toLowerCase()
+  const hasUsherInTeams = session.teams?.some((t) => t.toLowerCase().includes('usher')) ?? false
+
+  return (
+    team.includes('usher') ||
+    leadingTeam.includes('usher') ||
+    position.includes('usher') ||
+    hasUsherInTeams
+  )
+}
+
+export function isOutreachLeader(
+  session?: {
+    team?: string
+    teams?: string[]
+    excoPosition?: string
+    leadingTeam?: string
+  } | null
+): boolean {
   if (!session) return false
   const team = (session.team || '').toLowerCase()
   const position = (session.excoPosition || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const hasOutreachInTeams =
+    session.teams?.some((t) => {
+      const s = t.toLowerCase()
+      return s.includes('outreach') || s.includes('evangelism') || s.includes('follow')
+    }) ?? false
   return (
     team.includes('outreach') ||
     team.includes('evangelism') ||
     team.includes('follow') ||
     position.includes('outreach') ||
     position.includes('evangelism') ||
-    position.includes('follow')
+    position.includes('follow') ||
+    leadingTeam.includes('outreach') ||
+    leadingTeam.includes('evangelism') ||
+    leadingTeam.includes('follow') ||
+    hasOutreachInTeams
   )
 }
 
 export function canAccessSection(
   role: WorkerRole,
   section: DashboardSection,
-  session?: { team?: string; excoPosition?: string } | null
+  session?: {
+    role?: WorkerRole
+    team?: string
+    teams?: string[]
+    excoPosition?: string
+    leadingTeam?: string
+  } | null
 ): boolean {
+  const currentSession = session ? { ...session, role: session.role || role } : { role }
+
+  if (section === 'announcements') {
+    return isCSGBMember(currentSession)
+  }
+  if (section === 'sermons') {
+    return isMediaLeader(currentSession)
+  }
+  if (section === 'attendance') {
+    return role === 'admin' || role === 'team_lead' || role === 'hall_rep'
+  }
   if (section === 'firstTimers') {
     if (role === 'admin' || role === 'hall_rep') return true
     if (role === 'team_lead') {
-      return session ? isOutreachLeader(session) : false
+      return isOutreachLeader(currentSession)
     }
     return false
   }

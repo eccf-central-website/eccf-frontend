@@ -48,10 +48,17 @@ export default async function DashboardOverviewPage() {
         <DeniedToast />
       </Suspense>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-serif text-2xl text-foreground">Welcome back</h2>
-            <Badge>{ROLE_LABELS[session.role]}</Badge>
+        <div className="space-y-1.5 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <h2 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-foreground">
+              Welcome back, {session.name || 'Leader'}
+            </h2>
+            {session.excoPosition && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-xs">
+                {session.excoPosition}
+              </span>
+            )}
+            <Badge variant="secondary" className="text-xs font-medium">{ROLE_LABELS[session.role]}</Badge>
             {session.teams && session.teams.length > 0 ? (
               session.teams.map((t) => (
                 <Badge key={t} variant="outline" className="text-xs">
@@ -67,7 +74,7 @@ export default async function DashboardOverviewPage() {
           <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across the fellowship.</p>
         </div>
 
-        <div>
+        <div className="self-start sm:self-auto shrink-0">
           <Link
             href="/dashboard/workers"
             className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[#0077cc] hover:bg-[#0060aa] text-white font-bold text-xs shadow-xs transition-colors"

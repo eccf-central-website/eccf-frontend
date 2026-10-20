@@ -62,6 +62,7 @@ export default async function DashboardShellLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           sections={sections}
+          name={session.name}
           role={session.role}
           team={session.team}
           teams={session.teams}
