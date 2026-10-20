@@ -55,19 +55,22 @@ export default function UserMenu({ name, role, team, teams, excoPosition, devToo
         <Button
           variant="ghost"
           className="h-10 gap-2 px-2 focus-visible:ring-2 sm:px-3"
-          aria-label={`Account menu, signed in as ${excoPosition || ROLE_LABELS[role]}`}
+          aria-label={`Account menu, signed in as ${displayName}`}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground">
-            <UserRound aria-hidden="true" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground text-xs font-semibold">
+            {initials ? initials : <UserRound aria-hidden="true" className="h-4 w-4" />}
           </span>
-          <span className="hidden text-sm font-medium sm:inline">{excoPosition || ROLE_LABELS[role]}</span>
+          <span className="hidden text-sm font-medium sm:inline truncate max-w-[150px]">{displayName}</span>
           <ChevronDown aria-hidden="true" className="hidden text-muted-foreground sm:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="flex flex-col gap-1.5 font-normal">
           <span className="text-xs text-muted-foreground">Signed in as</span>
-          <span className="flex items-center gap-2">
+          {name && (
+            <span className="text-sm font-semibold text-foreground truncate">{name}</span>
+          )}
+          <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{ROLE_LABELS[role]}</Badge>
             <span className="truncate text-sm font-medium text-foreground">
               {excoPosition || `${displayTeam} team`}

@@ -95,7 +95,7 @@ async function hallScope(session: ECCFSession): Promise<string | null> {
 /** Team used to scope team_lead reads; null means all teams. */
 export function teamScope(session: ECCFSession): string | null {
   if (!isTeamScoped(session.role, session)) return null
-  return session.leadingTeam || session.team || (session.teams && session.teams[0]) || '__no-team__'
+  return session.leadingTeam || session.team || '__no-team__'
 }
 
 /** Boundaries follow the fellowship's calendar (Africa/Lagos), not UTC; see ../dates. */
@@ -117,7 +117,7 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
   const showFinance = hasPermission(session.role, 'stats:finance')
   const hall = await hallScope(session)
   const team = teamScope(session)
-  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/(?:\s+team)+$/i, '').trim() : null
   const params = { monthStart: monthStart(), weekStart: weekStart(), hall, team, cleanTeam }
 
   if (dataSource() === 'mock') {
@@ -197,10 +197,10 @@ export function matchesTeam(
 
   return allWorkerTeams.some((wt) => {
     const normWt = wt.toLowerCase()
-    const cleanWt = normWt.replace(/\s+team$/, '').trim()
+    const cleanWt = normWt.replace(/(?:\s+team)+$/i, '').trim()
     return targets.some((target) => {
       const normTarget = target.toLowerCase()
-      const cleanTarget = normTarget.replace(/\s+team$/, '').trim()
+      const cleanTarget = normTarget.replace(/(?:\s+team)+$/i, '').trim()
       return (
         normWt === normTarget ||
         cleanWt === cleanTarget ||
@@ -214,7 +214,7 @@ export function matchesTeam(
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   const hall = await hallScope(session)
   const team = teamScope(session)
-  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/(?:\s+team)+$/i, '').trim() : null
   const rawRows =
     dataSource() === 'mock'
       ? (await fromMock(MOCK_WORKERS, [])).filter(
@@ -269,7 +269,7 @@ export async function fetchWorkersForAttendance(
   targetTeam?: string
 ): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]> {
   const team = session.role === 'team_lead' ? (session.leadingTeam || session.team) : (targetTeam || null)
-  const cleanTeam = team ? team.toLowerCase().trim().replace(/\s+team$/, '').trim() : null
+  const cleanTeam = team ? team.toLowerCase().trim().replace(/(?:\s+team)+$/i, '').trim() : null
   if (dataSource() === 'mock') {
     const all = await fromMock(MOCK_WORKERS, [])
     return all

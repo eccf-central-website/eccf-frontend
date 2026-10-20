@@ -94,7 +94,7 @@ function normalizeTeam(t?: string | null): string {
   return t
     .toLowerCase()
     .trim()
-    .replace(/\s+team$/, '')
+    .replace(/(?:\s+team)+$/i, '')
     .trim()
 }
 
@@ -144,39 +144,31 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
   const isHallRep = session.role === 'hall_rep'
   const isMedia = isMediaTeam(session)
 
-  // Operational team target for non-media team leads
-  const targetLeaderTeams = useMemo(() => {
+  // Operational team target for non-media team leads: strictly session.leadingTeam || session.team
+  const targetLeaderTeam = useMemo(() => {
     if (!isTeamLead || isMedia) return null
-    if (session.leadingTeam) return [session.leadingTeam]
-    const list: string[] = []
-    if (session.team) {
-      list.push(...session.team.split(',').map((s) => s.trim()))
-    }
-    if (session.teams && session.teams.length > 0) {
-      list.push(...session.teams)
-    }
-    return Array.from(new Set(list.filter(Boolean)))
-  }, [isTeamLead, isMedia, session.leadingTeam, session.team, session.teams])
+    return (session.leadingTeam || session.team || '').trim() || null
+  }, [isTeamLead, isMedia, session.leadingTeam, session.team])
 
   // Scope workers for non-media team leads
   const scopedWorkers = useMemo(() => {
-    if (targetLeaderTeams && targetLeaderTeams.length > 0) {
-      return rows.filter((r) => matchesWorkerTeam(r, targetLeaderTeams))
+    if (isTeamLead && !isMedia && targetLeaderTeam) {
+      return rows.filter((r) => matchesWorkerTeam(r, targetLeaderTeam))
     }
     return rows
-  }, [rows, targetLeaderTeams])
+  }, [rows, isTeamLead, isMedia, targetLeaderTeam])
 
   // Summary counts
   const pendingWorkers = useMemo(
-    () => scopedWorkers.filter((r) => r.verificationStatus === 'pending'),
+    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'pending'),
     [scopedWorkers]
   )
   const verifiedWorkers = useMemo(
-    () => scopedWorkers.filter((r) => r.verificationStatus === 'verified'),
+    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'verified'),
     [scopedWorkers]
   )
   const rejectedWorkers = useMemo(
-    () => scopedWorkers.filter((r) => r.verificationStatus === 'rejected'),
+    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'rejected'),
     [scopedWorkers]
   )
 

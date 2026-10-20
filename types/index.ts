@@ -214,10 +214,20 @@ export interface Announcement {
   _id: string
   _type: 'announcement'
   title: string
-  content: PortableTextBlock[]
+  category?: 'WEEKLY SERVICES' | 'ACADEMIC & EXAMS' | 'BIBLE STUDY' | 'EXCO UPDATES' | 'GENERAL' | string
+  isPinned?: boolean
+  time?: string
+  location?: string
+  eventDate?: string // ISO date YYYY-MM-DD
   publishDate: string // ISO date YYYY-MM-DD
+  content: string | PortableTextBlock[]
   /** Controls visibility — false = draft, even if publishDate has passed */
   isPublished: boolean
+  sendBroadcastOnPublish?: boolean
+  sentToSubscribers?: boolean
+  sentAt?: string
+  _createdAt?: string
+  _updatedAt?: string
 }
 
 // ---------------------------------------------------------------------------

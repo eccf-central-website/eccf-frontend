@@ -31,6 +31,7 @@ export type DashboardPermission =
   | 'finance:create'
   | 'welfare:resolve'
   | 'sermons:sync'
+  | 'announcements:manage'
   /** Overview cards that show money totals */
   | 'stats:finance'
   /** Overview cards about people (first-timers, welfare, workers) */
