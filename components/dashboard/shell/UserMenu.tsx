@@ -26,6 +26,7 @@ import {
 } from '@/components/dashboard/ui/dropdown-menu'
 
 interface UserMenuProps {
+  name?: string
   role: WorkerRole
   team: string
   teams?: string[]
@@ -33,10 +34,20 @@ interface UserMenuProps {
   devTools?: React.ReactNode
 }
 
-export default function UserMenu({ role, team, teams, excoPosition, devTools }: UserMenuProps) {
+export default function UserMenu({ name, role, team, teams, excoPosition, devTools }: UserMenuProps) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
   const displayTeam = teams && teams.length > 0 ? teams.join(', ') : team
+  const displayName = name || excoPosition || ROLE_LABELS[role]
+  const initials = name
+    ? name
+        .trim()
+        .split(/\s+/)
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : null
 
   return (
     <DropdownMenu>

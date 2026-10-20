@@ -117,22 +117,37 @@ export const MOCK_PRAYER_REQUESTS: PrayerRequest[] = [
   { _id: 'mock-pr-05', _type: 'prayerRequest', request: 'Peace in my family and provision for school fees next session.', dateSubmitted: isoDateTime(16) },
 ]
 
-const SERVICE_ROTATION: AttendanceRow['serviceType'][] = ['Sunday Service', 'Wednesday Bible Study', 'Team Meeting', 'Exco Meeting']
+const SERVICE_ROTATION: AttendanceRow['serviceType'][] = ['Sunday Service', 'Wednesday Bible Study', 'Team Meeting', 'Sunday Service', 'Academic Service', 'Team Meeting']
 
 export const MOCK_ATTENDANCE: AttendanceRow[] = Array.from({ length: 14 }, (_, i) => {
   const serviceType = SERVICE_ROTATION[i % SERVICE_ROTATION.length]
-  const base = serviceType === 'Sunday Service' ? 310 : serviceType === 'Wednesday Bible Study' ? 140 : serviceType === 'Team Meeting' ? 35 : 14
+  const isGeneral = serviceType !== 'Team Meeting' && serviceType !== 'Exco Meeting'
+  const base = serviceType === 'Sunday Service' ? 320 : serviceType === 'Wednesday Bible Study' ? 140 : serviceType === 'Academic Service' ? 210 : 35
   const teamName = serviceType === 'Team Meeting' ? TEAMS[i % TEAMS.length] : undefined
   const meetingTitle = serviceType === 'Team Meeting' ? `${teamName} Weekly Rehearsal & Review` : undefined
+  const totalCount = base + ((i * 17) % 40)
+  
+  const menCount = isGeneral ? Math.round(totalCount * 0.42) : undefined
+  const womenCount = isGeneral ? Math.round(totalCount * 0.48) : undefined
+  const childrenCount = isGeneral ? Math.round(totalCount * 0.05) : undefined
+  const firstTimersCount = isGeneral ? Math.max(2, totalCount - ((menCount || 0) + (womenCount || 0) + (childrenCount || 0))) : undefined
+
   return {
     _id: `mock-att-${String(i + 1).padStart(2, '0')}`,
     date: isoDate(i * 3 + 1),
     serviceType,
     meetingTitle,
     teamName,
-    totalCount: base + ((i * 17) % 40),
-    attendeeCount: serviceType === 'Exco Meeting' || serviceType === 'Team Meeting' ? base : 0,
-    loggedBy: { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo' },
+    totalCount,
+    attendeeCount: serviceType === 'Team Meeting' ? totalCount : 0,
+    menCount,
+    womenCount,
+    childrenCount,
+    firstTimersCount,
+    notes: isGeneral && i % 3 === 0 ? 'Smooth service. Ushering headcount completed across all overflow wings.' : undefined,
+    loggedBy: isGeneral 
+      ? { _id: 'mock-worker-usher', fullName: 'Ushering Head Coordinator' }
+      : { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo' },
   }
 })
 
