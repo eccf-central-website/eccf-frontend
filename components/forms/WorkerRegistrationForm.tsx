@@ -526,12 +526,15 @@ export function WorkerRegistrationForm({
             }
           }
         }
+        toast.success(finalResult.message || 'Registration submitted successfully!')
         setSuccessResult(finalResult)
       } else {
         setError(registrationResult.error || 'Failed to submit registration. Please check your fields.')
+        toast.error(registrationResult.error || 'Failed to submit registration. Please check your fields.')
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
+      toast.error('An unexpected error occurred. Please try again.')
     } finally {
       setSubmitting(false)
       setTurnstileToken('')
@@ -619,6 +622,11 @@ export function WorkerRegistrationForm({
             <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
               Your profile has been logged in the ECCF directory. Below is the breakdown of your application and verification status.
             </p>
+            {successResult.message && (
+              <div className="mx-auto max-w-lg mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 shadow-xs">
+                {successResult.message}
+              </div>
+            )}
           </div>
         </div>
 

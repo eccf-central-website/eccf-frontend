@@ -20,7 +20,7 @@ import { createHash, randomBytes } from 'crypto'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
@@ -898,6 +898,34 @@ function normalizeCsgbOffice(officeRaw?: string): string {
 /**
  * Primary Worker Registration & Upsert Action — Phase 3 Unified Flow
  */
+/**
+ * Ensures a Clerk user exists for the given email so the worker can sign in later.
+ * Reuses an existing Clerk user when one already exists for the email.
+ */
+async function ensureClerkUserForWorkerEmail(
+  email: string,
+  firstName?: string,
+  lastName?: string
+): Promise<string | undefined> {
+  try {
+    const client = clerkClient()
+    const existing = await client.users.getUserList({ emailAddress: [email] })
+    if (existing.data && existing.data.length > 0) {
+      return existing.data[0].id
+    }
+    const created = await client.users.createUser({
+      emailAddress: [email],
+      firstName: firstName?.trim() || undefined,
+      lastName: lastName?.trim() || undefined,
+      skipPasswordRequirement: true,
+    })
+    return created.id
+  } catch (err) {
+    console.error('[ensureClerkUserForWorkerEmail] Failed to ensure Clerk user:', err)
+    return undefined
+  }
+}
+
 export async function registerWorker(
   input: WorkerRegistrationInput
 ): Promise<WorkerRegistrationResult> {
@@ -989,6 +1017,13 @@ export async function registerWorker(
     const phoneBlindIndex = createBlindIndex(cleanPhone)
     const allBlindIndexes = Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
     const cleanEmail = input.email.trim().toLowerCase()
+    if (!resolvedClerkUserId) {
+      resolvedClerkUserId = await ensureClerkUserForWorkerEmail(
+        cleanEmail,
+        input.firstName,
+        input.lastName
+      )
+    }
     const cleanTeams = Array.from(new Set(selectedTeams))
     const today = new Date().toISOString().split('T')[0]
 
@@ -1352,6 +1387,58 @@ export async function registerWorker(
  * Direct worker portrait upload action.
  * Securely uploads a portrait photo directly to Sanity Assets and attaches it to the worker profile.
  */
+/**
+ * Prepares login for a worker who registered before Clerk account creation.
+ * Ensures a Clerk user exists and links it to the Sanity worker document.
+ */
+export async function activateRegisteredWorkerLogin(
+  email: string
+): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const cleanEmail = email?.trim().toLowerCase()
+  if (!cleanEmail) {
+    return { ok: false, error: 'Enter your email address.' }
+  }
+
+  try {
+    const worker = await sanityPrivateClient.fetch<{
+      _id: string
+      fullName?: string
+      firstName?: string
+      lastName?: string
+      clerkUserId?: string
+      email?: string
+    } | null>(
+      `*[_type == "worker" && lower(email) == $email][0]{_id, fullName, firstName, lastName, clerkUserId, email}`,
+      { email: cleanEmail }
+    )
+
+    if (!worker) {
+      return { ok: false, error: 'No registered worker found for that email address.' }
+    }
+
+    let clerkUserId = worker.clerkUserId
+    if (!clerkUserId) {
+      clerkUserId = await ensureClerkUserForWorkerEmail(cleanEmail, worker.firstName, worker.lastName)
+    }
+
+    if (!clerkUserId) {
+      return { ok: false, error: 'Unable to prepare your login. Please try again.' }
+    }
+
+    if (!worker.clerkUserId) {
+      await patchPrivateDocument(worker._id).set({ clerkUserId }).commit()
+    }
+
+    return {
+      ok: true,
+      message: 'Your account is ready. Please sign in above using the same email address.',
+    }
+  } catch (err) {
+    console.error('[activateRegisteredWorkerLogin] Failed:', err)
+    return { ok: false, error: 'Unable to prepare your login. Please try again.' }
+  }
+}
+
 export async function uploadWorkerPhotoDirectAction({
   workerId,
   base64Image,

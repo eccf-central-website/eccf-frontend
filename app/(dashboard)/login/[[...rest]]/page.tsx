@@ -5,17 +5,32 @@ import Link from 'next/link'
 import { SignIn } from '@clerk/nextjs'
 import LoadingState from '@/components/common/LoadingState'
 import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
+import { activateRegisteredWorkerLogin } from '@/app/actions/worker-registration'
 
 function ClerkLoginCard() {
   const [ready, setReady] = useState(false)
+  const [activateEmail, setActivateEmail] = useState('')
+  const [activateStatus, setActivateStatus] = useState<{ ok?: boolean; message?: string; error?: string } | null>(null)
+  const [activating, setActivating] = useState(false)
 
-  // Hold loading animation for a smooth minimum duration so users can see the branded transition
   useEffect(() => {
     const timer = setTimeout(() => {
       setReady(true)
-    }, 1800) // 1.8 seconds smooth branded presentation
+    }, 1800)
     return () => clearTimeout(timer)
   }, [])
+
+  const handleActivate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setActivating(true)
+    setActivateStatus(null)
+    try {
+      const result = await activateRegisteredWorkerLogin(activateEmail)
+      setActivateStatus(result)
+    } finally {
+      setActivating(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-12 text-slate-100">
@@ -70,6 +85,36 @@ function ClerkLoginCard() {
               },
             }}
           />
+
+          {/* Activation for previously registered workers */}
+          <div className="w-full border-t border-slate-800 pt-4 space-y-3">
+            <p className="text-xs text-slate-400 text-center">
+              Registered before but cannot sign in? Activate your login below.
+            </p>
+            <form onSubmit={handleActivate} className="space-y-2">
+              <input
+                type="email"
+                value={activateEmail}
+                onChange={(e) => setActivateEmail(e.target.value)}
+                placeholder="Your registered email"
+                className="w-full h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                required
+              />
+              <button
+                type="submit"
+                disabled={activating}
+                className="w-full h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium transition-all disabled:opacity-50"
+              >
+                {activating ? 'Activating...' : 'Activate Login'}
+              </button>
+            </form>
+            {activateStatus?.ok && (
+              <p className="text-xs text-emerald-400 text-center">{activateStatus.message}</p>
+            )}
+            {activateStatus && !activateStatus.ok && (
+              <p className="text-xs text-red-400 text-center">{activateStatus.error}</p>
+            )}
+          </div>
 
           {/* Footer Navigation */}
           <div className="text-center">

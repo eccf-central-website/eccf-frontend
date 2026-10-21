@@ -4,6 +4,7 @@
  * (dashboard) route group and does not inherit any of this.
  */
 
+import { Toaster } from 'sonner'
 import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -52,6 +53,7 @@ export default async function PublicLayout({
       <Footer settings={settings} />
       <TheLauncher />
       <ScrollToTop />
+      <Toaster position="top-center" richColors closeButton />
     </>
   );
 }
