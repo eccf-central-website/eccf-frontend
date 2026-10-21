@@ -13,20 +13,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isDashboardRoute = createRouteMatcher(['/dashboard(.*)'])
 
-const clerkPublishableKey =
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_placeholder'
-    ? process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-    : 'pk_test_Y2xlcmsuZXhhbXBsZS5jb20k'
-
-const clerkSecretKey =
-  process.env.CLERK_SECRET_KEY &&
-  process.env.CLERK_SECRET_KEY !== 'sk_test_placeholder'
-    ? process.env.CLERK_SECRET_KEY
-    : 'sk_test_placeholder_secret_key_1234567890'
-
-export default clerkMiddleware(
-  (auth, req) => {
+export default clerkMiddleware((auth, req) => {
     const { pathname } = req.nextUrl
     const isPreviewParam = req.nextUrl.searchParams.get('preview') === 'true'
     const isPreviewCookie =
@@ -76,10 +63,6 @@ export default clerkMiddleware(
     }
 
     return response
-  },
-  {
-    publishableKey: clerkPublishableKey,
-    secretKey: clerkSecretKey,
   }
 )
 
