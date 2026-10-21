@@ -11,8 +11,8 @@ export async function syncSermonsAction() {
     return { success: false, error: 'Unauthorized: Authentication required.' }
   }
 
-  if (!isMediaLeader(session) && session.role !== 'admin' && process.env.NODE_ENV === 'production') {
-    return { success: false, error: 'Permission denied: CSGB or Media Team leaders only.' }
+  if (!isMediaLeader(session)) {
+    return { success: false, error: 'Permission denied: Exclusive to Media Team excos.' }
   }
 
   try {

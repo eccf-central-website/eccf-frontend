@@ -8,63 +8,76 @@
  * - Redirects /dashboard/login to /login preserving search parameters
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest, type NextFetchEvent } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isDashboardRoute = createRouteMatcher(['/dashboard(.*)'])
 
-export default clerkMiddleware((auth, req) => {
-    const { pathname } = req.nextUrl
-    const isPreviewParam = req.nextUrl.searchParams.get('preview') === 'true'
-    const isPreviewCookie =
-      req.cookies.get('preview')?.value === 'true' || req.cookies.has('__prerender_bypass')
-    const isPreview = isPreviewParam || isPreviewCookie
+const clerkHandler = clerkMiddleware((auth, req) => {
+  const { pathname } = req.nextUrl
+  const isPreviewParam = req.nextUrl.searchParams.get('preview') === 'true'
+  const isPreviewCookie =
+    req.cookies.get('preview')?.value === 'true' || req.cookies.has('__prerender_bypass')
+  const isPreview = isPreviewParam || isPreviewCookie
 
-    const requestHeaders = new Headers(req.headers)
-    if (isPreview) {
-      requestHeaders.set('x-preview-mode', 'true')
-    }
-
-    // Explicit redirect from /dashboard/login to /login preserving search parameters
-    if (pathname === '/dashboard/login' || pathname === '/dashboard/login/') {
-      const loginUrl = new URL('/login', req.url)
-      req.nextUrl.searchParams.forEach((value, key) => {
-        // Prevent callbackUrl loop if it pointed back to /dashboard/login
-        if (key === 'callbackUrl' && (value === '/dashboard/login' || value === '/dashboard/login/')) {
-          loginUrl.searchParams.set(key, '/dashboard')
-        } else {
-          loginUrl.searchParams.set(key, value)
-        }
-      })
-      return NextResponse.redirect(loginUrl)
-    }
-
-    // When DASHBOARD_MOCK_AUTH=1 is set outside production, pass through
-    const isMockAuth = process.env.NODE_ENV !== 'production' && process.env.DASHBOARD_MOCK_AUTH === '1'
-
-    if (isDashboardRoute(req) && !isMockAuth) {
-      auth().protect()
-    }
-
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
-
-    // If preview parameter is present, set partitioned SameSite=None cookie for seamless iframe rendering
-    if (isPreviewParam && !req.cookies.has('preview')) {
-      response.cookies.set('preview', 'true', {
-        path: '/',
-        sameSite: 'none',
-        secure: true,
-        maxAge: 60 * 60 * 24, // 24 hours
-      })
-    }
-
-    return response
+  const requestHeaders = new Headers(req.headers)
+  if (isPreview) {
+    requestHeaders.set('x-preview-mode', 'true')
   }
-)
+
+  // Explicit redirect from /dashboard/login to /login preserving search parameters
+  if (pathname === '/dashboard/login' || pathname === '/dashboard/login/') {
+    const loginUrl = new URL('/login', req.url)
+    req.nextUrl.searchParams.forEach((value, key) => {
+      // Prevent callbackUrl loop if it pointed back to /dashboard/login
+      if (key === 'callbackUrl' && (value === '/dashboard/login' || value === '/dashboard/login/')) {
+        loginUrl.searchParams.set(key, '/dashboard')
+      } else {
+        loginUrl.searchParams.set(key, value)
+      }
+    })
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // When DASHBOARD_MOCK_AUTH=1 is set outside production, pass through
+  const isMockAuth = process.env.NODE_ENV !== 'production' && process.env.DASHBOARD_MOCK_AUTH === '1'
+
+  if (isDashboardRoute(req) && !isMockAuth) {
+    auth().protect()
+  }
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+
+  // If preview parameter is present, set partitioned SameSite=None cookie for seamless iframe rendering
+  if (isPreviewParam && !req.cookies.has('preview')) {
+    response.cookies.set('preview', 'true', {
+      path: '/',
+      sameSite: 'none',
+      secure: true,
+      maxAge: 60 * 60 * 24, // 24 hours
+    })
+  }
+
+  return response
+})
+
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  try {
+    return await clerkHandler(req, event)
+  } catch (error) {
+    console.error('[Middleware] Clerk execution bypassed due to initialization error:', error)
+    // If not a protected dashboard route, permit public pages to render cleanly
+    if (!isDashboardRoute(req)) {
+      return NextResponse.next()
+    }
+    // If on a protected dashboard route, redirect to /login
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
+}
 
 export const config = {
   matcher: [

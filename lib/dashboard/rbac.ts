@@ -116,6 +116,7 @@ export function isCSGBMember(
 
 export function isMediaLeader(
   session?: {
+    access?: Record<string, any>
     role?: string
     team?: string
     teams?: string[]
@@ -124,22 +125,18 @@ export function isMediaLeader(
   } | null
 ): boolean {
   if (!session) return false
-  const role = session.role
-  const isLeaderOrAdmin = role === 'team_lead' || role === 'admin'
-  if (!isLeaderOrAdmin) return false
+  if (session.access && typeof (session.access as any).isMedia === 'boolean') {
+    return (session.access as any).isMedia === true
+  }
 
   const team = (session.team || '').toLowerCase()
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
   const position = (session.excoPosition || '').toLowerCase()
-  const hasMediaInTeams = session.teams?.some((t) => t.toLowerCase().includes('media')) ?? false
 
   return (
-    team.includes('media') ||
-    team.includes('publicity') ||
     leadingTeam.includes('media') ||
     position.includes('media') ||
-    position.includes('publicity') ||
-    hasMediaInTeams
+    team.includes('media')
   )
 }
 

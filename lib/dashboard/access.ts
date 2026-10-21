@@ -194,9 +194,12 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('welfare'))
 
   const isMedia =
-    isCSGB ||
     approvedPositions.some(
-      (p) => p.kind === 'team' && (p.teamKey === 'media' || p.teamName?.toLowerCase().includes('media'))
+      (p) =>
+        p.kind === 'team' &&
+        (p.teamKey === 'media' ||
+          p.teamKey === 'media-technical' ||
+          p.teamName?.toLowerCase().includes('media'))
     ) ||
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('media'))
 
