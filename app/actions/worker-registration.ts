@@ -21,7 +21,8 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
+import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
+import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
@@ -774,8 +775,18 @@ export async function getVerifiedWorkerProfile() {
   return confirmWorkerSelfServiceLink(token)
 }
 
+function normalizeTeamComparisonString(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/\bteam\b/g, '')
+    .replace(/[/&,._-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /**
  * Resolves an operational team name to a Sanity `teamUnit` reference.
+ * Supports exact match, canonical aliases, and robust normalization (& vs / vs -).
  */
 async function resolveTeamReference(
   teamName: string
@@ -783,36 +794,72 @@ async function resolveTeamReference(
   const normalized = teamName.trim()
   if (!normalized) return null
 
-  // 1. Exact match on name
-  let existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
-    `*[_type == "teamUnit" && lower(name) == lower($name)][0]{ _id, name }`,
-    { name: normalized }
+  // Fetch all team units once from Sanity
+  const allTeams = await sanityPrivateClient.fetch<Array<{ _id: string; name: string; key?: string }>>(
+    `*[_type == "teamUnit"]{ _id, name, key }`
   )
 
-  if (existingTeam?._id) {
-    return { _type: 'reference', _ref: existingTeam._id }
+  if (!allTeams || allTeams.length === 0) {
+    return null
   }
 
-  // 2. Fuzzy match stripping " Team" or matching keywords
-  const simplified = normalized.replace(/\s+team$/i, '').trim().toLowerCase()
-  existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
-    `*[_type == "teamUnit" && (lower(name) match $simplified || key match $simplified)][0]{ _id, name }`,
-    { simplified }
-  )
+  // 1. Exact case-insensitive match on name
+  let matched = allTeams.find((t) => t.name.toLowerCase() === normalized.toLowerCase())
+  if (matched?._id) return { _type: 'reference', _ref: matched._id }
 
-  if (existingTeam?._id) {
-    return { _type: 'reference', _ref: existingTeam._id }
+  // 2. Exact match on slug key
+  const requestedSlug = normalized.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  matched = allTeams.find((t) => t.key && t.key.toLowerCase() === requestedSlug)
+  if (matched?._id) return { _type: 'reference', _ref: matched._id }
+
+  // 3. Normalized string match (stripping 'team', treating '&' and '/' as equivalents)
+  const normReq = normalizeTeamComparisonString(normalized)
+  matched = allTeams.find((t) => {
+    const normName = normalizeTeamComparisonString(t.name)
+    return normName === normReq || normName.includes(normReq) || normReq.includes(normName)
+  })
+  if (matched?._id) return { _type: 'reference', _ref: matched._id }
+
+  // 4. Known fellowship aliases
+  if (normReq.includes('ushering') || normReq.includes('protocol')) {
+    matched = allTeams.find((t) => {
+      const n = t.name.toLowerCase()
+      return n.includes('ushering') || n.includes('protocol')
+    })
+    if (matched?._id) return { _type: 'reference', _ref: matched._id }
   }
 
-  // 3. Fallback: match any teamUnit where name contains the first word
-  const firstWord = normalized.split(/[\s/]+/)[0].toLowerCase()
-  existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
-    `*[_type == "teamUnit" && lower(name) match $firstWord][0]{ _id, name }`,
-    { firstWord }
-  )
+  if (normReq.includes('media') || normReq.includes('technical')) {
+    matched = allTeams.find((t) => {
+      const n = t.name.toLowerCase()
+      return n.includes('media') || n.includes('technical')
+    })
+    if (matched?._id) return { _type: 'reference', _ref: matched._id }
+  }
 
-  if (existingTeam?._id) {
-    return { _type: 'reference', _ref: existingTeam._id }
+  if (normReq.includes('drama') || normReq.includes('thespian')) {
+    matched = allTeams.find((t) => t.name.toLowerCase().includes('drama'))
+    if (matched?._id) return { _type: 'reference', _ref: matched._id }
+  }
+
+  if (normReq.includes('bible study') || normReq.includes('sunday school')) {
+    matched = allTeams.find((t) => t.name.toLowerCase().includes('bible study'))
+    if (matched?._id) return { _type: 'reference', _ref: matched._id }
+  }
+
+  // 5. If this is a canonical fellowship team that doesn't exist yet, auto-create it safely
+  const isCanonical = FELLOWSHIP_TEAMS.some(
+    (ft) => normalizeTeamComparisonString(ft) === normReq || ft.toLowerCase() === normalized.toLowerCase()
+  )
+  if (isCanonical) {
+    const teamId = `team-${requestedSlug}`
+    await sanityWriteClient.createIfNotExists({
+      _id: teamId,
+      _type: 'teamUnit',
+      name: normalized,
+      key: requestedSlug,
+    })
+    return { _type: 'reference', _ref: teamId }
   }
 
   return null
