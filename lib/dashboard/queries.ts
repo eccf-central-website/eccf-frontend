@@ -20,6 +20,8 @@ export const DASHBOARD_WORKERS_QUERY = `
     $hall == null || hall == $hall || lower(hall) == lower($hall)
   ) && (
     $team == null ||
+    $team in memberships[].team->name ||
+    count(memberships[team->name match $team || lower(team->name) == lower($team)]) > 0 ||
     team->name == $team ||
     team == $team ||
     lower(team->name) == lower($team) ||
@@ -31,6 +33,8 @@ export const DASHBOARD_WORKERS_QUERY = `
     count((teams[]->name)[@ match $team || lower(@) == lower($team)]) > 0 ||
     count(teams[@ match $team || lower(@) == lower($team)]) > 0 ||
     ($cleanTeam != null && (
+      $cleanTeam in memberships[].team->name ||
+      count(memberships[team->name match $cleanTeam || lower(team->name) == lower($cleanTeam)]) > 0 ||
       team->name match $cleanTeam ||
       team match $cleanTeam ||
       lower(team->name) == lower($cleanTeam) ||
@@ -44,20 +48,42 @@ export const DASHBOARD_WORKERS_QUERY = `
     _id,
     fullName,
     email,
-    "team": coalesce(team->name, team),
-    "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+    "team": coalesce(memberships[0].team->name, team->name, team),
+    "teams": coalesce(memberships[].team->name, teams[]->name, teams, [coalesce(team->name, team)]),
     hall,
-    role,
-    excoPosition,
-    isExcoApproved,
+    "role": coalesce(
+      select(
+        count(positions[kind == "csgb" && status == "approved"]) > 0 => "admin",
+        count(positions[kind == "hall" && status == "approved"]) > 0 => "hall_rep",
+        count(positions[kind == "team" && status == "approved"]) > 0 => "team_lead",
+        role
+      ),
+      "worker"
+    ),
+    "excoPosition": coalesce(
+      positions[status == "approved"][0].office,
+      select(
+        positions[status == "approved"][0].kind == "hall" => positions[status == "approved"][0].hall + " Pastor",
+        positions[status == "approved"][0].kind == "team" => positions[status == "approved"][0].team->name + " Lead",
+        excoPosition
+      )
+    ),
+    "isExcoApproved": coalesce(count(positions[status == "approved"]) > 0, isExcoApproved, false),
     requestedRole,
-    "verificationStatus": coalesce(verificationStatus, "verified"),
+    "verificationStatus": coalesce(
+      select(
+        count(memberships[status == "pending"]) > 0 => "pending",
+        count(memberships[status == "verified"]) > 0 => "verified",
+        count(memberships[status == "rejected"]) > 0 => "rejected",
+        "verified"
+      ),
+      verificationStatus,
+      "verified"
+    ),
     verifiedAt,
     verifiedBy,
     "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
     birthDate,
-    birthMonth,
-    birthDay,
     profileImageUrl,
     "positions": positions[]{
       _key,

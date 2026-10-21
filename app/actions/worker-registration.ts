@@ -1218,8 +1218,6 @@ export async function registerWorker(
         ...(cleanFirstName ? { firstName: cleanFirstName } : {}),
         ...(cleanMiddleName !== undefined ? { middleName: cleanMiddleName } : {}),
         ...(cleanLastName ? { lastName: cleanLastName } : {}),
-        team: primaryTeamReference,
-        teams: teamReferences,
         memberships,
         ...(positionsToSave ? { positions: positionsToSave } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
@@ -1243,9 +1241,15 @@ export async function registerWorker(
       await patchPrivateDocument(existing._id)
         .set(patchData)
         .unset([
-          'passwordHash', // Abolished in Phase 3
+          'passwordHash',
           'birthMonth',
           'birthDay',
+          'team',
+          'teams',
+          'role',
+          'excoPosition',
+          'isExcoApproved',
+          'verificationStatus',
           'selfServiceTokenHash',
           'selfServiceTokenPurpose',
           'selfServiceTokenExpiresAt',
@@ -1291,8 +1295,6 @@ export async function registerWorker(
         email: input.email.trim().toLowerCase(),
         phoneNumber: encrypt(cleanPhone),
         phoneBlindIndex,
-        team: primaryTeamReference,
-        teams: teamReferences,
         memberships,
         ...(positionsToSave ? { positions: positionsToSave } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
@@ -1300,7 +1302,6 @@ export async function registerWorker(
         roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: encryptedBirthDate,
         birthdayBlindIndex,
-        verificationStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         updateLog: initialLogs,

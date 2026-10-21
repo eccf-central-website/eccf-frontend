@@ -33,7 +33,7 @@ function ClerkLoginCard() {
           <SignIn
             routing="path"
             path="/login"
-            signUpUrl="/register"
+            signUpUrl="/sign-up"
             afterSignInUrl="/dashboard"
             appearance={{
               variables: {

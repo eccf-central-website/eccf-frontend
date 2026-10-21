@@ -25,7 +25,7 @@ const clerkHandler = clerkMiddleware((auth, req) => {
     requestHeaders.set('x-preview-mode', 'true')
   }
 
-  // Explicit redirect from /dashboard/login to /login preserving search parameters
+  // Explicit redirect from /dashboard/login or /dashboard/sign-up preserving search parameters
   if (pathname === '/dashboard/login' || pathname === '/dashboard/login/') {
     const loginUrl = new URL('/login', req.url)
     req.nextUrl.searchParams.forEach((value, key) => {
@@ -37,6 +37,14 @@ const clerkHandler = clerkMiddleware((auth, req) => {
       }
     })
     return NextResponse.redirect(loginUrl)
+  }
+
+  if (pathname === '/dashboard/sign-up' || pathname === '/dashboard/sign-up/') {
+    const signUpUrl = new URL('/sign-up', req.url)
+    req.nextUrl.searchParams.forEach((value, key) => {
+      signUpUrl.searchParams.set(key, value)
+    })
+    return NextResponse.redirect(signUpUrl)
   }
 
   // When DASHBOARD_MOCK_AUTH=1 is set outside production, pass through

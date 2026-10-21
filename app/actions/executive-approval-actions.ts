@@ -182,12 +182,6 @@ export async function approveExecutivePosition(
           },
         ])
       }
-      // Also update legacy verificationStatus for backwards compatibility
-      patch = patch.set({
-        verificationStatus: 'verified',
-        verifiedAt: decidedAt,
-        verifiedBy: 'Fellowship President',
-      })
     }
 
     const logMessage = `Executive position (${targetPos.office || targetPos.hall || targetPos.kind}) approved by President on ${today}`

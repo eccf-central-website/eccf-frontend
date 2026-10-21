@@ -195,7 +195,6 @@ export async function verifyWorkerMembership(
     }
 
     let patch = patchPrivateDocument(input.workerId).set({
-      verificationStatus: newStatus,
       verifiedAt: now.toISOString(),
       verifiedBy: approverRole,
       updatedAt: now.toISOString(),
