@@ -618,7 +618,7 @@ export default function TeamMeetingAttendanceView({
         </div>
 
         {/* Meeting Logs Table */}
-        <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40">

@@ -19,7 +19,7 @@ export default function FinanceTable({ entries }: FinanceTableProps) {
   }
 
   return (
-    <div className="rounded-xl border bg-card shadow-xs overflow-hidden">
+    <div className="rounded-xl border bg-card shadow-xs overflow-x-auto">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-muted/50 border-b text-xs uppercase tracking-wider text-muted-foreground font-medium">

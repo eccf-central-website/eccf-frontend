@@ -402,7 +402,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         </div>
       ) : viewMode === 'table' ? (
         /* Desktop & Tablet Table View */
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-md border bg-card overflow-x-auto">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">

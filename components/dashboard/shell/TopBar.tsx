@@ -40,12 +40,12 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1.5 border-b bg-background/90 px-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
       <MobileNav sections={sections} />
 
       <div className="min-w-0 flex-1">
         {section === 'overview' ? (
-          <h1 className="truncate font-serif text-xl text-foreground">{title}</h1>
+          <h1 className="truncate font-serif text-lg text-foreground sm:text-xl">{title}</h1>
         ) : (
           <nav aria-label="Breadcrumb">
             <ol className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -61,7 +61,7 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
                 <ChevronRight className="h-4 w-4" />
               </li>
               <li className="min-w-0">
-                <h1 aria-current="page" className="truncate font-serif text-xl text-foreground">
+                <h1 aria-current="page" className="truncate font-serif text-lg text-foreground sm:text-xl">
                   {title}
                 </h1>
               </li>
