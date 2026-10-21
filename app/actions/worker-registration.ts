@@ -67,6 +67,16 @@ export interface WorkerRegistrationResult {
   isExco?: boolean
   message?: string
   uploadGrant?: string
+  workerId?: string
+  fullName?: string
+  email?: string
+  phoneNumber?: string
+  hall?: string
+  roomNumber?: string
+  teams?: string[]
+  executiveApplication?: ExecutiveApplicationInput
+  profileImageUrl?: string
+  photoUploaded?: boolean
 }
 
 export interface CheckWorkerPhoneInput {
@@ -1067,10 +1077,19 @@ export async function registerWorker(
     if (resolvedTeamReferences.some((team) => !team)) {
       return { ok: false, error: 'One or more selected teams could not be found. Please refresh and select again.' }
     }
-    const teamReferences = resolvedTeamReferences.filter(
+    const cleanTeamRefs = resolvedTeamReferences.filter(
       (team): team is { _type: 'reference'; _ref: string } => Boolean(team)
     )
-    const primaryTeamReference = teamReferences[0]
+    const primaryTeamReference = {
+      _type: 'reference' as const,
+      _ref: cleanTeamRefs[0]._ref,
+    }
+    // Each reference in an array must have a unique _key for Sanity Studio validation
+    const teamReferences = cleanTeamRefs.map((ref) => ({
+      _key: `team_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
+      _type: 'reference' as const,
+      _ref: ref._ref,
+    }))
 
     // 5. Structure Operational Team Memberships
     // Maps selected teams into memberships[] with status: 'pending' (preserving existing verification if updating)
@@ -1083,13 +1102,13 @@ export async function registerWorker(
       }
     }
 
-    const memberships = teamReferences.map((ref) => {
+    const memberships = cleanTeamRefs.map((ref) => {
       const existingMem = existingMembershipsMap.get(ref._ref)
       if (existingMem) {
         return {
           _key: (existingMem._key as string) || `mem_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
           _type: 'teamMembership',
-          team: ref,
+          team: { _type: 'reference', _ref: ref._ref },
           status: (existingMem.status as string) || 'pending',
           ...(existingMem.decidedBy ? { decidedBy: existingMem.decidedBy } : {}),
           ...(existingMem.decidedAt ? { decidedAt: existingMem.decidedAt } : {}),
@@ -1098,7 +1117,7 @@ export async function registerWorker(
       return {
         _key: `mem_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
         _type: 'teamMembership',
-        team: ref,
+        team: { _type: 'reference', _ref: ref._ref },
         status: 'pending',
       }
     })
@@ -1243,8 +1262,16 @@ export async function registerWorker(
       return {
         ok: true,
         isExco: Boolean(input.isExco),
+        workerId: existing._id,
+        fullName: cleanFullName,
+        email: cleanEmail,
+        phoneNumber: cleanPhone,
+        hall: input.hall,
+        roomNumber: input.roomNumber,
+        teams: selectedTeams,
+        executiveApplication: input.executiveApplication,
         message: input.isExco
-          ? 'Your profile updates and executive application have been submitted.'
+          ? 'Your profile updates and executive application have been successfully submitted.'
           : 'Your worker profile has been updated.',
         ...(uploadGrant ? { uploadGrant } : {}),
       }
@@ -1289,7 +1316,7 @@ export async function registerWorker(
         newDoc.profileImageUrl = profileImageUrl
       }
 
-      await createPrivateDocument(newDoc)
+      const createdWorker = await createPrivateDocument(newDoc)
 
       revalidatePath('/dashboard/workers')
       revalidatePath('/register/status')
@@ -1297,8 +1324,16 @@ export async function registerWorker(
       return {
         ok: true,
         isExco: Boolean(input.isExco),
+        workerId: createdWorker._id,
+        fullName: cleanFullName,
+        email: cleanEmail,
+        phoneNumber: cleanPhone,
+        hall: input.hall,
+        roomNumber: input.roomNumber,
+        teams: selectedTeams,
+        executiveApplication: input.executiveApplication,
         message: input.isExco
-          ? `Welcome to ECCF, ${cleanFullName}! Your team registrations have been submitted for Team Lead verification, and your executive designation is pending Presidential approval.`
+          ? `Welcome to ECCF, ${cleanFullName}! Your workforce registration and executive application have been successfully submitted.`
           : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Lead(s) for verification.`,
         ...(uploadGrant ? { uploadGrant } : {}),
       }
@@ -1309,6 +1344,69 @@ export async function registerWorker(
       ok: false,
       error: 'An unexpected error occurred while saving your registration. Please try again.',
     }
+  }
+}
+
+/**
+ * Direct worker portrait upload action.
+ * Securely uploads a portrait photo directly to Sanity Assets and attaches it to the worker profile.
+ */
+export async function uploadWorkerPhotoDirectAction({
+  workerId,
+  base64Image,
+}: {
+  workerId: string
+  base64Image: string
+}): Promise<{ ok: boolean; fileUrl?: string; error?: string }> {
+  try {
+    if (!workerId || !base64Image) {
+      return { ok: false, error: 'Worker ID and image data are required.' }
+    }
+
+    const imageBytes = Buffer.from(base64Image, 'base64')
+    if (imageBytes.length === 0 || imageBytes.length > 2 * 1024 * 1024) {
+      return { ok: false, error: 'Photo must be 2MB or smaller.' }
+    }
+
+    let mimeType = 'image/jpeg'
+    if (imageBytes.length >= 8 && imageBytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+      mimeType = 'image/png'
+    } else if (imageBytes.length >= 12 && imageBytes.toString('ascii', 0, 4) === 'RIFF' && imageBytes.toString('ascii', 8, 12) === 'WEBP') {
+      mimeType = 'image/webp'
+    }
+
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
+    const sanityAsset = await sanityWriteClient.assets.upload('image', imageBytes, {
+      filename: `headshot_${workerId.replace(/[^a-zA-Z0-9]/g, '')}.${ext}`,
+      contentType: mimeType,
+    })
+
+    if (!sanityAsset?.url) {
+      return { ok: false, error: 'Could not store image asset.' }
+    }
+
+    await patchPrivateDocument(workerId)
+      .set({
+        profileImageUrl: sanityAsset.url,
+        headshot: {
+          _type: 'image',
+          asset: {
+            _type: 'reference',
+            _ref: sanityAsset._id,
+          },
+        },
+        updatedAt: new Date().toISOString(),
+      })
+      .append('updateLog', [`Uploaded official headshot on ${new Date().toISOString().slice(0, 10)}`])
+      .commit()
+
+    revalidatePath('/register/status')
+    revalidatePath('/dashboard/workers')
+
+    return { ok: true, fileUrl: sanityAsset.url }
+  } catch (err) {
+    console.error('[uploadWorkerPhotoDirectAction] Error:', err)
+    return { ok: false, error: 'Failed to upload photo. Please try again.' }
   }
 }
 
@@ -1356,9 +1454,7 @@ export async function getSignedInUserContext(): Promise<{
 /**
  * Retrieves registration status for the /register/status page.
  */
-export async function getRegistrationStatus(
-  queryPhoneOrEmail?: string
-): Promise<RegistrationStatusResult> {
+export async function getRegistrationStatus(): Promise<RegistrationStatusResult> {
   try {
     let signedInClerkUserId: string | undefined = undefined
     let clerkEmail: string | undefined = undefined
@@ -1387,20 +1483,20 @@ export async function getRegistrationStatus(
       }
     }
 
-    const queryTarget = queryPhoneOrEmail?.trim().toLowerCase() || null
-    const cleanQueryPhone = queryTarget ? queryTarget.replace(/\s+/g, '') : null
-    const queryBlindIndexes =
-      cleanQueryPhone && cleanQueryPhone.length >= 8
-        ? [createBlindIndex(cleanQueryPhone), ...getCandidateBlindIndexes(cleanQueryPhone)]
-        : []
+    // Security Gate: Disallow unauthenticated public searching to prevent PII harvesting
+    if (!signedInClerkUserId && !clerkEmail && !verifiedTokenWorkerId) {
+      return {
+        ok: false,
+        signedIn: false,
+        error: 'Please sign in with your account to view your registration status.',
+      }
+    }
 
     const worker = await sanityPrivateClient.fetch<Record<string, unknown> | null>(
       `*[_type == "worker" && (
         (defined($signedInClerkUserId) && clerkUserId == $signedInClerkUserId) ||
         (defined($clerkEmail) && lower(email) == lower($clerkEmail)) ||
-        (defined($verifiedTokenWorkerId) && _id == $verifiedTokenWorkerId) ||
-        (defined($queryTarget) && lower(email) == $queryTarget) ||
-        (defined($cleanQueryPhone) && (phoneNumber == $cleanQueryPhone || phoneBlindIndex in $queryBlindIndexes))
+        (defined($verifiedTokenWorkerId) && _id == $verifiedTokenWorkerId)
       )] | order(defined(clerkUserId) desc, _updatedAt desc)[0]{
         _id,
         fullName,
@@ -1443,9 +1539,6 @@ export async function getRegistrationStatus(
         signedInClerkUserId: signedInClerkUserId || null,
         clerkEmail: clerkEmail || null,
         verifiedTokenWorkerId: verifiedTokenWorkerId || null,
-        queryTarget: queryTarget || null,
-        cleanQueryPhone: cleanQueryPhone || null,
-        queryBlindIndexes,
       }
     )
 

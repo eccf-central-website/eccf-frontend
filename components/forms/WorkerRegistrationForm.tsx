@@ -8,6 +8,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
+  Clock,
   AlertCircle,
   Upload,
   UserCheck,
@@ -22,14 +24,17 @@ import {
   Users,
   ExternalLink,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   checkWorkerPhoneAndInitiateVerification,
   confirmWorkerSelfServiceLink,
   registerWorker,
   requestWorkerSelfServiceLink,
   verifyWorkerOtp,
+  uploadWorkerPhotoDirectAction,
   type ExecutiveApplicationInput,
   type ExecutiveApplicationKind,
+  type WorkerRegistrationResult,
 } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { compressImage } from '@/lib/image-compression'
@@ -159,11 +164,10 @@ export function WorkerRegistrationForm({
   // Privacy & Status
   const [ndprConsent, setNdprConsent] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [successResult, setSuccessResult] = useState<{
-    ok: boolean
-    message?: string
-    isExco?: boolean
-  } | null>(null)
+  const [successResult, setSuccessResult] = useState<WorkerRegistrationResult | null>(null)
+  const [isUploadingSuccessPhoto, setIsUploadingSuccessPhoto] = useState(false)
+  const [successPhotoError, setSuccessPhotoError] = useState<string | null>(null)
+  const successFileInputRef = useRef<HTMLInputElement>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -476,7 +480,20 @@ export function WorkerRegistrationForm({
       })
 
       if (registrationResult.ok) {
-        let finalResult = registrationResult
+        let finalResult: WorkerRegistrationResult = {
+          ...registrationResult,
+          fullName: registrationResult.fullName || fullName,
+          email: registrationResult.email || email,
+          phoneNumber: registrationResult.phoneNumber || phoneNumber,
+          hall: registrationResult.hall || hall,
+          roomNumber: registrationResult.roomNumber || roomNumber,
+          teams: registrationResult.teams || teams,
+          isExco: registrationResult.isExco ?? isExco,
+          executiveApplication: registrationResult.executiveApplication || executiveApplication,
+          profileImageUrl: existingPhotoUrl || undefined,
+          photoUploaded: Boolean(existingPhotoUrl),
+        }
+
         if (base64Image && registrationResult.uploadGrant) {
           try {
             const uploadRes = await fetch('/api/upload-drive', {
@@ -489,16 +506,23 @@ export function WorkerRegistrationForm({
                 uploadGrant: registrationResult.uploadGrant,
               }),
             })
-            if (!uploadRes.ok) {
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json()
               finalResult = {
-                ...registrationResult,
-                message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again anytime.`,
+                ...finalResult,
+                profileImageUrl: uploadData.fileUrl || base64Image,
+                photoUploaded: true,
+              }
+            } else {
+              finalResult = {
+                ...finalResult,
+                photoUploaded: false,
               }
             }
           } catch {
             finalResult = {
-              ...registrationResult,
-              message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again anytime.`,
+              ...finalResult,
+              photoUploaded: false,
             }
           }
         }
@@ -515,6 +539,41 @@ export function WorkerRegistrationForm({
     }
   }
 
+  const handleSuccessPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !successResult?.workerId) return
+
+    setIsUploadingSuccessPhoto(true)
+    setSuccessPhotoError(null)
+
+    try {
+      const compressed = await compressImage(file)
+      const res = await uploadWorkerPhotoDirectAction({
+        workerId: successResult.workerId,
+        base64Image: compressed.dataUrl,
+      })
+
+      if (res.ok && res.fileUrl) {
+        setSuccessResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                profileImageUrl: res.fileUrl,
+                photoUploaded: true,
+              }
+            : null
+        )
+        toast.success('Portrait photo successfully uploaded!')
+      } else {
+        setSuccessPhotoError(res.error || 'Failed to upload photo. Please try again.')
+      }
+    } catch {
+      setSuccessPhotoError('An error occurred while compressing or uploading your photo.')
+    } finally {
+      setIsUploadingSuccessPhoto(false)
+    }
+  }
+
   const slideVariants = {
     enter: { opacity: 0, x: 25 },
     center: { opacity: 1, x: 0 },
@@ -523,42 +582,221 @@ export function WorkerRegistrationForm({
 
   // Render Success Screen
   if (successResult?.ok) {
+    const firstName = successResult.fullName?.trim().split(/\s+/)[0] || 'Worker'
+    const hasPhoto = Boolean(successResult.profileImageUrl)
+    const teamsList = successResult.teams && successResult.teams.length > 0 ? successResult.teams : teams
+    const excoApp = successResult.executiveApplication || executiveApplication
+
+    let excoTitle = ''
+    if (successResult.isExco && excoApp) {
+      if (excoApp.kind === 'csgb') {
+        excoTitle = `CSGB — ${excoApp.office || 'Executive Office'}`
+      } else if (excoApp.kind === 'hall') {
+        const rank = excoApp.rank === 'assistant' ? 'Assistant ' : ''
+        excoTitle = `${rank}Hall Pastor (${excoApp.hall || successResult.hall || 'Hostel'})`
+      } else if (excoApp.kind === 'team') {
+        const rank = excoApp.rank === 'assistant' ? 'Assistant ' : ''
+        excoTitle = `${rank}Team Lead (${excoApp.team || teamsList[0] || 'Ministry Team'})`
+      }
+    }
+
     return (
-      <div className="w-full max-w-xl mx-auto text-center space-y-6 py-6">
-        <div className="space-y-2.5">
-          <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] font-mono block">
-            REGISTRATION CONFIRMED
-          </span>
-          <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
-            {isReturning ? 'Profile Updated!' : 'Welcome to the Workforce!'}
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
-            {successResult.message}
-          </p>
-        </div>
-
-        {/* Live Application Status Button */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200 text-left space-y-3 shadow-xs">
-          <div className="flex items-center gap-2 font-bold text-sky-950 text-sm">
-            <ShieldCheck className="h-5 w-5 text-[#0077cc]" />
-            <span>Track Verification &amp; Approval Live</span>
+      <div className="w-full max-w-2xl mx-auto space-y-6 py-4 animate-in fade-in duration-500">
+        {/* Celebration Header */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center p-3.5 rounded-full bg-emerald-50 ring-8 ring-emerald-500/10 text-emerald-600 mb-1 shadow-xs">
+            <CheckCircle2 className="h-10 w-10 stroke-[2.2]" />
           </div>
-          <p className="text-xs sm:text-sm text-sky-800 leading-relaxed">
-            Your operational team memberships and executive designations are tracked live in the Status Portal with real-time verification badges.
-          </p>
-          <Link
-            href="/register/status"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0077cc] hover:bg-[#005fa3] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
-          >
-            <span>View Live Application Status &amp; Badges</span>
-            <ExternalLink className="h-4 w-4" />
-          </Link>
+
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold tracking-wide font-mono uppercase">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Registration Confirmed
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
+              {isReturning ? `Welcome Back, ${firstName}!` : `Welcome to the Workforce, ${firstName}!`}
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
+              Your profile has been logged in the ECCF directory. Below is the breakdown of your application and verification status.
+            </p>
+          </div>
         </div>
 
+        {/* Profile & Application Summary Card */}
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm space-y-6 text-left">
+          {/* Identity & Avatar Row */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 shrink-0 shadow-xs flex items-center justify-center">
+                {hasPhoto && successResult.profileImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={successResult.profileImageUrl}
+                    alt={successResult.fullName || 'Worker portrait'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-8 w-8 text-slate-400" />
+                )}
+                {hasPhoto && (
+                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Photo Attached" />
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">{successResult.fullName || fullName}</h2>
+                  <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 text-[11px] font-semibold">
+                    {isReturning ? 'Updated Member' : 'New Intake'}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 font-mono flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-slate-400" />
+                  <span>{successResult.email || email}</span>
+                </p>
+                <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                  <Home className="h-3.5 w-3.5 text-slate-400" />
+                  <span>{successResult.hall || hall} {successResult.roomNumber ? `• Room ${successResult.roomNumber}` : ''}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Photo upload status badge */}
+            <div className="self-stretch sm:self-center">
+              {hasPhoto ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  <span>Portrait Attached</span>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    ref={successFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleSuccessPhotoUpload}
+                  />
+                  <button
+                    type="button"
+                    disabled={isUploadingSuccessPhoto}
+                    onClick={() => successFileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold transition-all shadow-2xs"
+                  >
+                    {isUploadingSuccessPhoto ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 text-amber-700" />
+                    )}
+                    <span>{isUploadingSuccessPhoto ? 'Uploading...' : 'Attach Portrait Photo'}</span>
+                  </button>
+                  {successPhotoError && (
+                    <p className="text-[11px] text-red-600 mt-1">{successPhotoError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Operational Team Memberships Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-slate-400" />
+                Operational Teams ({teamsList.length})
+              </span>
+              <span className="text-[11px] text-slate-400">Review by Team Leads</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {teamsList.map((tm, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-2xl border border-slate-200/80 bg-slate-50/60 flex items-center justify-between gap-2"
+                >
+                  <div className="font-semibold text-xs sm:text-sm text-slate-900 truncate">
+                    {tm}
+                  </div>
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
+                    <Clock className="h-3 w-3 text-amber-600" />
+                    Pending Verification
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500 italic">
+              Your Team Lead(s) will review and confirm your unit membership in their Exco attendance and workforce roster.
+            </p>
+          </div>
+
+          {/* Executive Application Section (if exco) */}
+          {successResult.isExco && excoTitle && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-sky-50/50 border border-indigo-200/80 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white shrink-0">
+                    <Crown className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 font-mono block">
+                      Executive Application
+                    </span>
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900">{excoTitle}</h3>
+                  </div>
+                </div>
+                <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-bold">
+                  <Clock className="h-3 w-3 text-indigo-700" />
+                  Pending Approval
+                </span>
+              </div>
+              <p className="text-xs text-indigo-950/80 leading-relaxed pt-1">
+                Executive appointments are subject to Presidential review. Once approved, your leadership permissions for Exco attendance, reports, and team rosters will activate automatically.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Live Application Status Callout */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-indigo-500/10 border-2 border-sky-200/90 text-left space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-[#0077cc] text-white shrink-0">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-950 text-sm sm:text-base">Track Verification &amp; Badges Live</h3>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Inspect real-time approval badges from your Team Lead and the Fellowship President.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-1 flex flex-col sm:flex-row gap-2.5">
+            <Link
+              href="/register/status"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#0077cc] hover:bg-[#005fa3] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
+            >
+              <span>Open My Application Status Portal</span>
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+            {successResult.isExco && (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm transition-all"
+              >
+                <span>Visit Exco Dashboard</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Navigation Buttons */}
         <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"
-            className="flex h-14 items-center justify-center rounded-xl bg-slate-900 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
+            className="flex h-13 items-center justify-center rounded-2xl bg-slate-950 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
           >
             Return to Homepage
           </Link>
@@ -569,8 +807,10 @@ export function WorkerRegistrationForm({
               setStep(1)
               setPhoneNumber('')
               setIsReturning(false)
+              setBase64Image(null)
+              setExistingPhotoUrl(null)
             }}
-            className="flex h-14 items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
+            className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
           >
             <RotateCcw className="h-4 w-4 mr-2" /> Register Another Member
           </button>

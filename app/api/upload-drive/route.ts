@@ -2,7 +2,7 @@ import 'server-only'
 
 import { createHash, createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
-import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
+import { patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024
 const MAX_BODY_BYTES = 3 * 1024 * 1024
@@ -30,7 +30,7 @@ function safeFileName(fullName: unknown, team: unknown): string {
       .replace(/[^a-zA-Z0-9_-]+/g, '_')
       .replace(/^_+|_+$/g, '')
       .slice(0, 50) || fallback
-  return `${cleanPart(fullName, 'Worker')}_${cleanPart(team, 'General')}_BirthdayPic`
+  return `${cleanPart(fullName, 'Worker')}_${cleanPart(team, 'General')}_Headshot`
 }
 
 function isSameOrigin(request: Request): boolean {
@@ -44,12 +44,6 @@ function isSameOrigin(request: Request): boolean {
 }
 
 export async function POST(request: Request) {
-  const appScriptUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL
-  const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
-  if (!appScriptUrl || !signingSecret || Buffer.byteLength(signingSecret, 'utf8') < 32) {
-    return NextResponse.json({ ok: false, error: 'Image upload is not configured.' }, { status: 503 })
-  }
-
   if (!isSameOrigin(request) || request.headers.get('sec-fetch-site') === 'cross-site') {
     return NextResponse.json({ ok: false, error: 'Origin check failed.' }, { status: 403 })
   }
@@ -102,50 +96,81 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'This upload request has already been used. Reopen the form to try again.' }, { status: 409 })
     }
 
-    const timestamp = Date.now().toString()
     const cleanFileName = safeFileName(body.fullName, body.team)
-    const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${body.base64}`
-    const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
+    const fileExtension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
 
-    const gasResponse = await fetch(appScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        base64: body.base64,
-        cleanFileName: `${cleanFileName}.${mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'}`,
-        mimeType,
-        timestamp,
-        signature,
-      }),
-      redirect: 'follow',
-      cache: 'no-store',
-    })
+    let uploadedUrl = ''
 
-    if (!gasResponse.ok) {
-      return NextResponse.json({ ok: false, error: 'The image upload service could not save the file.' }, { status: 502 })
-    }
-
-    const data = (await gasResponse.json()) as { ok?: boolean; fileUrl?: string }
-    if (!data.ok || !data.fileUrl) {
-      return NextResponse.json({ ok: false, error: 'The image upload service could not save the file.' }, { status: 502 })
-    }
-
-    let uploadedUrl: URL
+    // 1. Primary Storage: Sanity Asset Store (ultra-fast CDN with image transformations)
     try {
-      uploadedUrl = new URL(data.fileUrl)
-    } catch {
-      return NextResponse.json({ ok: false, error: 'The image upload service returned an invalid file address.' }, { status: 502 })
-    }
-    if (uploadedUrl.protocol !== 'https:' || uploadedUrl.hostname !== 'lh3.googleusercontent.com') {
-      return NextResponse.json({ ok: false, error: 'The image upload service returned an untrusted file address.' }, { status: 502 })
+      const sanityAsset = await sanityWriteClient.assets.upload('image', imageBytes, {
+        filename: `${cleanFileName}.${fileExtension}`,
+        contentType: mimeType,
+      })
+
+      if (sanityAsset?.url) {
+        uploadedUrl = sanityAsset.url
+        await patchPrivateDocument(worker._id)
+          .set({
+            profileImageUrl: sanityAsset.url,
+            headshot: {
+              _type: 'image',
+              asset: {
+                _type: 'reference',
+                _ref: sanityAsset._id,
+              },
+            },
+            updatedAt: new Date().toISOString(),
+          })
+          .append('updateLog', [`Uploaded official headshot to Sanity CDN on ${new Date().toISOString().slice(0, 10)}`])
+          .commit()
+      }
+    } catch (sanityErr) {
+      console.error('[/api/upload-drive] Sanity asset upload failed:', sanityErr)
     }
 
-    await patchPrivateDocument(worker._id)
-      .set({ profileImageUrl: uploadedUrl.toString(), updatedAt: new Date().toISOString() })
-      .append('updateLog', [`Updated profile image on ${new Date().toISOString().slice(0, 10)}`])
-      .commit()
+    // 2. Secondary Storage: Google Drive (if Google Apps Script webhook is configured)
+    const appScriptUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL
+    const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
+    if (appScriptUrl && signingSecret && Buffer.byteLength(signingSecret, 'utf8') >= 32) {
+      try {
+        const timestamp = Date.now().toString()
+        const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${body.base64}`
+        const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
 
-    return NextResponse.json({ ok: true, fileUrl: uploadedUrl.toString() })
+        const gasResponse = await fetch(appScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64: body.base64,
+            cleanFileName: `${cleanFileName}.${fileExtension}`,
+            mimeType,
+            timestamp,
+            signature,
+          }),
+          redirect: 'follow',
+          cache: 'no-store',
+        })
+
+        if (gasResponse.ok) {
+          const data = (await gasResponse.json()) as { ok?: boolean; fileUrl?: string }
+          if (data.ok && data.fileUrl && !uploadedUrl) {
+            uploadedUrl = data.fileUrl
+            await patchPrivateDocument(worker._id)
+              .set({ profileImageUrl: uploadedUrl, updatedAt: new Date().toISOString() })
+              .commit()
+          }
+        }
+      } catch (gasErr) {
+        console.warn('[/api/upload-drive] Optional Google Drive backup skipped:', gasErr)
+      }
+    }
+
+    if (!uploadedUrl) {
+      return NextResponse.json({ ok: false, error: 'The image upload service could not save the file.' }, { status: 502 })
+    }
+
+    return NextResponse.json({ ok: true, fileUrl: uploadedUrl })
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid upload request.' }, { status: 400 })
   }

@@ -10,7 +10,6 @@ import {
   ArrowRight,
   RotateCcw,
   LogIn,
-  Search,
   ExternalLink,
   Crown,
   Home,
@@ -33,17 +32,8 @@ export const metadata: Metadata = {
   },
 }
 
-interface StatusPageProps {
-  searchParams: {
-    q?: string
-    phone?: string
-    email?: string
-  }
-}
-
-export default async function RegistrationStatusPage({ searchParams }: StatusPageProps) {
-  const query = searchParams.q || searchParams.phone || searchParams.email || ''
-  const statusResult = await getRegistrationStatus(query)
+export default async function RegistrationStatusPage() {
+  const statusResult = await getRegistrationStatus()
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-slate-950 pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
@@ -61,8 +51,8 @@ export default async function RegistrationStatusPage({ searchParams }: StatusPag
           </p>
         </div>
 
-        {/* CASE A: No Profile Found or Not Signed In */}
-        {!statusResult.ok || !statusResult.worker ? (
+        {/* CASE A: Not Signed In — Enforce Identity Verification to Prevent PII Harvesting */}
+        {!statusResult.signedIn ? (
           <div className="w-full max-w-xl mx-auto space-y-6">
             <div className="rounded-3xl border-2 border-slate-200 bg-white p-8 sm:p-10 text-center space-y-6 shadow-sm">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 border border-sky-200 text-[#0077cc]">
@@ -71,48 +61,21 @@ export default async function RegistrationStatusPage({ searchParams }: StatusPag
 
               <div className="space-y-2">
                 <h2 className="font-serif text-2xl font-bold text-slate-950">
-                  {statusResult.signedIn ? 'No Worker Record Found' : 'Check Your Application Status'}
+                  Authentication Required
                 </h2>
                 <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-                  {statusResult.signedIn
-                    ? `You are signed in as ${statusResult.clerkEmail || 'a Clerk user'}, but no workforce registration is linked to this account yet.`
-                    : 'Sign in to access your linked workforce profile, or look up your record using your registered phone number or email.'}
+                  To protect fellowship member privacy and hostel room information, you must sign in with your verified email or Google account to view your registration status.
                 </p>
               </div>
 
-              {/* Lookup Form */}
-              <form action="/register/status" method="GET" className="space-y-3 pt-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="q"
-                    defaultValue={query}
-                    placeholder="Registered phone (e.g. 08012345678) or email"
-                    className="flex h-14 w-full rounded-2xl border-2 border-slate-300 bg-slate-50 px-5 pr-12 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                  />
-                  <button
-                    type="submit"
-                    aria-label="Search record"
-                    className="absolute right-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-[#0077cc] text-white hover:bg-[#005fa3] transition-colors"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 text-left px-1">
-                  Enter the phone number or email address provided when filling the workforce intake form.
-                </p>
-              </form>
-
               <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                {!statusResult.signedIn ? (
-                  <Link
-                    href="/login"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-sm"
-                  >
-                    <LogIn className="h-4 w-4" />
-                    <span>Sign In with Clerk</span>
-                  </Link>
-                ) : null}
+                <Link
+                  href="/login"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-sm"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In with Clerk</span>
+                </Link>
 
                 <Link
                   href="/register"
@@ -124,8 +87,36 @@ export default async function RegistrationStatusPage({ searchParams }: StatusPag
               </div>
             </div>
           </div>
+        ) : !statusResult.worker ? (
+          /* CASE B: Signed In but no worker record linked */
+          <div className="w-full max-w-xl mx-auto space-y-6">
+            <div className="rounded-3xl border-2 border-slate-200 bg-white p-8 sm:p-10 text-center space-y-6 shadow-sm">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-600">
+                <AlertTriangle className="h-8 w-8" />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="font-serif text-2xl font-bold text-slate-950">
+                  No Registration Linked
+                </h2>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                  You are signed in as <span className="font-semibold text-slate-900">{statusResult.clerkEmail}</span>, but no workforce intake registration was found under this account yet.
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/register"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-6 text-sm font-bold text-white hover:brightness-105 transition-all shadow-md shadow-sky-600/20"
+                >
+                  <span>Complete Worker Registration</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
         ) : (
-          /* CASE B: Profile Found — Display Status Board */
+          /* CASE C: Profile Found — Display Status Board for the Verified User */
           <div className="space-y-8">
             {/* 1. Applicant Profile Card */}
             <div className="rounded-3xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">

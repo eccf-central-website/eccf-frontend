@@ -66,6 +66,7 @@ export const metadata: Metadata = {
 };
 
 import LivePreviewListener from "@/components/common/LivePreviewListener";
+import InitialPageLoader from "@/components/common/InitialPageLoader";
 
 // Fallback to a validly structured test publishable key during build time if unconfigured
 const clerkPublishableKey =
@@ -94,6 +95,7 @@ export default function RootLayout({
         <body
           className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
         >
+          <InitialPageLoader />
           <LivePreviewListener />
           {children}
         </body>

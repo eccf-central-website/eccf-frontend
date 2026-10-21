@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 
 export interface LoadingStateProps {
@@ -7,6 +8,12 @@ export interface LoadingStateProps {
   fullscreen?: boolean
   /** Size variant of the animated emblem and ring. */
   size?: 'sm' | 'md' | 'lg'
+  /** Theme palette matching dark dashboard or light public pages. */
+  theme?: 'light' | 'dark'
+  /** Minimum milliseconds to display before allowing fade-out. */
+  minDurationMs?: number
+  /** Optional callback fired when the minimum display duration finishes. */
+  onReady?: () => void
   /** Primary label message. Set to null or empty string to hide. */
   message?: string | null
   /** Optional secondary subtitle or caption. */
@@ -18,10 +25,35 @@ export interface LoadingStateProps {
 export default function LoadingState({
   fullscreen = false,
   size = 'md',
+  theme = 'light',
+  minDurationMs,
+  onReady,
   message = 'Connecting to fellowship...',
   subtext,
   className = '',
 }: LoadingStateProps) {
+  const [visible, setVisible] = useState(true)
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    if (!minDurationMs || minDurationMs <= 0) return
+
+    const timer = setTimeout(() => {
+      setFading(true)
+      const hideTimer = setTimeout(() => {
+        setVisible(false)
+        onReady?.()
+      }, 400) // 400ms fade duration
+      return () => clearTimeout(hideTimer)
+    }, minDurationMs)
+
+    return () => clearTimeout(timer)
+  }, [minDurationMs, onReady])
+
+  if (!visible) return null
+
+  const isDark = theme === 'dark'
+
   // Dimensions map for outer ring and inner emblem
   const sizeMap = {
     sm: {
@@ -48,12 +80,20 @@ export default function LoadingState({
   }[size]
 
   const content = (
-    <div className={`flex flex-col items-center justify-center text-center select-none ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center text-center select-none transition-opacity duration-400 ${
+        fading ? 'opacity-0' : 'opacity-100'
+      } ${className}`}
+    >
       {/* Animated Emblem Anchor */}
       <div className="relative flex items-center justify-center">
         {/* Ambient Blue Breathing Glow */}
         <div
-          className={`absolute rounded-full bg-gradient-to-tr from-sky-400/25 via-[#0095ff]/20 to-blue-600/10 blur-xl animate-pulse pointer-events-none ${sizeMap.glow}`}
+          className={`absolute rounded-full bg-gradient-to-tr ${
+            isDark
+              ? 'from-sky-500/20 via-[#0095ff]/20 to-blue-600/15'
+              : 'from-sky-400/25 via-[#0095ff]/20 to-blue-600/10'
+          } blur-xl animate-pulse pointer-events-none ${sizeMap.glow}`}
           aria-hidden="true"
         />
 
@@ -91,7 +131,9 @@ export default function LoadingState({
         <div className="mt-5 space-y-1">
           <div className="flex items-center justify-center gap-1.5">
             <span
-              className={`font-sans font-medium text-slate-800 tracking-tight leading-none ${sizeMap.fontSize}`}
+              className={`font-sans font-medium tracking-tight leading-none ${
+                isDark ? 'text-slate-100' : 'text-slate-800'
+              } ${sizeMap.fontSize}`}
             >
               {message}
             </span>
@@ -113,7 +155,11 @@ export default function LoadingState({
           </div>
 
           {subtext && (
-            <p className="text-xs text-slate-500 font-normal tracking-wide max-w-xs mx-auto">
+            <p
+              className={`text-xs font-normal tracking-wide max-w-xs mx-auto ${
+                isDark ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
               {subtext}
             </p>
           )}
@@ -127,7 +173,9 @@ export default function LoadingState({
       <div
         role="status"
         aria-live="polite"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-md transition-all duration-300"
+        className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-400 ${
+          fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        } ${isDark ? 'bg-slate-950/95 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md'}`}
       >
         {content}
       </div>
@@ -135,7 +183,13 @@ export default function LoadingState({
   }
 
   return (
-    <div role="status" aria-live="polite" className="w-full py-12 flex items-center justify-center">
+    <div
+      role="status"
+      aria-live="polite"
+      className={`w-full py-12 flex items-center justify-center transition-opacity duration-400 ${
+        fading ? 'opacity-0' : 'opacity-100'
+      }`}
+    >
       {content}
     </div>
   )
