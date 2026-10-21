@@ -21,6 +21,8 @@ import type { WorkerRole, ExcoPosition } from '@/types'
 export interface VerifyWorkerInput {
   workerId: string
   decision: 'approve' | 'reject'
+  membershipKey?: string
+  teamId?: string
   reason?: string
 }
 
@@ -39,8 +41,19 @@ export async function verifyWorkerMembership(
     return { ok: false, error: 'Your session has expired. Please sign in again.' }
   }
 
-  // Only admins and team leads can verify members
-  if (session.role !== 'admin' && session.role !== 'team_lead') {
+  const access = session.access
+  const isPresident = Boolean(access?.isPresident)
+  const leadsTeamIds = access?.leadsTeamIds || []
+  const leadsTeamKeys = access?.leadsTeamKeys || []
+  const isLeadOrAssistant =
+    leadsTeamIds.length > 0 ||
+    leadsTeamKeys.length > 0 ||
+    session.role === 'team_lead' ||
+    session.role === 'admin' ||
+    Boolean(access?.isCSGB)
+
+  // Only President, CSGB admins, and Team Leads / Assistant Leads can verify members
+  if (!isPresident && !isLeadOrAssistant) {
     return { ok: false, error: 'You do not have permission to verify workers.' }
   }
 
@@ -48,11 +61,17 @@ export async function verifyWorkerMembership(
   const today = now.toLocaleDateString('en-CA')
   const newStatus = input.decision === 'approve' ? 'verified' : 'rejected'
   const actionLabel = input.decision === 'approve' ? 'Membership verified' : 'Membership declined'
-  const approverRole =
-    session.role === 'admin'
-      ? 'CSGB Admin'
-      : `${session.leadingTeam || session.team} Team Lead`
+  const approverRole = isPresident
+    ? 'Fellowship President'
+    : access?.titles?.[0] ||
+      (session.role === 'admin'
+        ? 'CSGB Admin'
+        : `${session.leadingTeam || session.team} Team Lead`)
+  const approverId: string = String(session.worker?._id || session.id)
   const logMessage = `${actionLabel} by ${approverRole} on ${today}${input.reason ? ` (${input.reason})` : ''}`
+
+  // Allowed team scopes for non-presidents
+  const allowedTeamNames = [session.leadingTeam || session.team].filter(Boolean) as string[]
 
   // Check data source: if mock mode, update in-memory mock workers
   const isMock =
@@ -65,16 +84,42 @@ export async function verifyWorkerMembership(
       return { ok: false, error: 'Worker record not found.' }
     }
 
-    // Role check: if team_lead, ensure worker belongs to their team
-    if (session.role === 'team_lead') {
-      const allowedTeams = [session.leadingTeam || session.team].filter(Boolean) as string[]
-      const belongsToTeam = matchesTeam(worker.team, worker.teams, allowedTeams)
-      if (!belongsToTeam) {
+    // Role & Team scoping check: President can verify for ANY team as fallback!
+    if (!isPresident && session.role !== 'admin') {
+      const workerMemberships = Array.isArray(worker.memberships) ? worker.memberships : []
+      const hasMatchingMembership = workerMemberships.some(
+        (m) =>
+          (m.teamId && leadsTeamIds.includes(m.teamId)) ||
+          (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
+          (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+      )
+      const belongsToLegacyTeam = matchesTeam(worker.team, worker.teams, allowedTeamNames)
+
+      if (!hasMatchingMembership && !belongsToLegacyTeam) {
         return {
           ok: false,
-          error: `You can only verify workers belonging to your team (${session.leadingTeam || session.team}).`,
+          error: `You can only verify workers belonging to your scoped operational team (${session.leadingTeam || session.team}).`,
         }
       }
+    }
+
+    // Update structured memberships if present
+    if (Array.isArray(worker.memberships) && worker.memberships.length > 0) {
+      worker.memberships.forEach((m) => {
+        const matchesTarget =
+          input.membershipKey
+            ? m._key === input.membershipKey
+            : isPresident ||
+              (m.teamId && leadsTeamIds.includes(m.teamId)) ||
+              (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
+              (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+
+        if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
+          m.status = newStatus
+          m.decidedBy = approverId
+          m.decidedAt = now.toISOString()
+        }
+      })
     }
 
     worker.verificationStatus = newStatus
@@ -101,13 +146,27 @@ export async function verifyWorkerMembership(
       team?: string
       teams?: string[]
       verificationStatus?: string
+      memberships?: Array<{
+        _key?: string
+        status?: string
+        teamId?: string
+        teamKey?: string
+        teamName?: string
+      }>
     }>(
       `*[_type == "worker" && _id == $id][0]{
         _id,
         fullName,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
-        verificationStatus
+        verificationStatus,
+        memberships[]{
+          _key,
+          status,
+          "teamId": coalesce(team._ref, team->_id),
+          "teamKey": coalesce(team->key, team->slug.current),
+          "teamName": team->name
+        }
       }`,
       { id: input.workerId }
     )
@@ -116,28 +175,58 @@ export async function verifyWorkerMembership(
       return { ok: false, error: 'Worker document not found in Sanity.' }
     }
 
-    // RBAC Scope Check: Team Lead can only verify their own team's workers!
-    if (session.role === 'team_lead') {
-      const allowedTeams = [session.leadingTeam || session.team].filter(Boolean) as string[]
-      const belongsToTeam = matchesTeam(existing.team, existing.teams, allowedTeams)
+    // RBAC Scope Check: President can verify for ANY team as fallback!
+    if (!isPresident && session.role !== 'admin') {
+      const existingMemberships = Array.isArray(existing.memberships) ? existing.memberships : []
+      const hasMatchingMembership = existingMemberships.some(
+        (m) =>
+          (m.teamId && leadsTeamIds.includes(m.teamId)) ||
+          (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
+          (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+      )
+      const belongsToLegacyTeam = matchesTeam(existing.team, existing.teams, allowedTeamNames)
 
-      if (!belongsToTeam) {
+      if (!hasMatchingMembership && !belongsToLegacyTeam) {
         return {
           ok: false,
-          error: `Permission denied: You can only verify workers belonging to your team (${session.leadingTeam || session.team}).`,
+          error: `Permission denied: You can only verify workers belonging to your scoped operational team (${session.leadingTeam || session.team}).`,
         }
       }
     }
 
-    await patchPrivateDocument(input.workerId)
-      .set({
-        verificationStatus: newStatus,
-        verifiedAt: now.toISOString(),
-        verifiedBy: approverRole,
-        updatedAt: now.toISOString(),
+    let patch = patchPrivateDocument(input.workerId).set({
+      verificationStatus: newStatus,
+      verifiedAt: now.toISOString(),
+      verifiedBy: approverRole,
+      updatedAt: now.toISOString(),
+    })
+
+    // Update structured memberships in Sanity
+    if (Array.isArray(existing.memberships) && existing.memberships.length > 0) {
+      existing.memberships.forEach((m) => {
+        if (!m._key) return
+        const matchesTarget =
+          input.membershipKey
+            ? m._key === input.membershipKey
+            : isPresident ||
+              (m.teamId && leadsTeamIds.includes(m.teamId)) ||
+              (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
+              (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+
+        if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
+          patch = patch.set({
+            [`memberships[_key=="${m._key}"].status`]: newStatus,
+            [`memberships[_key=="${m._key}"].decidedBy`]: {
+              _type: 'reference',
+              _ref: approverId,
+            },
+            [`memberships[_key=="${m._key}"].decidedAt`]: now.toISOString(),
+          })
+        }
       })
-      .append('updateLog', [logMessage])
-      .commit()
+    }
+
+    await patch.append('updateLog', [logMessage]).commit()
 
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/attendance')

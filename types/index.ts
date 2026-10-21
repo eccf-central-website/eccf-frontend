@@ -52,6 +52,53 @@ export type FellowshipTeam =
   | { _ref: string; _type: 'reference' }
   | { _id: string; name: string }
 
+export interface WorkerPosition {
+  _key?: string
+  kind: 'team' | 'hall' | 'csgb'
+  team?: { _ref?: string; _id?: string; name?: string; key?: string } | string
+  teamId?: string
+  teamKey?: string
+  teamName?: string
+  hall?: string
+  office?: string
+  rank?: 'lead' | 'assistant'
+  status: 'pending' | 'approved' | 'rejected'
+  decidedBy?: string
+  decidedAt?: string
+}
+
+export interface WorkerMembership {
+  _key?: string
+  team?: { _ref?: string; _id?: string; name?: string; key?: string } | string
+  teamId?: string
+  teamKey?: string
+  teamName?: string
+  status: 'pending' | 'verified' | 'rejected'
+  decidedBy?: string
+  decidedAt?: string
+}
+
+export interface PendingExecutiveApplication {
+  workerId: string
+  fullName: string
+  email: string
+  hall: string
+  profileImageUrl?: string
+  createdAt?: string
+  position: {
+    key: string
+    kind: 'csgb' | 'hall' | 'team'
+    office?: string
+    hall?: string
+    rank?: 'lead' | 'assistant'
+    teamId?: string
+    teamKey?: string
+    teamName?: string
+    status: 'pending' | 'approved' | 'rejected'
+    submittedAt?: string
+  }
+}
+
 export interface Worker {
   _id: string
   _type: 'worker'
@@ -92,6 +139,8 @@ export interface Worker {
   verifiedBy?: string
   /** Operational team this worker leads/heads (if Team Lead or Assistant) */
   leadingTeam?: FellowshipTeam
+  positions?: WorkerPosition[]
+  memberships?: WorkerMembership[]
   /** ⚠️ Never sent to client — server-side auth verification only */
   passwordHash?: string
   profileImageUrl?: string
@@ -123,6 +172,7 @@ export interface ECCFSession {
   leadingTeam?: string
   excoPosition?: string
   hall?: string
+  email?: string
 }
 
 // ---------------------------------------------------------------------------

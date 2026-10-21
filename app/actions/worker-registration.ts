@@ -1,25 +1,40 @@
 /**
  * Worker Registration Server Action — app/actions/worker-registration.ts
  *
- * Implements SDD §6.4: Profile Registration & Upsert Data Flow.
- * - Deduplicates on `phoneNumber` (unique identifier)
- * - Computes automated delta logs into `updateLog` array
- * - Handles client Base64 image bridge to Google Drive (via Apps Script)
- * - Implements Admin Approval Gate for Exco designations (SDD §7.3)
- * - Hashes Exco passwords with bcryptjs for NextAuth credentials verification
+ * Implements SDD §6.4 & Clerk Migration Phase 3:
+ * - Unified Registration without passwords (passwords abolished in favor of Clerk authentication)
+ * - Structured `memberships[]` array for operational teams (status: 'pending' | 'verified' | 'rejected')
+ * - Structured `positions[]` array for executive applications (status: 'pending' | 'approved' | 'rejected')
+ * - Automatic Clerk account linking via `clerkUserId`
+ * - Executive designations:
+ *     - CSGB Office ('President', "VP Admin", "VP Evangelism", "General Secretary")
+ *     - Hall Pastor / Assistant Hall Pastor
+ *     - Team Lead / Assistant Team Lead for chosen teams
+ *     - No manual "finance" role choice (finance access is granted only by being approved Finance Lead or Assistant)
+ * - PII Encryption (Room number, Phone number, Birthday)
  */
 
 'use server'
 
-import bcrypt from 'bcryptjs'
 import { createHash, randomBytes } from 'crypto'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
-import { createPrivateDocument, patchPrivateDocument, sanityClient, sanityPrivateClient } from '@/lib/sanity'
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
+
+export type ExecutiveApplicationKind = 'csgb' | 'hall' | 'team'
+
+export interface ExecutiveApplicationInput {
+  kind: ExecutiveApplicationKind
+  office?: string // 'President' | 'VP Admin' | 'VP Evangelism' | 'General Secretary'
+  hall?: string // 'Hall 1' ... 'Hall 8'
+  team?: string // Operational team name
+  rank?: 'lead' | 'assistant'
+}
 
 export interface WorkerRegistrationInput {
   fullName: string
@@ -39,8 +54,9 @@ export interface WorkerRegistrationInput {
   requestPhotoUpload?: boolean
   turnstileToken?: string
   isExco: boolean
-  requestedRole?: WorkerRole
-  password?: string
+  executiveApplication?: ExecutiveApplicationInput
+  requestedRole?: WorkerRole // Kept for backward compatibility
+  clerkUserId?: string
   ndprConsent: boolean
 }
 
@@ -87,6 +103,47 @@ export interface VerifyWorkerOtpResult {
     birthDay?: number
     profileImageUrl?: string
     isExco?: boolean
+    executiveApplication?: ExecutiveApplicationInput
+  }
+  error?: string
+}
+
+export interface RegistrationStatusResult {
+  ok: boolean
+  signedIn: boolean
+  clerkUserId?: string
+  clerkEmail?: string
+  worker?: {
+    id: string
+    fullName: string
+    firstName?: string
+    middleName?: string
+    lastName?: string
+    email: string
+    phoneNumber?: string
+    hall: string
+    roomNumber?: string
+    birthDate?: string
+    profileImageUrl?: string
+    clerkUserId?: string
+    memberships: Array<{
+      key: string
+      teamName: string
+      teamKey?: string
+      status: 'pending' | 'verified' | 'rejected'
+      decidedAt?: string
+    }>
+    positions: Array<{
+      key: string
+      kind: 'csgb' | 'hall' | 'team'
+      title: string
+      office?: string
+      hall?: string
+      teamName?: string
+      rank?: 'lead' | 'assistant'
+      status: 'pending' | 'approved' | 'rejected'
+      decidedAt?: string
+    }>
   }
   error?: string
 }
@@ -150,7 +207,6 @@ async function sendWorkerVerificationEmail({
     </head>
     <body style="margin: 0; padding: 24px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
       <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <!-- Top Brand Header -->
         <div style="background: #0f172a; padding: 28px 24px; text-align: center;">
           <p style="margin: 0 0 6px 0; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
             Edo State University Christian Campus Fellowship
@@ -160,16 +216,14 @@ async function sendWorkerVerificationEmail({
           </h1>
         </div>
 
-        <!-- Body Content -->
         <div style="padding: 32px 28px;">
           <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
             Hello ${fullName || 'Beloved Worker'},
           </p>
           <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-            We received a request to access and update your workforce profile on the ECCF portal. For your protection and privacy, personal details (hostel room, phone number, and teams) are kept locked until verified.
+            We received a request to access and update your workforce profile on the ECCF portal. For your protection and privacy, personal details are kept locked until verified.
           </p>
 
-          <!-- OTP Box -->
           <div style="margin: 28px 0; padding: 22px; background: #f0f9ff; border: 2px dashed #0077cc; border-radius: 14px; text-align: center;">
             <span style="display: block; font-size: 11px; font-weight: 700; color: #0077cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
               Your 6-Digit Verification Code
@@ -186,7 +240,6 @@ async function sendWorkerVerificationEmail({
             &mdash; OR USE ONE-CLICK UNLOCK &mdash;
           </div>
 
-          <!-- Magic Link Button -->
           <div style="text-align: center; margin: 24px 0;">
             <a href="${confirmationUrl.toString()}" style="display: inline-block; background: #0077cc; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 119, 204, 0.25);">
               Unlock My Worker Profile &rarr;
@@ -194,11 +247,10 @@ async function sendWorkerVerificationEmail({
           </div>
 
           <div style="background: #f8fafc; border-radius: 10px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.5; color: #64748b; margin-top: 28px;">
-            <strong style="color: #334155;">Security Notice:</strong> This verification code and link will expire in <strong>15 minutes</strong>. If you did not make this request, you can safely ignore this email &mdash; your information remains encrypted and protected.
+            <strong style="color: #334155;">Security Notice:</strong> This verification code and link will expire in <strong>15 minutes</strong>. If you did not make this request, you can safely ignore this email.
           </div>
         </div>
 
-        <!-- Footer -->
         <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
           <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
           <p style="margin: 0;">NLT 5, Faculty of Law, ESUI, Uzairue, Edo State &bull; Official Workforce Portal</p>
@@ -208,7 +260,7 @@ async function sendWorkerVerificationEmail({
     </html>
   `
 
-  const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes. If you did not request this, no action is needed.`
+  const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes.`
 
   if (!selfServiceEmailer) {
     console.warn('[sendWorkerVerificationEmail] Missing selfServiceEmailer (RESEND_API_KEY). Simulating dispatch in log.')
@@ -251,14 +303,16 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
     phoneNumber?: string
     team?: string
     teams?: string[]
+    memberships?: Array<Record<string, unknown>>
+    positions?: Array<Record<string, unknown>>
     hall?: string
     roomNumber?: string
     birthDate?: string
     profileImageUrl?: string
     role?: WorkerRole
     requestedRole?: WorkerRole
+    clerkUserId?: string
     isExcoApproved?: boolean
-    passwordHash?: string
     selfServiceTokenPurpose?: 'profile' | 'password'
   } | null>(
     `*[_type == "worker" && selfServiceTokenHash == $hash &&
@@ -267,8 +321,10 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
       _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
       "team": coalesce(team->name, team),
       "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+      memberships,
+      positions,
       hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
-      isExcoApproved, passwordHash, selfServiceTokenPurpose
+      clerkUserId, isExcoApproved, selfServiceTokenPurpose
     }`,
     { hash, now: new Date().toISOString(), purpose: purpose || null }
   )
@@ -276,8 +332,6 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
 
 /**
  * Checks if a phone number is already registered to a worker.
- * If found, DOES NOT reveal personal details, but immediately generates a 6-digit OTP
- * and secure unlock link, emailing them to the worker's address on file.
  */
 export async function checkWorkerPhoneAndInitiateVerification(
   input: CheckWorkerPhoneInput
@@ -295,7 +349,6 @@ export async function checkWorkerPhoneAndInitiateVerification(
 
     const indexes = Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
 
-    // Query for existing worker by blind indexes or raw phone
     const worker = await sanityPrivateClient.fetch<{
       _id: string
       _rev: string
@@ -314,12 +367,10 @@ export async function checkWorkerPhoneAndInitiateVerification(
       { cleanPhone, indexes }
     )
 
-    // CASE A: Worker not found -> brand new registration allowed to proceed
     if (!worker) {
       return { ok: true, exists: false }
     }
 
-    // CASE B: Worker found! Protect details and send verification
     const email = worker.email?.trim()
     if (!email || !email.includes('@')) {
       return {
@@ -335,7 +386,6 @@ export async function checkWorkerPhoneAndInitiateVerification(
       process.env.NEXT_PUBLIC_APP_URL ||
       'http://localhost:3000'
 
-    // Rate-limit check (60s cooldown)
     const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
     const now = Date.now()
 
@@ -348,7 +398,6 @@ export async function checkWorkerPhoneAndInitiateVerification(
       }
     }
 
-    // Generate Token & 6-digit OTP
     const token = randomBytes(32).toString('base64url')
     const otp = String(Math.floor(100000 + Math.random() * 900000))
     const expiresAt = new Date(now + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
@@ -390,7 +439,6 @@ export async function checkWorkerPhoneAndInitiateVerification(
 
 /**
  * Verifies a 6-digit OTP code entered on the /register page for an existing worker.
- * Unlocks the profile, sets the secure self-service cookie, and returns decrypted details.
  */
 export async function verifyWorkerOtp(
   input: VerifyWorkerOtpInput
@@ -422,6 +470,8 @@ export async function verifyWorkerOtp(
       phoneNumber?: string
       team?: string
       teams?: string[]
+      memberships?: Array<Record<string, unknown>>
+      positions?: Array<Record<string, unknown>>
       hall?: string
       roomNumber?: string
       birthDate?: string
@@ -429,7 +479,6 @@ export async function verifyWorkerOtp(
       role?: WorkerRole
       requestedRole?: WorkerRole
       isExcoApproved?: boolean
-      passwordHash?: string
       selfServiceTokenHash?: string
     } | null>(
       `*[_type == "worker" && (
@@ -441,8 +490,10 @@ export async function verifyWorkerOtp(
         _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        memberships,
+        positions,
         hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
-        isExcoApproved, passwordHash, selfServiceTokenHash
+        isExcoApproved, selfServiceTokenHash
       }`,
       { cleanPhone, indexes, otpHash, nowIso }
     )
@@ -451,7 +502,6 @@ export async function verifyWorkerOtp(
       return { ok: false, error: 'Invalid or expired verification code. Please check your email or request a new code.' }
     }
 
-    // Generate a fresh session token for the cookie so registerWorker can authenticate the update
     const sessionToken = randomBytes(32).toString('base64url')
     const sessionTokenHash = hashSelfServiceToken(sessionToken)
     const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
@@ -492,6 +542,17 @@ export async function verifyWorkerOtp(
     }
 
     const roomNumber = decrypt(worker.roomNumber)
+    const primaryPos = worker.positions?.[0] as any
+    let executiveApplication: ExecutiveApplicationInput | undefined
+    if (primaryPos) {
+      executiveApplication = {
+        kind: primaryPos.kind,
+        office: primaryPos.office,
+        hall: primaryPos.hall,
+        team: primaryPos.team?.name || undefined,
+        rank: primaryPos.rank,
+      }
+    }
 
     return {
       ok: true,
@@ -509,7 +570,8 @@ export async function verifyWorkerOtp(
         birthMonth,
         birthDay,
         profileImageUrl: worker.profileImageUrl,
-        isExco: Boolean(worker.role || worker.requestedRole),
+        isExco: Boolean(worker.role || worker.requestedRole || worker.positions?.length),
+        executiveApplication,
       },
     }
   } catch (err) {
@@ -562,9 +624,8 @@ export async function requestWorkerSelfServiceLink(input: {
       { cleanEmail, cleanPhone, indexes }
     )
 
-    const canResetPassword = Boolean(worker?.role || worker?.requestedRole)
     const email = worker?.email?.trim()
-    if (!worker || !email || (input.purpose === 'password' && !canResetPassword)) return genericResponse
+    if (!worker || !email) return genericResponse
 
     const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
     if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
@@ -593,32 +654,20 @@ export async function requestWorkerSelfServiceLink(input: {
       })
       .commit()
 
-    if (input.purpose === 'profile') {
-      await sendWorkerVerificationEmail({
-        email,
-        fullName: worker.firstName || worker.fullName || '',
-        otp,
-        token,
-        baseUrl,
-      })
-      return {
-        ok: true,
-        message: `A 6-digit verification code and secure unlock link have been dispatched to ${maskEmail(email)}.`,
-        maskedEmail: maskEmail(email),
-        phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
-      }
-    }
-
-    // Password reset email
-    const confirmationUrl = new URL('/login', baseUrl)
-    confirmationUrl.searchParams.set('selfServiceToken', token)
-    await selfServiceEmailer.emails.send({
-      from: process.env.EMAIL_FROM || 'ECCF <onboarding@resend.dev>',
-      to: email,
-      subject: 'Confirm your ECCF dashboard password setup',
-      text: `Use the secure link below to set or reset your Exco dashboard password:\n\n${confirmationUrl.toString()}\n\nThis link expires in 15 minutes. If you did not request this, ignore this message.`,
+    await sendWorkerVerificationEmail({
+      email,
+      fullName: worker.firstName || worker.fullName || '',
+      otp,
+      token,
+      baseUrl,
     })
-    return genericResponse
+
+    return {
+      ok: true,
+      message: `A 6-digit verification code and secure unlock link have been dispatched to ${maskEmail(email)}.`,
+      maskedEmail: maskEmail(email),
+      phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
+    }
   } catch (err) {
     console.error('[requestWorkerSelfServiceLink] Request could not be completed:', err)
     return genericResponse
@@ -643,6 +692,7 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
     birthDay?: number
     profileImageUrl?: string
     isExco?: boolean
+    executiveApplication?: ExecutiveApplicationInput
   }
   error?: string
 }> {
@@ -652,7 +702,6 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
       return { ok: false, error: 'This link is invalid or has expired. Request a new one.' }
     }
 
-    // Clear any pending OTP hash so it cannot be reused
     patchPrivateDocument(worker._id).unset(['selfServiceOtpHash']).commit().catch(() => null)
 
     const cookieStore = cookies()
@@ -663,10 +712,6 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
       path: '/',
       maxAge: 15 * 60,
     })
-
-    if (worker.selfServiceTokenPurpose === 'password') {
-      return { ok: true, purpose: 'password' }
-    }
 
     const birthday = decrypt(worker.birthDate)
     let birthMonth: number | undefined
@@ -683,6 +728,18 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
     }
 
     const roomNumber = decrypt(worker.roomNumber)
+    const primaryPos = worker.positions?.[0] as any
+    let executiveApplication: ExecutiveApplicationInput | undefined
+    if (primaryPos) {
+      executiveApplication = {
+        kind: primaryPos.kind,
+        office: primaryPos.office,
+        hall: primaryPos.hall,
+        team: primaryPos.team?.name || undefined,
+        rank: primaryPos.rank,
+      }
+    }
+
     return {
       ok: true,
       purpose: 'profile',
@@ -700,7 +757,8 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
         birthMonth,
         birthDay,
         profileImageUrl: worker.profileImageUrl,
-        isExco: Boolean(worker.role || worker.requestedRole),
+        isExco: Boolean(worker.role || worker.requestedRole || worker.positions?.length),
+        executiveApplication,
       },
     }
   } catch {
@@ -716,12 +774,17 @@ export async function getVerifiedWorkerProfile() {
   return confirmWorkerSelfServiceLink(token)
 }
 
+/**
+ * Resolves an operational team name to a Sanity `teamUnit` reference.
+ */
 async function resolveTeamReference(
   teamName: string
 ): Promise<{ _type: 'reference'; _ref: string } | null> {
   const normalized = teamName.trim()
   if (!normalized) return null
-  const existingTeam = await sanityClient.fetch<{ _id: string; name: string } | null>(
+
+  // 1. Exact match on name
+  let existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
     `*[_type == "teamUnit" && lower(name) == lower($name)][0]{ _id, name }`,
     { name: normalized }
   )
@@ -729,9 +792,55 @@ async function resolveTeamReference(
   if (existingTeam?._id) {
     return { _type: 'reference', _ref: existingTeam._id }
   }
+
+  // 2. Fuzzy match stripping " Team" or matching keywords
+  const simplified = normalized.replace(/\s+team$/i, '').trim().toLowerCase()
+  existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
+    `*[_type == "teamUnit" && (lower(name) match $simplified || key match $simplified)][0]{ _id, name }`,
+    { simplified }
+  )
+
+  if (existingTeam?._id) {
+    return { _type: 'reference', _ref: existingTeam._id }
+  }
+
+  // 3. Fallback: match any teamUnit where name contains the first word
+  const firstWord = normalized.split(/[\s/]+/)[0].toLowerCase()
+  existingTeam = await sanityPrivateClient.fetch<{ _id: string; name: string } | null>(
+    `*[_type == "teamUnit" && lower(name) match $firstWord][0]{ _id, name }`,
+    { firstWord }
+  )
+
+  if (existingTeam?._id) {
+    return { _type: 'reference', _ref: existingTeam._id }
+  }
+
   return null
 }
 
+/**
+ * Normalizes CSGB executive office name to canonical schema titles.
+ */
+function normalizeCsgbOffice(officeRaw?: string): string {
+  const lower = (officeRaw || '').toLowerCase().trim()
+  if (lower.includes('president') && !lower.includes('vice') && !lower.includes('vp')) {
+    return 'President'
+  }
+  if (lower.includes('admin') || lower.includes("brothers' coordinator")) {
+    return 'Vice President - Admin'
+  }
+  if (lower.includes('evangelism') || lower.includes("sisters' coordinator")) {
+    return 'Vice President - Evangelism'
+  }
+  if (lower.includes('secretary')) {
+    return 'General Secretary'
+  }
+  return officeRaw?.trim() || 'President'
+}
+
+/**
+ * Primary Worker Registration & Upsert Action — Phase 3 Unified Flow
+ */
 export async function registerWorker(
   input: WorkerRegistrationInput
 ): Promise<WorkerRegistrationResult> {
@@ -759,6 +868,7 @@ export async function registerWorker(
     if (!input.phoneNumber || input.phoneNumber.trim().length < 8) {
       return { ok: false, error: 'Please enter a valid phone number.' }
     }
+
     const selectedTeams: string[] = (
       input.teams && input.teams.length > 0
         ? input.teams
@@ -806,6 +916,17 @@ export async function registerWorker(
       return { ok: false, error: 'Complete the security check and try again.' }
     }
 
+    // 2. Clerk Session & User ID Resolution
+    let resolvedClerkUserId = input.clerkUserId?.trim() || undefined
+    try {
+      const authState = await auth()
+      if (authState?.userId) {
+        resolvedClerkUserId = authState.userId
+      }
+    } catch {
+      // Clerk auth not available in background or unconfigured context
+    }
+
     const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
     const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
     const phoneBlindIndex = createBlindIndex(cleanPhone)
@@ -814,8 +935,7 @@ export async function registerWorker(
     const cleanTeams = Array.from(new Set(selectedTeams))
     const today = new Date().toISOString().split('T')[0]
 
-    // 2. Check if worker already exists (Deduplication / Upsert check)
-    // Matches by candidate blind indexes, phone number, or email
+    // 3. Deduplication and Existing Profile Matching
     const identityMatches = await sanityPrivateClient.fetch<Array<{
       _id: string
       _rev: string
@@ -823,38 +943,45 @@ export async function registerWorker(
       phoneNumber?: string
       team?: string
       teams?: string[]
+      memberships?: Array<Record<string, unknown>>
+      positions?: Array<Record<string, unknown>>
       hall?: string
       roomNumber?: string
       email?: string
       birthDate?: string
       role?: WorkerRole
       requestedRole?: WorkerRole
+      clerkUserId?: string
       isExcoApproved?: boolean
       passwordHash?: string
       updateLog?: string[]
     }>>(
       `*[_type == "worker" && (
+        (defined($resolvedClerkUserId) && clerkUserId == $resolvedClerkUserId) ||
         phoneBlindIndex in $allBlindIndexes ||
         phoneNumber == $phoneNumber ||
         lower(email) == $cleanEmail
-      )] | order(defined(passwordHash) desc, _updatedAt desc)[0...10]{
+      )] | order(defined(clerkUserId) desc, _updatedAt desc)[0...10]{
         _id,
         _rev,
         fullName,
         phoneNumber,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        memberships,
+        positions,
         hall,
         roomNumber,
         email,
         birthDate,
         role,
         requestedRole,
+        clerkUserId,
         isExcoApproved,
         passwordHash,
         updateLog
       }`,
-      { phoneNumber: cleanPhone, allBlindIndexes, cleanEmail }
+      { phoneNumber: cleanPhone, allBlindIndexes, cleanEmail, resolvedClerkUserId: resolvedClerkUserId || null }
     )
 
     const selfServiceToken = cookies().get(SELF_SERVICE_COOKIE)?.value
@@ -862,50 +989,111 @@ export async function registerWorker(
       ? await getWorkerBySelfServiceToken(selfServiceToken, 'profile').catch(() => null)
       : null
 
-    const existing = verifiedWorker
-    if (verifiedWorker) {
-      const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === verifiedWorker._id)
-      const conflictsWithAnotherWorker = identityMatches.some((worker) => worker._id !== verifiedWorker._id)
-      const storedPhone = decrypt(verifiedWorker.phoneNumber)
+    // If signed in via Clerk, worker can be verified directly by clerkUserId match
+    const clerkVerifiedWorker = resolvedClerkUserId
+      ? identityMatches.find((w) => w.clerkUserId === resolvedClerkUserId) || null
+      : null
+
+    const existing = clerkVerifiedWorker || verifiedWorker
+
+    if (existing) {
+      const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === existing._id)
+      const conflictsWithAnotherWorker = identityMatches.some((worker) => worker._id !== existing._id)
+      const storedPhone = decrypt(existing.phoneNumber)
       if (
         !belongsToVerifiedWorker ||
         conflictsWithAnotherWorker ||
-        verifiedWorker.email?.trim().toLowerCase() !== cleanEmail ||
-        !storedPhone ||
-        storedPhone === '[Encrypted Data]' ||
-        normalizePhone(storedPhone) !== normalizePhone(cleanPhone)
+        (!clerkVerifiedWorker && existing.email?.trim().toLowerCase() !== cleanEmail) ||
+        (!clerkVerifiedWorker && (!storedPhone || storedPhone === '[Encrypted Data]' || normalizePhone(storedPhone) !== normalizePhone(cleanPhone)))
       ) {
         return { ok: false, error: 'For account safety, phone or email changes must be handled by an ECCF administrator.' }
       }
     } else if (identityMatches.length > 0) {
       return {
         ok: false,
-        error: 'A worker record may already use those details. If this is your profile, choose “Update an existing profile” and use the secure email link.',
+        error: 'A worker record was found matching those contact details. Sign in with your account or request a verification code to update your profile.',
       }
     }
 
-    // Password validation logic:
-    if (!existing) {
-      // For a brand-new worker requesting an Exco role, password is required
-      if (input.isExco) {
-        if (!input.requestedRole || !['admin', 'team_lead', 'hall_rep', 'finance'].includes(input.requestedRole)) {
-          return { ok: false, error: 'Please select your Exco designation.' }
-        }
-        if (!input.password || input.password.length < 8) {
-          return { ok: false, error: 'Exco accounts require a secure password of at least 8 characters.' }
-        }
-      }
-    }
-
-    // Resolve team references to match Sanity schema
+    // 4. Resolve Operational Team References
     const resolvedTeamReferences = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
     if (resolvedTeamReferences.some((team) => !team)) {
-      return { ok: false, error: 'One or more selected teams are no longer available. Refresh the form and try again.' }
+      return { ok: false, error: 'One or more selected teams could not be found. Please refresh and select again.' }
     }
     const teamReferences = resolvedTeamReferences.filter(
       (team): team is { _type: 'reference'; _ref: string } => Boolean(team)
     )
     const primaryTeamReference = teamReferences[0]
+
+    // 5. Structure Operational Team Memberships
+    // Maps selected teams into memberships[] with status: 'pending' (preserving existing verification if updating)
+    const existingMembershipsMap = new Map<string, Record<string, unknown>>()
+    if (existing?.memberships && Array.isArray(existing.memberships)) {
+      for (const m of existing.memberships) {
+        const teamObj = m.team as { _ref?: string; _id?: string } | undefined
+        const ref = teamObj?._ref || teamObj?._id || (typeof m.team === 'string' ? m.team : null)
+        if (ref) existingMembershipsMap.set(ref, m)
+      }
+    }
+
+    const memberships = teamReferences.map((ref) => {
+      const existingMem = existingMembershipsMap.get(ref._ref)
+      if (existingMem) {
+        return {
+          _key: (existingMem._key as string) || `mem_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
+          _type: 'teamMembership',
+          team: ref,
+          status: (existingMem.status as string) || 'pending',
+          ...(existingMem.decidedBy ? { decidedBy: existingMem.decidedBy } : {}),
+          ...(existingMem.decidedAt ? { decidedAt: existingMem.decidedAt } : {}),
+        }
+      }
+      return {
+        _key: `mem_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
+        _type: 'teamMembership',
+        team: ref,
+        status: 'pending',
+      }
+    })
+
+    // 6. Structure Executive Positions (Appointments / Applications)
+    let positionsToSave: Array<Record<string, unknown>> | undefined = undefined
+    if (input.isExco) {
+      const app = input.executiveApplication
+      const kind: ExecutiveApplicationKind = app?.kind || (input.requestedRole === 'admin' ? 'csgb' : input.requestedRole === 'hall_rep' ? 'hall' : 'team')
+
+      const newPosition: Record<string, unknown> = {
+        _key: `pos_${kind}_${Math.random().toString(36).substring(2, 7)}`,
+        _type: 'executivePosition',
+        kind,
+        status: 'pending',
+      }
+
+      if (kind === 'csgb') {
+        newPosition.office = normalizeCsgbOffice(app?.office)
+      } else if (kind === 'hall') {
+        newPosition.hall = app?.hall?.trim() || input.hall
+        newPosition.rank = app?.rank || 'lead'
+      } else if (kind === 'team') {
+        const targetTeamName = app?.team?.trim() || selectedTeams[0]
+        const execTeamRef = await resolveTeamReference(targetTeamName)
+        if (execTeamRef) {
+          newPosition.team = execTeamRef
+        } else {
+          newPosition.team = primaryTeamReference
+        }
+        newPosition.rank = app?.rank || 'lead'
+      }
+
+      // Preserve existing positions if any were already approved
+      const existingPositions: Array<Record<string, unknown>> = Array.isArray(existing?.positions) ? existing.positions : []
+      const approvedPositions = existingPositions.filter((p) => p.status === 'approved')
+
+      positionsToSave = [...approvedPositions, newPosition]
+    } else if (existing?.positions && Array.isArray(existing.positions)) {
+      // Keep approved positions if worker didn't re-apply
+      positionsToSave = existing.positions.filter((p) => p.status === 'approved')
+    }
 
     const profileImageUrl = input.profileImageUrl?.trim() || undefined
     if (profileImageUrl) {
@@ -920,18 +1108,11 @@ export async function registerWorker(
       }
     }
 
-    let passwordHash: string | undefined = undefined
-    if (input.password && input.password.length >= 8) {
-      const rawHash = await bcrypt.hash(input.password, 10)
-      // Double layer protection: Encrypt the bcrypt hash with AES-256-GCM before storing in Sanity
-      passwordHash = encrypt(rawHash)
-    }
-
     const encryptedBirthDate = encrypt(cleanBirthDate)
     const birthdayBlindIndex = createBirthdayBlindIndex(cleanBirthDate)
 
+    // 7. Execute Mutation (Upsert)
     if (existing) {
-      // 4a. Worker Exists -> Compute Delta Log and Patch
       const deltaLogs: string[] = []
       const currentRoom = decrypt(existing.roomNumber)
       const currentBirthDate = decrypt(existing.birthDate)
@@ -959,8 +1140,11 @@ export async function registerWorker(
       if (profileImageUrl) {
         deltaLogs.push(`Updated Birthday Picture on ${today}`)
       }
+      if (input.isExco) {
+        deltaLogs.push(`Submitted executive application on ${today} (pending Presidential approval)`)
+      }
       if (deltaLogs.length === 0) {
-        deltaLogs.push(`Profile re-verified on ${today}`)
+        deltaLogs.push(`Profile updated on ${today}`)
       }
 
       const patchData: Record<string, unknown> = {
@@ -970,6 +1154,9 @@ export async function registerWorker(
         ...(cleanLastName ? { lastName: cleanLastName } : {}),
         team: primaryTeamReference,
         teams: teamReferences,
+        memberships,
+        ...(positionsToSave ? { positions: positionsToSave } : {}),
+        ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: encryptedBirthDate,
@@ -990,6 +1177,7 @@ export async function registerWorker(
       await patchPrivateDocument(existing._id)
         .set(patchData)
         .unset([
+          'passwordHash', // Abolished in Phase 3
           'birthMonth',
           'birthDay',
           'selfServiceTokenHash',
@@ -1002,20 +1190,22 @@ export async function registerWorker(
         .commit()
 
       cookies().delete(SELF_SERVICE_COOKIE)
-
       revalidatePath('/dashboard/workers')
+      revalidatePath('/register/status')
 
       return {
         ok: true,
-        isExco: Boolean(existing.role || existing.requestedRole),
-        message: 'Your worker profile has been updated.',
+        isExco: Boolean(input.isExco),
+        message: input.isExco
+          ? 'Your profile updates and executive application have been submitted.'
+          : 'Your worker profile has been updated.',
         ...(uploadGrant ? { uploadGrant } : {}),
       }
     } else {
-      // 4b. New Worker -> Create document with initial updateLog
+      // Create Brand New Worker Document
       const initialLogs = [`Initial worker registration on ${today}`]
-      if (input.isExco && input.requestedRole) {
-        initialLogs.push(`Requested Exco role (${input.requestedRole}) on ${today} (pending approval)`)
+      if (input.isExco) {
+        initialLogs.push(`Submitted executive application on ${today} (pending Presidential approval)`)
       }
 
       const newDoc: { _type: 'worker'; [key: string]: unknown } = {
@@ -1029,6 +1219,9 @@ export async function registerWorker(
         phoneBlindIndex,
         team: primaryTeamReference,
         teams: teamReferences,
+        memberships,
+        ...(positionsToSave ? { positions: positionsToSave } : {}),
+        ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
         birthDate: encryptedBirthDate,
@@ -1049,22 +1242,17 @@ export async function registerWorker(
         newDoc.profileImageUrl = profileImageUrl
       }
 
-      if (input.isExco && passwordHash && input.requestedRole) {
-        newDoc.passwordHash = passwordHash
-        newDoc.requestedRole = input.requestedRole
-        newDoc.isExcoApproved = false
-      }
-
       await createPrivateDocument(newDoc)
 
       revalidatePath('/dashboard/workers')
+      revalidatePath('/register/status')
 
       return {
         ok: true,
         isExco: Boolean(input.isExco),
         message: input.isExco
-          ? `Welcome to ECCF, ${cleanFullName}! Your registration has been submitted to your Team Leader for verification, and your Exco dashboard request is pending CSGB approval.`
-          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Leader for membership approval.`,
+          ? `Welcome to ECCF, ${cleanFullName}! Your team registrations have been submitted for Team Lead verification, and your executive designation is pending Presidential approval.`
+          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Lead(s) for verification.`,
         ...(uploadGrant ? { uploadGrant } : {}),
       }
     }
@@ -1078,53 +1266,235 @@ export async function registerWorker(
 }
 
 /**
- * Set or reset a dashboard password only after the worker's registered email link was verified.
+ * Retrieves the signed-in user context from Clerk or active session.
+ * Used to prefill verified email and profile info during registration.
  */
-export async function setupExcoPassword(input: {
-  newPassword: string
-}): Promise<{ ok: boolean; message?: string; error?: string }> {
+export async function getSignedInUserContext(): Promise<{
+  isSignedIn: boolean
+  clerkUserId?: string
+  email?: string
+  firstName?: string
+  lastName?: string
+  fullName?: string
+}> {
   try {
-    const password = input.newPassword?.trim() || ''
-    if (password.length < 12) {
-      return { ok: false, error: 'Choose a password with at least 12 characters.' }
+    const authState = await auth()
+    if (authState?.userId) {
+      const user = await currentUser()
+      if (user) {
+        const primaryEmail =
+          user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ||
+          user.emailAddresses[0]?.emailAddress
+        return {
+          isSignedIn: true,
+          clerkUserId: user.id,
+          email: primaryEmail,
+          firstName: user.firstName || undefined,
+          lastName: user.lastName || undefined,
+          fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || undefined,
+        }
+      }
+      return {
+        isSignedIn: true,
+        clerkUserId: authState.userId,
+      }
+    }
+  } catch {
+    // Clerk not configured or session absent
+  }
+
+  return { isSignedIn: false }
+}
+
+/**
+ * Retrieves registration status for the /register/status page.
+ */
+export async function getRegistrationStatus(
+  queryPhoneOrEmail?: string
+): Promise<RegistrationStatusResult> {
+  try {
+    let signedInClerkUserId: string | undefined = undefined
+    let clerkEmail: string | undefined = undefined
+
+    try {
+      const authState = await auth()
+      if (authState?.userId) {
+        signedInClerkUserId = authState.userId
+        const user = await currentUser()
+        if (user) {
+          clerkEmail =
+            user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ||
+            user.emailAddresses[0]?.emailAddress
+        }
+      }
+    } catch {
+      // Clerk auth context unavailable
     }
 
-    const token = cookies().get(SELF_SERVICE_COOKIE)?.value
-    const worker = token ? await getWorkerBySelfServiceToken(token, 'password') : null
-    if (!worker || (!worker.role && !worker.requestedRole)) {
-      return { ok: false, error: 'Your secure link is invalid or expired. Request a new password setup link.' }
+    const selfServiceToken = cookies().get(SELF_SERVICE_COOKIE)?.value
+    let verifiedTokenWorkerId: string | undefined = undefined
+    if (selfServiceToken) {
+      const tokenWorker = await getWorkerBySelfServiceToken(selfServiceToken, 'profile').catch(() => null)
+      if (tokenWorker?._id) {
+        verifiedTokenWorkerId = tokenWorker._id
+      }
     }
 
-    const rawHash = await bcrypt.hash(password, 10)
-    const encryptedHash = encrypt(rawHash)
+    const queryTarget = queryPhoneOrEmail?.trim().toLowerCase() || null
+    const cleanQueryPhone = queryTarget ? queryTarget.replace(/\s+/g, '') : null
+    const queryBlindIndexes =
+      cleanQueryPhone && cleanQueryPhone.length >= 8
+        ? [createBlindIndex(cleanQueryPhone), ...getCandidateBlindIndexes(cleanQueryPhone)]
+        : []
 
-    const today = new Date().toISOString().split('T')[0]
-    await patchPrivateDocument(worker._id)
-      .set({
-        passwordHash: encryptedHash,
-        updatedAt: new Date().toISOString(),
-      })
-      .unset([
-        'selfServiceTokenHash',
-        'selfServiceTokenPurpose',
-        'selfServiceTokenExpiresAt',
-        'selfServiceRequestedAt',
-      ])
-      .append('updateLog', [`Dashboard password configured on ${today}`])
-      .commit()
+    const worker = await sanityPrivateClient.fetch<Record<string, unknown> | null>(
+      `*[_type == "worker" && (
+        (defined($signedInClerkUserId) && clerkUserId == $signedInClerkUserId) ||
+        (defined($clerkEmail) && lower(email) == lower($clerkEmail)) ||
+        (defined($verifiedTokenWorkerId) && _id == $verifiedTokenWorkerId) ||
+        (defined($queryTarget) && lower(email) == $queryTarget) ||
+        (defined($cleanQueryPhone) && (phoneNumber == $cleanQueryPhone || phoneBlindIndex in $queryBlindIndexes))
+      )] | order(defined(clerkUserId) desc, _updatedAt desc)[0]{
+        _id,
+        fullName,
+        firstName,
+        middleName,
+        lastName,
+        email,
+        phoneNumber,
+        hall,
+        roomNumber,
+        birthDate,
+        profileImageUrl,
+        clerkUserId,
+        canApproveExecutives,
+        "memberships": memberships[]{
+          _key,
+          status,
+          decidedAt,
+          "teamName": team->name,
+          "teamKey": team->key
+        },
+        "positions": positions[]{
+          _key,
+          kind,
+          office,
+          hall,
+          rank,
+          status,
+          decidedAt,
+          "teamName": team->name,
+          "teamKey": team->key
+        },
+        "legacyTeam": team->name,
+        "legacyTeams": teams[]->name,
+        role,
+        requestedRole,
+        isExcoApproved
+      }`,
+      {
+        signedInClerkUserId: signedInClerkUserId || null,
+        clerkEmail: clerkEmail || null,
+        verifiedTokenWorkerId: verifiedTokenWorkerId || null,
+        queryTarget: queryTarget || null,
+        cleanQueryPhone: cleanQueryPhone || null,
+        queryBlindIndexes,
+      }
+    )
 
-    cookies().delete(SELF_SERVICE_COOKIE)
+    if (!worker) {
+      return {
+        ok: false,
+        signedIn: Boolean(signedInClerkUserId),
+        clerkUserId: signedInClerkUserId,
+        clerkEmail,
+        error: 'No workforce registration record found.',
+      }
+    }
 
-    revalidatePath('/dashboard')
-    revalidatePath('/login')
+    const rawPhone = (worker.phoneNumber as string) || ''
+    const rawRoom = (worker.roomNumber as string) || ''
+    const rawBirthDate = (worker.birthDate as string) || ''
+    const decryptedPhone = decrypt(rawPhone) || rawPhone
+    const decryptedRoom = decrypt(rawRoom) || rawRoom
+    const decryptedBirthDate = decrypt(rawBirthDate) || rawBirthDate
+
+    const rawMemberships = (worker.memberships as Array<Record<string, unknown>>) || []
+    let formattedMemberships = rawMemberships.map((m, idx: number) => ({
+      key: (m._key as string) || `mem_${idx}`,
+      teamName: (m.teamName as string) || 'Operational Team',
+      teamKey: (m.teamKey as string) || '',
+      status: ((m.status as string) || 'pending') as 'pending' | 'verified' | 'rejected',
+      decidedAt: m.decidedAt as string | undefined,
+    }))
+
+    const legacyTeams = worker.legacyTeams as string[] | undefined
+    const legacyTeam = worker.legacyTeam as string | undefined
+    if (formattedMemberships.length === 0 && (legacyTeams?.length || legacyTeam)) {
+      const legacyList: string[] = (legacyTeams && legacyTeams.length > 0) ? legacyTeams : [legacyTeam || '']
+      formattedMemberships = legacyList.filter(Boolean).map((t, idx) => ({
+        key: `legacy_${idx}`,
+        teamName: t,
+        teamKey: '',
+        status: (worker.isExcoApproved ? 'verified' : 'pending') as 'pending' | 'verified' | 'rejected',
+        decidedAt: undefined,
+      }))
+    }
+
+    const rawPositions = (worker.positions as Array<Record<string, unknown>>) || []
+    const formattedPositions = rawPositions.map((p, idx: number) => {
+      const rank = p.rank as 'lead' | 'assistant' | undefined
+      const rankStr = rank === 'assistant' ? 'Assistant ' : ''
+      const kind = p.kind as 'csgb' | 'hall' | 'team'
+      let title = 'Executive Designation'
+      if (kind === 'csgb') {
+        title = `CSGB — ${(p.office as string) || 'Executive Office'}`
+      } else if (kind === 'hall') {
+        title = `${rankStr}Hall Pastor (${(p.hall as string) || 'Hostel'})`
+      } else if (kind === 'team') {
+        title = `${rankStr}Team Lead (${(p.teamName as string) || 'Ministry Team'})`
+      }
+      return {
+        key: (p._key as string) || `pos_${idx}`,
+        kind,
+        title,
+        office: p.office as string | undefined,
+        hall: p.hall as string | undefined,
+        teamName: p.teamName as string | undefined,
+        rank,
+        status: ((p.status as string) || 'pending') as 'pending' | 'approved' | 'rejected',
+        decidedAt: p.decidedAt as string | undefined,
+      }
+    })
 
     return {
       ok: true,
-      message: 'Password updated. You can now sign in.',
+      signedIn: Boolean(signedInClerkUserId),
+      clerkUserId: signedInClerkUserId,
+      clerkEmail,
+      worker: {
+        id: worker._id as string,
+        fullName: worker.fullName as string,
+        firstName: worker.firstName as string | undefined,
+        middleName: worker.middleName as string | undefined,
+        lastName: worker.lastName as string | undefined,
+        email: worker.email as string,
+        phoneNumber: decryptedPhone === '[Encrypted Data]' ? undefined : decryptedPhone,
+        hall: worker.hall as string,
+        roomNumber: decryptedRoom === '[Encrypted Data]' ? undefined : decryptedRoom,
+        birthDate: decryptedBirthDate === '[Encrypted Data]' ? undefined : decryptedBirthDate,
+        profileImageUrl: worker.profileImageUrl as string | undefined,
+        clerkUserId: worker.clerkUserId as string | undefined,
+        memberships: formattedMemberships,
+        positions: formattedPositions,
+      },
     }
   } catch (err) {
-    console.error('[setupExcoPassword] Error:', err)
-    return { ok: false, error: 'Failed to update password. Please try again.' }
+    console.error('[getRegistrationStatus] Error:', err)
+    return {
+      ok: false,
+      signedIn: false,
+      error: 'Unable to retrieve registration status at this time. Please try again.',
+    }
   }
 }
-

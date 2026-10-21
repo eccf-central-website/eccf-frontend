@@ -28,7 +28,7 @@ interface NavLinksProps {
 
 export default function NavLinks({ sections, collapsed = false, onNavigate }: NavLinksProps) {
   const pathname = usePathname()
-  const activeSection = sectionForPath(pathname)
+  const activeSection = sectionForPath(pathname || '')
   const [pendingHref, setPendingHref] = useState<string | null>(null)
 
   // Reset pending state on route change

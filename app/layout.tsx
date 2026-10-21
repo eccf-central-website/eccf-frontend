@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Belleza, Work_Sans } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 /**
@@ -66,23 +67,37 @@ export const metadata: Metadata = {
 
 import LivePreviewListener from "@/components/common/LivePreviewListener";
 
+// Fallback to a validly structured test publishable key during build time if unconfigured
+const clerkPublishableKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder"
+    ? process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    : "pk_test_Y2xlcmsuZXhhbXBsZS5jb20k";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${belleza.variable} ${workSans.variable} ${geistSans.variable} ${geistMono.variable}`}
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      signInUrl="/login"
+      signUpUrl="/register"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/register"
     >
-      <body
-        className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
+      <html
+        lang="en"
+        className={`${belleza.variable} ${workSans.variable} ${geistSans.variable} ${geistMono.variable}`}
       >
-        <LivePreviewListener />
-        {children}
-      </body>
-    </html>
+        <body
+          className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
+        >
+          <LivePreviewListener />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
-

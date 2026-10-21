@@ -75,15 +75,59 @@ function makeWorker(i: number, overrides: Partial<WorkerRow> = {}): WorkerRow {
 }
 
 const sessionWorkers: WorkerRow[] = [
-  makeWorker(0, { _id: 'mock-worker-admin', fullName: 'Osaro Igbinedion', email: 'osaro.igbinedion@example.com', team: 'Exco', hall: 'Hall A', role: 'admin', excoPosition: 'President', isExcoApproved: true, verificationStatus: 'verified' }),
-  makeWorker(1, { _id: 'mock-worker-teamlead', fullName: 'Tobi Adebayo', email: 'tobi.adebayo@example.com', team: 'Media', leadingTeam: 'Media', hall: 'Hall D', role: 'team_lead', excoPosition: 'Media Coordinator', isExcoApproved: true, verificationStatus: 'verified' }),
+  makeWorker(0, {
+    _id: 'mock-worker-admin',
+    fullName: 'Osaro Igbinedion',
+    email: 'osaro.igbinedion@example.com',
+    team: 'Exco',
+    hall: 'Hall A',
+    role: 'admin',
+    excoPosition: 'President',
+    isExcoApproved: true,
+    verificationStatus: 'verified',
+    positions: [{ _key: 'pos-pres', kind: 'csgb', office: 'President & Executive Shepherd', status: 'approved' }],
+  }),
+  makeWorker(1, {
+    _id: 'mock-worker-teamlead',
+    fullName: 'Tobi Adebayo',
+    email: 'tobi.adebayo@example.com',
+    team: 'Media',
+    leadingTeam: 'Media',
+    hall: 'Hall D',
+    role: 'team_lead',
+    excoPosition: 'Media Coordinator',
+    isExcoApproved: true,
+    verificationStatus: 'verified',
+    positions: [{ _key: 'pos-media-lead', kind: 'team', teamId: 'team-media', teamKey: 'media', teamName: 'Media', rank: 'lead', status: 'approved' }],
+    memberships: [{ _key: 'mem-media-lead', teamId: 'team-media', teamKey: 'media', teamName: 'Media', status: 'verified' }],
+  }),
   makeWorker(2, { _id: 'mock-worker-hallrep', fullName: 'Ivie Aigbe', email: 'ivie.aigbe@example.com', team: 'Welfare', hall: 'Hall B', role: 'hall_rep', isExcoApproved: true, verificationStatus: 'verified' }),
   makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', email: 'efosa.osagie@example.com', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary', isExcoApproved: true, verificationStatus: 'verified' }),
 ]
 
 export const MOCK_WORKERS: WorkerRow[] = [
   ...sessionWorkers,
-  ...Array.from({ length: 27 }, (_, i) => makeWorker(i + 4)),
+  makeWorker(4, {
+    positions: [{ _key: 'pos-csgb-01', kind: 'csgb', office: "Vice President - Admin", status: 'pending' }],
+  }),
+  makeWorker(5, {
+    positions: [{ _key: 'pos-csgb-02', kind: 'csgb', office: "General Secretary", status: 'pending' }],
+  }),
+  makeWorker(6, {
+    positions: [{ _key: 'pos-hall-01', kind: 'hall', hall: 'Hall 3', rank: 'lead', status: 'pending' }],
+  }),
+  makeWorker(7, {
+    positions: [{ _key: 'pos-hall-02', kind: 'hall', hall: 'Hall 1', rank: 'assistant', status: 'pending' }],
+  }),
+  makeWorker(8, {
+    positions: [{ _key: 'pos-team-01', kind: 'team', teamId: 'team-choir', teamKey: 'choir', teamName: 'Choir', rank: 'lead', status: 'pending' }],
+    memberships: [{ _key: 'mem-team-01', teamId: 'team-choir', teamKey: 'choir', teamName: 'Choir', status: 'pending' }],
+  }),
+  makeWorker(9, {
+    positions: [{ _key: 'pos-team-02', kind: 'team', teamId: 'team-technical', teamKey: 'technical', teamName: 'Technical', rank: 'assistant', status: 'pending' }],
+    memberships: [{ _key: 'mem-team-02', teamId: 'team-technical', teamKey: 'technical', teamName: 'Technical', status: 'pending' }],
+  }),
+  ...Array.from({ length: 21 }, (_, i) => makeWorker(i + 10)),
 ]
 
 /** Hall of a worker by id — mirrors WORKER_HALL_BY_ID_QUERY */

@@ -56,13 +56,14 @@ export default async function DashboardShellLayout({
   }
 
   return (
-    <div className="flex min-h-dvh flex-1">
+    <div className="fixed inset-0 flex h-dvh w-full overflow-hidden bg-background">
       <SkipLink />
       <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
         <TopBar
           sections={sections}
           name={session.name}
+          email={session.email}
           role={session.role}
           team={session.team}
           teams={session.teams}
@@ -71,7 +72,11 @@ export default async function DashboardShellLayout({
           actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
           devTools={devTools}
         />
-        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-y-auto overflow-x-hidden focus:outline-none"
+        >
           {children}
         </main>
       </div>

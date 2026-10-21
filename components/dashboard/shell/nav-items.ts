@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Radio,
+  Shield,
   UserPlus,
   Users,
   Wallet,
@@ -31,6 +32,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { section: 'overview', label: 'Overview', href: SECTION_PATHS.overview, icon: LayoutDashboard },
+  { section: 'executives', label: 'Executives', href: SECTION_PATHS.executives, icon: Shield },
   { section: 'workers', label: 'Workers', href: SECTION_PATHS.workers, icon: Users },
   { section: 'attendance', label: 'Attendance', href: SECTION_PATHS.attendance, icon: CalendarCheck },
   { section: 'finance', label: 'Finance', href: SECTION_PATHS.finance, icon: Wallet },

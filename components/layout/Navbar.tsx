@@ -117,7 +117,7 @@ export default function Navbar() {
     }
     if (href === '/') return pathname === '/' && !activeSection
     if (href.startsWith('/#')) return false
-    return pathname.startsWith(href)
+    return Boolean(pathname && pathname.startsWith(href))
   }
 
   return (

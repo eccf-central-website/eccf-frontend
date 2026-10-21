@@ -20,7 +20,7 @@ export default function DeniedToast() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
-  const denied = searchParams.get('denied')
+  const denied = searchParams?.get('denied')
 
   useEffect(() => {
     if (!denied) return
@@ -33,7 +33,9 @@ export default function DeniedToast() {
         id: TOAST_IDS.denied,
         description: 'Ask an admin if you think you should.',
       })
-      router.replace(pathname, { scroll: false })
+      if (pathname) {
+        router.replace(pathname, { scroll: false })
+      }
     }, 0)
     return () => clearTimeout(timer)
   }, [denied, pathname, router])

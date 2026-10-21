@@ -27,6 +27,7 @@ import type {
   ECCFSession,
   FinanceRow,
   FirstTimerRow,
+  PendingExecutiveApplication,
   PrayerRequest,
   SafeWelfareRequest,
   WorkerRow,
@@ -39,6 +40,7 @@ import {
   DASHBOARD_ATTENDANCE_QUERY,
   DASHBOARD_FINANCE_QUERY,
   DASHBOARD_FIRST_TIMERS_QUERY,
+  DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY,
   DASHBOARD_PRAYER_REQUESTS_QUERY,
   DASHBOARD_WELFARE_QUERY,
   DASHBOARD_WORKERS_QUERY,
@@ -394,6 +396,77 @@ export async function listAnnouncements(session: ECCFSession): Promise<Announcem
   } catch (err) {
     console.error('[listAnnouncements] Sanity fetch error, falling back to mock fixtures:', err)
     return MOCK_ANNOUNCEMENTS
+  }
+}
+
+export async function listPendingExecutiveApplications(): Promise<PendingExecutiveApplication[]> {
+  if (dataSource() === 'mock') {
+    const workers = await fromMock(MOCK_WORKERS, [])
+    const apps: PendingExecutiveApplication[] = []
+    for (const w of workers) {
+      const positions = Array.isArray(w.positions) ? w.positions : []
+      for (const pos of positions) {
+        if (pos.status === 'pending') {
+          apps.push({
+            workerId: w._id,
+            fullName: w.fullName,
+            email: w.email || '',
+            hall: w.hall || '',
+            profileImageUrl: w.profileImageUrl,
+            createdAt: w.createdAt,
+            position: {
+              key: pos._key || `${w._id}-${pos.kind}-${pos.office || pos.hall || pos.teamName || 'pos'}`,
+              kind: pos.kind,
+              office: pos.office,
+              hall: pos.hall,
+              rank: pos.rank || 'lead',
+              teamId: pos.teamId,
+              teamKey: pos.teamKey,
+              teamName: pos.teamName || (typeof pos.team === 'string' ? pos.team : undefined),
+              status: pos.status,
+              submittedAt: w.createdAt,
+            },
+          })
+        }
+      }
+    }
+    return apps
+  }
+
+  try {
+    const rawDocs = await sanityPrivateClient.fetch<any[]>(DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY)
+    const apps: PendingExecutiveApplication[] = []
+    for (const doc of rawDocs) {
+      const positions = Array.isArray(doc.positions) ? doc.positions : []
+      for (const pos of positions) {
+        if (pos.status === 'pending') {
+          apps.push({
+            workerId: doc._id,
+            fullName: doc.fullName || '',
+            email: doc.email || '',
+            hall: doc.hall || '',
+            profileImageUrl: doc.profileImageUrl,
+            createdAt: doc.createdAt || doc._createdAt,
+            position: {
+              key: pos._key,
+              kind: pos.kind,
+              office: pos.office,
+              hall: pos.hall,
+              rank: pos.rank || 'lead',
+              teamId: pos.teamId,
+              teamKey: pos.teamKey,
+              teamName: pos.teamName,
+              status: pos.status,
+              submittedAt: doc.createdAt || doc._createdAt,
+            },
+          })
+        }
+      }
+    }
+    return apps
+  } catch (err) {
+    console.error('[listPendingExecutiveApplications] Sanity fetch error:', err)
+    return []
   }
 }
 

@@ -17,6 +17,7 @@ import type { WorkerRole } from '@/types'
 
 export type DashboardSection =
   | 'overview'
+  | 'executives'
   | 'workers'
   | 'attendance'
   | 'finance'
@@ -50,6 +51,7 @@ export const ROLE_LABELS: Record<WorkerRole, string> = {
 /** URL path for each section. Intake paths match revalidatePath() calls in app/actions/intake-actions.ts. */
 export const SECTION_PATHS: Record<DashboardSection, string> = {
   overview: '/dashboard',
+  executives: '/dashboard/executives',
   workers: '/dashboard/workers',
   attendance: '/dashboard/attendance',
   finance: '/dashboard/finance',
@@ -62,6 +64,7 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   overview: ['admin', 'team_lead', 'finance', 'hall_rep'],
+  executives: ['admin'],
   workers: ['admin', 'team_lead', 'hall_rep'],
   attendance: ['admin', 'team_lead', 'hall_rep'],
   finance: ['admin', 'finance'],
@@ -202,10 +205,19 @@ export function canAccessSection(
     teams?: string[]
     excoPosition?: string
     leadingTeam?: string
+    access?: { isPresident?: boolean }
   } | null
 ): boolean {
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
+  if (section === 'executives') {
+    const hasAccess = currentSession && 'access' in currentSession && (currentSession as any).access
+    if (hasAccess && typeof (currentSession as any).access.isPresident === 'boolean') {
+      return (currentSession as any).access.isPresident
+    }
+    const pos = (currentSession.excoPosition || '').toLowerCase()
+    return Boolean(pos.includes('president'))
+  }
   if (section === 'announcements') {
     return isCSGBMember(currentSession)
   }

@@ -20,6 +20,7 @@ import {
   Mail,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
+import type { WorkerAccess } from '@/lib/dashboard/access'
 import SendWorkerEmailDialog from './SendWorkerEmailDialog'
 import SendWorkerEmailCard from './SendWorkerEmailCard'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -122,7 +123,7 @@ function matchesWorkerTeam(
 
 interface WorkersClientProps {
   rows: WorkerRow[]
-  session: ECCFSession
+  session: ECCFSession & { access?: WorkerAccess }
 }
 
 type StatusFilter = 'all' | 'pending' | 'verified' | 'rejected'
@@ -139,36 +140,68 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
   const [, startTransition] = useTransition()
   const [processingId, setProcessingId] = useState<string | null>(null)
 
+  const access = session.access
+  const isPresident = Boolean(access?.isPresident)
+  const leadsTeamIds = access?.leadsTeamIds || []
+  const leadsTeamKeys = access?.leadsTeamKeys || []
   const isTeamLead = session.role === 'team_lead'
+  const isLeadOrAssistant = leadsTeamIds.length > 0 || leadsTeamKeys.length > 0 || isTeamLead
   const isAdmin = session.role === 'admin'
   const isHallRep = session.role === 'hall_rep'
   const isMedia = isMediaTeam(session)
 
-  // Operational team target for non-media team leads: strictly session.leadingTeam || session.team
+  // Operational team target for non-media team leads: strictly session.leadingTeam || session.team || leadsTeamKeys[0]
   const targetLeaderTeam = useMemo(() => {
-    if (!isTeamLead || isMedia) return null
-    return (session.leadingTeam || session.team || '').trim() || null
-  }, [isTeamLead, isMedia, session.leadingTeam, session.team])
+    if ((!isLeadOrAssistant) || isMedia) return null
+    return (session.leadingTeam || session.team || leadsTeamKeys[0] || '').trim() || null
+  }, [isLeadOrAssistant, isMedia, session.leadingTeam, session.team, leadsTeamKeys])
 
-  // Scope workers for non-media team leads
+  // Scope workers: President, CSGB Admin, and Media see all.
+  // Team Leads and Assistant Leads are scoped to their operational teams (leadsTeamIds, leadsTeamKeys, or targetLeaderTeam).
   const scopedWorkers = useMemo(() => {
-    if (isTeamLead && !isMedia && targetLeaderTeam) {
-      return rows.filter((r) => matchesWorkerTeam(r, targetLeaderTeam))
+    if (isPresident || isAdmin || isMedia) return rows
+    if (isLeadOrAssistant) {
+      return rows.filter((r) => {
+        // Structured memberships check
+        if (Array.isArray(r.memberships) && r.memberships.length > 0) {
+          const hasMatch = r.memberships.some(
+            (m) =>
+              (m.teamId && leadsTeamIds.includes(m.teamId)) ||
+              (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
+              (targetLeaderTeam && matchesWorkerTeam(r, targetLeaderTeam))
+          )
+          if (hasMatch) return true
+        }
+        // Fallback to legacy team match
+        if (targetLeaderTeam) {
+          return matchesWorkerTeam(r, targetLeaderTeam)
+        }
+        return false
+      })
     }
     return rows
-  }, [rows, isTeamLead, isMedia, targetLeaderTeam])
+  }, [rows, isPresident, isAdmin, isMedia, isLeadOrAssistant, leadsTeamIds, leadsTeamKeys, targetLeaderTeam])
+
+  // Helper to determine if worker has any pending membership or status
+  const isWorkerPending = (w: WorkerRow) => {
+    if ((w.verificationStatus || 'verified') === 'pending') return true
+    if (Array.isArray(w.memberships) && w.memberships.some((m) => m.status === 'pending')) {
+      return true
+    }
+    return false
+  }
 
   // Summary counts
   const pendingWorkers = useMemo(
-    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'pending'),
+    () => scopedWorkers.filter((r) => isWorkerPending(r)),
     [scopedWorkers]
   )
   const verifiedWorkers = useMemo(
-    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'verified'),
+    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'verified' && !isWorkerPending(r)),
     [scopedWorkers]
   )
   const rejectedWorkers = useMemo(
-    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'rejected'),
+    () => scopedWorkers.filter((r) => (r.verificationStatus || 'verified') === 'rejected' && !isWorkerPending(r)),
     [scopedWorkers]
   )
 
@@ -223,10 +256,12 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 ? {
                     ...r,
                     verificationStatus: newStatus,
-                    verifiedBy:
-                      session.role === 'admin'
-                        ? 'CSGB Admin'
-                        : `${session.leadingTeam || session.team} Team Lead`,
+                    verifiedBy: isPresident
+                      ? 'Fellowship President'
+                      : access?.titles?.[0] ||
+                        (session.role === 'admin'
+                          ? 'CSGB Admin'
+                          : `${session.leadingTeam || session.team} Team Lead`),
                     verifiedAt: new Date().toISOString(),
                   }
                 : r
@@ -293,13 +328,15 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
-              {isAdmin
+              {isPresident
+                ? 'Presidential Workforce CRM'
+                : isAdmin
                 ? 'Central Workforce CRM'
                 : isMedia
                 ? 'Media & Celebrations Directory'
                 : isHallRep
                 ? `${session.hall || 'Hall'} Workers Roster`
-                : `${session.leadingTeam || session.team} Team Roster`}
+                : `${session.leadingTeam || session.team || leadsTeamKeys[0] || 'Ministry'} Team Roster`}
             </span>
             {pendingWorkers.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
@@ -309,22 +346,26 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
             )}
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-black text-foreground tracking-tight mt-1">
-            {isAdmin
+            {isPresident
+              ? 'Fellowship Workforce & Presidential CRM'
+              : isAdmin
               ? 'Workforce & Leadership Roster'
               : isMedia
               ? 'Fellowship Workers & Birthday Directory'
               : isHallRep
               ? `${session.hall || 'Hall'} Resident Workers`
-              : `${session.leadingTeam || session.team} Members & Applicants`}
+              : `${session.leadingTeam || session.team || leadsTeamKeys[0] || 'Team'} Members & Applicants`}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-            {isAdmin
+            {isPresident
+              ? 'Fellowship-wide presidential authority to review, confirm, and verify workers across all operational teams and halls.'
+              : isAdmin
               ? 'Govern all fellowship workers across all operational teams and halls. Approve departmental rosters and grant Exco dashboard credentials.'
               : isMedia
               ? 'Full directory of all fellowship workers across all teams and halls for designing birthday flyers, celebratory graphics, and media coverage.'
               : isHallRep
               ? `View and care for all fellowship workers living in ${session.hall || 'your hall'} across all operational units.`
-              : `Review and approve workers requesting to join ${session.leadingTeam || session.team}. Once accepted, they become verified members on your team roster.`}
+              : `Review and approve workers requesting to join ${session.leadingTeam || session.team || 'your team'}. Once accepted, they become verified members on your team roster.`}
           </p>
         </div>
 
@@ -403,7 +444,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
             {pendingWorkers.slice(0, 6).map((worker) => {
               const isBusy = processingId === worker._id
-              const canApprove = isAdmin || (isTeamLead && !isMedia)
+              const canApprove = isPresident || isAdmin || (isLeadOrAssistant && !isMedia)
 
               return (
                 <div
@@ -597,7 +638,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               </TableRow>
             ) : (
               filteredRows.map((worker) => {
-                const status = worker.verificationStatus || 'verified'
+                const status = isWorkerPending(worker) ? 'pending' : worker.verificationStatus || 'verified'
                 const isBusy = processingId === worker._id
                 const allTeams = worker.teams && worker.teams.length > 0 ? worker.teams : [worker.team]
 
@@ -719,7 +760,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                         </Button>
 
                         {/* If Pending & Authorized: Show 1-Tap Approve/Decline */}
-                        {status === 'pending' && (isAdmin || (isTeamLead && !isMedia)) && (
+                        {(status === 'pending' || isWorkerPending(worker)) && (isPresident || isAdmin || (isLeadOrAssistant && !isMedia)) && (
                           <>
                             <Button
                               size="sm"

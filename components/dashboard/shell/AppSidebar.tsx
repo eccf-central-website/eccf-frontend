@@ -68,7 +68,7 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
     <aside
       data-state={collapsed ? 'collapsed' : 'expanded'}
       className={cn(
-        'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex',
+        'hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex',
         collapsed ? 'w-[4.25rem]' : 'w-64'
       )}
     >

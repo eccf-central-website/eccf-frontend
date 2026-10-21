@@ -12,13 +12,15 @@ import {
   Upload,
   UserCheck,
   ShieldCheck,
-  Eye,
-  EyeOff,
   User,
   ShieldAlert,
   RotateCcw,
   Loader2,
   Mail,
+  Crown,
+  Home,
+  Users,
+  ExternalLink,
 } from 'lucide-react'
 import {
   checkWorkerPhoneAndInitiateVerification,
@@ -26,10 +28,11 @@ import {
   registerWorker,
   requestWorkerSelfServiceLink,
   verifyWorkerOtp,
+  type ExecutiveApplicationInput,
+  type ExecutiveApplicationKind,
 } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { compressImage } from '@/lib/image-compression'
-import type { WorkerRole } from '@/types'
 import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
 const HALLS_OF_RESIDENCE = [
@@ -41,6 +44,13 @@ const HALLS_OF_RESIDENCE = [
   'Hall 6',
   'Hall 7',
   'Hall 8',
+]
+
+const CSGB_OFFICES = [
+  { value: 'President', label: 'President & Executive Shepherd', description: 'Central executive leadership of the fellowship.' },
+  { value: 'VP Admin', label: "Vice President - Admin / Brothers' Coordinator", description: "Administrative coordination and brothers' ministry oversight." },
+  { value: 'VP Evangelism', label: "Vice President - Evangelism / Sisters' Coordinator", description: "Evangelism, campus outreach, and sisters' ministry oversight." },
+  { value: 'General Secretary', label: 'General Secretary', description: 'Fellowship secretarial administration and documentation.' },
 ]
 
 const MONTHS = [
@@ -61,13 +71,27 @@ const MONTHS = [
 function getDaysInMonth(monthStr: string): number {
   const month = parseInt(monthStr, 10)
   if ([4, 6, 9, 11].includes(month)) return 30
-  if (month === 2) return 29 // Support leap-year Feb 29
+  if (month === 2) return 29
   return 31
 }
 
-export function WorkerRegistrationForm() {
+export interface WorkerRegistrationFormProps {
+  initialEmail?: string
+  initialFirstName?: string
+  initialLastName?: string
+  clerkUserId?: string
+  isClerkSignedIn?: boolean
+}
+
+export function WorkerRegistrationForm({
+  initialEmail = '',
+  initialFirstName = '',
+  initialLastName = '',
+  clerkUserId,
+  isClerkSignedIn = false,
+}: WorkerRegistrationFormProps) {
   const searchParams = useSearchParams()
-  const selfServiceToken = searchParams.get('selfServiceToken') || ''
+  const selfServiceToken = searchParams?.get('selfServiceToken') || ''
 
   // Step & Flow State
   const [step, setStep] = useState(1)
@@ -98,11 +122,11 @@ export function WorkerRegistrationForm() {
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [firstName, setFirstName] = useState('')
+  const [firstName, setFirstName] = useState(initialFirstName)
   const [middleName, setMiddleName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [lastName, setLastName] = useState(initialLastName)
   const fullName = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [teams, setTeams] = useState<string[]>([])
 
   const toggleTeam = (t: string) => {
@@ -123,12 +147,14 @@ export function WorkerRegistrationForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
 
-  // Exco Fields
+  // Executive Designation State (No passwords)
   const [isExco, setIsExco] = useState(false)
-  const [requestedRole, setRequestedRole] = useState<WorkerRole>('team_lead')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [executiveKind, setExecutiveKind] = useState<ExecutiveApplicationKind>('csgb')
+  const [csgbOffice, setCsgbOffice] = useState('President')
+  const [hallRank, setHallRank] = useState<'lead' | 'assistant'>('lead')
+  const [execHall, setExecHall] = useState('')
+  const [teamRank, setTeamRank] = useState<'lead' | 'assistant'>('lead')
+  const [execTeam, setExecTeam] = useState('')
 
   // Privacy & Status
   const [ndprConsent, setNdprConsent] = useState(true)
@@ -144,6 +170,20 @@ export function WorkerRegistrationForm() {
   useEffect(() => {
     setTurnstileToken('')
   }, [step])
+
+  // Auto-fill exec hall when hall changes
+  useEffect(() => {
+    if (hall && !execHall) {
+      setExecHall(hall)
+    }
+  }, [hall, execHall])
+
+  // Auto-fill exec team when teams change
+  useEffect(() => {
+    if (teams.length > 0 && !execTeam) {
+      setExecTeam(teams[0])
+    }
+  }, [teams, execTeam])
 
   useEffect(() => {
     if (!selfServiceToken) return
@@ -166,6 +206,16 @@ export function WorkerRegistrationForm() {
         setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
         setExistingPhotoUrl(worker.profileImageUrl || null)
         setIsExco(worker.isExco || false)
+        if (worker.executiveApplication) {
+          setExecutiveKind(worker.executiveApplication.kind)
+          if (worker.executiveApplication.office) setCsgbOffice(worker.executiveApplication.office)
+          if (worker.executiveApplication.hall) setExecHall(worker.executiveApplication.hall)
+          if (worker.executiveApplication.team) setExecTeam(worker.executiveApplication.team)
+          if (worker.executiveApplication.rank) {
+            setHallRank(worker.executiveApplication.rank)
+            setTeamRank(worker.executiveApplication.rank)
+          }
+        }
         setStep(2)
         setError(null)
       } else {
@@ -184,10 +234,9 @@ export function WorkerRegistrationForm() {
     }
   }, [selfServiceToken])
 
-
   // Total steps based on flow
   // Returning flow: Step 1 (Phone) -> Step 2 (Location) -> Step 3 (Photo) -> Step 4 (Confirm)
-  // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Exco) -> Step 9 (Review)
+  // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Exco Designation) -> Step 9 (Review)
   const totalSteps = isReturning ? 4 : 9
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -209,7 +258,6 @@ export function WorkerRegistrationForm() {
       setBase64Image(compressed.base64)
       setError(null)
     } catch {
-      // Fallback to FileReader if Canvas compression fails
       const reader = new FileReader()
       reader.onload = () => {
         const res = reader.result as string
@@ -246,17 +294,14 @@ export function WorkerRegistrationForm() {
         return
       }
 
-      // If worker does NOT exist -> Proceed as new registration
       if (!result.exists) {
         setIsReturning(false)
         setIsExco(false)
-        setTeams([])
         setStep(2)
         return
       }
 
-      // Existing worker detected! Do NOT display details right away.
-      // Transition to security verification state
+      // Existing worker detected -> OTP flow
       setVerificationPending(true)
       setMaskedEmail(result.maskedEmail || 'your registered email')
       setVerificationNotice(
@@ -273,7 +318,6 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // Verifies the 6-digit OTP code entered on the page
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -310,10 +354,16 @@ export function WorkerRegistrationForm() {
       setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
       setExistingPhotoUrl(worker.profileImageUrl || null)
       setIsExco(worker.isExco || false)
+      if (worker.executiveApplication) {
+        setExecutiveKind(worker.executiveApplication.kind)
+        if (worker.executiveApplication.office) setCsgbOffice(worker.executiveApplication.office)
+        if (worker.executiveApplication.hall) setExecHall(worker.executiveApplication.hall)
+        if (worker.executiveApplication.team) setExecTeam(worker.executiveApplication.team)
+      }
 
       setVerificationPending(false)
       setOtpCode('')
-      setStep(2) // Jump straight to Returning Worker Step 2 (Location / Room update)
+      setStep(2)
       setError(null)
     } catch {
       setError('An error occurred during verification. Please try again.')
@@ -322,7 +372,6 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // Resend verification code / link with cooldown
   async function handleResendCode() {
     if (resendCooldown > 0) return
     setError(null)
@@ -334,7 +383,7 @@ export function WorkerRegistrationForm() {
         turnstileToken: turnstileToken || undefined,
       })
       if (result.ok) {
-        setVerificationNotice(`A fresh 6-digit verification code and link were sent to ${result.maskedEmail || maskedEmail}.`)
+        setVerificationNotice(`A fresh 6-digit verification code was sent to ${result.maskedEmail || maskedEmail}.`)
         setResendCooldown(60)
       } else {
         setError(result.error || 'Failed to resend code. Please try again.')
@@ -348,7 +397,6 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // Back from OTP verification to edit the phone number
   function handleChangePhone() {
     setVerificationPending(false)
     setOtpCode('')
@@ -383,6 +431,17 @@ export function WorkerRegistrationForm() {
       setTurnstileResetSignal((value) => value + 1)
     }
   }
+
+  // Construct Executive Application Input
+  const executiveApplication: ExecutiveApplicationInput | undefined = isExco
+    ? {
+        kind: executiveKind,
+        ...(executiveKind === 'csgb' ? { office: csgbOffice } : {}),
+        ...(executiveKind === 'hall' ? { hall: execHall || hall, rank: hallRank } : {}),
+        ...(executiveKind === 'team' ? { team: execTeam || teams[0] || 'General', rank: teamRank } : {}),
+      }
+    : undefined
+
   // Final Submission
   async function handleFinalSubmit() {
     setError(null)
@@ -411,8 +470,8 @@ export function WorkerRegistrationForm() {
         requestPhotoUpload: Boolean(base64Image),
         turnstileToken,
         isExco,
-        requestedRole: isExco ? requestedRole : undefined,
-        password: isExco && password ? password : undefined,
+        executiveApplication,
+        clerkUserId,
         ndprConsent,
       })
 
@@ -431,10 +490,16 @@ export function WorkerRegistrationForm() {
               }),
             })
             if (!uploadRes.ok) {
-              finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+              finalResult = {
+                ...registrationResult,
+                message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again anytime.`,
+              }
             }
           } catch {
-            finalResult = { ...registrationResult, message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again from this form.` }
+            finalResult = {
+              ...registrationResult,
+              message: `${registrationResult.message} Your profile was saved, but the photo could not be uploaded. You can submit it again anytime.`,
+            }
           }
         }
         setSuccessResult(finalResult)
@@ -450,7 +515,6 @@ export function WorkerRegistrationForm() {
     }
   }
 
-  // Slide Animation Variants
   const slideVariants = {
     enter: { opacity: 0, x: 25 },
     center: { opacity: 1, x: 0 },
@@ -473,36 +537,25 @@ export function WorkerRegistrationForm() {
           </p>
         </div>
 
-        {successResult.isExco && (
-          <div className="p-5 rounded-2xl bg-sky-50/90 border-2 border-sky-200 text-left space-y-2 shadow-xs">
-            <div className="flex items-center gap-2 font-bold text-sky-950 text-sm">
-              <ShieldCheck className="h-5 w-5 text-sky-600" />
-              <span>Exco Dashboard Access</span>
-            </div>
-            <p className="text-xs sm:text-sm text-sky-800 leading-relaxed">
-              Your Exco request is under review. Once an administrator approves your account, you
-              can log in at the{' '}
-              <Link href="/login" className="underline font-bold text-sky-950">
-                Exco Dashboard Login
-              </Link>
-              .
-            </p>
+        {/* Live Application Status Button */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200 text-left space-y-3 shadow-xs">
+          <div className="flex items-center gap-2 font-bold text-sky-950 text-sm">
+            <ShieldCheck className="h-5 w-5 text-[#0077cc]" />
+            <span>Track Verification &amp; Approval Live</span>
           </div>
-        )}
+          <p className="text-xs sm:text-sm text-sky-800 leading-relaxed">
+            Your operational team memberships and executive designations are tracked live in the Status Portal with real-time verification badges.
+          </p>
+          <Link
+            href="/register/status"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0077cc] hover:bg-[#005fa3] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
+          >
+            <span>View Live Application Status &amp; Badges</span>
+            <ExternalLink className="h-4 w-4" />
+          </Link>
+        </div>
 
-        {!isReturning && (
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1.5 shadow-xs">
-            <div className="flex items-center gap-2 font-bold text-amber-950 text-sm">
-              <UserCheck className="h-4 w-4 text-amber-600" />
-              <span>Team Leader Verification Queued</span>
-            </div>
-            <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Your department head has been notified to verify your workforce membership. You will appear on the active roster once confirmed.
-            </p>
-          </div>
-        )}
-
-        <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"
             className="flex h-14 items-center justify-center rounded-xl bg-slate-900 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
@@ -528,6 +581,19 @@ export function WorkerRegistrationForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
+      {/* Prefilled Clerk User Notice */}
+      {isClerkSignedIn && initialEmail && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Signed in with Clerk: <strong className="font-mono">{initialEmail}</strong></span>
+          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+            Auto-linked
+          </span>
+        </div>
+      )}
+
       {/* Visual Progress Bar Header */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-600 font-mono">
@@ -554,6 +620,7 @@ export function WorkerRegistrationForm() {
             <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
           </div>
         )}
+
         {/* Error Notification */}
         {error && (
           <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 text-sm font-semibold flex items-start gap-3 shadow-xs">
@@ -564,10 +631,7 @@ export function WorkerRegistrationForm() {
 
         <AnimatePresence mode="wait">
           {/* ========================================================================= */}
-          {/* STEP 1: Phone Number Gateway                                              */}
-          {/* ========================================================================= */}
-          {/* ========================================================================= */}
-          {/* STEP 1: Phone Number Gateway or Verification State                        */}
+          {/* STEP 1: Phone Number Gateway or OTP Verification                          */}
           {/* ========================================================================= */}
           {step === 1 && (
             verificationPending ? (
@@ -648,15 +712,6 @@ export function WorkerRegistrationForm() {
                   </button>
                 </form>
 
-                <div className="text-center py-1 border-t border-slate-100 pt-4">
-                  <p className="text-xs text-slate-400 font-mono uppercase tracking-wider">
-                    &mdash; Alternative Option &mdash;
-                  </p>
-                  <p className="text-xs text-slate-600 mt-1">
-                    You can also tap the <strong className="text-[#0077cc]">“Unlock My Worker Profile”</strong> button in your email to open the form directly.
-                  </p>
-                </div>
-
                 <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
                   <button
                     type="button"
@@ -727,8 +782,8 @@ export function WorkerRegistrationForm() {
 
                 <div className="border-t border-slate-200 pt-5 space-y-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">Already have a worker profile?</h3>
-                    <p className="text-xs text-slate-600 mt-1">Enter the email or phone number on your record. We’ll send a secure link and code to your saved email address.</p>
+                    <h3 className="text-sm font-bold text-slate-900">Already registered as a worker?</h3>
+                    <p className="text-xs text-slate-600 mt-1">Enter your registered email or phone to receive a quick profile unlock link.</p>
                   </div>
                   <input
                     type="text"
@@ -758,9 +813,6 @@ export function WorkerRegistrationForm() {
                       {updateLinkMessage}
                     </p>
                   )}
-                  <p className="text-xs text-slate-500">
-                    If you no longer have access to the email on file, contact an ECCF administrator to verify and update your contact details. You can still use this same form after opening the secure link; no dashboard account is required.
-                  </p>
                 </div>
               </motion.div>
             )
@@ -779,7 +831,6 @@ export function WorkerRegistrationForm() {
               transition={{ duration: 0.28 }}
               className="space-y-6"
             >
-              {/* Friendly Returning Greeting Badge */}
               <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start gap-3.5">
                 <UserCheck className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
@@ -813,7 +864,6 @@ export function WorkerRegistrationForm() {
                     <input type="tel" value={phoneNumber} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
                   </label>
                 </div>
-                <p className="text-xs text-slate-500">To change your email or phone number, contact an ECCF administrator so the new contact can be verified.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="text-xs font-semibold text-slate-600">
                     Birthday month
@@ -827,18 +877,6 @@ export function WorkerRegistrationForm() {
                     <input type="number" min="1" max={birthMonth ? getDaysInMonth(birthMonth) : 31} value={birthDay} onChange={(e) => setBirthDay(e.target.value)} className="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]" />
                   </label>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Session Update
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  What details have changed?
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Review your profile, current residence, operational teams, and birthday details.
-                </p>
               </div>
 
               <div className="space-y-4">
@@ -886,9 +924,6 @@ export function WorkerRegistrationForm() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Select all teams you belong to for this session. A worker can serve in multiple teams.
-                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
                     {FELLOWSHIP_TEAMS.map((t) => {
                       const isSelected = teams.includes(t)
@@ -958,8 +993,7 @@ export function WorkerRegistrationForm() {
                   Update your birthday picture?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Keep your existing photo on file or upload a fresh celebratory picture for this
-                  year.
+                  Keep your existing photo on file or upload a fresh celebratory picture.
                 </p>
               </div>
 
@@ -989,7 +1023,7 @@ export function WorkerRegistrationForm() {
                     {imagePreview
                       ? 'New photo selected!'
                       : existingPhotoUrl
-                        ? 'Current photo on file in the fellowship drive.'
+                        ? 'Current photo on file.'
                         : 'No photo currently on file.'}
                   </p>
                   <button
@@ -1044,11 +1078,8 @@ export function WorkerRegistrationForm() {
                   Confirm Updates
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Ready to save for this session?
+                  Ready to save profile updates?
                 </h2>
-                <p className="text-sm text-slate-600">
-                  Please review your updated location details before saving.
-                </p>
               </div>
 
               <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-3 shadow-sm">
@@ -1061,17 +1092,11 @@ export function WorkerRegistrationForm() {
                   <span className="font-bold text-slate-900">{teams.join(', ')}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm">
-                  <span className="text-slate-500 font-medium">New Residence:</span>
+                  <span className="text-slate-500 font-medium">Residence:</span>
                   <span className="font-bold text-[#0077cc] text-base">
                     {hall}, Room {roomNumber}
                   </span>
                 </div>
-                {imagePreview && (
-                  <div className="flex justify-between items-center py-2 text-sm">
-                    <span className="text-slate-500 font-medium">Birthday Picture:</span>
-                    <span className="font-bold text-emerald-600">New photo selected</span>
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -1208,7 +1233,7 @@ export function WorkerRegistrationForm() {
                   What is your email address?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Used for fellowship correspondence and your Exco portal sign-in credentials.
+                  Used for official correspondence and Clerk authentication.
                 </p>
               </div>
 
@@ -1422,7 +1447,7 @@ export function WorkerRegistrationForm() {
                   When is your birthday?
                 </h2>
                 <p className="text-sm text-slate-600">
-                  So we could celebrate with you on your special day!
+                  So we can celebrate with you on your special day!
                 </p>
               </div>
 
@@ -1571,6 +1596,9 @@ export function WorkerRegistrationForm() {
             </motion.div>
           )}
 
+          {/* ========================================================================= */}
+          {/* STEP 8: Executive Designation (Passwordless Unified Flow)                  */}
+          {/* ========================================================================= */}
           {!isReturning && step === 8 && (
             <motion.div
               key="step-n8"
@@ -1586,10 +1614,10 @@ export function WorkerRegistrationForm() {
                   Step 8 of {totalSteps}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Are you an Exco member?
+                  Executive Designation
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Select your role in the fellowship administration.
+                  Are you applying for an appointed executive leadership position in the fellowship?
                 </p>
               </div>
 
@@ -1607,7 +1635,7 @@ export function WorkerRegistrationForm() {
                   <User className={`h-8 w-8 ${!isExco ? 'text-[#0077cc]' : 'text-slate-500'}`} />
                   <h4 className="font-bold text-base text-slate-950">Volunteer Worker</h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    General workforce member serving in an operational team.
+                    General workforce member serving in operational team(s). Verified by Team Leads.
                   </p>
                 </button>
 
@@ -1623,80 +1651,235 @@ export function WorkerRegistrationForm() {
                   <ShieldCheck
                     className={`h-8 w-8 ${isExco ? 'text-[#0077cc]' : 'text-slate-500'}`}
                   />
-                  <h4 className="font-bold text-base text-slate-950">Exco Member</h4>
+                  <h4 className="font-bold text-base text-slate-950">Executive Designation</h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Executive Council member requiring Exco Dashboard access.
+                    Apply for an executive office (CSGB, Hall Pastorate, or Team Leadership). Approved by the President.
                   </p>
                 </button>
               </div>
 
-              {/* Exco Credentials Sub-Card */}
+              {/* Executive Application Options (Passwordless) */}
               {isExco && (
-                <div className="p-6 rounded-2xl bg-sky-50/90 border-2 border-sky-200 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-sky-50/90 border-2 border-sky-200 space-y-5 shadow-xs">
                   <div className="bg-amber-50 border-2 border-amber-300 text-amber-950 rounded-xl p-3.5 flex items-start gap-3 shadow-xs">
                     <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-900 leading-relaxed font-medium">
-                      <strong>Admin Approval Gate:</strong> Exco accounts require administrator
-                      approval before dashboard access is activated.
-                    </p>
+                    <div className="text-xs text-amber-900 leading-relaxed font-medium space-y-1">
+                      <p>
+                        <strong>Presidential Approval Required:</strong> All executive designations require verification and approval directly by the Fellowship President.
+                      </p>
+                      <p className="text-amber-800">
+                        Authentication is completely passwordless via Clerk. Once approved, you will sign in using Google OAuth or emailed magic code.
+                      </p>
+                    </div>
                   </div>
 
+                  {/* Category Selection: CSGB vs Hall Pastorate vs Team Leadership */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                      Exco Designation
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                      Leadership Category <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={requestedRole}
-                      onChange={(e) => setRequestedRole(e.target.value as WorkerRole)}
-                      className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
-                    >
-                      <option value="team_lead">Team Leader / Assistant Coordinator</option>
-                      <option value="hall_rep">Hall Representative (Hostels)</option>
-                      <option value="finance">Finance Team (Ledgers &amp; Accounts)</option>
-                      <option value="admin">CSGB — Christian Students&apos; Governing Board (Admin)</option>
-                    </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setExecutiveKind('csgb')}
+                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
+                          executiveKind === 'csgb'
+                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
+                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
+                          <Crown className="h-4 w-4 text-[#0077cc]" />
+                          <span>CSGB</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight">Central Student Governing Board</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExecutiveKind('hall')}
+                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
+                          executiveKind === 'hall'
+                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
+                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
+                          <Home className="h-4 w-4 text-[#0077cc]" />
+                          <span>Hall Pastorate</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight">Hostel Pastor / Assistant</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExecutiveKind('team')}
+                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
+                          executiveKind === 'team'
+                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
+                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
+                          <Users className="h-4 w-4 text-[#0077cc]" />
+                          <span>Team Leadership</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight">Team Lead / Assistant</p>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1">
-                        Password
+                  {/* Sub-form A: CSGB Office Selection */}
+                  {executiveKind === 'csgb' && (
+                    <div className="space-y-3 pt-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                        CSGB Executive Office <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Min. 8 characters"
-                          className="flex h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 pr-10 text-sm font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
+                      <div className="space-y-2">
+                        {CSGB_OFFICES.map((off) => {
+                          const isSelected = csgbOffice === off.value
+                          return (
+                            <button
+                              key={off.value}
+                              type="button"
+                              onClick={() => setCsgbOffice(off.value)}
+                              className={`w-full p-3.5 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
+                                isSelected
+                                  ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
+                                  : 'border-slate-200 bg-white/70 hover:bg-white'
+                              }`}
+                            >
+                              <span
+                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                  isSelected ? 'border-[#0077cc] bg-[#0077cc]' : 'border-slate-300 bg-white'
+                                }`}
+                              >
+                                {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                              </span>
+                              <div>
+                                <span className="font-bold text-sm text-slate-950 block">{off.label}</span>
+                                <span className="text-xs text-slate-500 leading-relaxed block mt-0.5">{off.description}</span>
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1">
-                        Repeat Password
-                      </label>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm password"
-                        className="flex h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 shadow-xs hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
-                      />
+                  {/* Sub-form B: Hall Pastorate */}
+                  {executiveKind === 'hall' && (
+                    <div className="space-y-4 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
+                          Hall Pastorate Rank <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setHallRank('lead')}
+                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
+                              hallRank === 'lead'
+                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
+                                : 'border-slate-200 bg-white/70 text-slate-700'
+                            }`}
+                          >
+                            Hall Pastor
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHallRank('assistant')}
+                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
+                              hallRank === 'assistant'
+                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
+                                : 'border-slate-200 bg-white/70 text-slate-700'
+                            }`}
+                          >
+                            Assistant Hall Pastor
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
+                          Assigned Hall of Residence <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={execHall || hall}
+                          onChange={(e) => setExecHall(e.target.value)}
+                          className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
+                        >
+                          {HALLS_OF_RESIDENCE.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Sub-form C: Team Leadership */}
+                  {executiveKind === 'team' && (
+                    <div className="space-y-4 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
+                          Team Leadership Rank <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setTeamRank('lead')}
+                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
+                              teamRank === 'lead'
+                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
+                                : 'border-slate-200 bg-white/70 text-slate-700'
+                            }`}
+                          >
+                            Team Lead / Coordinator
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTeamRank('assistant')}
+                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
+                              teamRank === 'assistant'
+                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
+                                : 'border-slate-200 bg-white/70 text-slate-700'
+                            }`}
+                          >
+                            Assistant Team Lead
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
+                          Chosen Ministry Team <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={execTeam || teams[0] || ''}
+                          onChange={(e) => setExecTeam(e.target.value)}
+                          className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
+                        >
+                          {/* Show selected teams first */}
+                          {teams.map((t) => (
+                            <option key={t} value={t}>
+                              {t} (Your Selected Team)
+                            </option>
+                          ))}
+                          {/* Show remaining fellowship teams */}
+                          {FELLOWSHIP_TEAMS.filter((t) => !teams.includes(t)).map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Note: Finance access is granted exclusively to the approved Finance Team Lead or Assistant.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1710,9 +1893,8 @@ export function WorkerRegistrationForm() {
                 </button>
                 <button
                   type="button"
-                  disabled={isExco && (password.length < 8 || password !== confirmPassword)}
                   onClick={() => setStep(9)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
                 >
                   Review &amp; Complete <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
@@ -1720,6 +1902,9 @@ export function WorkerRegistrationForm() {
             </motion.div>
           )}
 
+          {/* ========================================================================= */}
+          {/* STEP 9: Final Review & Confirmation                                       */}
+          {/* ========================================================================= */}
           {!isReturning && step === 9 && (
             <motion.div
               key="step-n9"
@@ -1748,6 +1933,10 @@ export function WorkerRegistrationForm() {
                   <span className="font-bold text-slate-900">{fullName}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Email:</span>
+                  <span className="font-bold text-slate-900">{email}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Phone:</span>
                   <span className="font-bold text-slate-900">{phoneNumber}</span>
                 </div>
@@ -1770,9 +1959,15 @@ export function WorkerRegistrationForm() {
                   </div>
                 )}
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">Exco Status:</span>
+                  <span className="text-slate-500 font-medium">Designation:</span>
                   <span className="font-bold text-[#0077cc]">
-                    {isExco ? `Yes (${requestedRole})` : 'General Worker'}
+                    {isExco
+                      ? executiveKind === 'csgb'
+                        ? `CSGB — ${csgbOffice} (Pending Approval)`
+                        : executiveKind === 'hall'
+                          ? `${hallRank === 'assistant' ? 'Assistant ' : ''}Hall Pastor (${execHall || hall}) (Pending Approval)`
+                          : `${teamRank === 'assistant' ? 'Assistant ' : ''}Team Lead (${execTeam || teams[0]}) (Pending Approval)`
+                      : 'Volunteer Worker (Pending Lead Verification)'}
                   </span>
                 </div>
               </div>
@@ -1824,15 +2019,15 @@ export function WorkerRegistrationForm() {
         </AnimatePresence>
       </div>
 
-      {/* Exco Portal Shortcut */}
+      {/* Footer shortcut to status page */}
       <div className="pt-4 text-center">
         <p className="text-sm text-slate-600">
-          Already registered as an Exco member?{' '}
+          Already registered?{' '}
           <Link
-            href="/login"
+            href="/register/status"
             className="font-semibold text-[#0077cc] underline underline-offset-4 hover:text-[#005fa3] transition-colors"
           >
-            Sign in to Exco Dashboard
+            Check your Application &amp; Approval Status
           </Link>
         </p>
       </div>

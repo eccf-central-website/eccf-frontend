@@ -1,15 +1,15 @@
 /**
- * UserMenu — top-bar account menu: role badge and team, a link to the
- * public site, and Sign out (disabled until feature/dashboard-auth).
+ * UserMenu — top-bar account menu: role badge and team, public site link,
+ * and Clerk authenticated Sign out.
  *
- * Displays the authenticated user's name, role badge, official leadership
- * title ([excoPosition] without em-dash), and operational teams.
+ * Displays authenticated user's name, primary email, role badge,
+ * official leadership title ([excoPosition] without em-dash), and operational teams.
  */
 
 'use client'
 
 import { ChevronDown, ExternalLink, LogOut, Moon, Sun, UserRound } from 'lucide-react'
-import { signOut } from 'next-auth/react'
+import { useClerk } from '@clerk/nextjs'
 import type { WorkerRole } from '@/types'
 import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -26,6 +26,7 @@ import {
 
 interface UserMenuProps {
   name?: string
+  email?: string
   role: WorkerRole
   team: string
   teams?: string[]
@@ -33,8 +34,9 @@ interface UserMenuProps {
   devTools?: React.ReactNode
 }
 
-export default function UserMenu({ name, role, team, teams, excoPosition, devTools }: UserMenuProps) {
+export default function UserMenu({ name, email, role, team, teams, excoPosition, devTools }: UserMenuProps) {
   const { theme, toggleTheme } = useTheme()
+  const { signOut } = useClerk()
   const isDark = theme === 'dark'
   const displayTeam = teams && teams.length > 0 ? teams.join(', ') : team
   const displayName = name || excoPosition || ROLE_LABELS[role]
@@ -47,6 +49,14 @@ export default function UserMenu({ name, role, team, teams, excoPosition, devToo
         .join('')
         .toUpperCase()
     : null
+
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirectUrl: '/login' })
+    } catch {
+      window.location.href = '/login'
+    }
+  }
 
   return (
     <DropdownMenu>
@@ -68,6 +78,9 @@ export default function UserMenu({ name, role, team, teams, excoPosition, devToo
           <span className="text-xs text-muted-foreground">Signed in as</span>
           {name && (
             <span className="text-sm font-semibold text-foreground truncate">{name}</span>
+          )}
+          {email && (
+            <span className="text-xs text-muted-foreground truncate">{email}</span>
           )}
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{ROLE_LABELS[role]}</Badge>
@@ -119,7 +132,7 @@ export default function UserMenu({ name, role, team, teams, excoPosition, devToo
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={handleSignOut}
           className="h-10 cursor-pointer text-destructive focus:text-destructive"
         >
           <LogOut aria-hidden="true" />

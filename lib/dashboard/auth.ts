@@ -1,22 +1,22 @@
 /**
  * Dashboard auth boundary — SERVER-SIDE ONLY.
  *
- * Every dashboard page and Server Action gets the session from here, never
- * from NextAuth directly, so the mock → NextAuth swap is a one-file change.
- *
- * Today: NextAuth is not configured yet (feature/dashboard-auth). Outside
- * production, setting DASHBOARD_MOCK_AUTH=1 enables a mock session whose role
- * comes from the `eccf-dev-role` cookie (default: admin). In production the
- * mock path is unreachable and getSession() returns null until NextAuth lands,
- * so /dashboard always redirects to /login.
+ * Implements Clerk Authentication (ADR-003):
+ * - Checks currentUser() from @clerk/nextjs/server
+ * - Matches worker in Sanity by clerkUserId or lower(email)
+ * - Auto-links clerkUserId on email match
+ * - Calls deriveAccess(worker)
+ * - Returns { worker, access, ...session }
+ * - Retains DASHBOARD_MOCK_AUTH=1 outside production for development
  */
 
 import 'server-only'
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from './auth-options'
+import { currentUser } from '@clerk/nextjs/server'
+import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
+import { deriveAccess, type WorkerAccess } from './access'
 import type { ECCFSession, WorkerRole } from '@/types'
 import {
   canAccessSection,
@@ -30,60 +30,239 @@ import type { ActionResult } from './action-result'
 
 export const DEV_ROLE_COOKIE = 'eccf-dev-role'
 
+export interface DashboardSession extends ECCFSession {
+  worker: Record<string, unknown>
+  access: WorkerAccess
+  email?: string
+}
+
+interface SanityWorkerSessionDoc {
+  _id: string
+  _rev?: string
+  fullName?: string
+  email?: string
+  clerkUserId?: string
+  role?: WorkerRole
+  requestedRole?: WorkerRole
+  excoPosition?: string
+  isExcoApproved?: boolean
+  canApproveExecutives?: boolean
+  team?: { name?: string } | string
+  hall?: string
+  leadingTeam?: { name?: string } | string
+  teams?: Array<{ name?: string } | string>
+  positions?: unknown[]
+  memberships?: unknown[]
+  [key: string]: unknown
+}
+
 /** Mock identities — ids match workers in lib/dashboard/mock/data.ts. */
 const MOCK_SESSIONS: Record<WorkerRole, ECCFSession> = {
-  admin: { id: 'mock-worker-admin', name: 'Osaro Igbinedion', role: 'admin', team: 'Exco', teams: ['Executive Council'], excoPosition: 'President', hall: 'Hall A' },
-  team_lead: { id: 'mock-worker-teamlead', name: 'Tobi Adebayo', role: 'team_lead', team: 'Media', teams: ['Media', 'Technical'], leadingTeam: 'Media', excoPosition: 'Media Coordinator', hall: 'Hall D' },
-  hall_rep: { id: 'mock-worker-hallrep', name: 'Ivie Aigbe', role: 'hall_rep', team: 'Welfare', teams: ['Welfare'], hall: 'Hall B' },
-  finance: { id: 'mock-worker-finance', name: 'Efosa Osagie', role: 'finance', team: 'Finance', teams: ['Finance'], excoPosition: 'Financial Secretary', hall: 'Hall C' },
+  admin: {
+    id: 'mock-worker-admin',
+    name: 'Osaro Igbinedion',
+    role: 'admin',
+    team: 'Exco',
+    teams: ['Executive Council'],
+    excoPosition: 'President',
+    hall: 'Hall A',
+    email: 'admin@eccf.org',
+  },
+  team_lead: {
+    id: 'mock-worker-teamlead',
+    name: 'Tobi Adebayo',
+    role: 'team_lead',
+    team: 'Media',
+    teams: ['Media', 'Technical'],
+    leadingTeam: 'Media',
+    excoPosition: 'Media Coordinator',
+    hall: 'Hall D',
+    email: 'media@eccf.org',
+  },
+  hall_rep: {
+    id: 'mock-worker-hallrep',
+    name: 'Ivie Aigbe',
+    role: 'hall_rep',
+    team: 'Welfare',
+    teams: ['Welfare'],
+    hall: 'Hall B',
+    email: 'welfare@eccf.org',
+  },
+  finance: {
+    id: 'mock-worker-finance',
+    name: 'Efosa Osagie',
+    role: 'finance',
+    team: 'Finance',
+    teams: ['Finance'],
+    excoPosition: 'Financial Secretary',
+    hall: 'Hall C',
+    email: 'finance@eccf.org',
+  },
 }
 
 export function isMockAuthEnabled(): boolean {
   return process.env.NODE_ENV !== 'production' && process.env.DASHBOARD_MOCK_AUTH === '1'
 }
 
-export async function getSession(): Promise<ECCFSession | null> {
+export async function getSession(): Promise<DashboardSession | null> {
   if (isMockAuthEnabled()) {
     const cookieRole = cookies().get(DEV_ROLE_COOKIE)?.value
-    return MOCK_SESSIONS[isWorkerRole(cookieRole) ? cookieRole : 'admin']
+    const roleKey = isWorkerRole(cookieRole) ? cookieRole : 'admin'
+    const mock = MOCK_SESSIONS[roleKey]
+    const mockWorker: Record<string, unknown> = {
+      _id: mock.id,
+      fullName: mock.name,
+      role: mock.role,
+      team: mock.team,
+      teams: mock.teams,
+      leadingTeam: mock.leadingTeam,
+      excoPosition: mock.excoPosition,
+      hall: mock.hall,
+      isExcoApproved: true,
+      canApproveExecutives: roleKey === 'admin',
+      email: mock.email,
+    }
+    const access = deriveAccess(mockWorker)
+    return {
+      ...mock,
+      worker: mockWorker,
+      access,
+    }
   }
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return null
-
-  const user = session.user as unknown as {
-    id?: string
-    name?: string
-    role?: WorkerRole
-    team?: string
-    teams?: string[]
-    leadingTeam?: string
-    excoPosition?: string
-    hall?: string
+  let clerkUser = null
+  try {
+    clerkUser = await currentUser()
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[getSession] Clerk currentUser() error:', err)
+    }
+    return null
   }
-  if (!user.id || !user.role) return null
+
+  if (!clerkUser) return null
+
+  const primaryEmail = (
+    clerkUser.emailAddresses?.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+    clerkUser.emailAddresses?.[0]?.emailAddress ||
+    ''
+  )
+    .toLowerCase()
+    .trim()
+
+  const clerkUserId = clerkUser.id
+  if (!primaryEmail && !clerkUserId) return null
+
+  let worker: SanityWorkerSessionDoc | null = null
+  try {
+    worker = await sanityPrivateClient.fetch<SanityWorkerSessionDoc | null>(
+      `*[_type == "worker" && (
+        (defined(clerkUserId) && clerkUserId == $clerkUserId) ||
+        (defined(email) && lower(email) == $primaryEmail)
+      )][0]{
+        _id,
+        _rev,
+        fullName,
+        email,
+        clerkUserId,
+        role,
+        requestedRole,
+        excoPosition,
+        isExcoApproved,
+        canApproveExecutives,
+        "team": coalesce(team->name, team),
+        hall,
+        "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        positions[] {
+          kind,
+          "team": team->{ _id, name, "key": coalesce(key, slug.current) },
+          hall,
+          office,
+          rank,
+          status
+        },
+        memberships[] {
+          "team": team->{ _id, name, "key": coalesce(key, slug.current) },
+          status
+        }
+      }`,
+      { clerkUserId, primaryEmail }
+    )
+  } catch (err) {
+    console.error('[getSession] Error querying worker from Sanity:', err)
+    return null
+  }
+
+  if (!worker) return null
+
+  // If matched by email without clerkUserId, or clerkUserId has changed, patch in Sanity
+  if (worker._id && (!worker.clerkUserId || worker.clerkUserId !== clerkUserId)) {
+    try {
+      await patchPrivateDocument(String(worker._id))
+        .set({ clerkUserId })
+        .commit()
+      worker.clerkUserId = clerkUserId
+    } catch (patchErr) {
+      console.warn('[getSession] Failed to patch clerkUserId to worker in Sanity:', patchErr)
+    }
+  }
+
+  const access = deriveAccess(worker)
+
+  // Derive backwards-compatible WorkerRole
+  let role: WorkerRole = 'team_lead'
+  if (isWorkerRole(worker.role)) {
+    role = worker.role
+  } else if (access.isCSGB || access.isPresident) {
+    role = 'admin'
+  } else if (access.isFinance) {
+    role = 'finance'
+  } else if (access.repsHalls.length > 0) {
+    role = 'hall_rep'
+  }
+
+  const teamObj = worker.team
+  const team = typeof teamObj === 'string' ? teamObj : teamObj?.name || 'Exco'
+  const rawTeams = worker.teams || []
+  const teams = Array.isArray(rawTeams)
+    ? (rawTeams.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean) as string[])
+    : [team]
+
+  const displayName =
+    worker.fullName ||
+    access.fullName ||
+    (clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : undefined)
+
+  const leadingTeamObj = worker.leadingTeam
+  const leadingTeam = typeof leadingTeamObj === 'string' ? leadingTeamObj : leadingTeamObj?.name
+  const excoPosition = (typeof worker.excoPosition === 'string' ? worker.excoPosition : undefined) || access.titles[0]
+  const hall = (typeof worker.hall === 'string' ? worker.hall : undefined) || access.repsHalls[0]
 
   return {
-    id: user.id,
-    name: user.name || (session.user as { name?: string | null })?.name || undefined,
-    role: user.role,
-    team: user.team || 'Exco',
-    teams: user.teams,
-    leadingTeam: user.leadingTeam,
-    excoPosition: user.excoPosition,
-    hall: user.hall,
+    id: String(worker._id || access.workerId),
+    name: displayName,
+    role,
+    team,
+    teams,
+    leadingTeam,
+    excoPosition,
+    hall,
+    email: primaryEmail || (typeof worker.email === 'string' ? worker.email : undefined),
+    worker: worker as Record<string, unknown>,
+    access,
   }
 }
 
 /** For pages/layouts: redirect to /login when there is no session. */
-export async function requireSession(): Promise<ECCFSession> {
+export async function requireSession(): Promise<DashboardSession> {
   const session = await getSession()
   if (!session) redirect('/login')
   return session
 }
 
 /** For pages: redirect to the overview (open to every role) when the role can't see this section. */
-export async function requireSection(section: DashboardSection): Promise<ECCFSession> {
+export async function requireSection(section: DashboardSection): Promise<DashboardSession> {
   const session = await requireSession()
   if (!canAccessSection(session.role, section, session)) redirect(`${SECTION_PATHS.overview}?denied=${section}`)
   return session
@@ -96,7 +275,7 @@ export async function requireSection(section: DashboardSection): Promise<ECCFSes
  */
 export async function authorize(
   permission: DashboardPermission
-): Promise<{ ok: true; session: ECCFSession } | Extract<ActionResult<never>, { ok: false }>> {
+): Promise<{ ok: true; session: DashboardSession } | Extract<ActionResult<never>, { ok: false }>> {
   const session = await getSession()
   if (!session) return { ok: false, error: 'Your session has expired. Please sign in again.' }
   if (!hasPermission(session.role, permission)) {

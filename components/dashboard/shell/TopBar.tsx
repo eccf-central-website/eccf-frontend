@@ -22,6 +22,7 @@ import InstallPwaButton from '@/components/dashboard/pwa/InstallPwaButton'
 interface TopBarProps {
   sections: readonly DashboardSection[]
   name?: string
+  email?: string
   role: WorkerRole
   team: string
   teams?: string[]
@@ -32,9 +33,9 @@ interface TopBarProps {
   devTools?: React.ReactNode
 }
 
-export default function TopBar({ sections, name, role, team, teams, excoPosition, leadingTeam, actions, devTools }: TopBarProps) {
+export default function TopBar({ sections, name, email, role, team, teams, excoPosition, leadingTeam, actions, devTools }: TopBarProps) {
   const pathname = usePathname()
-  const section = sectionForPath(pathname) ?? 'overview'
+  const section = sectionForPath(pathname || '') ?? 'overview'
   const title = navItemForSection(section).label
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
@@ -73,7 +74,7 @@ export default function TopBar({ sections, name, role, team, teams, excoPosition
         {isMediaLeaderUser && actions}
         <InstallPwaButton />
         <ThemeToggle />
-        <UserMenu name={name} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
+        <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
       </div>
     </header>
   )

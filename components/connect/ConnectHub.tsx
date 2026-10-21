@@ -41,7 +41,7 @@ const TABS: {
 
 export default function ConnectHub() {
   const searchParams = useSearchParams()
-  const initialParam = searchParams.get('tab') as TabType | null
+  const initialParam = searchParams?.get('tab') as TabType | null
   const defaultTab: TabType =
     initialParam && ['first-timer', 'welfare', 'prayer'].includes(initialParam)
       ? initialParam

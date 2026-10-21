@@ -59,9 +59,55 @@ export const DASHBOARD_WORKERS_QUERY = `
     birthMonth,
     birthDay,
     profileImageUrl,
+    "positions": positions[]{
+      _key,
+      kind,
+      office,
+      hall,
+      rank,
+      status,
+      "teamId": coalesce(team._ref, team->_id),
+      "teamKey": coalesce(team->key, team->slug.current),
+      "teamName": team->name,
+      decidedBy,
+      decidedAt
+    },
+    "memberships": memberships[]{
+      _key,
+      status,
+      "teamId": coalesce(team._ref, team->_id),
+      "teamKey": coalesce(team->key, team->slug.current),
+      "teamName": team->name,
+      decidedBy,
+      decidedAt
+    },
     createdAt,
     updatedAt,
     updateLog
+  }
+`
+
+export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
+  *[_type == "worker" && count(positions[status == "pending"]) > 0] | order(_createdAt desc) {
+    _id,
+    fullName,
+    email,
+    hall,
+    profileImageUrl,
+    createdAt,
+    _createdAt,
+    "positions": positions[status == "pending"]{
+      _key,
+      kind,
+      office,
+      hall,
+      rank,
+      status,
+      "teamId": coalesce(team._ref, team->_id),
+      "teamKey": coalesce(team->key, team->slug.current),
+      "teamName": team->name,
+      decidedAt
+    }
   }
 `
 
