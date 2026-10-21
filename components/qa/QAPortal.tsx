@@ -897,7 +897,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
                               {/* Description with Clean Mobile Clamp */}
                               <p
-                                className={`text-[11px] sm:text-xs text-slate-500 leading-relaxed ${
+                                className={`text-[11px] sm:text-xs text-slate-500 leading-relaxed whitespace-pre-line ${
                                   !isExpanded ? 'line-clamp-2 sm:line-clamp-none' : ''
                                 }`}
                               >
