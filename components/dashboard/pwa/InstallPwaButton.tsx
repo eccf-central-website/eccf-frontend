@@ -98,12 +98,12 @@ export default function InstallPwaButton() {
         variant="outline"
         size="sm"
         onClick={handleInstallClick}
-        className="h-8 sm:h-9 gap-1.5 rounded-full border-sky-300/80 bg-sky-50/70 text-xs font-bold text-[#0077cc] hover:bg-sky-100/80 hover:text-sky-900 dark:border-sky-800/80 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-900/60 transition-all shadow-2xs"
+        className="h-8 w-8 shrink-0 justify-center rounded-full border-sky-300/80 bg-sky-50/70 p-0 text-[#0077cc] hover:bg-sky-100/80 hover:text-sky-900 dark:border-sky-800/80 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-900/60 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-3 transition-all shadow-2xs"
         title="Install ECCF Exco Portal on this PC or Phone"
+        aria-label="Install ECCF Exco Portal"
       >
-        <Download className="h-3.5 w-3.5 text-[#0095ff]" />
+        <Download className="h-4 w-4 shrink-0 text-[#0095ff]" />
         <span className="hidden sm:inline">Install App</span>
-        <span className="sm:hidden">Install</span>
       </Button>
 
       {/* Guidance Modal for iOS Safari / Unsupported Browsers */}

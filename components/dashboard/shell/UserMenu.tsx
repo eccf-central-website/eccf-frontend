@@ -66,8 +66,8 @@ export default function UserMenu({ name, email, role, team, teams, excoPosition,
           className="h-10 gap-2 px-2 focus-visible:ring-2 sm:px-3"
           aria-label={`Account menu, signed in as ${displayName}`}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground text-xs font-semibold">
-            {initials ? initials : <UserRound aria-hidden="true" className="h-4 w-4" />}
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground text-xs font-semibold">
+            {initials ? initials : <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />}
           </span>
           <span className="hidden text-sm font-medium sm:inline truncate max-w-[150px]">{displayName}</span>
           <ChevronDown aria-hidden="true" className="hidden text-muted-foreground sm:block" />

@@ -40,12 +40,12 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1.5 border-b bg-background/90 px-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1 border-b bg-background/90 px-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-14 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
       <MobileNav sections={sections} />
 
       <div className="min-w-0 flex-1">
         {section === 'overview' ? (
-          <h1 className="truncate font-serif text-lg text-foreground sm:text-xl">{title}</h1>
+          <h1 className="truncate font-serif text-base text-foreground sm:text-lg lg:text-xl">{title}</h1>
         ) : (
           <nav aria-label="Breadcrumb">
             <ol className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -58,10 +58,10 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
                 </Link>
               </li>
               <li aria-hidden="true" className="hidden text-muted-foreground sm:block">
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 shrink-0" />
               </li>
               <li className="min-w-0">
-                <h1 aria-current="page" className="truncate font-serif text-lg text-foreground sm:text-xl">
+                <h1 aria-current="page" className="truncate font-serif text-base text-foreground sm:text-lg lg:text-xl">
                   {title}
                 </h1>
               </li>
@@ -71,9 +71,11 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {isMediaLeaderUser && actions}
+        {isMediaLeaderUser && actions && <div className="hidden sm:block">{actions}</div>}
         <InstallPwaButton />
-        <ThemeToggle />
+        <div className="hidden sm:block">
+          <ThemeToggle />
+        </div>
         <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
       </div>
     </header>

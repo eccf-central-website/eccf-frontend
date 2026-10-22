@@ -21,16 +21,16 @@ interface ActivityListProps {
 export default function ActivityList({ id, title, viewAllHref, viewAllNoun, children }: ActivityListProps) {
   return (
     <section aria-labelledby={id} className="flex min-w-0 flex-col rounded-xl border bg-card text-card-foreground shadow">
-      <div className="flex items-center justify-between gap-4 border-b px-4 py-2 sm:px-5">
-        <h3 id={id} className="font-serif text-lg text-foreground">
+      <div className="flex items-center justify-between gap-3 border-b px-3 py-2 sm:px-4 sm:py-2.5">
+        <h3 id={id} className="font-serif text-base text-foreground sm:text-lg">
           {title}
         </h3>
         <Link
           href={viewAllHref}
-          className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-10"
         >
           View all<span className="sr-only"> {viewAllNoun}</span>
-          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
         </Link>
       </div>
       <div className="flex-1">{children}</div>
@@ -41,7 +41,7 @@ export default function ActivityList({ id, title, viewAllHref, viewAllNoun, chil
 /** One row: primary text + meta on the left, a date (or status) on the right. */
 export function ActivityItem({ children, aside }: { children: React.ReactNode; aside: React.ReactNode }) {
   return (
-    <li className="flex items-start justify-between gap-4 px-4 py-3 sm:px-5">
+    <li className="flex items-start justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
       <div className="min-w-0">{children}</div>
       <div className="flex shrink-0 flex-col items-end gap-1 text-right text-xs text-muted-foreground">{aside}</div>
     </li>

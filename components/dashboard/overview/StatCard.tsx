@@ -66,19 +66,19 @@ export default function StatCard({
     <article
       aria-labelledby={labelId}
       className={cn(
-        'relative flex flex-col rounded-xl border bg-card p-5 text-card-foreground shadow sm:p-6',
+        'relative flex flex-col rounded-xl border bg-card p-4 text-card-foreground shadow sm:p-5 lg:p-6',
         href && 'transition-colors hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <Heading id={labelId} className="text-sm font-medium text-muted-foreground">
           {label}
         </Heading>
         <div
           aria-hidden="true"
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg [&_svg]:h-5 [&_svg]:w-5',
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 [&_svg]:h-4 [&_svg]:w-4 sm:[&_svg]:h-5 sm:[&_svg]:w-5',
             TONE_CHIP[tone]
           )}
         >
@@ -86,7 +86,7 @@ export default function StatCard({
         </div>
       </div>
 
-      <p className="mt-2 break-words font-serif text-3xl leading-tight text-foreground">
+      <p className="mt-2 break-words font-serif text-2xl leading-tight text-foreground sm:text-3xl">
         {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
       </p>
       {caption && <p className="mt-1 text-sm text-muted-foreground">{caption}</p>}

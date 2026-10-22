@@ -32,15 +32,15 @@ export default function MobileNav({ sections }: { sections: readonly DashboardSe
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 shrink-0 focus-visible:ring-2 lg:hidden"
+          className="h-9 w-9 shrink-0 focus-visible:ring-2 lg:hidden"
           aria-label="Open navigation menu"
         >
-          <Menu className="!size-5" aria-hidden="true" />
+          <Menu className="size-5 shrink-0" aria-hidden="true" />
         </Button>
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="flex w-72 max-w-[85vw] flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&>button]:text-sidebar-foreground [&>button]:ring-offset-sidebar"
+        className="flex w-72 max-w-[80vw] flex-col gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&>button]:text-sidebar-foreground [&>button]:ring-offset-sidebar"
       >
         <SheetTitle className="sr-only">Dashboard navigation</SheetTitle>
         <SheetDescription className="sr-only">Links to each dashboard section you can access.</SheetDescription>
