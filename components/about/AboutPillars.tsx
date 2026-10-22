@@ -148,7 +148,7 @@ export default function AboutPillars({
         </motion.div>
 
         {/* 3-Column Editorial Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
           {pillars.map((pillar, idx) => {
             const Icon = pillar.icon
             return (
@@ -159,7 +159,7 @@ export default function AboutPillars({
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="group flex flex-col justify-between p-6 sm:p-8 rounded-3xl bg-white border border-stone-200 shadow-sm hover:shadow-xl transition-all"
+                className="group flex flex-col self-start h-auto p-6 sm:p-8 rounded-3xl bg-white border border-stone-200 shadow-sm hover:shadow-xl transition-all"
               >
                 <div>
                   {/* Top Bar with Number and Icon */}
