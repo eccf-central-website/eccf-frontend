@@ -18,7 +18,7 @@ function ClerkSignUpCard() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col items-center justify-center bg-slate-950 px-4 py-12 text-slate-100">
+    <div className="flex min-h-screen flex-1 flex-col items-center justify-center bg-stone-950 px-4 py-12 text-stone-100">
       <PwaPromptSuppressor />
 
       {!ready ? (
@@ -35,7 +35,7 @@ function ClerkSignUpCard() {
             <span className="inline-block text-[11px] font-semibold tracking-wider text-blue-400 uppercase bg-blue-950/60 border border-blue-800/40 px-3 py-1 rounded-full">
               First-Time Exco Setup
             </span>
-            <p className="text-xs text-slate-400 pt-1">
+            <p className="text-xs text-stone-400 pt-1">
               Use the email address registered with the fellowship.
             </p>
           </div>
@@ -48,35 +48,35 @@ function ClerkSignUpCard() {
             appearance={{
               variables: {
                 colorPrimary: '#2563eb',
-                colorBackground: '#020617',
-                colorInputBackground: '#0f172a',
+                colorBackground: '#1c1917',
+                colorInputBackground: '#292524',
                 colorInputText: '#f8fafc',
                 colorText: '#f8fafc',
-                colorTextSecondary: '#94a3b8',
+                colorTextSecondary: '#a8a29e',
                 colorNeutral: '#f8fafc',
                 borderRadius: '0.75rem',
               },
               elements: {
                 rootBox: 'w-full shadow-2xl flex justify-center',
-                card: 'w-full bg-slate-950 border border-slate-800 shadow-2xl rounded-2xl p-6 sm:p-8',
+                card: 'w-full bg-stone-950 border border-stone-800 shadow-2xl rounded-2xl p-6 sm:p-8',
                 socialButtonsBlockButton:
-                  'bg-slate-900 border border-slate-800 text-slate-200 hover:bg-slate-800 hover:text-white transition-all h-11 rounded-xl',
-                socialButtonsBlockButtonText: 'text-slate-200 font-medium text-xs',
+                  'bg-stone-900 border border-stone-800 text-stone-200 hover:bg-stone-800 hover:text-white transition-all h-11 rounded-xl',
+                socialButtonsBlockButtonText: 'text-stone-200 font-medium text-xs',
                 dividerRow: 'my-4',
-                dividerLine: 'bg-slate-800',
-                dividerText: 'text-slate-400 text-xs uppercase tracking-wider',
-                formFieldLabel: 'text-slate-300 text-xs font-semibold uppercase tracking-wider mb-1',
+                dividerLine: 'bg-stone-800',
+                dividerText: 'text-stone-400 text-xs uppercase tracking-wider',
+                formFieldLabel: 'text-stone-300 text-xs font-semibold uppercase tracking-wider mb-1',
                 formFieldInput:
-                  'bg-slate-900 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-11 transition-all',
+                  'bg-stone-900 border border-stone-800 text-stone-100 placeholder:text-stone-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-11 transition-all',
                 formButtonPrimary:
                   'bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl h-11 transition-all shadow-md mt-2',
-                footerAction: 'pt-4 border-t border-slate-900 text-slate-400 text-xs',
+                footerAction: 'pt-4 border-t border-stone-900 text-stone-400 text-xs',
                 footerActionLink: 'text-blue-400 hover:text-blue-300 font-semibold transition-colors',
-                identityPreviewText: 'text-slate-200 text-sm font-medium',
+                identityPreviewText: 'text-stone-200 text-sm font-medium',
                 identityPreviewEditButton: 'text-blue-400 hover:text-blue-300 text-xs font-semibold',
                 formResendCodeLink: 'text-blue-400 hover:text-blue-300 text-xs font-semibold',
                 otpCodeFieldInput:
-                  'bg-slate-900 border border-slate-800 text-slate-100 text-xl font-mono focus:border-blue-500 rounded-xl',
+                  'bg-stone-900 border border-stone-800 text-stone-100 text-xl font-mono focus:border-blue-500 rounded-xl',
               },
             }}
           />
@@ -89,7 +89,7 @@ function ClerkSignUpCard() {
               </Link>
             </div>
             <div>
-              <Link href="/" className="text-xs text-slate-400 hover:text-slate-300 hover:underline transition-colors">
+              <Link href="/" className="text-xs text-stone-400 hover:text-stone-300 hover:underline transition-colors">
                 &larr; Return to main fellowship website
               </Link>
             </div>
@@ -104,7 +104,7 @@ export default function SignUpPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-1 items-center justify-center bg-slate-950 p-8">
+        <div className="flex min-h-screen flex-1 items-center justify-center bg-stone-950 p-8">
           <LoadingState
             size="md"
             theme="dark"

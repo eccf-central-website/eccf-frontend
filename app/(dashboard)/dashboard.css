@@ -8,12 +8,12 @@
  * Base/preflight come from globals.css, which every route already loads.
  *
  * Tokens sit on :root (not a
- * wrapper class) because Radix portals — Dialog, Sheet, Select, Toaster —
+ * wrapper class) because Radix portals ΓÇö Dialog, Sheet, Select, Toaster ΓÇö
  * render directly into <body>, outside any dashboard wrapper. No public page
  * uses these variable names, so they are inert if this sheet lingers after a
  * client-side navigation back to the public site.
  *
- * Brand: sky #0095ff · navy #090d16 · gold #f59e0b.
+ * Brand: sky #0095ff ┬╖ navy #090d16 ┬╖ gold #f59e0b.
  * `primary` is the deeper brand blue #0077cc (already used for text accents
  * on the public site) so white button text meets WCAG AA; sky is kept for
  * focus rings and active indicators.
@@ -25,7 +25,7 @@
 @tailwind utilities;
 
 :root {
-  --background: 60 9% 98%; /* #fafaf9 — matches the public site canvas */
+  --background: 60 9% 98%; /* #fafaf9 ΓÇö matches the public site canvas */
   --foreground: 222 42% 6%; /* navy #090d16 */
 
   --card: 0 0% 100%;
@@ -38,7 +38,7 @@
   --secondary: 210 40% 96%; /* slate-100 */
   --secondary-foreground: 222 42% 6%;
   --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 42%; /* ≥4.5:1 on white */
+  --muted-foreground: 215 16% 42%; /* ΓëÑ4.5:1 on white */
   --accent: 205 100% 96%; /* sky-50 tint for hovers */
   --accent-foreground: 205 100% 30%;
 
@@ -62,70 +62,71 @@
 }
 
 .dark {
-  /* Rich deep graphite canvas (Figma / Linear / Blender creative workstation tier) */
-  --background: 224 14% 9%;
-  --foreground: 220 15% 93%;
+  /* Soft warm-neutral canvas (Adobe Creative Cloud workstation tier) ΓÇö
+     low-contrast charcoal with a faint warm tint, gentle on the eyes. */
+  --background: 25 5% 13%; /* #21201f */
+  --foreground: 25 6% 82%; /* #d2cec9 */
 
-  /* Layered elevation surfaces */
-  --card: 224 14% 12.5%;
-  --card-foreground: 220 15% 93%;
-  --popover: 224 14% 14.5%;
-  --popover-foreground: 220 15% 93%;
+  /* Layered elevation surfaces ΓÇö subtle steps, never pure black */
+  --card: 25 5% 16%; /* #282725 */
+  --card-foreground: 25 6% 82%;
+  --popover: 25 5% 18%; /* #2d2c2a */
+  --popover-foreground: 25 6% 82%;
 
-  /* Electric pro azure primary */
-  --primary: 205 100% 52%;
+  /* Brand blue primary ΓÇö slightly muted for dark surfaces */
+  --primary: 205 88% 52%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 224 12% 16.5%;
-  --secondary-foreground: 220 14% 90%;
-  --muted: 224 12% 16.5%;
-  --muted-foreground: 220 10% 65%;
-  --accent: 224 14% 19%;
-  --accent-foreground: 205 100% 75%;
+  --secondary: 25 5% 20%; /* #32312f */
+  --secondary-foreground: 25 5% 78%;
+  --muted: 25 5% 20%;
+  --muted-foreground: 25 4% 58%; /* #9a9692 ΓÇö soft, readable */
+  --accent: 25 5% 22%; /* #373634 */
+  --accent-foreground: 205 88% 74%;
 
   /* Status tokens calibrated for dark surfaces */
-  --destructive: 356 75% 55%;
+  --destructive: 0 62% 55%;
   --destructive-foreground: 0 0% 100%;
-  --success: 155 65% 42%;
+  --success: 155 52% 44%;
   --success-foreground: 0 0% 100%;
-  --warning: 38 92% 52%;
-  --warning-foreground: 222 42% 6%;
+  --warning: 38 82% 54%;
+  --warning-foreground: 25 5% 10%;
 
   /* Refined hairline borders & inputs */
-  --border: 224 12% 18%;
-  --input: 224 12% 18%;
-  --ring: 205 100% 55%;
+  --border: 25 5% 22%;
+  --input: 25 5% 22%;
+  --ring: 205 88% 55%;
 
-  /* Grounded navigation sidebar */
-  --sidebar: 224 16% 7.5%;
-  --sidebar-foreground: 218 14% 76%;
-  --sidebar-accent: 224 14% 15%;
-  --sidebar-accent-foreground: 205 100% 90%;
-  --sidebar-border: 224 12% 14%;
-  --sidebar-ring: 205 100% 55%;
+  /* Grounded navigation sidebar ΓÇö slightly darker than canvas */
+  --sidebar: 25 5% 10%; /* #1a1918 */
+  --sidebar-foreground: 25 5% 72%; /* #b8b4b0 */
+  --sidebar-accent: 25 5% 16%;
+  --sidebar-accent-foreground: 205 88% 82%;
+  --sidebar-border: 25 5% 16%;
+  --sidebar-ring: 205 88% 55%;
 }
 
-/* Creative software workstation polish */
+/* Soft warm-neutral workstation polish */
 .dark ::selection {
-  background-color: hsl(205 100% 52% / 0.35);
-  color: hsl(220 15% 98%);
+  background-color: hsl(205 88% 52% / 0.30);
+  color: hsl(25 6% 92%);
 }
 
 .dark ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: hsl(224 14% 9%);
+  background: hsl(25 5% 13%);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(224 12% 24%);
+  background: hsl(25 5% 26%);
   border-radius: 9999px;
-  border: 1px solid hsl(224 14% 9%);
+  border: 1px solid hsl(25 5% 13%);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(224 14% 32%);
+  background: hsl(25 5% 34%);
 }
 

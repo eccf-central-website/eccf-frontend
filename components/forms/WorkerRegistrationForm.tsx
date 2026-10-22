@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
@@ -101,6 +101,7 @@ export function WorkerRegistrationForm({
   // Step & Flow State
   const [step, setStep] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
+  const [isReturnerFlow, setIsReturnerFlow] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [requestingUpdateLink, setRequestingUpdateLink] = useState(false)
   const [updateLinkMessage, setUpdateLinkMessage] = useState<string | null>(null)
@@ -593,7 +594,7 @@ export function WorkerRegistrationForm({
     let excoTitle = ''
     if (successResult.isExco && excoApp) {
       if (excoApp.kind === 'csgb') {
-        excoTitle = `CSGB — ${excoApp.office || 'Executive Office'}`
+        excoTitle = `CSGB â€” ${excoApp.office || 'Executive Office'}`
       } else if (excoApp.kind === 'hall') {
         const rank = excoApp.rank === 'assistant' ? 'Assistant ' : ''
         excoTitle = `${rank}Hall Pastor (${excoApp.hall || successResult.hall || 'Hostel'})`
@@ -664,7 +665,7 @@ export function WorkerRegistrationForm({
                 </p>
                 <p className="text-xs text-slate-500 flex items-center gap-1.5">
                   <Home className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{successResult.hall || hall} {successResult.roomNumber ? `• Room ${successResult.roomNumber}` : ''}</span>
+                  <span>{successResult.hall || hall} {successResult.roomNumber ? `â€¢ Room ${successResult.roomNumber}` : ''}</span>
                 </p>
               </div>
             </div>
@@ -938,7 +939,7 @@ export function WorkerRegistrationForm({
                       autoFocus
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="• • • • • •"
+                      placeholder="â€¢ â€¢ â€¢ â€¢ â€¢ â€¢"
                       className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-center text-3xl font-mono font-bold tracking-[14px] text-slate-900 placeholder:text-slate-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                     />
                   </div>
@@ -980,7 +981,8 @@ export function WorkerRegistrationForm({
                 </div>
               </motion.div>
             ) : (
-              <motion.div
+              <>
+                <motion.div
                 key="step-1-phone"
                 variants={slideVariants}
                 initial="enter"
@@ -1028,41 +1030,116 @@ export function WorkerRegistrationForm({
                   </button>
                 </form>
 
-                <div className="border-t border-slate-200 pt-5 space-y-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">Already registered as a worker?</h3>
-                    <p className="text-xs text-slate-600 mt-1">Enter your registered email or phone to receive a quick profile unlock link.</p>
-                  </div>
-                  <input
-                    type="text"
-                    autoComplete="username"
-                    value={updateIdentifier}
-                    onChange={(event) => setUpdateIdentifier(event.target.value)}
-                    placeholder="Registered email or phone number"
-                    aria-label="Email or phone number on your worker profile"
-                    className="flex h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]/30 focus-visible:border-[#0077cc]"
-                  />
-                  {Boolean(updateIdentifier.trim()) && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to receive your link:</p>
-                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleRequestUpdateLink}
-                    disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-[#0077cc] hover:text-[#0077cc] disabled:opacity-50"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReturnerFlow(true)
+                    setError(null)
+                    setUpdateIdentifier('')
+                    setUpdateLinkMessage(null)
+                  }}
+                  className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-[#0077cc] hover:text-[#0077cc] hover:bg-slate-50 transition-all"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  <span>Already registered as a worker?</span>
+                </button>
+                </motion.div>
+
+                {isReturnerFlow && (
+                  <motion.div
+                    key="step-1-returner"
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.28 }}
+                    className="space-y-6"
                   >
-                    {requestingUpdateLink ? 'Sending secure code…' : 'Email me a profile update code & link'}
-                  </button>
-                  {updateLinkMessage && (
-                    <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
-                      {updateLinkMessage}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
+                        Worker Profile Recovery
+                      </span>
+                      <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
+                        Update Your Worker Profile
+                      </h2>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        Enter your registered email or phone number to receive a secure profile unlock link.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                      <div className="space-y-3">
+                        <label htmlFor="returner-identifier" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                          Registered Email or Phone Number
+                        </label>
+                        <input
+                          id="returner-identifier"
+                          type="text"
+                          autoComplete="username"
+                          autoFocus
+                          value={updateIdentifier}
+                          onChange={(event) => setUpdateIdentifier(event.target.value)}
+                          placeholder="name@example.com or 0801 234 5678"
+                          aria-label="Email or phone number on your worker profile"
+                          className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                        />
+                      </div>
+
+                      {Boolean(updateIdentifier.trim()) && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <p className="mb-3 text-xs font-semibold text-slate-700">
+                            Complete the security check to receive your link:
+                          </p>
+                          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleRequestUpdateLink}
+                        disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
+                        className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                      >
+                        {requestingUpdateLink ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Loader2 className="h-5 w-5 animate-spin" /> Sending secure codeâ€¦
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            Email me a profile update code & link <ArrowRight className="h-5 w-5" />
+                          </span>
+                        )}
+                      </button>
+
+                      {updateLinkMessage && (
+                        <p role="status" aria-live="polite" className="text-xs text-slate-700 rounded-lg bg-slate-100 p-3">
+                          {updateLinkMessage}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 pt-6">
+                      <button
+                        type="button"
+                        onClick={() => setIsReturnerFlow(false)}
+                        className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
+                        aria-label="Register as a new worker instead"
+                      >
+                        <ArrowLeft className="h-6 w-6" />
+                      </button>
+                      <p className="text-sm text-slate-600">
+                        New to the workforce?{' '}
+                        <span
+                          onClick={() => setIsReturnerFlow(false)}
+                          className="font-semibold text-[#0077cc] underline underline-offset-4 hover:text-[#005fa3] cursor-pointer transition-colors"
+                        >
+                          Register as a new worker instead
+                        </span>
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </>
             )
           )}
 
@@ -1083,13 +1160,13 @@ export function WorkerRegistrationForm({
                 <UserCheck className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-base text-emerald-950">
-                    Welcome back, {fullName}! 👋
+                    Welcome back, {fullName}! ðŸ‘‹
                   </h4>
                   <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">
                     Operational Team{teams.length > 1 ? 's' : ''}:{' '}
-                    <strong>{teams.join(', ') || 'Unassigned'}</strong> · Previous record:{' '}
+                    <strong>{teams.join(', ') || 'Unassigned'}</strong> Â· Previous record:{' '}
                     <strong>
-                      {hall || 'Unassigned'}, Room {roomNumber || '—'}
+                      {hall || 'Unassigned'}, Room {roomNumber || 'â€”'}
                     </strong>
                   </p>
                 </div>
@@ -1364,7 +1441,7 @@ export function WorkerRegistrationForm({
                   {submitting ? (
                     <span className="inline-flex items-center justify-center gap-2.5">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Saving Location…</span>
+                      <span>Saving Locationâ€¦</span>
                     </span>
                   ) : (
                     'Save Profile Updates'
@@ -2211,7 +2288,7 @@ export function WorkerRegistrationForm({
                   <span className="font-bold text-[#0077cc]">
                     {isExco
                       ? executiveKind === 'csgb'
-                        ? `CSGB — ${csgbOffice} (Pending Approval)`
+                        ? `CSGB â€” ${csgbOffice} (Pending Approval)`
                         : executiveKind === 'hall'
                           ? `${hallRank === 'assistant' ? 'Assistant ' : ''}Hall Pastor (${execHall || hall}) (Pending Approval)`
                           : `${teamRank === 'assistant' ? 'Assistant ' : ''}Team Lead (${execTeam || teams[0]}) (Pending Approval)`
@@ -2255,7 +2332,7 @@ export function WorkerRegistrationForm({
                   {submitting ? (
                     <span className="inline-flex items-center justify-center gap-2.5">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Submitting Registration…</span>
+                      <span>Submitting Registrationâ€¦</span>
                     </span>
                   ) : (
                     'Complete Registration'
