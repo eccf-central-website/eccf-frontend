@@ -2,10 +2,9 @@
  * AboutLeadership — Comprehensive Executive & Ministerial Leadership Gallery
  *
  * Implements:
- * - 6 Hierarchical Leadership Sections:
+ * - 5 Hierarchical Leadership Sections:
  *   1. Patrons (Dr. Andrew Ate, Dr. Matthew & Dr. Emmanuel Okla)
- *   2. Resident Pastor (Pastor Samuel Adebayo-Adesina)
- *   3. CSGB (Central Student Governing Body)
+ *   2. CSGB (Central Student Governing Body)
  *   4. Hall Pastors (Halls 1 through 8)
  *   5. Operational Team Leaders
  *   6. Assistant Team Leaders
@@ -21,7 +20,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Shield, BookOpen, Users, Church, Compass, Award } from 'lucide-react'
+import { Shield, BookOpen, Users, Compass, Award } from 'lucide-react'
 
 export interface LeaderCard {
   _id?: string
@@ -56,25 +55,21 @@ const PATRONS_LIST: LeaderCard[] = [
   },
   {
     _id: 'patron-2',
-    fullName: 'Dr. Matthew & Dr. Emmanuel Okla',
-    excoPosition: 'Patrons & Faculty Mentors',
+    fullName: 'Dr. Matthew',
+    excoPosition: 'Patron & Faculty Mentor',
     teamName: 'Board of Patrons',
-    bio: 'Senior academic and spiritual patrons steering student mentorship, academic scholarship integrity, and kingdom fellowship support at Edo State University.',
-    badgeLabel: 'PATRONS',
+    bio: 'Senior academic and spiritual patron steering student mentorship, academic scholarship integrity, and kingdom fellowship support at Edo State University.',
+    badgeLabel: 'PATRON',
+  },
+  {
+    _id: 'patron-3',
+    fullName: 'Dr. Emmanuel Okla',
+    excoPosition: 'Patron & Faculty Mentor',
+    teamName: 'Board of Patrons',
+    bio: 'Senior academic and spiritual patron steering student mentorship, academic scholarship integrity, and kingdom fellowship support at Edo State University.',
+    badgeLabel: 'PATRON',
   },
 ]
-
-// ---------------------------------------------------------------------------
-// 2. Resident Pastor (Spiritual Oversight)
-// ---------------------------------------------------------------------------
-const RESIDENT_PASTOR: LeaderCard = {
-  _id: 'pastor-1',
-  fullName: 'Pastor Samuel Adebayo-Adesina',
-  excoPosition: 'Resident Pastor & Spiritual Father',
-  teamName: 'Pastoral Council',
-  bio: 'Provides apostolic direction, pulpit ministration, spiritual covering, and pastoral fatherhood over the student body and fellowship leadership across all colleges.',
-  badgeLabel: 'RESIDENT PASTOR',
-}
 
 // ---------------------------------------------------------------------------
 // 3. CSGB (Central Student Governing Body)
@@ -403,7 +398,6 @@ const ASSISTANT_TEAM_LEADERS: LeaderCard[] = [
 type LeaderTier =
   | 'all'
   | 'patrons'
-  | 'pastor'
   | 'csgb'
   | 'hall_pastors'
   | 'team_leaders'
@@ -456,6 +450,24 @@ export default function AboutLeadership({
       (e) => e.excoPosition && e.excoPosition.toLowerCase().includes('assist')
     )
     return matched.length > 0 ? matched : ASSISTANT_TEAM_LEADERS
+  }, [excos])
+
+  const patronsList = useMemo(() => {
+    if (!excos || excos.length === 0) return PATRONS_LIST
+    const matched = excos.filter((e) => {
+      const role = (e.role || '').toLowerCase()
+      const excoPosition = (e.excoPosition || '').toLowerCase()
+      const teamName = (e.teamName || '').toLowerCase()
+      const badgeLabel = (e.badgeLabel || '').toLowerCase()
+      return (
+        role === 'patron' ||
+        role === 'patrons' ||
+        excoPosition.includes('patron') ||
+        teamName.includes('patron') ||
+        badgeLabel.includes('patron')
+      )
+    })
+    return matched.length > 0 ? matched : PATRONS_LIST
   }, [excos])
 
   const getInitials = (name: string) => {
@@ -552,7 +564,7 @@ export default function AboutLeadership({
             </h2>
             <p className="mt-4 text-base sm:text-xl text-slate-300 leading-relaxed font-normal">
               {lead ||
-                'Meet the distinguished patrons, resident pastor, student governing executives, hall pastors, and operational leaders who guide our fellowship life.'}
+                'Meet the distinguished patrons, student governing executives, hall pastors, and operational leaders who guide our fellowship life.'}
             </p>
           </motion.div>
 
@@ -561,7 +573,6 @@ export default function AboutLeadership({
             {[
               { id: 'all', label: 'All Leadership' },
               { id: 'patrons', label: 'Patrons' },
-              { id: 'pastor', label: 'Resident Pastor' },
               { id: 'csgb', label: 'CSGB' },
               { id: 'hall_pastors', label: 'Hall Pastors' },
               { id: 'team_leaders', label: 'Team Leaders' },
@@ -601,110 +612,11 @@ export default function AboutLeadership({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-8 max-w-4xl mx-auto">
-              {PATRONS_LIST.map((patron, idx) => (
-                <motion.div
-                  layout
-                  key={patron.fullName + idx}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 }}
-                  className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 border border-amber-500/30 p-6 sm:p-8 text-left shadow-xl"
-                >
-                  <h4 className="font-serif font-bold text-2xl sm:text-3xl text-white leading-tight mb-2">
-                    {patron.fullName}
-                  </h4>
-
-                  <span className="text-xs sm:text-sm font-semibold text-sky-400 block mb-4 uppercase tracking-wide">
-                    {patron.excoPosition}
-                  </span>
-
-                  <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                    {patron.bio}
-                  </p>
-
-                  <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
-                    <span>{patron.teamName}</span>
-                    <span className="text-amber-400 font-bold">ESUI Iyamho</span>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-6">
+              {patronsList.map((patron, idx) => renderCard(patron, idx))}
             </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TIER 2: RESIDENT PASTOR (Featured Hero Card)                     */}
-        {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'pastor') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Church className="h-5 w-5 text-sky-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Resident Pastor &amp; Spiritual Oversight
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Pastoral Leadership &amp; Ministry
-              </span>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 25 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.55 }}
-              className="overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 border border-sky-500/30 shadow-2xl relative group"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
-                {/* Pastor Portrait or Monogram */}
-                <div className="lg:col-span-5 relative aspect-[4/5] lg:aspect-auto lg:h-[460px] w-full bg-slate-950 overflow-hidden">
-                  {RESIDENT_PASTOR.profileImageUrl ? (
-                    <Image
-                      src={RESIDENT_PASTOR.profileImageUrl}
-                      alt={RESIDENT_PASTOR.fullName}
-                      fill
-                      priority
-                      sizes="(max-width: 1024px) 100vw, 40vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-slate-500 p-6 text-center">
-                      <span className="font-serif text-5xl sm:text-7xl font-bold text-sky-400/80 tracking-wider">
-                        SA
-                      </span>
-                      <span className="font-mono text-xs uppercase tracking-widest text-sky-300/60">
-                        Resident Pastorate
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent lg:hidden" />
-                </div>
-
-                {/* Pastor Bio & Mandate */}
-                <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 space-y-4 sm:space-y-6 text-left">
-                  <div>
-                    <h3 className="font-serif font-black text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
-                      {RESIDENT_PASTOR.fullName}
-                    </h3>
-                    <span className="text-sm sm:text-base font-semibold text-sky-400 block mt-1.5 uppercase tracking-wide">
-                      {RESIDENT_PASTOR.excoPosition}
-                    </span>
-                  </div>
-
-                  <p className="text-sm sm:text-lg text-slate-300 leading-relaxed font-normal">
-                    {RESIDENT_PASTOR.bio}
-                  </p>
-
-                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs sm:text-sm text-slate-400 font-mono">
-                    <span>{RESIDENT_PASTOR.teamName}</span>
-                    <span className="text-amber-300 font-bold">Spiritual Fatherhood</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
         )}
-
         {/* ================================================================ */}
         {/* TIER 3: CENTRAL STUDENT GOVERNING BODY (CSGB)                    */}
         {/* ================================================================ */}
