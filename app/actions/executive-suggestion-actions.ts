@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import * as XLSX from 'xlsx'
 import { revalidatePath } from 'next/cache'
@@ -37,8 +37,8 @@ export async function suggestPositionsFromCsv(
     session.access?.isVP ||
     session.access?.isChaplain ||
     session.worker?.canApproveExecutives === true ||
-    session.role === 'admin' ||
-    session.role === 'chaplain'
+    session.role === 'admin'
+
 
   if (!canApprove) {
     return { ok: false, imported: 0, skipped: [], error: 'Permission denied.' }

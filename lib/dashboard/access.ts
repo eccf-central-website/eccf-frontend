@@ -1,9 +1,9 @@
-import 'server-only'
+﻿import 'server-only'
 
 /**
- * Pure RBAC & Access Derivation Engine — lib/dashboard/access.ts
+ * Pure RBAC & Access Derivation Engine â€” lib/dashboard/access.ts
  *
- * Implements ADR-003 and SDD §6.2.
+ * Implements ADR-003 and SDD Â§6.2.
  * Pure, deterministic mapping from Sanity worker document to computed capabilities.
  * Enforces:
  * - Only approved positions count.
@@ -46,10 +46,12 @@ export interface WorkerAccess {
   clerkUserId?: string
   isExecutive: boolean
   isPresident: boolean
+  isVP: boolean
   isCSGB: boolean
   isFinance: boolean
   isWelfare: boolean
   isMedia: boolean
+  isChaplain: boolean
   leadsTeamIds: string[]
   leadsTeamKeys: string[]
   repsHalls: string[]
@@ -97,10 +99,12 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       email: '',
       isExecutive: false,
       isPresident: false,
+      isVP: false,
       isCSGB: false,
       isFinance: false,
       isWelfare: false,
       isMedia: false,
+      isChaplain: false,
       leadsTeamIds: [],
       leadsTeamKeys: [],
       repsHalls: [],
@@ -167,6 +171,15 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     Boolean(worker.canApproveExecutives) ||
     approvedPositions.some((p) => p.kind === 'csgb' && p.office?.toLowerCase().includes('president')) ||
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president'))
+
+  const isVP =
+    approvedPositions.some((p) => p.kind === 'csgb' && (p.office?.toLowerCase().includes('vp') || p.office?.toLowerCase().includes('vice president'))) ||
+    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('vp'))
+
+  const isChaplain =
+    approvedPositions.some((p) => p.office?.toLowerCase().includes('chaplain')) ||
+    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('chaplain')) ||
+    worker.role === 'chaplain'
 
   const isCSGB =
     isPresident ||
@@ -247,10 +260,12 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     clerkUserId: worker.clerkUserId || undefined,
     isExecutive,
     isPresident: Boolean(isPresident),
+    isVP: Boolean(isVP),
     isCSGB: Boolean(isCSGB),
     isFinance: Boolean(isFinance),
     isWelfare: Boolean(isWelfare),
     isMedia: Boolean(isMedia),
+    isChaplain: Boolean(isChaplain),
     leadsTeamIds,
     leadsTeamKeys,
     repsHalls,
