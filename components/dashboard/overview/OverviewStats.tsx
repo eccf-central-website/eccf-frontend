@@ -242,7 +242,7 @@ export function OverviewStatsSkeleton({ people, finance }: { people: boolean; fi
     <div className="space-y-6">
       {groups.map((count, i) => (
         <div key={i} className="space-y-3">
-          <Skeleton aria-hidden="true" className="h-3 w-16" />
+          <Skeleton aria-hidden="true" className="h-3 w-16 shrink-0" />
           <StatGridSkeleton count={count} label="Loading statistics…" announce={i === 0} />
         </div>
       ))}

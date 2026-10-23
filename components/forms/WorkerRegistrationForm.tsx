@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
@@ -15,11 +15,9 @@ import {
   UserCheck,
   ShieldCheck,
   User,
-  ShieldAlert,
   RotateCcw,
   Loader2,
   Mail,
-  Crown,
   Home,
   Users,
   ExternalLink,
@@ -32,8 +30,6 @@ import {
   requestWorkerSelfServiceLink,
   verifyWorkerOtp,
   uploadWorkerPhotoDirectAction,
-  type ExecutiveApplicationInput,
-  type ExecutiveApplicationKind,
   type WorkerRegistrationResult,
 } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
@@ -51,12 +47,6 @@ const HALLS_OF_RESIDENCE = [
   'Hall 8',
 ]
 
-const CSGB_OFFICES = [
-  { value: 'President', label: 'President & Executive Shepherd', description: 'Central executive leadership of the fellowship.' },
-  { value: 'VP Admin', label: "Vice President - Admin / Brothers' Coordinator", description: "Administrative coordination and brothers' ministry oversight." },
-  { value: 'VP Evangelism', label: "Vice President - Evangelism / Sisters' Coordinator", description: "Evangelism, campus outreach, and sisters' ministry oversight." },
-  { value: 'General Secretary', label: 'General Secretary', description: 'Fellowship secretarial administration and documentation.' },
-]
 
 const MONTHS = [
   { value: '01', label: 'January' },
@@ -154,13 +144,6 @@ export function WorkerRegistrationForm({
   const [base64Image, setBase64Image] = useState<string | null>(null)
 
   // Executive Designation State (No passwords)
-  const [isExco, setIsExco] = useState(false)
-  const [executiveKind, setExecutiveKind] = useState<ExecutiveApplicationKind>('csgb')
-  const [csgbOffice, setCsgbOffice] = useState('President')
-  const [hallRank, setHallRank] = useState<'lead' | 'assistant'>('lead')
-  const [execHall, setExecHall] = useState('')
-  const [teamRank, setTeamRank] = useState<'lead' | 'assistant'>('lead')
-  const [execTeam, setExecTeam] = useState('')
 
   // Privacy & Status
   const [ndprConsent, setNdprConsent] = useState(true)
@@ -177,18 +160,8 @@ export function WorkerRegistrationForm({
   }, [step])
 
   // Auto-fill exec hall when hall changes
-  useEffect(() => {
-    if (hall && !execHall) {
-      setExecHall(hall)
-    }
-  }, [hall, execHall])
 
   // Auto-fill exec team when teams change
-  useEffect(() => {
-    if (teams.length > 0 && !execTeam) {
-      setExecTeam(teams[0])
-    }
-  }, [teams, execTeam])
 
   useEffect(() => {
     if (!selfServiceToken) return
@@ -210,17 +183,6 @@ export function WorkerRegistrationForm({
         setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
         setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
         setExistingPhotoUrl(worker.profileImageUrl || null)
-        setIsExco(worker.isExco || false)
-        if (worker.executiveApplication) {
-          setExecutiveKind(worker.executiveApplication.kind)
-          if (worker.executiveApplication.office) setCsgbOffice(worker.executiveApplication.office)
-          if (worker.executiveApplication.hall) setExecHall(worker.executiveApplication.hall)
-          if (worker.executiveApplication.team) setExecTeam(worker.executiveApplication.team)
-          if (worker.executiveApplication.rank) {
-            setHallRank(worker.executiveApplication.rank)
-            setTeamRank(worker.executiveApplication.rank)
-          }
-        }
         setStep(2)
         setError(null)
       } else {
@@ -241,8 +203,8 @@ export function WorkerRegistrationForm({
 
   // Total steps based on flow
   // Returning flow: Step 1 (Phone) -> Step 2 (Location) -> Step 3 (Photo) -> Step 4 (Confirm)
-  // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Exco Designation) -> Step 9 (Review)
-  const totalSteps = isReturning ? 4 : 9
+  // New worker flow: Step 1 (Phone) -> Step 2 (Name) -> Step 3 (Email) -> Step 4 (Team) -> Step 5 (Location) -> Step 6 (Birthday) -> Step 7 (Photo) -> Step 8 (Review)
+  const totalSteps = isReturning ? 4 : 8
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -301,7 +263,6 @@ export function WorkerRegistrationForm({
 
       if (!result.exists) {
         setIsReturning(false)
-        setIsExco(false)
         setStep(2)
         return
       }
@@ -358,13 +319,6 @@ export function WorkerRegistrationForm({
       setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
       setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
       setExistingPhotoUrl(worker.profileImageUrl || null)
-      setIsExco(worker.isExco || false)
-      if (worker.executiveApplication) {
-        setExecutiveKind(worker.executiveApplication.kind)
-        if (worker.executiveApplication.office) setCsgbOffice(worker.executiveApplication.office)
-        if (worker.executiveApplication.hall) setExecHall(worker.executiveApplication.hall)
-        if (worker.executiveApplication.team) setExecTeam(worker.executiveApplication.team)
-      }
 
       setVerificationPending(false)
       setOtpCode('')
@@ -438,14 +392,6 @@ export function WorkerRegistrationForm({
   }
 
   // Construct Executive Application Input
-  const executiveApplication: ExecutiveApplicationInput | undefined = isExco
-    ? {
-        kind: executiveKind,
-        ...(executiveKind === 'csgb' ? { office: csgbOffice } : {}),
-        ...(executiveKind === 'hall' ? { hall: execHall || hall, rank: hallRank } : {}),
-        ...(executiveKind === 'team' ? { team: execTeam || teams[0] || 'General', rank: teamRank } : {}),
-      }
-    : undefined
 
   // Final Submission
   async function handleFinalSubmit() {
@@ -474,10 +420,9 @@ export function WorkerRegistrationForm({
         profileImageUrl: base64Image ? undefined : existingPhotoUrl || undefined,
         requestPhotoUpload: Boolean(base64Image),
         turnstileToken,
-        isExco,
-        executiveApplication,
         clerkUserId,
         ndprConsent,
+        isExco: false,
       })
 
       if (registrationResult.ok) {
@@ -489,8 +434,6 @@ export function WorkerRegistrationForm({
           hall: registrationResult.hall || hall,
           roomNumber: registrationResult.roomNumber || roomNumber,
           teams: registrationResult.teams || teams,
-          isExco: registrationResult.isExco ?? isExco,
-          executiveApplication: registrationResult.executiveApplication || executiveApplication,
           profileImageUrl: existingPhotoUrl || undefined,
           photoUploaded: Boolean(existingPhotoUrl),
         }
@@ -589,32 +532,17 @@ export function WorkerRegistrationForm({
     const firstName = successResult.fullName?.trim().split(/\s+/)[0] || 'Worker'
     const hasPhoto = Boolean(successResult.profileImageUrl)
     const teamsList = successResult.teams && successResult.teams.length > 0 ? successResult.teams : teams
-    const excoApp = successResult.executiveApplication || executiveApplication
-
-    let excoTitle = ''
-    if (successResult.isExco && excoApp) {
-      if (excoApp.kind === 'csgb') {
-        excoTitle = `CSGB â€” ${excoApp.office || 'Executive Office'}`
-      } else if (excoApp.kind === 'hall') {
-        const rank = excoApp.rank === 'assistant' ? 'Assistant ' : ''
-        excoTitle = `${rank}Hall Pastor (${excoApp.hall || successResult.hall || 'Hostel'})`
-      } else if (excoApp.kind === 'team') {
-        const rank = excoApp.rank === 'assistant' ? 'Assistant ' : ''
-        excoTitle = `${rank}Team Lead (${excoApp.team || teamsList[0] || 'Ministry Team'})`
-      }
-    }
-
     return (
       <div className="w-full max-w-2xl mx-auto space-y-6 py-4 animate-in fade-in duration-500">
         {/* Celebration Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center p-3.5 rounded-full bg-emerald-50 ring-8 ring-emerald-500/10 text-emerald-600 mb-1 shadow-xs">
-            <CheckCircle2 className="h-10 w-10 stroke-[2.2]" />
+            <CheckCircle2 className="h-10 w-10 shrink-0 stroke-[2.2]" />
           </div>
 
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold tracking-wide font-mono uppercase">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
               Registration Confirmed
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
@@ -645,10 +573,10 @@ export function WorkerRegistrationForm({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <User className="h-8 w-8 text-slate-400" />
+                  <User className="h-8 w-8 shrink-0 text-slate-400" />
                 )}
                 {hasPhoto && (
-                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Photo Attached" />
+                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-white" title="Photo Attached" />
                 )}
               </div>
 
@@ -660,12 +588,12 @@ export function WorkerRegistrationForm({
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 font-mono flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" />
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                   <span>{successResult.email || email}</span>
                 </p>
                 <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                  <Home className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{successResult.hall || hall} {successResult.roomNumber ? `â€¢ Room ${successResult.roomNumber}` : ''}</span>
+                  <Home className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <span>{successResult.hall || hall} {successResult.roomNumber ? `• Room ${successResult.roomNumber}` : ''}</span>
                 </p>
               </div>
             </div>
@@ -674,7 +602,7 @@ export function WorkerRegistrationForm({
             <div className="self-stretch sm:self-center">
               {hasPhoto ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className="h-4 w-4 shrink-0 text-emerald-600" />
                   <span>Portrait Attached</span>
                 </div>
               ) : (
@@ -693,9 +621,9 @@ export function WorkerRegistrationForm({
                     className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold transition-all shadow-2xs"
                   >
                     {isUploadingSuccessPhoto ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
                     ) : (
-                      <Upload className="h-3.5 w-3.5 text-amber-700" />
+                      <Upload className="h-3.5 w-3.5 shrink-0 text-amber-700" />
                     )}
                     <span>{isUploadingSuccessPhoto ? 'Uploading...' : 'Attach Portrait Photo'}</span>
                   </button>
@@ -711,7 +639,7 @@ export function WorkerRegistrationForm({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-slate-400" />
+                <Users className="h-4 w-4 shrink-0 text-slate-400" />
                 Operational Teams ({teamsList.length})
               </span>
               <span className="text-[11px] text-slate-400">Review by Team Leads</span>
@@ -727,7 +655,7 @@ export function WorkerRegistrationForm({
                     {tm}
                   </div>
                   <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">
-                    <Clock className="h-3 w-3 text-amber-600" />
+                    <Clock className="h-3 w-3 shrink-0 text-amber-600" />
                     Pending Verification
                   </span>
                 </div>
@@ -738,31 +666,6 @@ export function WorkerRegistrationForm({
             </p>
           </div>
 
-          {/* Executive Application Section (if exco) */}
-          {successResult.isExco && excoTitle && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-sky-50/50 border border-indigo-200/80 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white shrink-0">
-                    <Crown className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 font-mono block">
-                      Executive Application
-                    </span>
-                    <h3 className="font-bold text-sm sm:text-base text-slate-900">{excoTitle}</h3>
-                  </div>
-                </div>
-                <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-bold">
-                  <Clock className="h-3 w-3 text-indigo-700" />
-                  Pending Approval
-                </span>
-              </div>
-              <p className="text-xs text-indigo-950/80 leading-relaxed pt-1">
-                Executive appointments are subject to Presidential review. Once approved, your leadership permissions for Exco attendance, reports, and team rosters will activate automatically.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Live Application Status Callout */}
@@ -770,7 +673,7 @@ export function WorkerRegistrationForm({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-[#0077cc] text-white shrink-0">
-                <ShieldCheck className="h-5 w-5" />
+                <ShieldCheck className="h-5 w-5 shrink-0" />
               </div>
               <div>
                 <h3 className="font-bold text-slate-950 text-sm sm:text-base">Track Verification &amp; Badges Live</h3>
@@ -787,17 +690,8 @@ export function WorkerRegistrationForm({
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#0077cc] hover:bg-[#005fa3] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
             >
               <span>Open My Application Status Portal</span>
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4 shrink-0" />
             </Link>
-            {successResult.isExco && (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs sm:text-sm transition-all"
-              >
-                <span>Visit Exco Dashboard</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            )}
           </div>
         </div>
 
@@ -821,7 +715,7 @@ export function WorkerRegistrationForm({
             }}
             className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
           >
-            <RotateCcw className="h-4 w-4 mr-2" /> Register Another Member
+            <RotateCcw className="h-4 w-4 shrink-0 mr-2" /> Register Another Member
           </button>
         </div>
       </div>
@@ -834,7 +728,7 @@ export function WorkerRegistrationForm({
       {isClerkSignedIn && initialEmail && (
         <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900 shadow-xs">
           <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
             <span>Signed in with Clerk: <strong className="font-mono">{initialEmail}</strong></span>
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
@@ -863,7 +757,7 @@ export function WorkerRegistrationForm({
 
       {/* Main Interactive Container */}
       <div className="space-y-6">
-        {((isReturning && step === 4) || (!isReturning && step === 9)) && (
+        {((isReturning && step === 4) || (!isReturning && step === 8)) && (
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
             <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to continue.</p>
             <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
@@ -895,7 +789,7 @@ export function WorkerRegistrationForm({
               >
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold uppercase tracking-wider mb-1">
-                    <ShieldCheck className="h-4 w-4" />
+                    <ShieldCheck className="h-4 w-4 shrink-0" />
                     <span>SECURITY VERIFICATION</span>
                   </div>
                   <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
@@ -939,7 +833,7 @@ export function WorkerRegistrationForm({
                       autoFocus
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="â€¢ â€¢ â€¢ â€¢ â€¢ â€¢"
+                      placeholder="• • • • • •"
                       className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-center text-3xl font-mono font-bold tracking-[14px] text-slate-900 placeholder:text-slate-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                     />
                   </div>
@@ -951,11 +845,11 @@ export function WorkerRegistrationForm({
                   >
                     {verifyingOtp ? (
                       <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" /> Verifying Code...
+                        <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> Verifying Code...
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
-                        Verify Code &amp; Unlock Profile <ArrowRight className="h-5 w-5" />
+                        Verify Code &amp; Unlock Profile <ArrowRight className="h-5 w-5 shrink-0" />
                       </span>
                     )}
                   </button>
@@ -1020,11 +914,11 @@ export function WorkerRegistrationForm({
                   >
                     {checkingPhone ? (
                       <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" /> Checking Records...
+                        <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> Checking Records...
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
-                        Continue <ArrowRight className="h-5 w-5" />
+                        Continue <ArrowRight className="h-5 w-5 shrink-0" />
                       </span>
                     )}
                   </button>
@@ -1040,7 +934,7 @@ export function WorkerRegistrationForm({
                   }}
                   className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-[#0077cc] hover:text-[#0077cc] hover:bg-slate-50 transition-all"
                 >
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 shrink-0" />
                   <span>Already registered as a worker?</span>
                 </button>
                 </motion.div>
@@ -1102,11 +996,11 @@ export function WorkerRegistrationForm({
                       >
                         {requestingUpdateLink ? (
                           <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-5 w-5 animate-spin" /> Sending secure codeâ€¦
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> Sending secure code…
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
-                            Email me a profile update code & link <ArrowRight className="h-5 w-5" />
+                            Email me a profile update code & link <ArrowRight className="h-5 w-5 shrink-0" />
                           </span>
                         )}
                       </button>
@@ -1125,7 +1019,7 @@ export function WorkerRegistrationForm({
                         className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                         aria-label="Register as a new worker instead"
                       >
-                        <ArrowLeft className="h-6 w-6" />
+                        <ArrowLeft className="h-6 w-6 shrink-0" />
                       </button>
                       <p className="text-sm text-slate-600">
                         New to the workforce?{' '}
@@ -1160,13 +1054,13 @@ export function WorkerRegistrationForm({
                 <UserCheck className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-base text-emerald-950">
-                    Welcome back, {fullName}! ðŸ‘‹
+                    Welcome back, {fullName}! 👋
                   </h4>
                   <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">
                     Operational Team{teams.length > 1 ? 's' : ''}:{' '}
-                    <strong>{teams.join(', ') || 'Unassigned'}</strong> Â· Previous record:{' '}
+                    <strong>{teams.join(', ') || 'Unassigned'}</strong> · Previous record:{' '}
                     <strong>
-                      {hall || 'Unassigned'}, Room {roomNumber || 'â€”'}
+                      {hall || 'Unassigned'}, Room {roomNumber || '—'}
                     </strong>
                   </p>
                 </div>
@@ -1269,7 +1163,7 @@ export function WorkerRegistrationForm({
                                 isSelected ? 'bg-[#0077cc] border-[#0077cc]' : 'border-slate-300 bg-white'
                               }`}
                             >
-                              {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                              {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
                             </span>
                             <span>{t}</span>
                           </span>
@@ -1286,7 +1180,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(1)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1294,7 +1188,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(3)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1339,7 +1233,7 @@ export function WorkerRegistrationForm({
                   />
                 ) : (
                   <div className="h-24 w-24 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                    <Upload className="h-10 w-10 text-slate-500" />
+                    <Upload className="h-10 w-10 shrink-0 text-slate-500" />
                   </div>
                 )}
 
@@ -1356,7 +1250,7 @@ export function WorkerRegistrationForm({
                     onClick={() => fileInputRef.current?.click()}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-xs text-xs sm:text-sm font-bold transition-colors"
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-4 w-4 shrink-0" />
                     {imagePreview ? 'Change Photo' : 'Upload New Photo'}
                   </button>
                   <input
@@ -1375,14 +1269,14 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(2)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(4)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
                 >
-                  Review &amp; Confirm <ArrowRight className="h-5 w-5 ml-2" />
+                  Review &amp; Confirm <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1430,7 +1324,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(3)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1441,7 +1335,7 @@ export function WorkerRegistrationForm({
                   {submitting ? (
                     <span className="inline-flex items-center justify-center gap-2.5">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Saving Locationâ€¦</span>
+                      <span>Saving Location…</span>
                     </span>
                   ) : (
                     'Save Profile Updates'
@@ -1526,7 +1420,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(1)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1534,7 +1428,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(3)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1580,7 +1474,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(2)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1588,7 +1482,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(4)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1643,7 +1537,7 @@ export function WorkerRegistrationForm({
                             isSelected ? 'bg-[#0077cc] border-[#0077cc]' : 'border-slate-300 bg-white'
                           }`}
                         >
-                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          {isSelected && <Check className="h-3.5 w-3.5 shrink-0 stroke-[3]" />}
                         </span>
                         <span>{t}</span>
                       </span>
@@ -1663,7 +1557,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(3)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1671,7 +1565,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(5)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1740,7 +1634,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(4)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1748,7 +1642,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(6)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1834,7 +1728,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(5)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -1842,7 +1736,7 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(7)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
@@ -1876,11 +1770,11 @@ export function WorkerRegistrationForm({
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="mx-auto h-32 w-32 rounded-3xl object-cover border-2 border-slate-200 shadow-md"
+                    className="mx-auto h-32 w-32 shrink-0 rounded-3xl object-cover border-2 border-slate-200 shadow-md"
                   />
                 ) : (
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 border border-slate-200 text-slate-400">
-                    <Upload className="h-10 w-10 text-slate-500" />
+                  <div className="mx-auto flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-slate-100 border border-slate-200 text-slate-400">
+                    <Upload className="h-10 w-10 shrink-0 text-slate-500" />
                   </div>
                 )}
                 <div>
@@ -1889,7 +1783,7 @@ export function WorkerRegistrationForm({
                     onClick={() => fileInputRef.current?.click()}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-xs text-sm font-bold transition-colors"
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-4 w-4 shrink-0" />
                     {imagePreview ? 'Change Photo' : 'Choose Photo (Max 5MB)'}
                   </button>
                   <input
@@ -1908,329 +1802,24 @@ export function WorkerRegistrationForm({
                   onClick={() => setStep(6)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(8)}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 ml-2" />
+                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* ========================================================================= */}
-          {/* STEP 8: Executive Designation (Passwordless Unified Flow)                  */}
-          {/* ========================================================================= */}
-          {!isReturning && step === 8 && (
-            <motion.div
-              key="step-n8"
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.28 }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Step 8 of {totalSteps}
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Executive Designation
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Are you applying for an appointed executive leadership position in the fellowship?
-                </p>
-              </div>
-
-              {/* Two Choice Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setIsExco(false)}
-                  className={`p-6 rounded-2xl border-2 text-left space-y-2 transition-all ${
-                    !isExco
-                      ? 'border-[#0077cc] bg-sky-50 shadow-sm ring-2 ring-[#0077cc]/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 shadow-xs'
-                  }`}
-                >
-                  <User className={`h-8 w-8 ${!isExco ? 'text-[#0077cc]' : 'text-slate-500'}`} />
-                  <h4 className="font-bold text-base text-slate-950">Volunteer Worker</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    General workforce member serving in operational team(s). Verified by Team Leads.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsExco(true)}
-                  className={`p-6 rounded-2xl border-2 text-left space-y-2 transition-all ${
-                    isExco
-                      ? 'border-[#0077cc] bg-sky-50 shadow-sm ring-2 ring-[#0077cc]/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 shadow-xs'
-                  }`}
-                >
-                  <ShieldCheck
-                    className={`h-8 w-8 ${isExco ? 'text-[#0077cc]' : 'text-slate-500'}`}
-                  />
-                  <h4 className="font-bold text-base text-slate-950">Executive Designation</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Apply for an executive office (CSGB, Hall Pastorate, or Team Leadership). Approved by the President.
-                  </p>
-                </button>
-              </div>
-
-              {/* Executive Application Options (Passwordless) */}
-              {isExco && (
-                <div className="p-6 rounded-2xl bg-sky-50/90 border-2 border-sky-200 space-y-5 shadow-xs">
-                  <div className="bg-amber-50 border-2 border-amber-300 text-amber-950 rounded-xl p-3.5 flex items-start gap-3 shadow-xs">
-                    <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="text-xs text-amber-900 leading-relaxed font-medium space-y-1">
-                      <p>
-                        <strong>Presidential Approval Required:</strong> All executive designations require verification and approval directly by the Fellowship President.
-                      </p>
-                      <p className="text-amber-800">
-                        Authentication is completely passwordless via Clerk. Once approved, you will sign in using Google OAuth or emailed magic code.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Category Selection: CSGB vs Hall Pastorate vs Team Leadership */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                      Leadership Category <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setExecutiveKind('csgb')}
-                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
-                          executiveKind === 'csgb'
-                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
-                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
-                          <Crown className="h-4 w-4 text-[#0077cc]" />
-                          <span>CSGB</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-tight">Central Student Governing Board</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setExecutiveKind('hall')}
-                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
-                          executiveKind === 'hall'
-                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
-                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
-                          <Home className="h-4 w-4 text-[#0077cc]" />
-                          <span>Hall Pastorate</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-tight">Hostel Pastor / Assistant</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setExecutiveKind('team')}
-                        className={`p-3.5 rounded-xl border-2 text-left space-y-1 transition-all ${
-                          executiveKind === 'team'
-                            ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
-                            : 'border-slate-200 bg-white/70 hover:bg-white text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900">
-                          <Users className="h-4 w-4 text-[#0077cc]" />
-                          <span>Team Leadership</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-tight">Team Lead / Assistant</p>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Sub-form A: CSGB Office Selection */}
-                  {executiveKind === 'csgb' && (
-                    <div className="space-y-3 pt-1">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800">
-                        CSGB Executive Office <span className="text-red-500">*</span>
-                      </label>
-                      <div className="space-y-2">
-                        {CSGB_OFFICES.map((off) => {
-                          const isSelected = csgbOffice === off.value
-                          return (
-                            <button
-                              key={off.value}
-                              type="button"
-                              onClick={() => setCsgbOffice(off.value)}
-                              className={`w-full p-3.5 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
-                                isSelected
-                                  ? 'border-[#0077cc] bg-white ring-2 ring-[#0077cc]/20 shadow-xs'
-                                  : 'border-slate-200 bg-white/70 hover:bg-white'
-                              }`}
-                            >
-                              <span
-                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                                  isSelected ? 'border-[#0077cc] bg-[#0077cc]' : 'border-slate-300 bg-white'
-                                }`}
-                              >
-                                {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                              </span>
-                              <div>
-                                <span className="font-bold text-sm text-slate-950 block">{off.label}</span>
-                                <span className="text-xs text-slate-500 leading-relaxed block mt-0.5">{off.description}</span>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sub-form B: Hall Pastorate */}
-                  {executiveKind === 'hall' && (
-                    <div className="space-y-4 pt-1">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                          Hall Pastorate Rank <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setHallRank('lead')}
-                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
-                              hallRank === 'lead'
-                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
-                                : 'border-slate-200 bg-white/70 text-slate-700'
-                            }`}
-                          >
-                            Hall Pastor
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setHallRank('assistant')}
-                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
-                              hallRank === 'assistant'
-                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
-                                : 'border-slate-200 bg-white/70 text-slate-700'
-                            }`}
-                          >
-                            Assistant Hall Pastor
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                          Assigned Hall of Residence <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={execHall || hall}
-                          onChange={(e) => setExecHall(e.target.value)}
-                          className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
-                        >
-                          {HALLS_OF_RESIDENCE.map((h) => (
-                            <option key={h} value={h}>
-                              {h}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Sub-form C: Team Leadership */}
-                  {executiveKind === 'team' && (
-                    <div className="space-y-4 pt-1">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                          Team Leadership Rank <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setTeamRank('lead')}
-                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
-                              teamRank === 'lead'
-                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
-                                : 'border-slate-200 bg-white/70 text-slate-700'
-                            }`}
-                          >
-                            Team Lead / Coordinator
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTeamRank('assistant')}
-                            className={`p-3.5 rounded-xl border-2 text-center font-bold text-sm transition-all ${
-                              teamRank === 'assistant'
-                                ? 'border-[#0077cc] bg-white text-[#0077cc] ring-2 ring-[#0077cc]/20'
-                                : 'border-slate-200 bg-white/70 text-slate-700'
-                            }`}
-                          >
-                            Assistant Team Lead
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                          Chosen Ministry Team <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={execTeam || teams[0] || ''}
-                          onChange={(e) => setExecTeam(e.target.value)}
-                          className="flex h-14 w-full rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-semibold text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0077cc]"
-                        >
-                          {/* Show selected teams first */}
-                          {teams.map((t) => (
-                            <option key={t} value={t}>
-                              {t} (Your Selected Team)
-                            </option>
-                          ))}
-                          {/* Show remaining fellowship teams */}
-                          {FELLOWSHIP_TEAMS.filter((t) => !teams.includes(t)).map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Note: Finance access is granted exclusively to the approved Finance Team Lead or Assistant.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(7)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(9)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
-                >
-                  Review &amp; Complete <ArrowRight className="h-5 w-5 ml-2" />
-                </button>
-              </div>
-            </motion.div>
-          )}
 
           {/* ========================================================================= */}
           {/* STEP 9: Final Review & Confirmation                                       */}
           {/* ========================================================================= */}
-          {!isReturning && step === 9 && (
+          {!isReturning && step === 8 && (
             <motion.div
               key="step-n9"
               variants={slideVariants}
@@ -2242,7 +1831,7 @@ export function WorkerRegistrationForm({
             >
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                  Step 9 of {totalSteps}
+                  Step 8 of {totalSteps}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
                   Confirm your details
@@ -2285,15 +1874,9 @@ export function WorkerRegistrationForm({
                 )}
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Designation:</span>
-                  <span className="font-bold text-[#0077cc]">
-                    {isExco
-                      ? executiveKind === 'csgb'
-                        ? `CSGB â€” ${csgbOffice} (Pending Approval)`
-                        : executiveKind === 'hall'
-                          ? `${hallRank === 'assistant' ? 'Assistant ' : ''}Hall Pastor (${execHall || hall}) (Pending Approval)`
-                          : `${teamRank === 'assistant' ? 'Assistant ' : ''}Team Lead (${execTeam || teams[0]}) (Pending Approval)`
-                      : 'Volunteer Worker (Pending Lead Verification)'}
-                  </span>
+                   <span className="font-bold text-[#0077cc]">
+                     Volunteer Worker (Pending Lead Verification)
+                   </span>
                 </div>
               </div>
 
@@ -2304,7 +1887,7 @@ export function WorkerRegistrationForm({
                   required
                   checked={ndprConsent}
                   onChange={(e) => setNdprConsent(e.target.checked)}
-                  className="h-5 w-5 rounded border-slate-300 text-[#0077cc] focus:ring-[#0077cc] mt-0.5 cursor-pointer"
+                  className="h-5 w-5 shrink-0 rounded border-slate-300 text-[#0077cc] focus:ring-[#0077cc] mt-0.5 cursor-pointer"
                 />
                 <label
                   htmlFor="ndpr-new"
@@ -2318,10 +1901,10 @@ export function WorkerRegistrationForm({
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setStep(8)}
+                  onClick={() => setStep(7)}
                   className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-6 w-6 shrink-0" />
                 </button>
                 <button
                   type="button"
@@ -2332,7 +1915,7 @@ export function WorkerRegistrationForm({
                   {submitting ? (
                     <span className="inline-flex items-center justify-center gap-2.5">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0 aspect-square text-white" />
-                      <span>Submitting Registrationâ€¦</span>
+                      <span>Submitting Registration…</span>
                     </span>
                   ) : (
                     'Complete Registration'

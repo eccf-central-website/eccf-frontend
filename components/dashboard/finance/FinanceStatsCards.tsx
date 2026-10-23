@@ -20,8 +20,8 @@ export default function FinanceStatsCards({ totalIncome, totalExpense }: Finance
             <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Total Inflow (Income)
             </span>
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-500">
-              <ArrowDownRight className="h-5 w-5" />
+            <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-500">
+              <ArrowDownRight className="h-5 w-5 shrink-0" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -38,8 +38,8 @@ export default function FinanceStatsCards({ totalIncome, totalExpense }: Finance
             <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
               Total Outflow (Expense)
             </span>
-            <div className="h-8 w-8 rounded-lg bg-rose-500/15 flex items-center justify-center text-rose-500">
-              <ArrowUpRight className="h-5 w-5" />
+            <div className="h-8 w-8 shrink-0 rounded-lg bg-rose-500/15 flex items-center justify-center text-rose-500">
+              <ArrowUpRight className="h-5 w-5 shrink-0" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -56,8 +56,8 @@ export default function FinanceStatsCards({ totalIncome, totalExpense }: Finance
             <span className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">
               Net Balance
             </span>
-            <div className="h-8 w-8 rounded-lg bg-sky-500/15 flex items-center justify-center text-sky-500">
-              <Scale className="h-5 w-5" />
+            <div className="h-8 w-8 shrink-0 rounded-lg bg-sky-500/15 flex items-center justify-center text-sky-500">
+              <Scale className="h-5 w-5 shrink-0" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">

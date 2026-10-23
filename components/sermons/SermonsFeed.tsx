@@ -55,7 +55,7 @@ export default function SermonsFeed({ sermons }: Props) {
       {/* Search & Topic Filters */}
       <div className="mb-10 sm:mb-14 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border border-stone-200/80 p-5 sm:p-6 rounded-[24px] shadow-sm">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 shrink-0 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
@@ -67,7 +67,7 @@ export default function SermonsFeed({ sermons }: Props) {
 
         {dynamicTopics.length > 1 && (
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            <Filter className="h-4 w-4 text-slate-400 mr-1 hidden sm:block" />
+            <Filter className="h-4 w-4 shrink-0 text-slate-400 mr-1 hidden sm:block" />
             {dynamicTopics.map((topic) => {
               const isActive = selectedTopic === topic
               return (
@@ -92,7 +92,7 @@ export default function SermonsFeed({ sermons }: Props) {
       {/* Empty State */}
       {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <Disc3 className="h-16 w-16 text-slate-300 animate-pulse" />
+          <Disc3 className="h-16 w-16 shrink-0 text-slate-300 animate-pulse" />
           <p className="font-serif font-bold text-2xl text-slate-800 tracking-tight">
             {searchQuery || selectedTopic !== 'All'
               ? 'No sermons match your filter'
@@ -144,7 +144,7 @@ export default function SermonsFeed({ sermons }: Props) {
 
                     {sermon.duration && (
                       <div className="absolute top-3.5 right-3.5 z-10 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 flex items-center gap-1.5 shadow-sm">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
                         <span>{sermon.duration}</span>
                       </div>
                     )}
@@ -168,11 +168,11 @@ export default function SermonsFeed({ sermons }: Props) {
                             : 'bg-[#0095ff] hover:bg-sky-500 shadow-sky-500/30'
                         }`}
                       >
-                        <Play className="h-6 w-6 fill-white translate-x-0.5" />
+                        <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" />
                       </a>
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
-                        <Radio className="h-5 w-5 text-[#0077cc]" />
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
+                        <Radio className="h-5 w-5 shrink-0 text-[#0077cc]" />
                       </div>
                     )}
                   </div>
@@ -182,14 +182,14 @@ export default function SermonsFeed({ sermons }: Props) {
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2.5">
                       {sermon.datePreached && (
                         <>
-                          <Calendar className="h-3.5 w-3.5 text-[#0077cc]" />
+                          <Calendar className="h-3.5 w-3.5 shrink-0 text-[#0077cc]" />
                           <span>{sermon.datePreached}</span>
                         </>
                       )}
                       {sermon.datePreached && sermon.scriptureReference && <span>&bull;</span>}
                       {sermon.scriptureReference && (
                         <>
-                          <BookOpen className="h-3.5 w-3.5 text-emerald-600" />
+                          <BookOpen className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                           <span>{sermon.scriptureReference}</span>
                         </>
                       )}
@@ -220,7 +220,7 @@ export default function SermonsFeed({ sermons }: Props) {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0077cc] hover:text-sky-800 transition-colors"
                     >
-                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
                       <span>{youtubeId ? 'Watch Video' : 'Listen Now'}</span>
                     </a>
                   ) : (
@@ -235,9 +235,9 @@ export default function SermonsFeed({ sermons }: Props) {
                         rel="noopener noreferrer"
                         title="Listen on Spotify"
                         aria-label="Listen on Spotify"
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-stone-200/60"
                       >
-                        <SpotifyIcon className="h-4 w-4" />
+                        <SpotifyIcon className="h-4 w-4 shrink-0" />
                       </a>
                     )}
 
@@ -248,9 +248,9 @@ export default function SermonsFeed({ sermons }: Props) {
                         rel="noopener noreferrer"
                         title="Listen on YouTube Music"
                         aria-label="Listen on YouTube Music"
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                       >
-                        <YouTubeMusicIcon className="h-4 w-4" />
+                        <YouTubeMusicIcon className="h-4 w-4 shrink-0" />
                       </a>
                     )}
 
@@ -261,9 +261,9 @@ export default function SermonsFeed({ sermons }: Props) {
                         rel="noopener noreferrer"
                         title="Watch on YouTube"
                         aria-label="Watch on YouTube"
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                       >
-                        <YouTubeIcon className="h-4 w-4" />
+                        <YouTubeIcon className="h-4 w-4 shrink-0" />
                       </a>
                     )}
                   </div>

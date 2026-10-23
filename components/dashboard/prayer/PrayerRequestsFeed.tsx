@@ -174,7 +174,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
         <Card className="border bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <MessageSquareText className="h-5 w-5" />
+              <MessageSquareText className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -188,7 +188,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
         <Card className="border bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-              <Calendar className="h-5 w-5" />
+              <Calendar className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -202,7 +202,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
         <Card className="border bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Users className="h-5 w-5" />
+              <Users className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -223,7 +223,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
       {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border bg-card p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search by submitter name or keyword..."
@@ -312,7 +312,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
       {/* Requests Feed Cards */}
       {filteredRequests.length === 0 ? (
         <div className="rounded-xl border border-dashed bg-card p-12 text-center shadow-sm">
-          <HeartHandshake className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+          <HeartHandshake className="mx-auto h-10 w-10 shrink-0 text-muted-foreground/50 mb-3" />
           <h4 className="font-semibold text-foreground text-sm">No prayer requests found</h4>
           <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
             {searchQuery
@@ -352,7 +352,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
                     <div className="flex items-center gap-3">
                       {isAnon ? (
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                          <Shield className="h-4 w-4" />
+                          <Shield className="h-4 w-4 shrink-0" />
                         </div>
                       ) : (
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
@@ -380,7 +380,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
 
                     {/* Timestamp Section */}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground self-start sm:self-center">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                       <span className="font-medium text-foreground/80">{fullDateTime}</span>
                       {relativeTime && (
                         <Badge
@@ -403,7 +403,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
                   {/* Card Footer Actions */}
                   <div className="flex items-center justify-between pt-1">
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Sparkles className="h-3 w-3 text-primary/70" />
+                      <Sparkles className="h-3 w-3 shrink-0 text-primary/70" />
                       <span>Intercessory Prayer Network</span>
                     </div>
 
@@ -419,12 +419,12 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
                     >
                       {isCopied ? (
                         <>
-                          <Check className="h-3.5 w-3.5" />
+                          <Check className="h-3.5 w-3.5 shrink-0" />
                           <span>Copied</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="h-3.5 w-3.5" />
+                          <Copy className="h-3.5 w-3.5 shrink-0" />
                           <span>Copy Request</span>
                         </>
                       )}

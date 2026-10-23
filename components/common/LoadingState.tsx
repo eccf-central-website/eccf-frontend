@@ -140,15 +140,15 @@ export default function LoadingState({
             {/* Elegant Sequential Bouncing Dots */}
             <span className="inline-flex items-center gap-0.5 ml-0.5 pt-0.5">
               <span
-                className="h-1.5 w-1.5 rounded-full bg-[#0095ff] animate-bounce"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0095ff] animate-bounce"
                 style={{ animationDelay: '0ms', animationDuration: '1s' }}
               />
               <span
-                className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-bounce"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400 animate-bounce"
                 style={{ animationDelay: '200ms', animationDuration: '1s' }}
               />
               <span
-                className="h-1.5 w-1.5 rounded-full bg-sky-300 animate-bounce"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-300 animate-bounce"
                 style={{ animationDelay: '400ms', animationDuration: '1s' }}
               />
             </span>

@@ -4,8 +4,8 @@
  * Kept apart from lib/queries.ts so public pages never import these.
  * Run only from lib/dashboard/data after an RBAC check.
  *
- * ⚠️ PII: no projection here may select `phoneNumber` or `roomNumber`.
- * ⚠️ Naming: `team` — never `unit`. Worker.team is a teamUnit reference on
+ * PII: no projection here may select `phoneNumber` or `roomNumber`.
+ * Naming: `team` — never `unit`. Worker.team is a teamUnit reference on
  *    the current backend branches and a plain string on older data, so it
  *    is always resolved with coalesce(team->name, team).
  */

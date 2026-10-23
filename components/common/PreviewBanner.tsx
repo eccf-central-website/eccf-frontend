@@ -39,12 +39,12 @@ export default function PreviewBanner({ exitUrl = '/api/exit-preview' }: Preview
 
   return (
     <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 flex items-center gap-2.5 bg-slate-900/90 text-white pl-3.5 pr-2 py-2 rounded-full shadow-2xl border border-sky-500/30 backdrop-blur-md text-xs font-medium transition-all animate-in fade-in slide-in-from-bottom-2">
-      <span className="flex h-2 w-2 relative">
+      <span className="flex h-2 w-2 shrink-0 relative">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 shrink-0 bg-emerald-500"></span>
       </span>
       <div className="flex items-center gap-1.5 text-slate-200">
-        <Eye className="h-3.5 w-3.5 text-sky-400" />
+        <Eye className="h-3.5 w-3.5 shrink-0 text-sky-400" />
         <span className="hidden sm:inline">Preview Mode (Unpublished Drafts)</span>
         <span className="sm:hidden">Previewing</span>
       </div>
@@ -63,7 +63,7 @@ export default function PreviewBanner({ exitUrl = '/api/exit-preview' }: Preview
         title="Dismiss notice"
         aria-label="Dismiss notice"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5 shrink-0" />
       </button>
     </div>
   )

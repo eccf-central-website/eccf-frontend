@@ -204,7 +204,7 @@ export default function SendWorkerEmailDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-border text-card-foreground">
         <DialogHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-primary">
-            <Mail className="h-4 w-4" />
+            <Mail className="h-4 w-4 shrink-0" />
             <span>Exco Communication Portal</span>
           </div>
           <DialogTitle className="font-serif text-2xl font-black text-foreground tracking-tight">
@@ -239,7 +239,7 @@ export default function SendWorkerEmailDialog({
                     }`}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                      <Users className="h-4 w-4" />
+                      <Users className="h-4 w-4 shrink-0" />
                     </div>
                     <div>
                       <p className="font-bold text-xs text-foreground">All Workers</p>
@@ -259,7 +259,7 @@ export default function SendWorkerEmailDialog({
                     }`}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400">
-                      <ShieldCheck className="h-4 w-4" />
+                      <ShieldCheck className="h-4 w-4 shrink-0" />
                     </div>
                     <div>
                       <p className="font-bold text-xs text-foreground">All EXCOs</p>
@@ -282,7 +282,7 @@ export default function SendWorkerEmailDialog({
                 }`}
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
-                  <Users className="h-4 w-4" />
+                  <Users className="h-4 w-4 shrink-0" />
                 </div>
                 <div>
                   <p className="font-bold text-xs text-foreground">
@@ -307,7 +307,7 @@ export default function SendWorkerEmailDialog({
                 }`}
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
-                  <User className="h-4 w-4" />
+                  <User className="h-4 w-4 shrink-0" />
                 </div>
                 <div>
                   <p className="font-bold text-xs text-foreground">Specific Worker</p>
@@ -353,7 +353,7 @@ export default function SendWorkerEmailDialog({
                 </Select>
               ) : (
                 <div className="p-2.5 rounded-lg bg-background border border-border text-xs font-bold text-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
+                  <Users className="h-4 w-4 shrink-0 text-primary" />
                   <span>{session.team}</span>
                 </div>
               )}
@@ -373,7 +373,7 @@ export default function SendWorkerEmailDialog({
 
               {/* Worker Search Box */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Filter workers by name, team, or hall..."
@@ -426,7 +426,7 @@ export default function SendWorkerEmailDialog({
                               No email
                             </span>
                           )}
-                          {isSelected && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                          {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />}
                         </div>
                       </button>
                     )
@@ -436,7 +436,7 @@ export default function SendWorkerEmailDialog({
 
               {selectedWorkerObj && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/25 text-xs text-primary">
-                  <User className="h-3.5 w-3.5 text-primary" />
+                  <User className="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span>
                     Selected: <strong>{selectedWorkerObj.fullName}</strong> ({selectedWorkerObj.team})
                   </span>
@@ -468,7 +468,7 @@ export default function SendWorkerEmailDialog({
           {/* ================================================================ */}
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-amber-500" />
+              <Sparkles className="h-3 w-3 shrink-0 text-amber-500" />
               <span className="font-semibold text-foreground">Quick Templates:</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -538,7 +538,7 @@ export default function SendWorkerEmailDialog({
           {/* ================================================================ */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-primary" />
               <span>
                 Audience scope: <strong className="text-foreground">{audienceType.replace('_', ' ').toUpperCase()}</strong>
               </span>
@@ -576,12 +576,12 @@ export default function SendWorkerEmailDialog({
             >
               {isPending ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 mr-2 animate-spin" />
                   Dispatching...
                 </>
               ) : (
                 <>
-                  <Send className="h-3.5 w-3.5 mr-2" />
+                  <Send className="h-3.5 w-3.5 shrink-0 mr-2" />
                   Send Mail ({estimatedRecipientCount})
                 </>
               )}

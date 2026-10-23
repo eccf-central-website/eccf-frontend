@@ -203,7 +203,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
                         <span>Submitting...</span>
                       </>
                     ) : (
@@ -285,7 +285,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Follow ECCF on Facebook"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
                   </a>
@@ -301,7 +301,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Follow ECCF on Instagram"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                       <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
@@ -319,7 +319,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Watch ECCF sermons on YouTube"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                     </svg>
                   </a>
@@ -335,7 +335,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Follow ECCF on TikTok"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3 15.28 6.34 6.34 0 0 0 9.34 21.6a6.34 6.34 0 0 0 6.34-6.32V8.75a8.28 8.28 0 0 0 4.81 1.54V6.84a4.8 4.8 0 0 1-.9-.15z"/>
                     </svg>
                   </a>
@@ -351,7 +351,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Join ECCF Telegram channel"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.693c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
                     </svg>
                   </a>
@@ -367,7 +367,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Follow ECCF on X"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                     </svg>
                   </a>
@@ -383,7 +383,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                     title="Join ECCF WhatsApp Channel / Community"
                     className="text-slate-500 hover:text-[#0095ff] transition-colors p-1"
                   >
-                    <svg className="h-5 w-5 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0 sm:h-6 sm:w-6 fill-current" viewBox="0 0 24 24">
                       <path d="M12.031 0C5.397 0 .007 5.39.007 12.023c0 2.118.553 4.186 1.606 6.01L0 24l6.167-1.618a12.012 12.012 0 0 0 5.864 1.517h.005c6.632 0 12.023-5.391 12.023-12.024A11.96 11.96 0 0 0 12.031 0zm0 21.996h-.004a9.98 9.98 0 0 1-5.088-1.39l-.365-.216-3.774.99 1.008-3.678-.238-.378a9.974 9.974 0 0 1-1.536-5.299c0-5.518 4.49-10.008 10.01-10.008a9.94 9.94 0 0 1 7.078 2.932 9.94 9.94 0 0 1 2.932 7.078c0 5.518-4.49 10.008-10.021 10.008zm5.487-7.498c-.3-.15-1.776-.876-2.051-.976-.276-.1-.476-.15-.676.15s-.776.976-.951 1.176-.35.225-.65.075a8.214 8.214 0 0 1-2.418-1.492 9.066 9.066 0 0 1-1.674-2.083c-.176-.3-.019-.462.131-.611.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525s-.676-1.63-.926-2.233c-.244-.588-.492-.508-.676-.517l-.576-.01c-.2 0-.525.075-.8.375s-1.05 1.026-1.05 2.503 1.075 2.903 1.225 3.103c.15.2 2.115 3.23 5.124 4.53 3.01 1.3 3.01.867 3.56.817.55-.05 1.776-.726 2.026-1.427.25-.7.25-1.301.175-1.426-.075-.125-.275-.2-.575-.35z" />
                     </svg>
                   </a>

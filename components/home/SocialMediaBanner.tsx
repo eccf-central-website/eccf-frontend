@@ -45,7 +45,7 @@ export default function SocialMediaBanner({
       ariaLabel: 'Follow ECCF on YouTube for sermons, livestreams and worship encounters',
       icon: (
         <svg
-          className="h-4 w-4 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
+          className="h-4 w-4 shrink-0 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
@@ -59,7 +59,7 @@ export default function SocialMediaBanner({
       ariaLabel: 'Follow ECCF on Instagram for daily devotionals and campus moments',
       icon: (
         <svg
-          className="h-4 w-4 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-none stroke-current stroke-2"
+          className="h-4 w-4 shrink-0 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-none stroke-current stroke-2"
           viewBox="0 0 24 24"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -77,7 +77,7 @@ export default function SocialMediaBanner({
       ariaLabel: 'Connect with ECCF on Facebook for fellowship community updates',
       icon: (
         <svg
-          className="h-4 w-4 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
+          className="h-4 w-4 shrink-0 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
@@ -91,7 +91,7 @@ export default function SocialMediaBanner({
       ariaLabel: 'Follow ECCF on TikTok for short sermon clips, choir ministrations and youth reels',
       icon: (
         <svg
-          className="h-4 w-4 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
+          className="h-4 w-4 shrink-0 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
@@ -105,7 +105,7 @@ export default function SocialMediaBanner({
       ariaLabel: 'Join ECCF on Telegram for instant audio podcasts, study notes and announcements',
       icon: (
         <svg
-          className="h-4 w-4 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
+          className="h-4 w-4 shrink-0 min-[375px]:h-5 min-[375px]:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 fill-current"
           viewBox="0 0 24 24"
           aria-hidden="true"
         >

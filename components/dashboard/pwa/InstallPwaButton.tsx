@@ -6,7 +6,7 @@
  *
  * Capabilities:
  * - Captures the native `beforeinstallprompt` event for 1-click install on Chrome, Edge & Android
- * - Provides step-by-step guidance for iOS Safari (Share ➔ Add to Home Screen)
+ * - Provides step-by-step guidance for iOS Safari (Share -> Add to Home Screen)
  * - Automatically hides when the app is already running in standalone/installed mode
  */
 
@@ -116,12 +116,12 @@ export default function InstallPwaButton() {
               className="absolute top-4 right-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               aria-label="Close"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 shrink-0" />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-[#0077cc] border border-sky-200/60 dark:bg-sky-950/50 dark:border-sky-800">
-                <Smartphone className="h-5 w-5" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-[#0077cc] border border-sky-200/60 dark:bg-sky-950/50 dark:border-sky-800">
+                <Smartphone className="h-5 w-5 shrink-0" />
               </div>
               <div>
                 <h3 className="font-serif font-bold text-base text-foreground leading-tight">
@@ -141,7 +141,7 @@ export default function InstallPwaButton() {
                     </span>
                     <span>
                       Tap the <strong className="text-foreground">Share</strong> icon{' '}
-                      <Share className="inline h-3.5 w-3.5 text-[#0077cc] align-text-bottom" /> at the
+                      <Share className="inline h-3.5 w-3.5 shrink-0 text-[#0077cc] align-text-bottom" /> at the
                       bottom of Safari.
                     </span>
                   </li>
@@ -151,7 +151,7 @@ export default function InstallPwaButton() {
                     </span>
                     <span>
                       Scroll down and tap <strong className="text-foreground">Add to Home Screen</strong>{' '}
-                      <Plus className="inline h-3.5 w-3.5 text-[#0077cc] align-text-bottom" />.
+                      <Plus className="inline h-3.5 w-3.5 shrink-0 text-[#0077cc] align-text-bottom" />.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

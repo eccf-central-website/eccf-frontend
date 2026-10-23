@@ -60,7 +60,7 @@ export default function FinanceClient({ initialEntries }: FinanceClientProps) {
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="flex flex-1 gap-2 items-center max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -87,7 +87,7 @@ export default function FinanceClient({ initialEntries }: FinanceClientProps) {
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <FinanceExportButton entries={filteredEntries} />
           <Button onClick={() => setShowModal(true)} size="sm" className="shadow-xs">
-            <PlusCircle className="mr-1.5 h-4 w-4" />
+            <PlusCircle className="mr-1.5 h-4 w-4 shrink-0" />
             Record Transaction
           </Button>
         </div>

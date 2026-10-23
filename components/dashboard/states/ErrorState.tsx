@@ -75,9 +75,9 @@ export default function ErrorState({
     >
       <div
         aria-hidden="true"
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive"
       >
-        <AlertTriangle className="h-6 w-6" />
+        <AlertTriangle className="h-6 w-6 shrink-0" />
       </div>
       <Heading
         ref={headingRef}

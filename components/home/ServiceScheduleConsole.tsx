@@ -132,9 +132,9 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
           {/* Quick Stats Pill */}
           <div className="hidden sm:inline-flex items-center gap-2.5 rounded-full bg-white border border-stone-200/90 px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs self-start lg:self-end">
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 shrink-0 bg-emerald-500"></span>
             </span>
             <span>3 Weekly Encounters</span>
             <span className="text-stone-300">•</span>
@@ -179,7 +179,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                     <span className="relative z-10 flex items-center gap-2">
                       <span>{service.day}</span>
                       {isActive && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#0095ff]" />
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0095ff]" />
                       )}
                     </span>
 
@@ -207,17 +207,17 @@ export default function ServiceScheduleConsole({ services }: Props) {
               >
                 {isPaused ? (
                   <>
-                    <Play className="h-3 w-3 text-emerald-600 fill-emerald-600" />
+                    <Play className="h-3 w-3 shrink-0 text-emerald-600 fill-emerald-600" />
                     <span>Paused</span>
                   </>
                 ) : (
                   <>
-                    <span className="relative flex h-2 w-2">
+                    <span className="relative flex h-2 w-2 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0077cc] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0077cc]"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 shrink-0 bg-[#0077cc]"></span>
                     </span>
                     <span>Auto 3s</span>
-                    <Pause className="h-3 w-3 text-slate-400 ml-0.5" />
+                    <Pause className="h-3 w-3 shrink-0 text-slate-400 ml-0.5" />
                   </>
                 )}
               </button>
@@ -239,7 +239,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                 <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left flex flex-col items-start">
                   {currentService.badge && (
                     <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-1.5 text-xs font-bold text-[#0077cc] uppercase tracking-wider border border-sky-200/60">
-                      <Sparkles className="h-3.5 w-3.5 text-[#0095ff]" />
+                      <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#0095ff]" />
                       <span>{currentService.badge}</span>
                     </div>
                   )}
@@ -273,7 +273,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                       className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
                     >
                       <span>View Campus Bulletins</span>
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
                     </Link>
 
                     <Link
@@ -281,7 +281,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                       className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 hover:text-slate-950 transition-colors group"
                     >
                       <span>Plan Your Visit</span>
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
 
                     <div className="w-full flex items-center justify-between border-b border-slate-800 pb-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest text-sky-400 uppercase font-mono">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
                         <span>Gathering Time</span>
                       </span>
                       <span className="text-emerald-400 text-xs font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">

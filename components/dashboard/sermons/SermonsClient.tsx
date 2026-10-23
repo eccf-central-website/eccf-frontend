@@ -217,7 +217,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-5">
         <div>
           <div className="flex items-center gap-2 text-primary">
-            <Radio className="h-6 w-6" />
+            <Radio className="h-6 w-6 shrink-0" />
             <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Sermon Vault &amp; Media Desk
             </h2>
@@ -230,7 +230,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <SyncSermonsButton variant="button" />
           <Button onClick={handleOpenCreate} className="gap-1.5 shadow-sm">
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 shrink-0" />
             <span>New Sermon</span>
           </Button>
         </div>
@@ -247,7 +247,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif">
                 {totalCount}
               </span>
-              <BookOpen className="h-4 w-4 text-muted-foreground/70" />
+              <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground/70" />
             </div>
           </CardContent>
         </Card>
@@ -261,7 +261,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-serif">
                 {autoSyncedCount}
               </span>
-              <RefreshCw className="h-4 w-4 text-emerald-500/80" />
+              <RefreshCw className="h-4 w-4 shrink-0 text-emerald-500/80" />
             </div>
           </CardContent>
         </Card>
@@ -275,7 +275,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-blue-600 dark:text-blue-400 font-serif">
                 {manualCount}
               </span>
-              <Sparkles className="h-4 w-4 text-blue-500/80" />
+              <Sparkles className="h-4 w-4 shrink-0 text-blue-500/80" />
             </div>
           </CardContent>
         </Card>
@@ -289,7 +289,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif">
                 {uniquePreachers}
               </span>
-              <Layers className="h-4 w-4 text-muted-foreground/70" />
+              <Layers className="h-4 w-4 shrink-0 text-muted-foreground/70" />
             </div>
           </CardContent>
         </Card>
@@ -300,7 +300,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         <div className="flex flex-1 flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -312,7 +312,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                 onClick={() => setSearch('')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3.5 w-3.5 shrink-0" />
               </button>
             )}
           </div>
@@ -358,7 +358,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
             className="h-8 px-2.5 text-xs gap-1"
             aria-label="Table view"
           >
-            <List className="h-3.5 w-3.5" />
+            <List className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden md:inline">Table</span>
           </Button>
           <Button
@@ -369,7 +369,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
             className="h-8 px-2.5 text-xs gap-1"
             aria-label="Cards view"
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden md:inline">Cards</span>
           </Button>
         </div>
@@ -378,7 +378,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       {/* Sermons Display */}
       {filteredSermons.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          <Radio className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+          <Radio className="mx-auto h-10 w-10 shrink-0 text-muted-foreground/50 mb-3" />
           <h3 className="text-base font-semibold text-foreground">No sermons found</h3>
           <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
             {search || topicFilter !== 'all' || originFilter !== 'all'
@@ -428,7 +428,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                             variant="outline"
                             className="text-[11px] font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 whitespace-nowrap"
                           >
-                            <RefreshCw className="h-3 w-3" />
+                            <RefreshCw className="h-3 w-3 shrink-0" />
                             RSS
                           </Badge>
                         ) : (
@@ -436,7 +436,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                             variant="outline"
                             className="text-[11px] font-medium border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1 whitespace-nowrap"
                           >
-                            <Sparkles className="h-3 w-3" />
+                            <Sparkles className="h-3 w-3 shrink-0" />
                             Curated
                           </Badge>
                         )}
@@ -495,12 +495,12 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                         >
                           {isPlaying ? (
                             <>
-                              <Pause className="h-3.5 w-3.5 fill-current" />
+                              <Pause className="h-3.5 w-3.5 shrink-0 fill-current" />
                               <span>Playing</span>
                             </>
                           ) : (
                             <>
-                              <Play className="h-3.5 w-3.5 fill-current" />
+                              <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
                               <span>Test</span>
                             </>
                           )}
@@ -518,7 +518,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                               className="p-1 rounded hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
                               title="Listen on Spotify"
                             >
-                              <SpotifyIcon className="h-4 w-4" />
+                              <SpotifyIcon className="h-4 w-4 shrink-0" />
                             </a>
                           )}
                           {sermon.youtubeUrl && (
@@ -529,7 +529,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                               className="p-1 rounded hover:text-red-500 hover:bg-red-500/10 transition-colors"
                               title="Watch on YouTube"
                             >
-                              <YouTubeIcon className="h-4 w-4" />
+                              <YouTubeIcon className="h-4 w-4 shrink-0" />
                             </a>
                           )}
                           {!sermon.spotifyUrl && !sermon.youtubeUrl && (
@@ -545,19 +545,19 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                             size="icon"
                             variant="ghost"
                             onClick={() => handleOpenEdit(sermon)}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
                             title="Edit sermon record"
                           >
-                            <Edit className="h-3.5 w-3.5" />
+                            <Edit className="h-3.5 w-3.5 shrink-0" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
                             onClick={() => setDeletingId(sermon._id)}
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
                             title="Delete sermon"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5 shrink-0" />
                           </Button>
                         </div>
                       </TableCell>
@@ -583,7 +583,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                         variant="outline"
                         className="text-[11px] font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1"
                       >
-                        <RefreshCw className="h-3 w-3" />
+                        <RefreshCw className="h-3 w-3 shrink-0" />
                         Auto-Synced (RSS)
                       </Badge>
                     ) : (
@@ -591,13 +591,13 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                         variant="outline"
                         className="text-[11px] font-medium border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1"
                       >
-                        <Sparkles className="h-3 w-3" />
+                        <Sparkles className="h-3 w-3 shrink-0" />
                         Curated
                       </Badge>
                     )}
 
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar className="h-3 w-3 shrink-0" />
                       {sermon.datePreached}
                     </span>
                   </div>
@@ -622,7 +622,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                     )}
                     {sermon.duration && (
                       <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1 ml-auto">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3 shrink-0" />
                         {sermon.duration}
                       </span>
                     )}
@@ -657,12 +657,12 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                     >
                       {isPlaying ? (
                         <>
-                          <Pause className="h-3.5 w-3.5 fill-current" />
+                          <Pause className="h-3.5 w-3.5 shrink-0 fill-current" />
                           <span>Playing</span>
                         </>
                       ) : (
                         <>
-                          <Play className="h-3.5 w-3.5 fill-current" />
+                          <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
                           <span>Test Audio</span>
                         </>
                       )}
@@ -677,7 +677,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                           className="p-1.5 rounded hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
                           title="Open Spotify"
                         >
-                          <SpotifyIcon className="h-4 w-4" />
+                          <SpotifyIcon className="h-4 w-4 shrink-0" />
                         </a>
                       )}
                       {sermon.youtubeUrl && (
@@ -688,7 +688,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                           className="p-1.5 rounded hover:text-red-500 hover:bg-red-500/10 transition-colors"
                           title="Open YouTube"
                         >
-                          <YouTubeIcon className="h-4 w-4" />
+                          <YouTubeIcon className="h-4 w-4 shrink-0" />
                         </a>
                       )}
                     </div>
@@ -702,7 +702,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                       onClick={() => handleOpenEdit(sermon)}
                       className="h-7 text-xs text-muted-foreground hover:text-foreground"
                     >
-                      <Edit className="h-3 w-3 mr-1" />
+                      <Edit className="h-3 w-3 shrink-0 mr-1" />
                       Edit
                     </Button>
                     <Button
@@ -711,7 +711,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                       onClick={() => setDeletingId(sermon._id)}
                       className="h-7 text-xs text-muted-foreground hover:text-red-600"
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
+                      <Trash2 className="h-3 w-3 shrink-0 mr-1" />
                       Delete
                     </Button>
                   </div>
@@ -740,7 +740,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
               aria-label="Close audio player"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 shrink-0" />
             </Button>
           </div>
           <audio
@@ -766,7 +766,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-5 w-5 shrink-0" />
               Delete Sermon Record
             </DialogTitle>
             <DialogDescription className="text-sm pt-2">
@@ -796,7 +796,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                   Deleting...
                 </>
               ) : (

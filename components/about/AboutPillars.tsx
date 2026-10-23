@@ -135,7 +135,7 @@ export default function AboutPillars({
           className="text-left md:text-center max-w-3xl md:mx-auto mb-10 sm:mb-16"
         >
           <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 shrink-0" />
             CORE PILLARS &amp; MANDATE
           </span>
           <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
@@ -168,7 +168,7 @@ export default function AboutPillars({
                       {pillar.num}
                     </span>
                     <div className={`p-3 rounded-2xl ${pillar.accentBg}`}>
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-6 w-6 shrink-0" />
                     </div>
                   </div>
 

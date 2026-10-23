@@ -109,7 +109,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Total Requests
               </span>
-              <HeartHandshake className="h-5 w-5 text-primary" />
+              <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -125,7 +125,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                 Pending Attention
               </span>
-              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
@@ -141,7 +141,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 Resolved
               </span>
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
@@ -155,7 +155,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
       {/* Filter and Search Controls */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -202,7 +202,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <div className="flex items-center gap-1.5 font-bold text-base text-foreground">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span>{req.name}</span>
                       </div>
                       <Badge
@@ -216,7 +216,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                         {req.status === 'Pending' ? 'Pending Attention' : 'Resolved'}
                       </Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
                         {formatFullDateTime(req.dateSubmitted)}
                       </span>
                     </div>
@@ -236,12 +236,12 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                       >
                         {resolvingId === req._id ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
                             Marking...
                           </>
                         ) : (
                           <>
-                            <Check className="mr-1.5 h-4 w-4" />
+                            <Check className="mr-1.5 h-4 w-4 shrink-0" />
                             Mark Resolved
                           </>
                         )}

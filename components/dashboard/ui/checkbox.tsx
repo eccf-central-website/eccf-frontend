@@ -29,7 +29,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             className
           )}
         >
-          {checked && <Check className="h-3 w-3 stroke-[3]" />}
+          {checked && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
         </div>
       </label>
     )

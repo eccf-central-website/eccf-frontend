@@ -412,7 +412,7 @@ export default function AnnouncementModal({
                 type="checkbox"
                 checked={isPinned}
                 onChange={(e) => setIsPinned(e.target.checked)}
-                className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                className="h-5 w-5 shrink-0 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
             </label>
 
@@ -439,7 +439,7 @@ export default function AnnouncementModal({
                 type="checkbox"
                 checked={isPublished}
                 onChange={(e) => setIsPublished(e.target.checked)}
-                className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                className="h-5 w-5 shrink-0 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
             </label>
           </div>

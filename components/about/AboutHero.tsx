@@ -205,7 +205,7 @@ export default function AboutHero({
           className="mt-8 sm:mt-10 pt-6 border-t border-stone-200/80 flex items-center justify-between flex-wrap gap-3"
         >
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <Compass className="h-4 w-4 text-[#0095ff]" />
+            <Compass className="h-4 w-4 shrink-0 text-[#0095ff]" />
             <span>Explore Page:</span>
           </div>
 
@@ -217,7 +217,7 @@ export default function AboutHero({
                 className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0077cc] border border-stone-200 transition-colors shadow-2xs inline-flex items-center gap-1"
               >
                 <span>{anchor.label}</span>
-                <ArrowDown className="h-3 w-3 opacity-60" />
+                <ArrowDown className="h-3 w-3 shrink-0 opacity-60" />
               </a>
             ))}
           </div>

@@ -29,8 +29,8 @@ export default function PageHeaderSkeleton({
     <LoadingRegion label={label} announce={announce} className={className}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          {description && <Skeleton className="h-4 w-72 max-w-full" />}
+          <Skeleton className="h-8 w-48 shrink-0" />
+          {description && <Skeleton className="h-4 w-72 shrink-0 max-w-full" />}
         </div>
         {action && <Skeleton className="h-10 w-full sm:w-32" />}
       </div>

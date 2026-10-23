@@ -93,7 +93,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                        <Users className="h-12 w-12 text-slate-300" />
+                        <Users className="h-12 w-12 shrink-0 text-slate-300" />
                         <span className="text-sm font-semibold">{team.name}</span>
                       </div>
                     )}
@@ -123,7 +123,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
                     className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] group-hover:text-sky-800 transition-colors"
                   >
                     <span>Join Team</span>
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0" />
                   </Link>
                 </div>
               </motion.div>

@@ -224,7 +224,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
           className="text-left md:text-center max-w-3xl md:mx-auto mb-10 sm:mb-16"
         >
           <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
-            <Users className="h-4 w-4" />
+            <Users className="h-4 w-4 shrink-0" />
             OPERATIONAL UNITS &amp; WORKFORCE
           </span>
           <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
@@ -265,7 +265,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
 
           {/* Search Input */}
           <div className="relative min-w-[260px] md:max-w-xs">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
@@ -306,7 +306,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                        <Users className="h-12 w-12 text-slate-300" />
+                        <Users className="h-12 w-12 shrink-0 text-slate-300" />
                         <span className="text-sm font-semibold">{team.name}</span>
                       </div>
                     )}
@@ -336,7 +336,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                     className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] group-hover:text-sky-800 transition-colors"
                   >
                     <span>Get Involved</span>
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0" />
                   </Link>
                 </div>
               </motion.div>

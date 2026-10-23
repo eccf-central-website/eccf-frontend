@@ -43,8 +43,8 @@ export default function TableSkeleton({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Skeleton className="h-10 w-full sm:max-w-xs" />
           <div className="flex gap-2">
-            <Skeleton className="h-10 w-28" />
-            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28 shrink-0" />
+            <Skeleton className="h-10 w-28 shrink-0" />
           </div>
         </div>
       )}
@@ -75,12 +75,12 @@ export default function TableSkeleton({
               <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className={cn('h-4', CELL_WIDTHS[r % CELL_WIDTHS.length])} />
-                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-3 w-1 shrink-0/3" />
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <Skeleton className="h-3 w-4/5" />
-              <Skeleton className="h-3 w-3/5" />
+              <Skeleton className="h-3 w-4 shrink-0/5" />
+              <Skeleton className="h-3 w-3 shrink-0/5" />
             </div>
           </div>
         ))}
@@ -88,10 +88,10 @@ export default function TableSkeleton({
 
       {pagination && (
         <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-28 shrink-0" />
           <div className="flex gap-2">
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10 shrink-0" />
+            <Skeleton className="h-10 w-10 shrink-0" />
           </div>
         </div>
       )}

@@ -144,12 +144,12 @@ export default function TheLauncher() {
               >
                 {isExpanded ? (
                   <>
-                    <Minimize2 className="h-5 w-5" />
+                    <Minimize2 className="h-5 w-5 shrink-0" />
                     <span>Minimize</span>
                   </>
                 ) : (
                   <>
-                    <Maximize2 className="h-4 w-4" />
+                    <Maximize2 className="h-4 w-4 shrink-0" />
                   </>
                 )}
               </button>
@@ -298,7 +298,7 @@ export default function TheLauncher() {
                       onClick={() => setView('menu')}
                       className="flex items-center gap-1 text-xs font-bold text-slate-300 hover:text-white"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4 shrink-0" />
                       Back
                     </button>
                     <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
@@ -308,8 +308,8 @@ export default function TheLauncher() {
 
                   {formStatus?.success ? (
                     <div className="my-auto py-8 text-center">
-                      <div className="h-12 w-12 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center mb-3">
-                        <CheckCircle2 className="h-6 w-6" />
+                      <div className="h-12 w-12 shrink-0 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center mb-3">
+                        <CheckCircle2 className="h-6 w-6 shrink-0" />
                       </div>
                       <h4 className="font-bold text-base text-white mb-1">
                         Welcome to the Family!
@@ -406,12 +406,12 @@ export default function TheLauncher() {
                       >
                         {formLoading ? (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                             Connecting...
                           </>
                         ) : (
                           <>
-                            <Send className="h-3.5 w-3.5" />
+                            <Send className="h-3.5 w-3.5 shrink-0" />
                             Submit Connect Card
                           </>
                         )}
@@ -443,7 +443,7 @@ export default function TheLauncher() {
                       onClick={() => setView('menu')}
                       className="flex items-center gap-1.5 text-sm font-bold text-slate-300 hover:text-white"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4 shrink-0" />
                       Back
                     </button>
                     <span className="text-sm font-bold uppercase tracking-wider text-sky-400">
@@ -529,7 +529,7 @@ export default function TheLauncher() {
         }
       >
         {isOpen ? (
-          <X className="h-6 w-6 text-white" />
+          <X className="h-6 w-6 shrink-0 text-white" />
         ) : (
           <div className="flex items-center transition-all duration-300">
             <Footprints className="h-6 w-6 text-white shrink-0" />

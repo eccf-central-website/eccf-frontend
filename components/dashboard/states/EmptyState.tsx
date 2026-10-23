@@ -54,7 +54,7 @@ export default function EmptyState({
     >
       <div
         aria-hidden="true"
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground [&_svg]:h-6 [&_svg]:w-6"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground [&_svg]:h-6 [&_svg]:w-6"
       >
         {icon ?? DEFAULT_ICONS[variant]}
       </div>

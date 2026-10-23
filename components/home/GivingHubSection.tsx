@@ -45,7 +45,7 @@ export default function GivingHubSection({ settings }: Props) {
             className="md:col-span-6 space-y-6 sm:space-y-8 text-center md:text-left"
           >
             <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 backdrop-blur-md px-4 py-1.5 text-xs sm:text-sm font-bold text-sky-300 border border-sky-400/30">
-              <HeartHandshake className="h-4 w-4" aria-hidden="true" />
+              <HeartHandshake className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>KINGDOM PARTNERSHIP</span>
             </div>
 
@@ -67,7 +67,7 @@ export default function GivingHubSection({ settings }: Props) {
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3.5 text-sm sm:text-base font-semibold text-slate-100">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0095ff] text-white shadow-sm shadow-sky-500/30">
-                    <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
+                    <Check className="h-3.5 w-3.5 shrink-0 stroke-[3]" aria-hidden="true" />
                   </span>
                   <span>{item}</span>
                 </div>
@@ -119,7 +119,7 @@ export default function GivingHubSection({ settings }: Props) {
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#0095ff] hover:bg-[#0080e0] text-white font-bold px-5 sm:px-6 lg:px-4 xl:px-6 py-2.5 text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                           aria-label={copied ? 'Account number copied' : 'Copy account number'}
                         >
-                          {copied ? <CheckCheck className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                          {copied ? <CheckCheck className="h-4 w-4 shrink-0" aria-hidden="true" /> : <Copy className="h-4 w-4 shrink-0" aria-hidden="true" />}
                           <span>{copied ? 'Copied!' : 'Copy Number'}</span>
                         </button>
                       </dd>

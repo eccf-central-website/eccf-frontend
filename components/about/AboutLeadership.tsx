@@ -413,42 +413,25 @@ export default function AboutLeadership({
   // Partition Sanity excos if available
   const csgbList = useMemo(() => {
     if (!excos || excos.length === 0) return CSGB_LIST
-    const matched = excos.filter(
-      (e) =>
-        e.role === 'admin' ||
-        (e.excoPosition &&
-          ['President', 'Vice President', 'General Secretary', 'Prayer Coordinator', 'Financial Secretary'].some(
-            (p) => e.excoPosition?.toLowerCase().includes(p.toLowerCase())
-          ))
-    )
+    const matched = excos.filter((e) => e.role === 'admin')
     return matched.length > 0 ? matched : CSGB_LIST
   }, [excos])
 
   const hallPastorsList = useMemo(() => {
     if (!excos || excos.length === 0) return HALL_PASTORS
-    const matched = excos.filter(
-      (e) =>
-        e.role === 'hall_rep' ||
-        (e.excoPosition && e.excoPosition.toLowerCase().includes('hall'))
-    )
+    const matched = excos.filter((e) => e.role === 'hall_rep')
     return matched.length > 0 ? matched : HALL_PASTORS
   }, [excos])
 
   const teamLeadersList = useMemo(() => {
     if (!excos || excos.length === 0) return TEAM_LEADERS
-    const matched = excos.filter(
-      (e) =>
-        e.role === 'team_lead' &&
-        (!e.excoPosition || !e.excoPosition.toLowerCase().includes('assist'))
-    )
+    const matched = excos.filter((e) => e.role === 'team_lead')
     return matched.length > 0 ? matched : TEAM_LEADERS
   }, [excos])
 
   const assistantLeadersList = useMemo(() => {
     if (!excos || excos.length === 0) return ASSISTANT_TEAM_LEADERS
-    const matched = excos.filter(
-      (e) => e.excoPosition && e.excoPosition.toLowerCase().includes('assist')
-    )
+    const matched = excos.filter((e) => e.role === 'assistant_lead')
     return matched.length > 0 ? matched : ASSISTANT_TEAM_LEADERS
   }, [excos])
 
@@ -556,7 +539,7 @@ export default function AboutLeadership({
             className="text-left max-w-2xl"
           >
             <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-sky-400 uppercase font-mono mb-3">
-              <Shield className="h-4 w-4" />
+              <Shield className="h-4 w-4 shrink-0" />
               OUR TEAM &amp; MINISTERIAL HIERARCHY
             </span>
             <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
@@ -603,7 +586,7 @@ export default function AboutLeadership({
         {(activeTier === 'all' || activeTier === 'patrons') && (
           <div className="mb-14 sm:mb-20">
             <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Award className="h-5 w-5 text-amber-400" />
+              <Award className="h-5 w-5 shrink-0 text-amber-400" />
               <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
                 Board of Patrons &amp; Staff Advisers
               </h3>
@@ -623,7 +606,7 @@ export default function AboutLeadership({
         {(activeTier === 'all' || activeTier === 'csgb') && (
           <div className="mb-14 sm:mb-20">
             <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Shield className="h-5 w-5 text-sky-400" />
+              <Shield className="h-5 w-5 shrink-0 text-sky-400" />
               <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
                 Central Student Governing Body (CSGB)
               </h3>
@@ -644,7 +627,7 @@ export default function AboutLeadership({
         {(activeTier === 'all' || activeTier === 'hall_pastors') && (
           <div className="mb-14 sm:mb-20">
             <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Compass className="h-5 w-5 text-emerald-400" />
+              <Compass className="h-5 w-5 shrink-0 text-emerald-400" />
               <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
                 Residence Hall Pastors
               </h3>
@@ -665,7 +648,7 @@ export default function AboutLeadership({
         {(activeTier === 'all' || activeTier === 'team_leaders') && (
           <div className="mb-14 sm:mb-20">
             <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Users className="h-5 w-5 text-sky-400" />
+              <Users className="h-5 w-5 shrink-0 text-sky-400" />
               <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
                 Operational Team Leaders
               </h3>
@@ -686,7 +669,7 @@ export default function AboutLeadership({
         {(activeTier === 'all' || activeTier === 'assistant_leaders') && (
           <div className="mb-14 sm:mb-20">
             <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <BookOpen className="h-5 w-5 text-purple-400" />
+              <BookOpen className="h-5 w-5 shrink-0 text-purple-400" />
               <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
                 Assistant Team Leaders
               </h3>

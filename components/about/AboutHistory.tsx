@@ -105,7 +105,7 @@ export default function AboutHistory({
           className="text-left max-w-3xl mb-10 sm:mb-16"
         >
           <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono mb-3">
-            <History className="h-4 w-4" />
+            <History className="h-4 w-4 shrink-0" />
             OUR STORY &amp; HERITAGE
           </span>
           <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight leading-tight">
@@ -194,7 +194,7 @@ export default function AboutHistory({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-3">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Milestone className="h-5 w-5 text-[#0095ff]" />
+                <Milestone className="h-5 w-5 shrink-0 text-[#0095ff]" />
                 <span className="text-xs sm:text-sm font-bold tracking-widest text-[#0077cc] uppercase font-mono">
                   CHRONOLOGICAL JOURNEY
                 </span>

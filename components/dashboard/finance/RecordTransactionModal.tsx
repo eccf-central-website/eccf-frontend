@@ -91,7 +91,7 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
       <div className="relative w-full max-w-md rounded-2xl border bg-background p-6 shadow-xl space-y-5 animate-in fade-in-0 zoom-in-95">
         <div className="flex items-center justify-between border-b pb-3">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <PlusCircle className="h-5 w-5 text-primary" />
+            <PlusCircle className="h-5 w-5 shrink-0 text-primary" />
             Record Transaction
           </h2>
           <button
@@ -99,7 +99,7 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
             onClick={onClose}
             className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 shrink-0" />
           </button>
         </div>
 
@@ -188,7 +188,7 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
             <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground">
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
                   Saving...
                 </>
               ) : (

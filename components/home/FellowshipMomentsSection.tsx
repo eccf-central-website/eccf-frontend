@@ -54,9 +54,9 @@ export default function FellowshipMomentsSection({ gallery }: Props) {
             href="/about#teams"
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-sky-50 hover:bg-sky-100 text-[#0077cc] text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors shrink-0 border border-sky-200/80"
           >
-            <Users className="h-4 w-4" />
+            <Users className="h-4 w-4 shrink-0" />
             <span>Meet Our 14 Teams on About Page</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
           </Link>
         </div>
 

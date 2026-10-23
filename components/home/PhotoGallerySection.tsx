@@ -32,7 +32,7 @@ export default function PhotoGallerySection() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#00a8ff] flex items-center gap-1.5 mb-1">
-              <Camera className="h-3.5 w-3.5 text-[#00a8ff]" />
+              <Camera className="h-3.5 w-3.5 shrink-0 text-[#00a8ff]" />
               <span>FELLOWSHIP MOMENTS</span>
             </span>
             <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
@@ -43,7 +43,7 @@ export default function PhotoGallerySection() {
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#00a8ff]">
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span>EDO STATE UNIVERSITY</span>
           </div>
         </div>
@@ -72,8 +72,8 @@ export default function PhotoGallerySection() {
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-between">
                 <div className="flex justify-end">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md">
-                    <Maximize2 className="h-4 w-4" />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md">
+                    <Maximize2 className="h-4 w-4 shrink-0" />
                   </span>
                 </div>
                 <div>
@@ -111,9 +111,9 @@ export default function PhotoGallerySection() {
               <button
                 onClick={() => setSelectedImage(null)}
                 aria-label="Close modal"
-                className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/60 text-white hover:bg-slate-900 transition-colors backdrop-blur-md"
+                className="absolute top-4 right-4 z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900/60 text-white hover:bg-slate-900 transition-colors backdrop-blur-md"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 shrink-0" />
               </button>
 
               <div className="relative h-[450px] w-full bg-slate-100">

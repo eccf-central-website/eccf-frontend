@@ -53,7 +53,7 @@ export default function CsvPositionImportClient() {
   return (
     <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2">
-        <Upload className="h-5 w-5 text-[#0077cc]" />
+        <Upload className="h-5 w-5 shrink-0 text-[#0077cc]" />
         <h2 className="font-serif font-bold text-lg text-slate-900">
           Import Position Suggestions (CSV / Excel)
         </h2>
@@ -75,7 +75,7 @@ export default function CsvPositionImportClient() {
         <Button type="submit" disabled={isPending || !file}>
           {isPending ? (
             <span className="inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Importing…
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> Importing…
             </span>
           ) : (
             'Import Suggestions'
@@ -85,12 +85,12 @@ export default function CsvPositionImportClient() {
       {result && (
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-emerald-700 font-semibold">
-            <CheckCircle2 className="h-4 w-4" /> Imported {result.imported} suggestion(s).
+            <CheckCircle2 className="h-4 w-4 shrink-0" /> Imported {result.imported} suggestion(s).
           </div>
           {result.skipped.length > 0 && (
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-amber-700 font-semibold">
-                <XCircle className="h-4 w-4" /> Skipped {result.skipped.length}:
+                <XCircle className="h-4 w-4 shrink-0" /> Skipped {result.skipped.length}:
               </div>
               <ul className="list-disc pl-5 text-xs text-slate-600 space-y-0.5">
                 {result.skipped.map((s, i) => (

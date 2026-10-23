@@ -187,7 +187,7 @@ export default function SermonModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold font-serif">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 shrink-0 text-primary" />
             {isEditing ? 'Edit Sermon Record' : 'Add New Sermon to Vault'}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
@@ -299,7 +299,7 @@ export default function SermonModal({
                 disabled={submitting || !topicInput.trim()}
                 className="shrink-0"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-4 w-4 shrink-0 mr-1" />
                 Add
               </Button>
             </div>
@@ -317,7 +317,7 @@ export default function SermonModal({
                       className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
                       aria-label={`Remove topic ${t}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3 shrink-0" />
                     </button>
                   </span>
                 ))}
@@ -416,7 +416,7 @@ export default function SermonModal({
             <Button type="submit" disabled={submitting} className="min-w-[120px]">
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
                   Saving...
                 </>
               ) : isEditing ? (

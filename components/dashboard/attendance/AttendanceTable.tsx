@@ -99,7 +99,7 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
       {/* Search and Filters Bar */}
       <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search meetings, topics, or logger..."
@@ -184,7 +184,7 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
                 <TableRow key={row._id} className="hover:bg-muted/20 transition-colors">
                   <TableCell className="font-medium text-xs whitespace-nowrap">
                     <div className="flex items-center gap-1.5 text-foreground">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <span>{formatDate(row.date)}</span>
                     </div>
                   </TableCell>
@@ -245,7 +245,7 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
                       className="h-8 gap-1 text-xs text-primary hover:text-primary"
                       onClick={() => setActiveAttendeeRecord(row)}
                     >
-                      <Eye className="h-3.5 w-3.5" />
+                      <Eye className="h-3.5 w-3.5 shrink-0" />
                       <span className="hidden sm:inline">Roster</span>
                     </Button>
                   </TableCell>
@@ -264,7 +264,7 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
         <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary">
-              <Users className="h-5 w-5" />
+              <Users className="h-5 w-5 shrink-0" />
               <DialogTitle className="font-serif text-lg">
                 Meeting Attendance Roster
               </DialogTitle>

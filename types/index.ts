@@ -6,12 +6,12 @@
  * Source of truth for field shape is ALWAYS eccf-backend — never modify
  * field names or types here without a corresponding schema change there.
  *
- * ⚠️  RBAC/Privacy rule: Worker.phoneNumber and Worker.roomNumber must be
+ *  RBAC/Privacy rule: Worker.phoneNumber and Worker.roomNumber must be
  * stripped from any payload before it reaches the browser. These fields
  * are marked optional here to reflect that they are withheld from
  * client-facing responses.
  *
- * ⚠️  Naming: The worker's operational group is `team`, never `unit`.
+ *  Naming: The worker's operational group is `team`, never `unit`.
  */
 
 // ---------------------------------------------------------------------------
@@ -113,19 +113,19 @@ export interface Worker {
   teams?: FellowshipTeam[]
   hall: string
   /**
-   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   * ENCRYPTED — stripped before any client-facing response.
    * Present only in server-side contexts after decryption.
    */
   roomNumber?: string
   /**
-   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   * ENCRYPTED — stripped before any client-facing response.
    * This is the unique identifier used for upsert deduplication.
    */
   phoneNumber?: string
-  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  /** One-way HMAC-SHA256 blind index for deterministic lookups */
   phoneBlindIndex?: string
   birthDate?: string // ISO date string YYYY-MM-DD
-  /** ⚠️ One-way HMAC-SHA256 blind index for birthday matching/tracking */
+  /** One-way HMAC-SHA256 blind index for birthday matching/tracking */
   birthdayBlindIndex?: string
   birthMonth?: number
   birthDay?: number
@@ -141,7 +141,7 @@ export interface Worker {
   leadingTeam?: FellowshipTeam
   positions?: WorkerPosition[]
   memberships?: WorkerMembership[]
-  /** ⚠️ Never sent to client — server-side auth verification only */
+  /** Never sent to client — server-side auth verification only */
   passwordHash?: string
   profileImageUrl?: string
   createdAt?: string
@@ -308,14 +308,14 @@ export interface FirstTimer {
   firstName?: string
   lastName?: string
   /**
-   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   * ENCRYPTED — stripped before any client-facing response.
    */
   phoneNumber: string
-  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  /** One-way HMAC-SHA256 blind index for deterministic lookups */
   phoneBlindIndex?: string
   hall?: string
   /**
-   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   * ENCRYPTED — stripped before any client-facing response.
    */
   roomNumber?: string
   department?: string
@@ -329,10 +329,10 @@ export interface WelfareRequest {
   _type: 'welfareRequest'
   name: string
   /**
-   * ⚠️ ENCRYPTED — stripped before any client-facing response.
+   * ENCRYPTED — stripped before any client-facing response.
    */
   phoneNumber: string
-  /** ⚠️ One-way HMAC-SHA256 blind index for deterministic lookups */
+  /** One-way HMAC-SHA256 blind index for deterministic lookups */
   phoneBlindIndex?: string
   requestDetails: string
   status: 'Pending' | 'Resolved'

@@ -146,14 +146,14 @@ export default function RecordAttendanceModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 shrink-0" />
           <span>Record Attendance</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary">
-            <ClipboardList className="h-5 w-5" />
+            <ClipboardList className="h-5 w-5 shrink-0" />
             <DialogTitle className="font-serif text-xl">Record Meeting Attendance</DialogTitle>
           </div>
           <DialogDescription>
@@ -246,7 +246,7 @@ export default function RecordAttendanceModal({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="flex items-center gap-1.5 text-sm font-semibold">
-                  <Users className="h-4 w-4 text-primary" />
+                  <Users className="h-4 w-4 shrink-0 text-primary" />
                   <span>Tick-Off Present Workers</span>
                 </h4>
                 <p className="text-xs text-muted-foreground">
@@ -280,7 +280,7 @@ export default function RecordAttendanceModal({
 
             {/* Search Filter */}
             <div className="relative mt-3">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search worker by name or hall..."
@@ -379,7 +379,7 @@ export default function RecordAttendanceModal({
               disabled={isPending || totalHeadcount === 0}
               className="gap-2"
             >
-              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 shrink-0 animate-spin" />}
               <span>Save Attendance Record</span>
             </Button>
           </DialogFooter>

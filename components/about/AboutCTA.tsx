@@ -39,7 +39,7 @@ export default function AboutCTA({ tag, headline, subtitle }: AboutCTAProps) {
           transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-mono font-bold uppercase tracking-widest text-sky-400 mb-6"
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <Sparkles className="h-3.5 w-3.5 shrink-0" />
           <span>{tag || 'JOIN THE MOVEMENT ON CAMPUS'}</span>
         </motion.div>
 

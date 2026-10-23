@@ -49,9 +49,9 @@ export default function FinanceTable({ entries }: FinanceTableProps) {
                       }`}
                     >
                       {isIncome ? (
-                        <ArrowDownLeft className="h-3 w-3" />
+                        <ArrowDownLeft className="h-3 w-3 shrink-0" />
                       ) : (
-                        <ArrowUpRight className="h-3 w-3" />
+                        <ArrowUpRight className="h-3 w-3 shrink-0" />
                       )}
                       <span>{entry.type}</span>
                     </Badge>

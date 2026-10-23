@@ -46,7 +46,7 @@ export default function FinanceExportButton({ entries }: FinanceExportButtonProp
       disabled={entries.length === 0}
       className="shadow-xs"
     >
-      <Download className="mr-1.5 h-4 w-4" />
+      <Download className="mr-1.5 h-4 w-4 shrink-0" />
       Export CSV
     </Button>
   )

@@ -55,9 +55,9 @@ export default function DevSwitcher({ role, mockState }: DevSwitcherProps) {
   return (
     <>
       <DropdownMenuLabel className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-warning-foreground">
-        <FlaskConical aria-hidden="true" className="h-4 w-4 text-warning" />
+        <FlaskConical aria-hidden="true" className="h-4 w-4 shrink-0 text-warning" />
         Developer
-        {isPending && <Loader2 aria-label="Switching" className="ml-auto h-4 w-4 animate-spin" />}
+        {isPending && <Loader2 aria-label="Switching" className="ml-auto h-4 w-4 shrink-0 animate-spin" />}
       </DropdownMenuLabel>
 
       <DropdownMenuLabel className="pb-0 text-xs font-medium text-muted-foreground">Mock role</DropdownMenuLabel>

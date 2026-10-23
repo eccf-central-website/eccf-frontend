@@ -65,8 +65,8 @@ const SheetContent = React.forwardRef<
       {...props}
     >
       {/* ECCF: 40px touch target (shadcn default is 16px) */}
-      <SheetPrimitive.Close className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
-        <X className="h-5 w-5" />
+      <SheetPrimitive.Close className="absolute right-3 top-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+        <X className="h-5 w-5 shrink-0" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
       {children}

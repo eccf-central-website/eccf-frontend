@@ -30,8 +30,8 @@ export default function SectionPlaceholder({ section, branch, description, count
     <PageContainer>
       <Card>
         <CardHeader className="gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-            <Icon aria-hidden="true" className="h-5 w-5" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
           </div>
           <CardTitle className="font-serif text-2xl">
             <h2>{label}</h2>
@@ -43,7 +43,7 @@ export default function SectionPlaceholder({ section, branch, description, count
             </p>
           )}
           <p className="flex flex-wrap items-center gap-2 pt-1 text-sm text-muted-foreground">
-            <Construction aria-hidden="true" className="h-4 w-4 text-warning" />
+            <Construction aria-hidden="true" className="h-4 w-4 shrink-0 text-warning" />
             Coming in
             <code className="break-all rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">{branch}</code>
           </p>

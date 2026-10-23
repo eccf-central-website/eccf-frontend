@@ -162,13 +162,13 @@ export default function SendWorkerEmailCard({
       className={`rounded-2xl border border-border bg-card p-5 shadow-xs transition-all ${className}`}
     >
       {/* Header bar with toggle */}
-      <div className="flex items-center justify-between pb-3 border-b border-border">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-            <Mail className="h-4 w-4" />
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+            <Mail className="h-4 w-4 shrink-0" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary">
                 Workforce Email Dispatcher
               </span>
@@ -176,7 +176,7 @@ export default function SendWorkerEmailCard({
                 Resend API
               </span>
             </div>
-            <h3 className="font-serif font-bold text-lg text-foreground leading-tight">
+            <h3 className="font-serif font-bold text-lg text-foreground leading-tight truncate">
               {isAdmin ? 'Send Mails to Fellowship Workers' : `Send Mails to ${session.team}`}
             </h3>
           </div>
@@ -189,7 +189,7 @@ export default function SendWorkerEmailCard({
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <span>{isExpanded ? 'Collapse' : 'Compose'}</span>
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isExpanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
           </button>
         </div>
       </div>
@@ -213,7 +213,7 @@ export default function SendWorkerEmailCard({
                         : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <Users className="h-3.5 w-3.5" />
+                    <Users className="h-3.5 w-3.5 shrink-0" />
                     <span>All Workers ({workers.filter((w) => Boolean(w.email)).length})</span>
                   </button>
 
@@ -226,7 +226,7 @@ export default function SendWorkerEmailCard({
                         : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
                     <span>All EXCOs</span>
                   </button>
                 </>
@@ -241,7 +241,7 @@ export default function SendWorkerEmailCard({
                     : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <Users className="h-3.5 w-3.5" />
+                <Users className="h-3.5 w-3.5 shrink-0" />
                 <span>{isAdmin ? 'Specific Team' : `All ${session.team}`}</span>
               </button>
 
@@ -254,7 +254,7 @@ export default function SendWorkerEmailCard({
                     : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <User className="h-3.5 w-3.5" />
+                <User className="h-3.5 w-3.5 shrink-0" />
                 <span>Specific Worker</span>
               </button>
             </div>
@@ -287,7 +287,7 @@ export default function SendWorkerEmailCard({
               </div>
 
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search worker by name..."
@@ -381,12 +381,12 @@ export default function SendWorkerEmailCard({
             >
               {isPending ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 mr-1.5 animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send className="h-3.5 w-3.5 mr-1.5" />
+                  <Send className="h-3.5 w-3.5 shrink-0 mr-1.5" />
                   Send Mail ({estimatedRecipientCount})
                 </>
               )}

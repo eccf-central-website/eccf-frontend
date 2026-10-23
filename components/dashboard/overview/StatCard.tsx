@@ -97,7 +97,7 @@ export default function StatCard({
           className="mt-3 inline-flex min-h-10 items-center gap-1 self-start text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:underline focus-visible:outline-none"
         >
           {linkLabel}
-          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
         </Link>
       )}
     </article>

@@ -31,9 +31,9 @@ export function ThemeToggle({ className, alignTooltip = 'bottom' }: ThemeToggleP
           )}
         >
           {isDark ? (
-            <Sun className="h-4 w-4 text-amber-400 transition-transform duration-200" aria-hidden="true" />
+            <Sun className="h-4 w-4 shrink-0 text-amber-400 transition-transform duration-200" aria-hidden="true" />
           ) : (
-            <Moon className="h-4 w-4 text-slate-700 transition-transform duration-200" aria-hidden="true" />
+            <Moon className="h-4 w-4 shrink-0 text-slate-700 transition-transform duration-200" aria-hidden="true" />
           )}
           <span className="sr-only">{label}</span>
         </Button>

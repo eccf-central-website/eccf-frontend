@@ -34,8 +34,8 @@ export default function FeedSkeleton({
     <LoadingRegion label={label} announce={announce} className={cn('space-y-4', className)}>
       {tabs && (
         <div className="flex gap-2">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24 shrink-0" />
+          <Skeleton className="h-10 w-24 shrink-0" />
         </div>
       )}
       {search && <Skeleton className="h-10 w-full sm:max-w-xs" />}
@@ -48,12 +48,12 @@ export default function FeedSkeleton({
               <Skeleton className="h-3 w-16 shrink-0" />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Skeleton className="h-5 w-20 rounded-full" />
-              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
+              <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
             </div>
             <div className="mt-4 space-y-2">
               <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-4/5" />
+              <Skeleton className="h-3 w-4 shrink-0/5" />
             </div>
           </li>
         ))}

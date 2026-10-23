@@ -31,7 +31,7 @@ export default async function PrayerRequestsPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-2 border-b pb-5">
         <div className="flex items-center gap-2.5 text-primary">
-          <HeartHandshake className="h-6 w-6" />
+          <HeartHandshake className="h-6 w-6 shrink-0" />
           <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Prayer Requests Feed
           </h2>

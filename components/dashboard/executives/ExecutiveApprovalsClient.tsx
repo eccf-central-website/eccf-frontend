@@ -237,21 +237,21 @@ export default function ExecutiveApprovalsClient({
               <span className="font-semibold text-primary">{positionTitle}</span>
               <span>•</span>
               <span className="inline-flex items-center gap-1">
-                <Building className="h-3 w-3" />
+                <Building className="h-3 w-3 shrink-0" />
                 {app.hall || 'No Hall Assigned'}
               </span>
               {app.email && (
                 <>
                   <span>•</span>
                   <span className="inline-flex items-center gap-1 truncate max-w-[200px]" title={app.email}>
-                    <Mail className="h-3 w-3" />
+                    <Mail className="h-3 w-3 shrink-0" />
                     {app.email}
                   </span>
                 </>
               )}
               <span>•</span>
               <span className="inline-flex items-center gap-1 text-[11px] font-mono">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 shrink-0" />
                 {formatDate(app.position.submittedAt || app.createdAt)}
               </span>
             </div>
@@ -267,9 +267,9 @@ export default function ExecutiveApprovalsClient({
             className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
           >
             {isBusy ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
             ) : (
-              <ShieldCheck className="h-4 w-4 mr-1.5" />
+              <ShieldCheck className="h-4 w-4 shrink-0 mr-1.5" />
             )}
             Approve Appointment
           </Button>
@@ -280,7 +280,7 @@ export default function ExecutiveApprovalsClient({
             onClick={() => handleReject(app)}
             className="h-9 px-3 rounded-xl text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 text-xs font-bold"
           >
-            <XCircle className="h-4 w-4 mr-1 sm:mr-0" />
+            <XCircle className="h-4 w-4 shrink-0 mr-1 sm:mr-0" />
             <span className="sm:hidden">Decline</span>
           </Button>
         </div>
@@ -297,12 +297,12 @@ export default function ExecutiveApprovalsClient({
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-primary">
-              <Shield className="h-3.5 w-3.5" />
+              <Shield className="h-3.5 w-3.5 shrink-0" />
               Presidential Governance Chamber
             </span>
             {applications.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 shrink-0" />
                 {applications.length} Pending Approval
               </span>
             )}
@@ -343,7 +343,7 @@ export default function ExecutiveApprovalsClient({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search applicants by name, email, hall, or position..."
@@ -389,7 +389,7 @@ export default function ExecutiveApprovalsClient({
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span>{tab.label}</span>
               </button>
             )
@@ -402,8 +402,8 @@ export default function ExecutiveApprovalsClient({
       {/* ==================================================================== */}
       {filteredApps.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-3">
-            <CheckCircle2 className="h-7 w-7" />
+          <div className="mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-3">
+            <CheckCircle2 className="h-7 w-7 shrink-0" />
           </div>
           <h3 className="font-serif text-lg font-bold text-foreground">
             {applications.length === 0
@@ -424,8 +424,8 @@ export default function ExecutiveApprovalsClient({
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400">
-                    <Award className="h-4 w-4" />
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400">
+                    <Award className="h-4 w-4 shrink-0" />
                   </div>
                   <h2 className="font-serif font-bold text-lg text-foreground">
                     CSGB Central Student Governing Board Offices
@@ -446,8 +446,8 @@ export default function ExecutiveApprovalsClient({
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                    <Building className="h-4 w-4" />
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                    <Building className="h-4 w-4 shrink-0" />
                   </div>
                   <h2 className="font-serif font-bold text-lg text-foreground">
                     Hall Pastors &amp; Assistant Pastors
@@ -468,8 +468,8 @@ export default function ExecutiveApprovalsClient({
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                    <Users className="h-4 w-4" />
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    <Users className="h-4 w-4 shrink-0" />
                   </div>
                   <h2 className="font-serif font-bold text-lg text-foreground">
                     Ministry Team Leads &amp; Assistant Leads

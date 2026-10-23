@@ -21,6 +21,8 @@ import {
   EyeOff,
   AlertCircle,
   Check,
+    X,
+
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -255,7 +257,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
 
     // STRICT TAMPER PROTECTION:
     if (current && ownerName && ownerName.toLowerCase() !== testerName.toLowerCase() && !isLeadOverride) {
-      toast.error(`🔒 Locked: Verified by ${ownerName}`, {
+      toast.error(`Locked: Verified by ${ownerName}`, {
         description: `Only ${ownerName} (or a QA Lead) can change or untick this test report.`,
       })
       return
@@ -549,19 +551,19 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 <div className="shrink-0 transition-all duration-300">
                   {saveStatus === 'saving' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-bold text-blue-700 animate-pulse">
-                      <RefreshCw className="h-2.5 w-2.5 animate-spin text-blue-600" />
+                      <RefreshCw className="h-2.5 w-2.5 shrink-0 animate-spin text-blue-600" />
                       <span>Saving...</span>
                     </span>
                   )}
                   {saveStatus === 'saved' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800 shadow-2xs">
-                      <Check className="h-2.5 w-2.5 text-emerald-600 stroke-[3]" />
+                      <Check className="h-2.5 w-2.5 shrink-0 text-emerald-600 stroke-[3]" />
                       <span>Saved</span>
                     </span>
                   )}
                   {saveStatus === 'error' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-[10px] font-bold text-red-700">
-                      <AlertCircle className="h-2.5 w-2.5 text-red-600" />
+                      <AlertCircle className="h-2.5 w-2.5 shrink-0 text-red-600" />
                       <span>Retry save</span>
                     </span>
                   )}
@@ -606,9 +608,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-purple-300 bg-purple-100 text-purple-900 text-[11px] font-bold shadow-2xs hover:bg-purple-200"
                   title="Click to turn off QA Lead Override"
                 >
-                  <KeyRound className="h-3 w-3 text-purple-700" />
+                  <KeyRound className="h-3 w-3 shrink-0 text-purple-700" />
                   <span className="hidden sm:inline">Lead Mode</span>
-                  <span className="text-[10px] text-purple-600">✕</span>
+                  <span className="text-[10px] text-purple-600"><X className="h-3 w-3 shrink-0" /></span>
                 </button>
               )}
 
@@ -693,7 +695,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         {/* Search Bar & Quick Suite Dropdown — Mobile Compact */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 shrink-0 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
@@ -721,7 +723,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
         {contributorStats.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1 text-xs">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-blue-500" />
+              <Sparkles className="h-3 w-3 shrink-0 text-blue-500" />
               <span>Team:</span>
             </span>
             {contributorStats.map(([name, count]) => {
@@ -788,7 +790,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                   <div className="flex items-center gap-2 shrink-0">
                     {isAllPassed ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                        <CheckCircle2 className="h-3 w-3" />
+                        <CheckCircle2 className="h-3 w-3 shrink-0" />
                         <span className="hidden sm:inline">Passed</span>
                       </span>
                     ) : (
@@ -797,9 +799,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                       </span>
                     )}
                     {isCollapsed ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     ) : (
-                      <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+                      <ChevronUp className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     )}
                   </div>
                 </button>
@@ -844,17 +846,17 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                             <div className="flex h-6 w-6 items-center justify-center shrink-0 mt-0.5">
                               {isLockedByOther ? (
                                 <div
-                                  className="h-5 w-5 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 shadow-2xs"
+                                  className="h-5 w-5 shrink-0 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 shadow-2xs"
                                   title={`Verified by ${rawOwner}. Only they can untick.`}
                                 >
-                                  <Lock className="h-3 w-3" />
+                                  <Lock className="h-3 w-3 shrink-0" />
                                 </div>
                               ) : isMine ? (
-                                <CheckCircle2 className="h-5 w-5 text-emerald-600 fill-emerald-100 transition-transform scale-105" />
+                                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 fill-emerald-100 transition-transform scale-105" />
                               ) : isChecked && isLeadOverride ? (
-                                <ShieldCheck className="h-5 w-5 text-purple-600 fill-purple-100 transition-transform scale-105" />
+                                <ShieldCheck className="h-5 w-5 shrink-0 text-purple-600 fill-purple-100 transition-transform scale-105" />
                               ) : (
-                                <Circle className="h-5 w-5 text-slate-300 hover:text-blue-500 transition-colors" />
+                                <Circle className="h-5 w-5 shrink-0 text-slate-300 hover:text-blue-500 transition-colors" />
                               )}
                             </div>
 
@@ -920,19 +922,19 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                                 <div className="pt-1 flex flex-wrap items-center gap-1.5">
                                   {isMine ? (
                                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-                                      <Check className="h-2.5 w-2.5 text-emerald-700 stroke-[3]" />
+                                      <Check className="h-2.5 w-2.5 shrink-0 text-emerald-700 stroke-[3]" />
                                       <span>Passed by you ({rawOwner})</span>
                                       <span className="text-[9px] text-emerald-600/75">· Tap to uncheck</span>
                                     </span>
                                   ) : isLockedByOther ? (
                                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">
-                                      <Lock className="h-2.5 w-2.5 text-slate-500" />
+                                      <Lock className="h-2.5 w-2.5 shrink-0 text-slate-500" />
                                       <span>Passed by <strong>{rawOwner}</strong></span>
                                       <span className="text-[9px] text-slate-400">· Locked</span>
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-900 bg-purple-100/70 px-2 py-0.5 rounded-md">
-                                      <ShieldCheck className="h-2.5 w-2.5 text-purple-700" />
+                                      <ShieldCheck className="h-2.5 w-2.5 shrink-0 text-purple-700" />
                                       <span>Passed by {rawOwner} (Lead Mode)</span>
                                     </span>
                                   )}
@@ -955,7 +957,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
             <div>
               <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Bug className="h-4 w-4 text-red-500" />
+                <Bug className="h-4 w-4 shrink-0 text-red-500" />
                 <span>Issue & Defect Tracker</span>
               </h2>
               <p className="text-[10px] sm:text-[11px] text-slate-400">
@@ -968,7 +970,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
               onClick={() => setIsDefectModalOpen(true)}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-2xs transition-colors shrink-0"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5 shrink-0" />
               <span>Report Bug</span>
             </button>
           </div>
@@ -1018,9 +1020,9 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                           : 'bg-red-50 text-red-800 border-red-300'
                       }`}
                     >
-                      <option value="Open">🔴 Open</option>
-                      <option value="In Progress">🔵 In Progress</option>
-                      <option value="Resolved">🟢 Resolved</option>
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved</option>
                     </select>
                   </div>
 
@@ -1057,7 +1059,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-purple-200 bg-white text-purple-700 font-semibold hover:bg-purple-50 transition-colors shadow-2xs"
                 title="Authorize QA Lead Override"
               >
-                <KeyRound className="h-3 w-3" />
+                <KeyRound className="h-3 w-3 shrink-0" />
                 <span>Lead Override</span>
               </button>
             ) : (
@@ -1066,7 +1068,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                 onClick={handleDeactivateLeadOverride}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-purple-300 bg-purple-100 text-purple-900 font-bold hover:bg-purple-200 transition-colors"
               >
-                <ShieldCheck className="h-3 w-3 text-purple-700" />
+                <ShieldCheck className="h-3 w-3 shrink-0 text-purple-700" />
                 <span>Exit Lead</span>
               </button>
             )}
@@ -1076,7 +1078,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
               onClick={() => window.print()}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
             >
-              <Printer className="h-3 w-3" />
+              <Printer className="h-3 w-3 shrink-0" />
               <span>Print</span>
             </button>
 
@@ -1090,7 +1092,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-red-200 bg-white text-red-600 font-semibold hover:bg-red-50 transition-colors shadow-2xs"
               title="Reset team checklist"
             >
-              <RotateCcw className="h-3 w-3" />
+              <RotateCcw className="h-3 w-3 shrink-0" />
               <span>Reset</span>
             </button>
           </div>
@@ -1106,7 +1108,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 active:scale-95 transition-all text-xs font-bold"
           aria-label="Report Defect"
         >
-          <Bug className="h-4 w-4" />
+          <Bug className="h-4 w-4 shrink-0" />
           <span>Report Bug</span>
         </button>
       </div>
@@ -1120,7 +1122,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           >
             <div className="flex items-center gap-2.5 text-blue-600 border-b border-slate-100 pb-2.5">
               <div className="h-8 w-8 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                <ShieldCheck className="h-4 w-4 text-blue-600" />
+                <ShieldCheck className="h-4 w-4 shrink-0 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">Tester Registration</h3>
@@ -1165,7 +1167,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                     onClick={() => setShowPin(!showPin)}
                     className="text-[10px] text-blue-600 font-semibold hover:underline flex items-center gap-0.5"
                   >
-                    {showPin ? <EyeOff className="h-2.5 w-2.5" /> : <Eye className="h-2.5 w-2.5" />}
+                    {showPin ? <EyeOff className="h-2.5 w-2.5 shrink-0" /> : <Eye className="h-2.5 w-2.5 shrink-0" />}
                     <span>{showPin ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
@@ -1216,7 +1218,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           >
             <div className="flex items-center gap-2 text-purple-700 border-b border-slate-100 pb-2.5">
               <div className="h-8 w-8 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-                <KeyRound className="h-4 w-4 text-purple-700" />
+                <KeyRound className="h-4 w-4 shrink-0 text-purple-700" />
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">QA Lead Override</h3>
@@ -1277,7 +1279,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           >
             <div className="flex items-center gap-2 text-red-600 border-b border-slate-100 pb-2.5">
               <div className="h-8 w-8 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                <RotateCcw className="h-4 w-4 text-red-600" />
+                <RotateCcw className="h-4 w-4 shrink-0 text-red-600" />
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">Reset All Test Checkboxes</h3>
@@ -1339,15 +1341,14 @@ export default function QAPortal({ initialData }: QAPortalProps) {
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-1.5 text-red-600">
-                <Bug className="h-4 w-4" />
+                <Bug className="h-4 w-4 shrink-0" />
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">Report an Issue / Bug</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDefectModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 text-base font-bold"
-              >
-                ✕
+              >                <X className="h-4 w-4 shrink-0" />
               </button>
             </div>
 
@@ -1398,10 +1399,10 @@ export default function QAPortal({ initialData }: QAPortalProps) {
                     }
                     className="w-full h-9 px-2 rounded-xl border border-slate-300 text-[11px] font-semibold focus:outline-none"
                   >
-                    <option value="Blocker">🔴 Blocker</option>
-                    <option value="High">🟠 High</option>
-                    <option value="Med">🟡 Medium</option>
-                    <option value="Low">⚪ Low</option>
+                    <option value="Blocker">Blocker</option>
+                    <option value="High">High</option>
+                    <option value="Med">Medium</option>
+                    <option value="Low">Low</option>
                   </select>
                 </div>
               </div>

@@ -59,7 +59,7 @@ export default function AnnouncementsSubscriptionCard() {
 
         <div className="relative z-10 max-w-2xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-bold uppercase tracking-widest font-mono">
-            <Bell className="h-3.5 w-3.5 text-sky-400" />
+            <Bell className="h-3.5 w-3.5 shrink-0 text-sky-400" />
             <span>EMAIL BULLETINS &amp; ALERTS</span>
           </div>
 
@@ -89,7 +89,7 @@ export default function AnnouncementsSubscriptionCard() {
           <form onSubmit={handleSubmit} className="pt-2 sm:pt-4 space-y-3">
             <div className="flex flex-col sm:flex-row items-center gap-2.5 max-w-lg mx-auto">
               <div className="relative w-full flex-1">
-                <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                <Mail className="absolute left-3.5 top-3.5 h-4 w-4 shrink-0 text-slate-400 pointer-events-none" />
                 <input
                   type="email"
                   name="email"
@@ -108,12 +108,12 @@ export default function AnnouncementsSubscriptionCard() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                     <span>Subscribing...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="h-3.5 w-3.5" />
+                    <Send className="h-3.5 w-3.5 shrink-0" />
                     <span>Subscribe</span>
                   </>
                 )}
@@ -125,7 +125,7 @@ export default function AnnouncementsSubscriptionCard() {
             </div>
 
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-slate-500" />
               <span>We respect your privacy. No spam, ever. Unsubscribe at any time.</span>
             </div>
           </form>

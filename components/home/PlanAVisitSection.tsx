@@ -57,8 +57,8 @@ export default function PlanAVisitSection({
       className="relative overflow-hidden border-t border-stone-200/90 bg-[#fafaf9] py-16 scroll-mt-16 sm:py-20 sm:scroll-mt-20 lg:py-24"
     >
       {/* Ambient background glows */}
-      <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full bg-sky-100/70 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 rounded-full bg-emerald-50/80 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 shrink-0 rounded-full bg-sky-100/70 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-24 -left-16 h-80 w-80 shrink-0 rounded-full bg-emerald-50/80 blur-3xl" aria-hidden="true" />
 
       <div className="relative w-full grid gap-8 px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28 lg:grid-cols-12 lg:gap-12 items-stretch">
         {/* Left Column: Weekly Service Schedule & Actions */}
@@ -80,11 +80,11 @@ export default function PlanAVisitSection({
                   <h3 className="font-semibold text-slate-950 text-base">{service.title}</h3>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
                     <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
-                      <CalendarDays className="h-4 w-4 text-[#0077cc]" aria-hidden="true" />
+                      <CalendarDays className="h-4 w-4 shrink-0 text-[#0077cc]" aria-hidden="true" />
                       {service.day}
                     </span>
                     <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
-                      <Clock3 className="h-4 w-4 text-[#0077cc]" aria-hidden="true" />
+                      <Clock3 className="h-4 w-4 shrink-0 text-[#0077cc]" aria-hidden="true" />
                       {service.time}
                     </span>
                   </div>
@@ -101,7 +101,7 @@ export default function PlanAVisitSection({
                 rel="noopener noreferrer"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#0077cc] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0066ad] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] focus-visible:ring-offset-2"
               >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                 Message {contactName}
               </a>
             )}
@@ -110,7 +110,7 @@ export default function PlanAVisitSection({
                 href={`mailto:${safeEmail}`}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition-colors hover:border-[#0077cc] hover:text-[#0077cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] focus-visible:ring-offset-2"
               >
-                <Mail className="h-4 w-4" aria-hidden="true" />
+                <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
                 Email us
               </a>
             )}

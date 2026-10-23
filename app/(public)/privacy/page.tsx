@@ -31,7 +31,7 @@ export default async function PrivacyPage() {
             href="/"
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 hover:text-[#0077cc] transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 shrink-0" />
             <span>Back to Fellowship Home</span>
           </Link>
         </div>
@@ -43,7 +43,7 @@ export default async function PrivacyPage() {
           {/* Document Header */}
           <header className="border-b border-slate-200 pb-8 sm:pb-10 mb-10 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#0077cc] text-xs font-mono font-bold tracking-wider uppercase mb-4">
-              <ShieldCheck className="h-4 w-4" />
+              <ShieldCheck className="h-4 w-4 shrink-0" />
               <span>OFFICIAL CHARTER &bull; DATA CARE</span>
             </div>
 
@@ -333,7 +333,7 @@ export default async function PrivacyPage() {
                     href={`mailto:${fellowshipEmail}`}
                     className="inline-flex items-center gap-2 text-sm font-bold text-[#0077cc] hover:underline"
                   >
-                    <Mail className="h-4 w-4" />
+                    <Mail className="h-4 w-4 shrink-0" />
                     <span>Direct Inquiries: {fellowshipEmail}</span>
                   </a>
                 </div>

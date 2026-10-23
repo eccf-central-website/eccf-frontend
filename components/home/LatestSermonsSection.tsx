@@ -42,14 +42,14 @@ export default function LatestSermonsSection({ sermons }: Props) {
             className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
           >
             <span>Explore All Sermons</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
 
         {/* Empty State when no sermons uploaded yet */}
         {safeSermons.length === 0 && (
           <div className="rounded-[28px] bg-[#fafaf9] border border-stone-200/80 p-8 sm:p-14 text-center flex flex-col items-center justify-center space-y-4">
-            <Disc3 className="h-12 w-12 text-slate-300 animate-pulse" />
+            <Disc3 className="h-12 w-12 shrink-0 text-slate-300 animate-pulse" />
             <p className="font-serif font-bold text-xl sm:text-2xl text-slate-900">Audio &amp; Video Podcasts Coming Soon</p>
             <p className="text-sm sm:text-base text-slate-600 max-w-lg leading-relaxed">
               Recordings from our Sunday, Word, and Academic Challenge services are being processed. Check the full vault for updates.
@@ -59,7 +59,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
               className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-950 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 hover:bg-slate-800 transition-all shadow-md"
             >
               <span>Go to Sermon Vault</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 shrink-0" />
             </Link>
           </div>
         )}
@@ -103,7 +103,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
 
                       {sermon.duration && (
                         <div className="absolute top-3.5 right-3.5 z-10 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 flex items-center gap-1.5 shadow-sm">
-                          <Clock className="h-3.5 w-3.5" />
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
                           <span>{sermon.duration}</span>
                         </div>
                       )}
@@ -127,11 +127,11 @@ export default function LatestSermonsSection({ sermons }: Props) {
                               : 'bg-[#0095ff] hover:bg-sky-500 shadow-sky-500/30'
                           }`}
                         >
-                          <Play className="h-6 w-6 fill-white translate-x-0.5" />
+                          <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" />
                         </a>
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
-                          <Radio className="h-5 w-5 text-[#0077cc]" />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
+                          <Radio className="h-5 w-5 shrink-0 text-[#0077cc]" />
                         </div>
                       )}
                     </div>
@@ -162,7 +162,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0077cc] hover:text-sky-800 transition-colors"
                       >
-                        <Play className="h-3.5 w-3.5 fill-current" />
+                        <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
                         <span>{youtubeId ? 'Watch Video' : 'Listen Now'}</span>
                       </a>
                     ) : (
@@ -177,9 +177,9 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           rel="noopener noreferrer"
                           title="Listen on Spotify"
                           aria-label="Listen on Spotify"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
-                          <SpotifyIcon className="h-4 w-4" />
+                          <SpotifyIcon className="h-4 w-4 shrink-0" />
                         </a>
                       )}
 
@@ -190,9 +190,9 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           rel="noopener noreferrer"
                           title="Listen on YouTube Music"
                           aria-label="Listen on YouTube Music"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
-                          <YouTubeMusicIcon className="h-4 w-4" />
+                          <YouTubeMusicIcon className="h-4 w-4 shrink-0" />
                         </a>
                       )}
 
@@ -203,9 +203,9 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           rel="noopener noreferrer"
                           title="Watch on YouTube"
                           aria-label="Watch on YouTube"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
-                          <YouTubeIcon className="h-4 w-4" />
+                          <YouTubeIcon className="h-4 w-4 shrink-0" />
                         </a>
                       )}
                     </div>

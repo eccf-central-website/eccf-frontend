@@ -60,7 +60,7 @@ export const sanityWriteClient = createClient({
   dataset,
   apiVersion: '2025-02-19',
   useCdn: false,
-  token: process.env.SANITY_WRITE_TOKEN, // ⚠️ Server-side only — never prefix with NEXT_PUBLIC_
+  token: process.env.SANITY_WRITE_TOKEN, // Server-side only — never prefix with NEXT_PUBLIC_
 })
 
 /**

@@ -207,7 +207,7 @@ export default function Navbar() {
             onClick={() => setMobileOpen((prev) => !prev)}
             className="flex lg:hidden items-center justify-center h-10 w-10 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none shrink-0"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-5 w-5 shrink-0" /> : <Menu className="h-5 w-5 shrink-0" />}
           </button>
         </div>
       </nav>

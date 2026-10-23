@@ -90,7 +90,7 @@ export default function AttendanceHub({
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <BarChart3 className="h-4 w-4 text-primary" />
+              <BarChart3 className="h-4 w-4 shrink-0 text-primary" />
               <span>General Headcount</span>
               <Badge variant="outline" className="text-[10px] py-0 px-1 font-normal hidden sm:inline-block">
                 Ushering
@@ -106,7 +106,7 @@ export default function AttendanceHub({
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Users className="h-4 w-4 text-primary" />
+              <Users className="h-4 w-4 shrink-0 text-primary" />
               <span>
                 {session.role === 'team_lead' ? `${effectiveTeam} Roster` : 'Team Rosters'}
               </span>

@@ -107,7 +107,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
       {/* Search & Category Filter */}
       <div className="mb-6 sm:mb-8 flex flex-col md:flex-row items-center justify-between gap-3.5 bg-white border border-stone-200/80 p-4 sm:p-5 rounded-2xl shadow-sm">
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
@@ -118,7 +118,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <Filter className="h-4 w-4 text-slate-400 mr-1 hidden sm:block" />
+          <Filter className="h-4 w-4 shrink-0 text-slate-400 mr-1 hidden sm:block" />
           {dynamicCategories.map((cat) => {
             const isActive = selectedCategory.toLowerCase() === cat.toLowerCase()
             return (
@@ -142,7 +142,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
       {/* Empty State */}
       {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <Megaphone className="h-12 w-12 text-slate-300" />
+          <Megaphone className="h-12 w-12 shrink-0 text-slate-300" />
           <p className="font-serif text-xl sm:text-2xl text-slate-800 tracking-tight">
             {searchQuery || selectedCategory !== 'All'
               ? 'No announcements match your filter'
@@ -172,7 +172,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
             >
               {item.isPinned && (
                 <div className="absolute top-0 right-0 rounded-bl-xl bg-[#0077cc] text-white px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                  <Pin className="h-3 w-3 fill-white" />
+                  <Pin className="h-3 w-3 shrink-0 fill-white" />
                   <span>PINNED NOTICE</span>
                 </div>
               )}
@@ -199,7 +199,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
                     </span>
                     {item.time && (
                       <div className="flex items-center gap-1 text-xs font-medium text-slate-500">
-                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                         <span>{item.time}</span>
                       </div>
                     )}
@@ -227,7 +227,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
                       <span>{item.location}</span>
                     </div>
                     <div className="flex items-center gap-1 text-slate-400 text-[11px]">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar className="h-3 w-3 shrink-0" />
                       <span>Published {item.publishDate}</span>
                     </div>
                   </div>

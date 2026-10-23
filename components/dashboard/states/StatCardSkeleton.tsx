@@ -13,11 +13,11 @@ export function StatCardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('rounded-xl border bg-card p-6 shadow', className)}>
       <div className="flex items-center justify-between gap-4">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-9 w-9 rounded-lg" />
+        <Skeleton className="h-4 w-32 shrink-0" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
       </div>
-      <Skeleton className="mt-4 h-8 w-20" />
-      <Skeleton className="mt-3 h-3 w-40 max-w-full" />
+      <Skeleton className="mt-4 h-8 w-20 shrink-0" />
+      <Skeleton className="mt-3 h-3 w-40 shrink-0 max-w-full" />
     </div>
   )
 }

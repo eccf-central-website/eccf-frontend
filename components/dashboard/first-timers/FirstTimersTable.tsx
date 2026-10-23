@@ -146,7 +146,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         <Card>
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <UserPlus className="h-5 w-5" />
+              <UserPlus className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">
@@ -160,7 +160,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         <Card>
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <MessageCircle className="h-5 w-5" />
+              <MessageCircle className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Ready for WhatsApp</p>
@@ -174,7 +174,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         <Card>
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Building2 className="h-5 w-5" />
+              <Building2 className="h-5 w-5 shrink-0" />
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Hostel Coverage</p>
@@ -189,7 +189,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       {/* Filter and Search Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 shrink-0 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name, department, hall, room..."
             value={searchQuery}
@@ -215,14 +215,14 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
             </Select>
           ) : (
             <Badge variant="outline" className="border-primary/30 bg-primary/5 py-1.5 px-3 text-xs text-primary font-medium">
-              <Building2 className="mr-1.5 h-3.5 w-3.5" />
+              <Building2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
               Scoped to {session.hall || 'Your Hall'}
             </Badge>
           )}
 
           {isOutreach && (
             <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 px-3 text-xs font-medium">
-              <UserCheck className="mr-1.5 h-3.5 w-3.5" />
+              <UserCheck className="mr-1.5 h-3.5 w-3.5 shrink-0" />
               Outreach Coordinator
             </Badge>
           )}
@@ -246,8 +246,8 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center">
                   <div className="mx-auto flex max-w-sm flex-col items-center justify-center text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                      <Users className="h-6 w-6 text-muted-foreground" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <Users className="h-6 w-6 shrink-0 text-muted-foreground" />
                     </div>
                     <p className="mt-3 text-sm font-semibold text-foreground">No matching first-timers</p>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -269,7 +269,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       <span className="font-medium text-foreground">{row.fullName}</span>
                       {row.phoneNumber ? (
                         <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3" />
+                          <Phone className="h-3 w-3 shrink-0" />
                           <span>{row.phoneNumber}</span>
                           <button
                             type="button"
@@ -279,9 +279,9 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                             aria-label={`Copy phone number for ${row.fullName}`}
                           >
                             {copiedId === row._id ? (
-                              <Check className="h-3 w-3 text-emerald-600" />
+                              <Check className="h-3 w-3 shrink-0 text-emerald-600" />
                             ) : (
-                              <Copy className="h-3 w-3" />
+                              <Copy className="h-3 w-3 shrink-0" />
                             )}
                           </button>
                         </div>
@@ -299,7 +299,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       </span>
                       {row.roomNumber && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <DoorClosed className="h-3 w-3" />
+                          <DoorClosed className="h-3 w-3 shrink-0" />
                           {row.roomNumber}
                         </span>
                       )}
@@ -312,7 +312,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       <span className="text-foreground">{row.department || '—'}</span>
                       {row.level && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <GraduationCap className="h-3 w-3" />
+                          <GraduationCap className="h-3 w-3 shrink-0" />
                           {row.level} Level
                         </span>
                       )}
@@ -322,7 +322,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                   {/* Date Visited */}
                   <TableCell className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                       <span>{formatDate(row.dateVisited)}</span>
                     </div>
                   </TableCell>
@@ -339,17 +339,17 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                             className="inline-flex h-8 items-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 px-2.5 text-xs font-medium text-white shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
                             title="Open WhatsApp chat with pre-filled pastoral greeting"
                           >
-                            <MessageCircle className="h-3.5 w-3.5" />
+                            <MessageCircle className="h-3.5 w-3.5 shrink-0" />
                             WhatsApp
                           </a>
 
                           <a
                             href={`tel:${row.phoneNumber}`}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                             title={`Call ${row.fullName}`}
                             aria-label={`Call ${row.fullName}`}
                           >
-                            <Phone className="h-3.5 w-3.5" />
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
                           </a>
                         </>
                       ) : null}
@@ -357,12 +357,12 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => setSelectedVisitor(row)}
                         title="View visitor details"
                         aria-label={`View details for ${row.fullName}`}
                       >
-                        <Eye className="h-3.5 w-3.5" />
+                        <Eye className="h-3.5 w-3.5 shrink-0" />
                       </Button>
                     </div>
                   </TableCell>
@@ -378,7 +378,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         {filteredRows.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+              <Users className="mx-auto h-8 w-8 shrink-0 text-muted-foreground" />
               <p className="mt-2 text-sm font-semibold text-foreground">No first-timers found</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {isHallRep
@@ -428,29 +428,29 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                         rel="noopener noreferrer"
                         className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 px-3 text-xs font-medium text-white shadow-sm"
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <MessageCircle className="h-4 w-4 shrink-0" />
                         WhatsApp Follow-up
                       </a>
 
                       <a
                         href={`tel:${row.phoneNumber}`}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground"
                         aria-label={`Call ${row.fullName}`}
                       >
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-4 w-4 shrink-0" />
                       </a>
 
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-9 w-9 p-0"
+                        className="h-9 w-9 shrink-0 p-0"
                         onClick={() => copyPhoneNumber(row.phoneNumber!, row._id)}
                         aria-label={`Copy phone number for ${row.fullName}`}
                       >
                         {copiedId === row._id ? (
-                          <Check className="h-4 w-4 text-emerald-600" />
+                          <Check className="h-4 w-4 shrink-0 text-emerald-600" />
                         ) : (
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-4 w-4 shrink-0" />
                         )}
                       </Button>
                     </>
@@ -471,7 +471,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
             <>
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" />
+                  <UserPlus className="h-5 w-5 shrink-0 text-primary" />
                   {selectedVisitor.fullName}
                 </DialogTitle>
                 <DialogDescription>
@@ -515,7 +515,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       rel="noopener noreferrer"
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-sm font-medium text-white shadow transition-colors"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <MessageCircle className="h-4 w-4 shrink-0" />
                       Open WhatsApp Pastoral Message
                     </a>
 
@@ -524,7 +524,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                         href={`tel:${selectedVisitor.phoneNumber}`}
                         className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background hover:bg-muted text-sm font-medium text-foreground transition-colors"
                       >
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-4 w-4 shrink-0" />
                         Call Visitor
                       </a>
 
@@ -535,12 +535,12 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                       >
                         {copiedId === selectedVisitor._id ? (
                           <>
-                            <Check className="h-4 w-4 text-emerald-600" />
+                            <Check className="h-4 w-4 shrink-0 text-emerald-600" />
                             Copied!
                           </>
                         ) : (
                           <>
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-4 w-4 shrink-0" />
                             Copy Phone
                           </>
                         )}

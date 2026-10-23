@@ -67,10 +67,10 @@ async function removeLegacyFields() {
     if (fieldsToUnset.length > 0) {
       console.log(`Unsetting legacy fields [${fieldsToUnset.join(', ')}] on ${doc._id} (${doc.fullName || 'Worker'})...`)
       await client.patch(doc._id).unset(fieldsToUnset).commit()
-      console.log(`✓ Cleaned ${doc._id}`)
+      console.log(`OK Cleaned ${doc._id}`)
       count++
     } else {
-      console.log(`✓ Document ${doc._id} (${doc.fullName || 'Worker'}) has no legacy fields.`)
+      console.log(`OK Document ${doc._id} (${doc.fullName || 'Worker'}) has no legacy fields.`)
     }
   }
 

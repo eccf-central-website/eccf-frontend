@@ -54,7 +54,7 @@ export interface WorkerRegistrationInput {
   profileImageUrl?: string
   requestPhotoUpload?: boolean
   turnstileToken?: string
-  isExco: boolean
+  isExco?: boolean
   executiveApplication?: ExecutiveApplicationInput
   requestedRole?: WorkerRole // Kept for backward compatibility
   clerkUserId?: string

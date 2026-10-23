@@ -109,7 +109,7 @@ export default function WhoWeAreSection({
                 className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
               >
                 <span>Explore Our Ministry Teams</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </motion.div>

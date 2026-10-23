@@ -232,8 +232,8 @@ export default function TeamMeetingAttendanceView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Team Meetings</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <CalendarCheck className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CalendarCheck className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -249,8 +249,8 @@ export default function TeamMeetingAttendanceView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Avg Present</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Users className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Users className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -266,8 +266,8 @@ export default function TeamMeetingAttendanceView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Registered Crew</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                <UserCheck className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                <UserCheck className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -283,8 +283,8 @@ export default function TeamMeetingAttendanceView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Attendance Rate</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <BarChart3 className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <BarChart3 className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -331,7 +331,7 @@ export default function TeamMeetingAttendanceView({
             onClick={() => setIsFormOpen((prev) => !prev)}
             className="gap-2 h-9 text-xs sm:text-sm font-semibold"
           >
-            {isFormOpen ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {isFormOpen ? <X className="h-4 w-4 shrink-0" /> : <Plus className="h-4 w-4 shrink-0" />}
             <span>{isFormOpen ? 'Close Roster Form' : 'Take Meeting Attendance'}</span>
           </Button>
         </div>
@@ -417,7 +417,7 @@ export default function TeamMeetingAttendanceView({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
                   <div>
                     <h4 className="flex items-center gap-1.5 text-sm font-semibold">
-                      <Users className="h-4 w-4 text-primary" />
+                      <Users className="h-4 w-4 shrink-0 text-primary" />
                       <span>Team Member Roster</span>
                     </h4>
                     <p className="text-xs text-muted-foreground">
@@ -451,7 +451,7 @@ export default function TeamMeetingAttendanceView({
 
                 {/* Worker Search */}
                 <div className="relative mt-3">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Filter workers by name or residence hall..."
@@ -485,7 +485,7 @@ export default function TeamMeetingAttendanceView({
                               <Checkbox
                                 checked={isChecked}
                                 onCheckedChange={() => toggleWorker(worker._id)}
-                                className="h-4 w-4"
+                                className="h-4 w-4 shrink-0"
                               />
                               <div className="truncate">
                                 <p className="truncate text-xs sm:text-sm font-semibold text-foreground">
@@ -577,12 +577,12 @@ export default function TeamMeetingAttendanceView({
                 >
                   {isPending ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                       <span>Saving Roster...</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
                       <span>Save Attendance ({totalPresentCount})</span>
                     </>
                   )}
@@ -606,7 +606,7 @@ export default function TeamMeetingAttendanceView({
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search meeting topics..."
@@ -705,7 +705,7 @@ export default function TeamMeetingAttendanceView({
                           className="h-8 gap-1 text-xs text-primary hover:text-primary"
                           onClick={() => setActiveRosterRecord(row)}
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="h-3.5 w-3.5 shrink-0" />
                           <span className="hidden sm:inline">Roster</span>
                         </Button>
                       </TableCell>
@@ -725,7 +725,7 @@ export default function TeamMeetingAttendanceView({
         <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary">
-              <Users className="h-5 w-5" />
+              <Users className="h-5 w-5 shrink-0" />
               <DialogTitle className="font-serif text-lg">
                 Meeting Attendance Roster
               </DialogTitle>

@@ -202,8 +202,8 @@ export default function UsheringHeadcountView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Services Counted</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <CalendarDays className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CalendarDays className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -219,8 +219,8 @@ export default function UsheringHeadcountView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Sunday Avg Count</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -236,8 +236,8 @@ export default function UsheringHeadcountView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Highest Peak</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                <BarChart3 className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                <BarChart3 className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
@@ -253,8 +253,8 @@ export default function UsheringHeadcountView({
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Latest Service</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Users className="h-4 w-4" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Users className="h-4 w-4 shrink-0" />
               </div>
             </div>
             <div className="mt-2">
@@ -274,8 +274,8 @@ export default function UsheringHeadcountView({
         <CardHeader className="pb-3 border-b border-border/40">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <ShieldCheck className="h-5 w-5" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <ShieldCheck className="h-5 w-5 shrink-0" />
               </div>
               <div>
                 <CardTitle className="font-serif text-lg font-bold sm:text-xl">
@@ -451,7 +451,7 @@ export default function UsheringHeadcountView({
                     onClick={() => setShowBreakdown((prev) => !prev)}
                     className="flex items-center gap-2 text-xs font-semibold text-foreground hover:text-primary transition-colors text-left"
                   >
-                    <Users className="h-4 w-4 text-primary" />
+                    <Users className="h-4 w-4 shrink-0 text-primary" />
                     <span>Detailed Demographic Breakdown (Men, Women, Children, First-Timers)</span>
                     <Badge variant="secondary" className="text-[10px] ml-1">
                       {showBreakdown ? 'Hide' : 'Optional'}
@@ -470,7 +470,7 @@ export default function UsheringHeadcountView({
                     className="h-7 text-xs text-primary gap-1"
                     onClick={applyBreakdownSum}
                   >
-                    <Sparkles className="h-3 w-3" />
+                    <Sparkles className="h-3 w-3 shrink-0" />
                     <span>Set Total ({breakdownSum})</span>
                   </Button>
                 )}
@@ -579,12 +579,12 @@ export default function UsheringHeadcountView({
               >
                 {isPending ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                     <span>Logging Headcount...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-5 w-5" />
+                    <CheckCircle2 className="h-5 w-5 shrink-0" />
                     <span>Log {serviceType} Attendance ({totalCount ? `${totalCount} Attendees` : '0'})</span>
                   </>
                 )}
@@ -608,7 +608,7 @@ export default function UsheringHeadcountView({
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative w-full sm:w-56">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search date, notes, logger..."
