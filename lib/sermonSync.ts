@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { sanityWriteClient } from '@/lib/sanity'
 
 export const DEFAULT_SPOTIFY_RSS_URL = 'https://anchor.fm/s/f24b9b94/podcast/rss'
-export const DEFAULT_YOUTUBE_RSS_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCMaqmdr3Wrvx5rLWUlAsChw'
+export const DEFAULT_YOUTUBE_RSS_URL = 'https://www.youtube.com/feeds/videos.xml?playlist_id=PLBI5gIAk9TVM'
 
 // Curated reference catalogue of confirmed ECCF sermon videos for instant high-accuracy resolution
 const KNOWN_YOUTUBE_SERMONS: Array<{ title: string; youtubeVideoId: string; preacher?: string; series?: string }> = [
@@ -208,15 +208,29 @@ export function extractYoutubeId(urlStr: string): string | null {
 }
 
 /**
- * Automatically searches YouTube for a sermon from ECCF to retrieve its video ID.
- * Bypasses cookie consent dialogues and extracts the videoId from public YouTube results.
+ * Searches YouTube for a sermon using the YouTube Data API v3.
+ * Falls back to the curated KNOWN_YOUTUBE_SERMONS list first (exact match only)
+ * to avoid API calls for known sermons and prevent false-positive video matches.
  */
-export async function searchYouTubeForSermon(title: string): Promise<string | null> {
-  // First check curated reference catalogue
-  const known = KNOWN_YOUTUBE_SERMONS.find((k) => titlesMatch(k.title, title))
+export async function searchYouTubeForSermon(
+  title: string,
+  preacher?: string
+): Promise<string | null> {
+  // First check curated reference catalogue (exact match only to prevent wrong videos)
+  const known = KNOWN_YOUTUBE_SERMONS.find((k) => {
+    if (normalizeTitle(k.title) !== normalizeTitle(title)) return false
+    if (preacher && k.preacher) {
+      return k.preacher.toLowerCase() === preacher.toLowerCase()
+    }
+    return true
+  })
   if (known) {
     return known.youtubeVideoId
   }
+
+  // Fall back to YouTube Data API v3
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (!apiKey) return null
 
   try {
     const cleanTitle = title
@@ -225,27 +239,33 @@ export async function searchYouTubeForSermon(title: string): Promise<string | nu
       .replace(/\s+/g, ' ')
       .trim()
     const query = `ESUI Christian Campus Fellowship ${cleanTitle}`
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
 
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        Cookie: 'SOCS=CAESEwgDEgk2OTU3NTg3MDRaAmVuIAEaBgiA_LyaBg;',
-      },
-      cache: 'no-store',
+    const params = new URLSearchParams({
+      part: 'snippet',
+      q: query,
+      type: 'video',
+      maxResults: '1',
+      channelId: 'UCMaqmdr3Wrvx5rLWUlAsChw',
+      key: apiKey,
     })
 
+    const url = `https://www.googleapis.com/youtube/v3/search?${params.toString()}`
+
+    const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) return null
-    const html = await res.text()
-    const matches: string[] = []
-    const regex = /"videoId":"([a-zA-Z0-9_-]{11})"/g
-    let match: RegExpExecArray | null
-    while ((match = regex.exec(html)) !== null) {
-      matches.push(match[1])
+
+    const data = await res.json()
+    const item = data?.items?.[0]
+    const videoId = item?.id?.videoId
+    if (!videoId) return null
+
+    // Verify the returned video title actually matches our search to prevent wrong videos
+    const returnedTitle = item?.snippet?.title
+    if (returnedTitle && !titlesMatch(returnedTitle, title)) {
+      return null
     }
-    return matches.length > 0 ? matches[0] : null
+
+    return videoId
   } catch {
     return null
   }
@@ -399,7 +419,7 @@ export async function runSermonSync() {
               ytVideoId = matchingYt.videoId
             } else {
               // Otherwise dynamically search YouTube
-              const foundId = await searchYouTubeForSermon(item.title)
+              const foundId = await searchYouTubeForSermon(item.title, item.author)
               if (foundId) {
                 ytVideoId = foundId
                 results.resolvedFromYouTube++
@@ -470,7 +490,7 @@ export async function runSermonSync() {
   // -------------------------------------------------------------------------
   for (const s of existingSermons) {
     if (!s.youtubeVideoId || !s.thumbnailUrl) {
-      const foundId = await searchYouTubeForSermon(s.title)
+      const foundId = await searchYouTubeForSermon(s.title, s.preacher)
       if (foundId) {
         const ytThumb = `https://img.youtube.com/vi/${foundId}/hqdefault.jpg`
         await sanityWriteClient
