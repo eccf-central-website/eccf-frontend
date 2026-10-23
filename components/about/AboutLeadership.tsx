@@ -3,7 +3,7 @@
  *
  * Implements:
  * - 5 Hierarchical Leadership Sections:
- *   1. Patrons (Dr. Andrew Ate, Dr. Matthew & Dr. Emmanuel Okla)
+ *   1. Patrons (curated fallback; Sanity `publicLeader` records with role `patron` override it)
  *   2. CSGB (Central Student Governing Body)
  *   4. Hall Pastors (Halls 1 through 8)
  *   5. Operational Team Leaders
@@ -43,6 +43,9 @@ interface AboutLeadershipProps {
 
 // ---------------------------------------------------------------------------
 // 1. Patrons (Faculty Mentors & Patrons)
+// Curated fallback used only when Sanity has no `publicLeader` with role `patron`
+// (or a patron-related position/team/badge). Add Patron records in Sanity to
+// make this section fully data-driven.
 // ---------------------------------------------------------------------------
 const PATRONS_LIST: LeaderCard[] = [
   {

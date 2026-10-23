@@ -16,13 +16,14 @@
 
 'use server'
 
-import { createHash, createHmac, randomBytes } from 'crypto'
+import { createHash, createHmac, randomInt, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import { resolveResendFrom } from '@/lib/email/from'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
@@ -78,6 +79,8 @@ export interface WorkerRegistrationResult {
   profileImageUrl?: string
   photoUploaded?: boolean
   requiresVerification?: boolean
+  /** A first-time registrant must confirm ownership of the email address first. */
+  requiresEmailVerification?: boolean
   maskedEmail?: string
 }
 
@@ -129,6 +132,32 @@ export interface SignedInUserContext {
   worker?: SignedInWorkerSnapshot
   /** A profile exists but is linked to a different sign-in method; require an email code. */
   needsVerification?: boolean
+}
+
+export interface RequestRegistrationEmailOtpInput {
+  email: string
+  firstName?: string
+  turnstileToken?: string
+}
+
+export interface RequestRegistrationEmailOtpResult {
+  ok: boolean
+  maskedEmail?: string
+  /** Seconds the caller must wait before requesting another code. */
+  retryAfterSeconds?: number
+  message?: string
+  error?: string
+}
+
+export interface VerifyRegistrationEmailOtpInput {
+  email: string
+  otp: string
+}
+
+export interface VerifyRegistrationEmailOtpResult {
+  ok: boolean
+  verifiedEmail?: string
+  error?: string
 }
 
 export interface VerifyWorkerOtpInput {
@@ -262,8 +291,101 @@ const SELF_SERVICE_TOKEN_TTL_MS = 15 * 60 * 1000
 const SELF_SERVICE_RESEND_COOLDOWN_MS = 60 * 1000
 const selfServiceEmailer = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
+// First-time registration requires proof that the applicant can read the email
+// inbox before the rest of the form can be completed.
+const REGISTRATION_OTP_COOKIE = 'eccf_registration_email_otp'
+const REGISTRATION_PROOF_COOKIE = 'eccf_registration_email_proof'
+const REGISTRATION_OTP_TTL_MS = 10 * 60 * 1000
+const REGISTRATION_PROOF_TTL_MS = 30 * 60 * 1000
+const REGISTRATION_RESEND_COOLDOWN_MS = 60 * 1000
+const REGISTRATION_MAX_OTP_ATTEMPTS = 5
+
+// Returning-worker OTP challenge. Kept in an encrypted, HTTP-only cookie so it
+// does not depend on deprecated worker token fields in Sanity.
+const WORKER_OTP_COOKIE = 'eccf_worker_login_otp'
+
+interface RegistrationOtpCookie {
+  email: string
+  otpHash: string
+  expiresAt: number
+  sentAt: number
+  attempts: number
+}
+
+interface RegistrationProofCookie {
+  email: string
+  verifiedAt: number
+  expiresAt: number
+}
+
+interface WorkerOtpCookie {
+  workerId: string
+  email: string
+  purpose: 'profile' | 'password'
+  phone?: string
+  otpHash: string
+  expiresAt: number
+  sentAt: number
+}
+
+interface SelfServiceTokenPayload {
+  workerId: string
+  email?: string
+  purpose: 'profile' | 'password'
+  expiresAt: number
+}
+
 function hashSelfServiceToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')
+}
+
+function safeHashEquals(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false
+  try {
+    return timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))
+  } catch {
+    return false
+  }
+}
+
+function cookieOptions(maxAgeSeconds: number) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: maxAgeSeconds,
+  }
+}
+
+function writeEncryptedCookie(name: string, payload: unknown, maxAgeSeconds: number): boolean {
+  try {
+    cookies().set(name, encrypt(JSON.stringify(payload)), cookieOptions(maxAgeSeconds))
+    return true
+  } catch (err) {
+    console.error(`[worker-registration] Could not write secure cookie ${name}:`, err)
+    return false
+  }
+}
+
+function readEncryptedCookie<T>(name: string): T | null {
+  try {
+    const raw = cookies().get(name)?.value
+    if (!raw) return null
+    const decrypted = decrypt(raw)
+    if (!decrypted) return null
+    return JSON.parse(decrypted) as T
+  } catch {
+    return null
+  }
+}
+
+function deleteCookie(name: string) {
+  try {
+    cookies().delete(name)
+  } catch {
+    // Cookie mutation is only available inside a server action.
+  }
 }
 
 function selfServiceResponse(): { ok: true; message: string } {
@@ -273,8 +395,22 @@ function selfServiceResponse(): { ok: true; message: string } {
   }
 }
 
-function isValidSelfServiceToken(token: string): boolean {
-  return /^[A-Za-z0-9_-]{40,60}$/.test(token)
+function createSelfServiceToken(payload: SelfServiceTokenPayload): string {
+  return Buffer.from(encrypt(JSON.stringify(payload)), 'utf8').toString('base64url')
+}
+
+function readSelfServiceToken(token: string): SelfServiceTokenPayload | null {
+  if (!token || token.length > 2048 || !/^[A-Za-z0-9_-]+$/.test(token)) return null
+  try {
+    const decrypted = decrypt(Buffer.from(token, 'base64url').toString('utf8'))
+    if (!decrypted) return null
+    const payload = JSON.parse(decrypted) as SelfServiceTokenPayload
+    if (!payload?.workerId || !payload.purpose || !payload.expiresAt) return null
+    if (payload.expiresAt <= Date.now()) return null
+    return payload
+  } catch {
+    return null
+  }
 }
 
 async function sendWorkerVerificationEmail({
@@ -292,16 +428,8 @@ async function sendWorkerVerificationEmail({
 }): Promise<{ sent: boolean; simulated: boolean; error?: string }> {
   const confirmationUrl = new URL('/register', baseUrl)
   confirmationUrl.searchParams.set('selfServiceToken', token)
-  const fromAddress = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'ECCF Workforce <onboarding@resend.dev>'
+  const fromAddress = resolveResendFrom('ECCF Workforce')
   const subject = `[ECCF Workforce] Your Verification Code: ${otp}`
-
-  if (/@resend\.dev>?$/i.test(fromAddress)) {
-    console.warn(
-      '[sendWorkerVerificationEmail] RESEND_FROM_EMAIL is not set or still uses @resend.dev. ' +
-        'Resend only allows onboarding@resend.dev to send to the account owner. ' +
-        'Verify a domain at https://resend.com/domains and set RESEND_FROM_EMAIL to an address on it.'
-    )
-  }
 
   const emailHtml = `
     <!DOCTYPE html>
@@ -411,45 +539,342 @@ async function sendWorkerVerificationEmail({
   }
 }
 
-async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 'password') {
-  if (!isValidSelfServiceToken(token)) return null
-  const hash = hashSelfServiceToken(token)
-  return sanityPrivateClient.fetch<{
-    _id: string
-    _rev: string
-    fullName: string
-    firstName?: string
-    middleName?: string
-    lastName?: string
-    email?: string
-    phoneNumber?: string
-    team?: string
-    teams?: string[]
-    memberships?: Array<Record<string, unknown>>
-    positions?: Array<Record<string, unknown>>
-    hall?: string
-    roomNumber?: string
-    birthDate?: string
-    profileImageUrl?: string
-    role?: WorkerRole
-    requestedRole?: WorkerRole
-    clerkUserId?: string
-    isExcoApproved?: boolean
-    selfServiceTokenPurpose?: 'profile' | 'password'
-  } | null>(
-    `*[_type == "worker" && selfServiceTokenHash == $hash &&
-      selfServiceTokenExpiresAt > $now &&
-      (!defined($purpose) || selfServiceTokenPurpose == $purpose)][0]{
-      _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
-      "team": coalesce(team->name, team),
-      "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
-      memberships,
-      positions,
-      hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
-      clerkUserId, isExcoApproved, selfServiceTokenPurpose
-    }`,
-    { hash, now: new Date().toISOString(), purpose: purpose || null }
-  )
+async function sendRegistrationOtpEmail({
+  email,
+  firstName,
+  otp,
+}: {
+  email: string
+  firstName?: string
+  otp: string
+}): Promise<{ sent: boolean; simulated: boolean; error?: string }> {
+  const fromAddress = resolveResendFrom('ECCF Workforce')
+  const subject = `[ECCF Workforce] Confirm your email: ${otp}`
+  const greeting = firstName?.trim() || 'Beloved Worker'
+
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Confirm your ECCF worker email</title>
+    </head>
+    <body style="margin: 0; padding: 24px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+      <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden;">
+        <div style="background: #0f172a; padding: 28px 24px; text-align: center;">
+          <p style="margin: 0 0 6px 0; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
+            Edo State University Christian Campus Fellowship
+          </p>
+          <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
+            Confirm your email address
+          </h1>
+        </div>
+
+        <div style="padding: 32px 28px;">
+          <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
+            Hello ${greeting},
+          </p>
+          <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+            You started a worker registration on the ECCF portal. Enter the code below on the registration page to confirm that this email address belongs to you.
+          </p>
+
+          <div style="margin: 28px 0; padding: 22px; background: #f0f9ff; border: 2px dashed #0077cc; border-radius: 14px; text-align: center;">
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #0077cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+              Your 6-Digit Confirmation Code
+            </span>
+            <span style="font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #0f172a; display: inline-block;">
+              ${otp}
+            </span>
+            <span style="display: block; font-size: 12px; color: #64748b; margin-top: 8px;">
+              This code expires in 10 minutes.
+            </span>
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 10px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.5; color: #64748b; margin-top: 28px;">
+            <strong style="color: #334155;">Security Notice:</strong> Never share this code with anyone. If you did not start a worker registration, you can safely ignore this email.
+          </div>
+        </div>
+
+        <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
+          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI, Uzairue, Edo State &bull; Official Workforce Portal</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  const plainText = `ECCF Worker Registration\n\nHello ${greeting},\n\nYour 6-digit email confirmation code is: ${otp}\n\nEnter it on the registration page to continue. This code expires in 10 minutes.\n\nIf you did not start a worker registration, you can ignore this email.`
+
+  if (!selfServiceEmailer) {
+    console.warn('[sendRegistrationOtpEmail] Missing selfServiceEmailer (RESEND_API_KEY).')
+    if (process.env.NODE_ENV === 'production') {
+      return { sent: false, simulated: false, error: 'Email service is not configured.' }
+    }
+    console.log(`[DEV OTP LOG] Registration email: ${email} | Code: ${otp}`)
+    return { sent: true, simulated: true }
+  }
+
+  try {
+    const { error } = await selfServiceEmailer.emails.send({
+      from: fromAddress,
+      to: email,
+      subject,
+      text: plainText,
+      html: emailHtml,
+    })
+
+    if (error) {
+      const message = error.message || 'Email provider rejected the message.'
+      const isTestingRestriction = /only send testing emails|not verified|domain/i.test(message)
+      console.error('[sendRegistrationOtpEmail] Resend rejected the message:', {
+        name: error.name,
+        message,
+        hint: isTestingRestriction
+          ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
+          : undefined,
+      })
+      return { sent: false, simulated: false, error: message }
+    }
+
+    return { sent: true, simulated: false }
+  } catch (err: unknown) {
+    console.error('[sendRegistrationOtpEmail] Resend dispatch error:', err)
+    return {
+      sent: false,
+      simulated: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
+  }
+}
+
+/**
+ * Sends a 6-digit code to the email address a first-time worker wants to use.
+ * The code hash is stored in an encrypted, HTTP-only cookie so registration can
+ * prove inbox ownership without creating a temporary Sanity record.
+ */
+export async function requestRegistrationEmailOtp(
+  input: RequestRegistrationEmailOtpInput
+): Promise<RequestRegistrationEmailOtpResult> {
+  try {
+    const cleanEmail = input.email?.trim().toLowerCase() || ''
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { ok: false, error: 'Please enter a valid email address.' }
+    }
+
+    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+      return { ok: false, error: 'Complete the security verification and try again.' }
+    }
+
+    const existing = readEncryptedCookie<RegistrationOtpCookie>(REGISTRATION_OTP_COOKIE)
+    if (
+      existing &&
+      existing.email === cleanEmail &&
+      existing.expiresAt > Date.now() &&
+      Date.now() - existing.sentAt < REGISTRATION_RESEND_COOLDOWN_MS
+    ) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((REGISTRATION_RESEND_COOLDOWN_MS - (Date.now() - existing.sentAt)) / 1000)
+      )
+      return {
+        ok: true,
+        maskedEmail: maskEmail(cleanEmail),
+        retryAfterSeconds,
+        message: `A confirmation code was recently sent to ${maskEmail(cleanEmail)}. Check your inbox and spam folder, or wait ${retryAfterSeconds}s before requesting another one.`,
+      }
+    }
+
+    const otp = String(randomInt(100000, 1000000))
+    const now = Date.now()
+    const expiresAt = now + REGISTRATION_OTP_TTL_MS
+
+    const delivery = await sendRegistrationOtpEmail({
+      email: cleanEmail,
+      firstName: input.firstName,
+      otp,
+    })
+
+    if (!delivery.sent) {
+      return {
+        ok: false,
+        maskedEmail: maskEmail(cleanEmail),
+        error:
+          'The confirmation email could not be delivered right now. Please try again shortly, or contact an ECCF administrator for help.',
+      }
+    }
+
+    const stored = writeEncryptedCookie(
+      REGISTRATION_OTP_COOKIE,
+      {
+        email: cleanEmail,
+        otpHash: hashSelfServiceToken(otp),
+        expiresAt,
+        sentAt: now,
+        attempts: 0,
+      } satisfies RegistrationOtpCookie,
+      Math.ceil(REGISTRATION_OTP_TTL_MS / 1000)
+    )
+
+    if (!stored) {
+      return {
+        ok: false,
+        error: 'The confirmation code could not be saved securely. Please enable cookies and try again.',
+      }
+    }
+
+    return {
+      ok: true,
+      maskedEmail: maskEmail(cleanEmail),
+      retryAfterSeconds: 60,
+      message: delivery.simulated
+        ? `Development mode: the confirmation code for ${maskEmail(cleanEmail)} was written to the server log instead of being emailed.`
+        : `A 6-digit confirmation code has been sent to ${maskEmail(cleanEmail)}. Check your inbox and spam folder.`,
+    }
+  } catch (err) {
+    console.error('[requestRegistrationEmailOtp] Error:', err)
+    return { ok: false, error: 'Unable to send the confirmation code. Please try again.' }
+  }
+}
+
+/**
+ * Verifies the code sent by `requestRegistrationEmailOtp` and, on success,
+ * issues a short-lived proof cookie that `registerWorker` requires before it
+ * creates a brand-new worker document.
+ */
+export async function verifyRegistrationEmailOtp(
+  input: VerifyRegistrationEmailOtpInput
+): Promise<VerifyRegistrationEmailOtpResult> {
+  try {
+    const cleanEmail = input.email?.trim().toLowerCase() || ''
+    const cleanOtp = input.otp?.trim().replace(/\s+/g, '') || ''
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { ok: false, error: 'Please enter a valid email address.' }
+    }
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return { ok: false, error: 'Please enter the 6-digit confirmation code.' }
+    }
+
+    const challenge = readEncryptedCookie<RegistrationOtpCookie>(REGISTRATION_OTP_COOKIE)
+    if (!challenge) {
+      return { ok: false, error: 'Request a confirmation code for this email before continuing.' }
+    }
+    if (challenge.expiresAt <= Date.now()) {
+      deleteCookie(REGISTRATION_OTP_COOKIE)
+      return { ok: false, error: 'That confirmation code has expired. Request a new one.' }
+    }
+    if (challenge.email !== cleanEmail) {
+      return {
+        ok: false,
+        error: 'That confirmation code was sent to a different email address. Request a new code for this address.',
+      }
+    }
+    if (challenge.attempts >= REGISTRATION_MAX_OTP_ATTEMPTS) {
+      deleteCookie(REGISTRATION_OTP_COOKIE)
+      return { ok: false, error: 'Too many incorrect attempts. Request a new confirmation code.' }
+    }
+
+    if (!safeHashEquals(challenge.otpHash, hashSelfServiceToken(cleanOtp))) {
+      const attempts = challenge.attempts + 1
+      if (attempts >= REGISTRATION_MAX_OTP_ATTEMPTS) {
+        deleteCookie(REGISTRATION_OTP_COOKIE)
+        return { ok: false, error: 'Too many incorrect attempts. Request a new confirmation code.' }
+      }
+      writeEncryptedCookie(
+        REGISTRATION_OTP_COOKIE,
+        { ...challenge, attempts } satisfies RegistrationOtpCookie,
+        Math.max(1, Math.ceil((challenge.expiresAt - Date.now()) / 1000))
+      )
+      const remaining = REGISTRATION_MAX_OTP_ATTEMPTS - attempts
+      return {
+        ok: false,
+        error: `That code is not correct. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
+      }
+    }
+
+    const now = Date.now()
+    const proofExpiresAt = now + REGISTRATION_PROOF_TTL_MS
+    const stored = writeEncryptedCookie(
+      REGISTRATION_PROOF_COOKIE,
+      {
+        email: cleanEmail,
+        verifiedAt: now,
+        expiresAt: proofExpiresAt,
+      } satisfies RegistrationProofCookie,
+      Math.ceil(REGISTRATION_PROOF_TTL_MS / 1000)
+    )
+
+    if (!stored) {
+      return {
+        ok: false,
+        error: 'Email verification succeeded, but the session could not be saved. Please enable cookies and try again.',
+      }
+    }
+
+    deleteCookie(REGISTRATION_OTP_COOKIE)
+    return { ok: true, verifiedEmail: cleanEmail }
+  } catch (err) {
+    console.error('[verifyRegistrationEmailOtp] Error:', err)
+    return { ok: false, error: 'Unable to verify the confirmation code. Please try again.' }
+  }
+}
+
+function isRegistrationEmailVerified(email: string): boolean {
+  const proof = readEncryptedCookie<RegistrationProofCookie>(REGISTRATION_PROOF_COOKIE)
+  if (!proof) return false
+  if (proof.expiresAt <= Date.now()) {
+    deleteCookie(REGISTRATION_PROOF_COOKIE)
+    return false
+  }
+  return proof.email === email.trim().toLowerCase()
+}
+
+async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 'password'): Promise<any> {
+  const payload = readSelfServiceToken(token)
+  if (!payload) return null
+  if (purpose && payload.purpose !== purpose) return null
+
+  try {
+    return await sanityPrivateClient.fetch<{
+      _id: string
+      _rev: string
+      fullName: string
+      firstName?: string
+      middleName?: string
+      lastName?: string
+      email?: string
+      phoneNumber?: string
+      team?: string
+      teams?: string[]
+      memberships?: Array<Record<string, unknown>>
+      positions?: Array<Record<string, unknown>>
+      hall?: string
+      roomNumber?: string
+      birthDate?: string
+      profileImageUrl?: string
+      role?: WorkerRole
+      requestedRole?: WorkerRole
+      clerkUserId?: string
+      isExcoApproved?: boolean
+      passwordHash?: string
+      updateLog?: string[]
+    } | null>(
+      `*[_type == "worker" && _id == $id][0]{
+        _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
+        "team": coalesce(team->name, team),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        memberships,
+        positions,
+        hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
+        clerkUserId, isExcoApproved, passwordHash, updateLog
+      }`,
+      { id: payload.workerId }
+    )
+  } catch (err) {
+    console.error('[getWorkerBySelfServiceToken] Lookup failed:', err)
+    return null
+  }
 }
 
 /**
@@ -465,7 +890,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
       return { ok: false, exists: false, error: 'Please enter a valid phone number (at least 8 digits).' }
     }
 
-    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+    if (!(await verifyTurnstileToken(input.turnstileToken))) {
       return { ok: false, exists: false, error: 'Complete the security verification and try again.' }
     }
 
@@ -478,13 +903,12 @@ export async function checkWorkerPhoneAndInitiateVerification(
       firstName?: string
       email?: string
       phoneNumber?: string
-      selfServiceRequestedAt?: string
     } | null>(
       `*[_type == "worker" && (
         phoneBlindIndex in $indexes ||
         phoneNumber == $cleanPhone
       )] | order(_updatedAt desc)[0]{
-        _id, _rev, fullName, firstName, email, phoneNumber, selfServiceRequestedAt
+        _id, _rev, fullName, firstName, email, phoneNumber
       }`,
       { cleanPhone, indexes }
     )
@@ -503,12 +927,11 @@ export async function checkWorkerPhoneAndInitiateVerification(
     }
 
     const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
 
-    const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
+    const requestedAt = 0
     const now = Date.now()
 
     if (requestedAt && now - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
@@ -523,24 +946,14 @@ export async function checkWorkerPhoneAndInitiateVerification(
       }
     }
 
-    const token = randomBytes(32).toString('base64url')
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
-    const expiresAt = new Date(now + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
-
-    const patchBuilder = patchPrivateDocument(worker._id)
-    if (worker._id.startsWith('drafts.')) {
-      patchBuilder.ifRevisionId(worker._rev)
-    }
-
-    await patchBuilder
-      .set({
-        selfServiceTokenHash: hashSelfServiceToken(token),
-        selfServiceOtpHash: hashSelfServiceToken(otp),
-        selfServiceTokenPurpose: 'profile',
-        selfServiceTokenExpiresAt: expiresAt,
-        selfServiceRequestedAt: new Date().toISOString(),
-      })
-      .commit()
+    const otp = String(randomInt(100000, 1000000))
+    const expiresAt = now + SELF_SERVICE_TOKEN_TTL_MS
+    const token = createSelfServiceToken({
+      workerId: worker._id,
+      email,
+      purpose: 'profile',
+      expiresAt,
+    })
 
     const delivery = await sendWorkerVerificationEmail({
       email,
@@ -552,10 +965,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
 
     if (!delivery.sent) {
       // Do not leave the user stuck behind the resend cooldown when nothing was delivered.
-      await patchPrivateDocument(worker._id)
-        .unset(['selfServiceRequestedAt'])
-        .commit()
-        .catch(() => null)
+      deleteCookie(WORKER_OTP_COOKIE)
       return {
         ok: false,
         exists: true,
@@ -564,6 +974,32 @@ export async function checkWorkerPhoneAndInitiateVerification(
         emailSent: false,
         error:
           'We found your profile, but the verification email could not be delivered right now. Please try again shortly, or contact an ECCF administrator for help.',
+      }
+    }
+
+    const challengeStored = writeEncryptedCookie(
+      WORKER_OTP_COOKIE,
+      {
+        workerId: worker._id,
+        email,
+        purpose: 'profile',
+        phone: decrypt(worker.phoneNumber) || cleanPhone,
+        otpHash: hashSelfServiceToken(otp),
+        expiresAt,
+        sentAt: now,
+      } satisfies WorkerOtpCookie,
+      Math.ceil(SELF_SERVICE_TOKEN_TTL_MS / 1000)
+    )
+
+    if (!challengeStored) {
+      return {
+        ok: false,
+        exists: true,
+        maskedEmail: maskEmail(email),
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
+        emailSent: true,
+        error:
+          'The verification code was sent, but this browser could not store the challenge. Enable cookies and request a new code.',
       }
     }
 
@@ -602,9 +1038,26 @@ export async function verifyWorkerOtp(
       return { ok: false, error: 'Please enter a valid 6-digit verification code.' }
     }
 
-    const indexes = Array.from(new Set([createBlindIndex(cleanPhone), ...getCandidateBlindIndexes(cleanPhone)]))
-    const otpHash = hashSelfServiceToken(cleanOtp)
-    const nowIso = new Date().toISOString()
+    const challenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
+    if (!challenge) {
+      return { ok: false, error: 'Request a verification code before continuing.' }
+    }
+    if (challenge.expiresAt <= Date.now()) {
+      deleteCookie(WORKER_OTP_COOKIE)
+      return { ok: false, error: 'That verification code has expired. Request a new one.' }
+    }
+    if (challenge.purpose !== 'profile') {
+      return { ok: false, error: 'Invalid or expired verification code. Request a new one.' }
+    }
+    if (!safeHashEquals(challenge.otpHash, hashSelfServiceToken(cleanOtp))) {
+      return { ok: false, error: 'That verification code is not correct. Check your email or request a new code.' }
+    }
+    if (
+      challenge.phone &&
+      normalizePhone(challenge.phone) !== normalizePhone(cleanPhone)
+    ) {
+      return { ok: false, error: 'That verification code was sent for a different profile. Start again.' }
+    }
 
     const worker = await sanityPrivateClient.fetch<{
       _id: string
@@ -626,44 +1079,33 @@ export async function verifyWorkerOtp(
       role?: WorkerRole
       requestedRole?: WorkerRole
       isExcoApproved?: boolean
-      selfServiceTokenHash?: string
     } | null>(
-      `*[_type == "worker" && (
-        phoneBlindIndex in $indexes ||
-        phoneNumber == $cleanPhone
-      ) && selfServiceOtpHash == $otpHash &&
-        selfServiceTokenExpiresAt > $nowIso &&
-        selfServiceTokenPurpose == 'profile'][0]{
+      `*[_type == "worker" && _id == $id][0]{
         _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         memberships,
         positions,
         hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
-        isExcoApproved, selfServiceTokenHash
+        isExcoApproved
       }`,
-      { cleanPhone, indexes, otpHash, nowIso }
+      { id: challenge.workerId }
     )
 
     if (!worker) {
+      deleteCookie(WORKER_OTP_COOKIE)
       return { ok: false, error: 'Invalid or expired verification code. Please check your email or request a new code.' }
     }
 
-    const sessionToken = randomBytes(32).toString('base64url')
-    const sessionTokenHash = hashSelfServiceToken(sessionToken)
-    const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
+    const sessionExpiresAt = Date.now() + SELF_SERVICE_TOKEN_TTL_MS
+    const sessionToken = createSelfServiceToken({
+      workerId: worker._id,
+      email: worker.email || challenge.email,
+      purpose: 'profile',
+      expiresAt: sessionExpiresAt,
+    })
 
-    const patchBuilder = patchPrivateDocument(worker._id)
-    if (worker._id.startsWith('drafts.')) {
-      patchBuilder.ifRevisionId(worker._rev)
-    }
-    await patchBuilder
-      .set({
-        selfServiceTokenHash: sessionTokenHash,
-        selfServiceTokenExpiresAt: expiresAt,
-      })
-      .unset(['selfServiceOtpHash'])
-      .commit()
+    deleteCookie(WORKER_OTP_COOKIE)
 
     const cookieStore = cookies()
     cookieStore.set(SELF_SERVICE_COOKIE, sessionToken, {
@@ -671,7 +1113,7 @@ export async function verifyWorkerOtp(
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 15 * 60,
+      maxAge: Math.ceil(SELF_SERVICE_TOKEN_TTL_MS / 1000),
     })
 
     const birthday = decrypt(worker.birthDate)
@@ -727,9 +1169,8 @@ export async function requestWorkerSelfServiceLink(input: {
     if (!identifier || !['profile', 'password'].includes(input.purpose)) return genericResponse
     if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) return genericResponse
     const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
     if (!selfServiceEmailer || !baseUrl) {
       console.warn('[requestWorkerSelfServiceLink] Missing selfServiceEmailer (RESEND_API_KEY) or baseUrl')
@@ -748,14 +1189,13 @@ export async function requestWorkerSelfServiceLink(input: {
       phoneNumber?: string
       role?: string
       requestedRole?: string
-      selfServiceRequestedAt?: string
     } | null>(
       `*[_type == "worker" && (
         lower(email) == $cleanEmail ||
         phoneNumber == $cleanPhone ||
         phoneBlindIndex in $indexes
       )] | order(_updatedAt desc)[0]{
-        _id, _rev, fullName, firstName, email, phoneNumber, role, requestedRole, selfServiceRequestedAt
+        _id, _rev, fullName, firstName, email, phoneNumber, role, requestedRole
       }`,
       { cleanEmail, cleanPhone, indexes }
     )
@@ -763,7 +1203,7 @@ export async function requestWorkerSelfServiceLink(input: {
     const email = worker?.email?.trim()
     if (!worker || !email) return genericResponse
 
-    const requestedAt = worker.selfServiceRequestedAt ? Date.parse(worker.selfServiceRequestedAt) : 0
+    const requestedAt = 0
     if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
       return {
         ok: true,
@@ -774,22 +1214,15 @@ export async function requestWorkerSelfServiceLink(input: {
       }
     }
 
-    const token = randomBytes(32).toString('base64url')
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
-    const expiresAt = new Date(Date.now() + SELF_SERVICE_TOKEN_TTL_MS).toISOString()
-    const patchBuilder = patchPrivateDocument(worker._id)
-    if (worker._id.startsWith('drafts.')) {
-      patchBuilder.ifRevisionId(worker._rev)
-    }
-    await patchBuilder
-      .set({
-        selfServiceTokenHash: hashSelfServiceToken(token),
-        selfServiceOtpHash: hashSelfServiceToken(otp),
-        selfServiceTokenPurpose: input.purpose,
-        selfServiceTokenExpiresAt: expiresAt,
-        selfServiceRequestedAt: new Date().toISOString(),
-      })
-      .commit()
+    const sentAt = Date.now()
+    const expiresAt = sentAt + SELF_SERVICE_TOKEN_TTL_MS
+    const otp = String(randomInt(100000, 1000000))
+    const token = createSelfServiceToken({
+      workerId: worker._id,
+      email,
+      purpose: input.purpose,
+      expiresAt,
+    })
 
     const delivery = await sendWorkerVerificationEmail({
       email,
@@ -800,13 +1233,26 @@ export async function requestWorkerSelfServiceLink(input: {
     })
 
     if (!delivery.sent) {
-      await patchPrivateDocument(worker._id)
-        .unset(['selfServiceRequestedAt'])
-        .commit()
-        .catch(() => null)
       // Keep the public response generic so it cannot be used to enumerate worker accounts.
+      deleteCookie(WORKER_OTP_COOKIE)
       return genericResponse
     }
+
+    const challengeStored = writeEncryptedCookie(
+      WORKER_OTP_COOKIE,
+      {
+        workerId: worker._id,
+        email,
+        purpose: input.purpose,
+        phone: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
+        otpHash: hashSelfServiceToken(otp),
+        expiresAt,
+        sentAt,
+      } satisfies WorkerOtpCookie,
+      Math.ceil(SELF_SERVICE_TOKEN_TTL_MS / 1000)
+    )
+
+    if (!challengeStored) return genericResponse
 
     return {
       ok: true,
@@ -847,11 +1293,9 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
 }> {
   try {
     const worker = await getWorkerBySelfServiceToken(token)
-    if (!worker || !worker.selfServiceTokenPurpose) {
+    if (!worker) {
       return { ok: false, error: 'This link is invalid or has expired. Request a new one.' }
     }
-
-    patchPrivateDocument(worker._id).unset(['selfServiceOtpHash']).commit().catch(() => null)
 
     const cookieStore = cookies()
     cookieStore.set(SELF_SERVICE_COOKIE, token, {
@@ -1342,7 +1786,7 @@ export async function registerWorker(
       positionsToSave = [...approvedPositions, newPosition]
     } else if (existing?.positions && Array.isArray(existing.positions)) {
       // Keep approved positions if worker didn't re-apply
-      positionsToSave = existing.positions.filter((p) => p.status === 'approved')
+      positionsToSave = existing.positions.filter((p: Record<string, unknown>) => p.status === 'approved')
     }
 
     const profileImageUrl = input.profileImageUrl?.trim() || undefined
@@ -1412,11 +1856,7 @@ export async function registerWorker(
         updatedAt: new Date().toISOString(),
       }
 
-      const uploadGrant = input.requestPhotoUpload ? randomBytes(32).toString('base64url') : undefined
-      if (uploadGrant) {
-        patchData.uploadGrantHash = hashSelfServiceToken(uploadGrant)
-        patchData.uploadGrantExpiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString()
-      }
+      // Upload grants are deprecated and no longer persisted to Sanity.
 
       if (profileImageUrl) {
         patchData.profileImageUrl = profileImageUrl
@@ -1434,11 +1874,6 @@ export async function registerWorker(
           'excoPosition',
           'isExcoApproved',
           'verificationStatus',
-          'selfServiceTokenHash',
-          'selfServiceTokenPurpose',
-          'selfServiceTokenExpiresAt',
-          'selfServiceRequestedAt',
-          ...(!uploadGrant ? ['uploadGrantHash', 'uploadGrantExpiresAt'] : []),
         ])
         .append('updateLog', deltaLogs)
         .commit()
@@ -1463,9 +1898,19 @@ export async function registerWorker(
         message: input.isExco
           ? 'Your profile updates and executive application have been successfully submitted.'
           : 'Your worker profile has been updated.',
-        ...(uploadGrant ? { uploadGrant } : {}),
       }
     } else {
+      // First-time registration must prove ownership of the entered email
+      // before a new worker document is created.
+      if (!isRegistrationEmailVerified(cleanEmail)) {
+        return {
+          ok: false,
+          requiresEmailVerification: true,
+          maskedEmail: maskEmail(cleanEmail),
+          error: 'Verify your email address before completing registration.',
+        }
+      }
+
       // Create Brand New Worker Document
       const initialLogs = [`Initial worker registration on ${today}`]
       if (input.isExco) {
@@ -1493,17 +1938,14 @@ export async function registerWorker(
         updateLog: initialLogs,
       }
 
-      const uploadGrant = input.requestPhotoUpload ? randomBytes(32).toString('base64url') : undefined
-      if (uploadGrant) {
-        newDoc.uploadGrantHash = hashSelfServiceToken(uploadGrant)
-        newDoc.uploadGrantExpiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString()
-      }
+      // Upload grants are deprecated and no longer persisted to Sanity.
 
       if (profileImageUrl) {
         newDoc.profileImageUrl = profileImageUrl
       }
 
       const createdWorker = await createPrivateDocument(newDoc)
+      deleteCookie(REGISTRATION_PROOF_COOKIE)
 
       revalidatePath('/dashboard/workers')
       revalidatePath('/register/status')
@@ -1522,7 +1964,6 @@ export async function registerWorker(
         message: input.isExco
           ? `Welcome to ECCF, ${cleanFullName}! Your workforce registration and executive application have been successfully submitted.`
           : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Lead(s) for verification.`,
-        ...(uploadGrant ? { uploadGrant } : {}),
       }
     }
   } catch (err) {

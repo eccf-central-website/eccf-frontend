@@ -30,7 +30,9 @@ import {
   checkWorkerPhoneAndInitiateVerification,
   confirmWorkerSelfServiceLink,
   registerWorker,
+  requestRegistrationEmailOtp,
   requestWorkerSelfServiceLink,
+  verifyRegistrationEmailOtp,
   verifyWorkerOtp,
   uploadWorkerPhotoDirectAction,
   type SignedInWorkerSnapshot,
@@ -141,6 +143,15 @@ const [checkingEmail, setCheckingEmail] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [verificationNotice, setVerificationNotice] = useState<string | null>(null)
 
+  // First-time registration email ownership check
+  const [registrationOtpSent, setRegistrationOtpSent] = useState(false)
+  const [registrationOtp, setRegistrationOtp] = useState('')
+  const [registrationEmailVerified, setRegistrationEmailVerified] = useState(false)
+  const [registrationOtpNotice, setRegistrationOtpNotice] = useState<string | null>(null)
+  const [registrationOtpError, setRegistrationOtpError] = useState<string | null>(null)
+  const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false)
+  const [emailOtpCooldown, setEmailOtpCooldown] = useState(0)
+
   useEffect(() => {
     if (resendCooldown <= 0) return
     const timer = setInterval(() => {
@@ -148,6 +159,14 @@ const [checkingEmail, setCheckingEmail] = useState(false)
     }, 1000)
     return () => clearInterval(timer)
   }, [resendCooldown])
+
+  useEffect(() => {
+    if (emailOtpCooldown <= 0) return
+    const timer = setInterval(() => {
+      setEmailOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [emailOtpCooldown])
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState(signedInWorker?.phoneNumber || '')
@@ -275,7 +294,17 @@ const [checkingEmail, setCheckingEmail] = useState(false)
     setMaskedEmail(null)
     setOtpCode('')
     setResendCooldown(0)
+    resetRegistrationEmailVerification()
     setError(null)
+  }
+
+  function resetRegistrationEmailVerification() {
+    setRegistrationOtpSent(false)
+    setRegistrationOtp('')
+    setRegistrationEmailVerified(false)
+    setRegistrationOtpNotice(null)
+    setRegistrationOtpError(null)
+    setEmailOtpCooldown(0)
   }
 
   // Total steps based on flow
@@ -340,6 +369,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
 
       if (!result.exists) {
         setIsReturning(false)
+        resetRegistrationEmailVerification()
         setStep(2)
         return
       }
@@ -1138,11 +1168,18 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                   </button>
                 </form>
 
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="mb-3 text-xs font-semibold text-slate-700">
+                    Complete the security check to resend your code:
+                  </p>
+                  <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                </div>
+
                 <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
                   <button
                     type="button"
                     onClick={handleResendCode}
-                    disabled={resendCooldown > 0 || checkingPhone}
+                    disabled={resendCooldown > 0 || checkingPhone || !turnstileToken}
                     className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
                   >
                     {resendCooldown > 0 ? `Resend verification code (${resendCooldown}s)` : 'Resend verification code'}
@@ -1196,9 +1233,16 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                     />
                   </div>
 
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-semibold text-slate-700">
+                      Complete the security check to look up your number:
+                    </p>
+                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={phoneNumber.trim().length < 8 || checkingPhone}
+                    disabled={phoneNumber.trim().length < 8 || checkingPhone || !turnstileToken}
                     className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                   >
                     {checkingPhone ? (
@@ -1653,7 +1697,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
           )}
 
           {/* ========================================================================= */}
-          {/* NEW WORKER FLOW (Steps 2 through 9)                                       */}
+          {/* NEW WORKER FLOW (Steps 2 through 8)                                       */}
           {/* ========================================================================= */}
           {!isReturning && step === 2 && (
             <motion.div
@@ -2124,7 +2168,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
 
 
           {/* ========================================================================= */}
-          {/* STEP 9: Final Review & Confirmation                                       */}
+          {/* STEP 8: Final Review & Confirmation                                       */}
           {/* ========================================================================= */}
           {!isReturning && step === 8 && (
             <motion.div

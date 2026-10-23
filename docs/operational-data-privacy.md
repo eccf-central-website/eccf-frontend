@@ -6,7 +6,7 @@ Operational records stay in the existing Sanity dataset to avoid a paid dataset.
 
 1. Set `SANITY_READ_TOKEN` to a server-only Sanity token with read access. Keep `SANITY_WRITE_TOKEN` server-only and use it only for server mutations and the migration. Do not add either value to a `NEXT_PUBLIC_` variable.
 2. Deploy the backend Studio schema change so operational document types no longer offer Publish.
-3. Deploy the frontend with `SANITY_READ_TOKEN`, `SANITY_WRITE_TOKEN`, `ENCRYPTION_KEY`, `HMAC_PEPPER`, `NEXTAUTH_SECRET`, `CRON_SECRET`, `SANITY_WEBHOOK_SECRET`, and the free Cloudflare Turnstile site and secret keys configured. Keep legacy keys only during a deliberate key rotation.
+3. Deploy the frontend with `SANITY_READ_TOKEN`, `SANITY_WRITE_TOKEN`, `ENCRYPTION_KEY`, `HMAC_PEPPER`, `CRON_SECRET`, `SANITY_WEBHOOK_SECRET`, and the free Cloudflare Turnstile site and secret keys configured. Keep legacy keys in `ENCRYPTION_LEGACY_KEYS` / `HMAC_LEGACY_PEPPERS` only during a deliberate key rotation.
 4. Run `node scripts/migrate-operational-records-to-drafts.mjs` with the production Sanity project and dataset selected. This is a dry run and reports counts only.
 5. Review the counts and then run `node scripts/migrate-operational-records-to-drafts.mjs --execute`. The script copies each published record to a draft and removes its published copy in one Sanity transaction. It skips any record that already has a draft and reports only counts. Resolve skipped records and rerun until no published operational records remain.
 6. Verify that an anonymous `published` perspective query returns zero documents for those operational types, while authenticated dashboard reads still work through `SANITY_READ_TOKEN`.

@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 interface TurnstileOptions {
   sitekey: string
   theme?: 'light' | 'dark' | 'auto'
+  size?: 'normal' | 'compact' | 'flexible'
   callback: (token: string) => void
   'expired-callback': () => void
   'error-callback': () => void
@@ -26,9 +27,15 @@ interface Props {
   onToken: (token: string) => void
   resetSignal: number
   hideFallbackText?: boolean
+  size?: 'normal' | 'compact' | 'flexible'
 }
 
-export default function TurnstileWidget({ onToken, resetSignal, hideFallbackText }: Props) {
+export default function TurnstileWidget({
+  onToken,
+  resetSignal,
+  hideFallbackText,
+  size = 'normal',
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -46,6 +53,7 @@ export default function TurnstileWidget({ onToken, resetSignal, hideFallbackText
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         theme: 'light',
+        size,
         callback: (token) => onToken(token),
         'expired-callback': () => onToken(''),
         'error-callback': () => onToken(''),
@@ -74,7 +82,7 @@ export default function TurnstileWidget({ onToken, resetSignal, hideFallbackText
         widgetIdRef.current = null
       }
     }
-  }, [siteKey, onToken])
+  }, [siteKey, onToken, size])
 
   useEffect(() => {
     if (resetSignal === 0) return

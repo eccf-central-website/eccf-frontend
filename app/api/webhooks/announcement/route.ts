@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
+import { resolveResendFrom } from '@/lib/email/from'
 import { Resend } from 'resend'
 import { constantTimeStringEqual } from '@/lib/security/constant-time'
 
@@ -113,6 +114,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Guard 2: Must have broadcast enabled
+    // Legacy announcements may have `sendBroadcastOnPublish: true` or leave it
+    // undefined. New announcements are written with an explicit `false` so
+    // publishing is always followed by a deliberate per-card broadcast.
     if (doc.sendBroadcastOnPublish === false) {
       return NextResponse.json({ skipped: true, reason: 'Broadcast is disabled for this announcement' })
     }
@@ -230,7 +234,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const chunk = subscribers.slice(i, i + BATCH_SIZE)
       const batchPayload = chunk.map((subscriberEmail) => ({
-        from: 'ECCF Bulletins <onboarding@resend.dev>',
+        from: resolveResendFrom('ECCF Bulletins'),
         to: subscriberEmail,
         subject: `[ECCF Bulletin] ${title}`,
         html: emailHtml,

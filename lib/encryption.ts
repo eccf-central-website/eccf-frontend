@@ -12,12 +12,12 @@ function getSecret(name: string): string {
   if (secret && Buffer.byteLength(secret, 'utf8') >= 16) {
     return secret
   }
-  const nextAuth = process.env.NEXTAUTH_SECRET?.trim() || process.env.AUTH_SECRET?.trim()
-  if (nextAuth && Buffer.byteLength(nextAuth, 'utf8') >= 16) {
-    return nextAuth
-  }
   if (process.env.NODE_ENV === 'production') {
-    throw new Error(`[SECURITY FATAL] Neither ${name} nor NEXTAUTH_SECRET is configured in environment.`)
+    throw new Error(
+      `[SECURITY FATAL] ${name} is not configured. ` +
+        'Retired NEXTAUTH_SECRET/AUTH_SECRET fallbacks are no longer used for encryption; ' +
+        `add any historical key to ${name === 'ENCRYPTION_KEY' ? 'ENCRYPTION_LEGACY_KEYS' : 'HMAC_LEGACY_PEPPERS'} before rotating.`
+    )
   }
   return 'development_only_secret_key_32_bytes_min!'
 }
@@ -44,8 +44,6 @@ function getCandidateSecrets(): string[] {
   return Array.from(
     new Set([
       process.env.ENCRYPTION_KEY?.trim(),
-      process.env.NEXTAUTH_SECRET?.trim(),
-      process.env.AUTH_SECRET?.trim(),
       ...parseLegacySecrets('ENCRYPTION_LEGACY_KEYS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )
@@ -56,8 +54,6 @@ function getCandidateHmacPeppers(): string[] {
     new Set([
       process.env.HMAC_PEPPER?.trim(),
       process.env.ENCRYPTION_KEY?.trim(),
-      process.env.NEXTAUTH_SECRET?.trim(),
-      process.env.AUTH_SECRET?.trim(),
       ...parseLegacySecrets('HMAC_LEGACY_PEPPERS'),
     ].filter((s): s is string => Boolean(s && s.length > 0)))
   )

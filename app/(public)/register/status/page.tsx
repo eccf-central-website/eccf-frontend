@@ -301,8 +301,7 @@ export default async function RegistrationStatusPage() {
                     <span>Registered as Volunteer Worker</span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    You have not submitted an application for an executive leadership appointment (CSGB, Hall Pastorate, or Team Leadership).
-                    If you were appointed, you can <Link href="/register" className="text-[#0077cc] underline font-semibold">apply for executive designation here</Link>.
+                    Executive positions are appointed by the Fellowship President. Contact the President or Technical Administrator if you believe a position is missing.
                   </p>
                 </div>
               ) : (

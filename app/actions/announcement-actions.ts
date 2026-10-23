@@ -29,7 +29,6 @@ export interface AnnouncementInput {
   content?: string | PortableTextBlock[]
   isPinned?: boolean
   isPublished?: boolean
-  sendBroadcastOnPublish?: boolean
 }
 
 export interface UpdateAnnouncementInput extends AnnouncementInput {
@@ -78,7 +77,10 @@ export async function createAnnouncement(
     content: blocks,
     isPinned: Boolean(input.isPinned),
     isPublished,
-    sendBroadcastOnPublish: Boolean(input.sendBroadcastOnPublish),
+    // New announcements never auto-broadcast. Broadcasting is a deliberate
+    // per-card action in the dashboard (see announcement-broadcast-actions).
+    // Explicit false also keeps the Sanity webhook from emailing subscribers.
+    sendBroadcastOnPublish: false,
     sentToSubscribers: false,
   }
 
@@ -139,10 +141,6 @@ export async function updateAnnouncement(
     content: blocks,
     isPinned: Boolean(input.isPinned),
     isPublished: Boolean(input.isPublished),
-  }
-
-  if (input.sendBroadcastOnPublish !== undefined) {
-    patchData.sendBroadcastOnPublish = Boolean(input.sendBroadcastOnPublish)
   }
 
   try {

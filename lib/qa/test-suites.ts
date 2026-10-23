@@ -122,13 +122,15 @@ How to test:
     suiteId: 1,
     suiteName: '1. Public Website & Media',
     section: 'Home Page',
-    title: 'Next Service Live Status Pill',
-    description: `A blue banner pill above the main headline tells visitors when the very next gathering is taking place.
+    title: 'Hero Top Pill',
+    description: `A small pill badge appears above the main homepage headline.
 
 How to test:
-1. Look above the main headline on the Home page.
-2. Find the pill badge that says "NEXT UP • Sunday 08:00 AM • NLT 5 Law Auditorium" (or the next scheduled gathering).
-3. Confirm the text is clear, centered, and easy to read.`,
+1. Open the Home page (/).
+2. Confirm a pill badge sits above the main headline.
+3. Confirm it shows the text configured in Sanity Site Settings under "Hero Top Pill" (siteSettings.heroTopPill).
+4. If that field is empty, confirm the default text "Join us this week" appears instead.
+5. Confirm the pill is clear, centered, and easy to read on desktop and mobile.`,
     tag: 'UI',
   },
   {

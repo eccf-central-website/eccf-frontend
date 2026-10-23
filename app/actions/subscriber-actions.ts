@@ -1,6 +1,7 @@
 'use server'
 
 import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
+import { resolveResendFrom } from '@/lib/email/from'
 import { Resend } from 'resend'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 
@@ -114,7 +115,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
 
       try {
         await resend.emails.send({
-          from: 'ECCF Bulletins <onboarding@resend.dev>',
+          from: resolveResendFrom('ECCF Bulletins'),
           to: email,
           subject: 'Welcome to ECCF Announcements & Bulletins',
           html: welcomeHtml,

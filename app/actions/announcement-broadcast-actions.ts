@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getSession } from '@/lib/dashboard/auth'
 import { isCSGBMember } from '@/lib/dashboard/rbac'
 import { sanityClient, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
+import { resolveResendFrom } from '@/lib/email/from'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -181,7 +182,7 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const chunk = subscribers.slice(i, i + BATCH_SIZE)
       const batchPayload = chunk.map((subscriberEmail) => ({
-        from: 'ECCF Bulletins <onboarding@resend.dev>',
+        from: resolveResendFrom('ECCF Bulletins'),
         to: subscriberEmail,
         subject: `[ECCF Bulletin] ${title}`,
         html: emailHtml,

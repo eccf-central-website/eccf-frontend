@@ -51,8 +51,8 @@ if (!projectId || !token) {
 
 const candidates = [
   ['ENCRYPTION_KEY', env('ENCRYPTION_KEY')],
-  ['NEXTAUTH_SECRET', env('NEXTAUTH_SECRET')],
-  ['AUTH_SECRET', env('AUTH_SECRET')],
+  // Retired NEXTAUTH_SECRET/AUTH_SECRET fallbacks are intentionally not read
+  // directly. Add any historical key to ENCRYPTION_LEGACY_KEYS first.
   ...(env('ENCRYPTION_LEGACY_KEYS') || '')
     .split(',')
     .map((value) => value.trim())

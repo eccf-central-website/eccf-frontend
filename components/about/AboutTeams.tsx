@@ -329,8 +329,7 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="px-6 pb-6 pt-3 flex items-center justify-between border-t border-stone-100">
-                  <span className="text-[11px] font-semibold text-slate-400">Open to all students</span>
+                <div className="px-6 pb-6 pt-3 flex items-center justify-end border-t border-stone-100">
                   <Link
                     href="/connect"
                     className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] group-hover:text-sky-800 transition-colors"

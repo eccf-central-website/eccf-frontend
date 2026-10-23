@@ -40,3 +40,12 @@ next-env.d.ts
 # dev server output
 dev-server.out
 "
+
+.vercel
+.env*
+
+# stale editor backups
+*.bak
+
+# one-off migration helpers; only documented scripts in scripts/ are tracked
+scripts/_*.mjs

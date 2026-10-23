@@ -5,6 +5,7 @@ import { sanityPrivateClient } from '@/lib/sanity'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import type { ActionResult } from '@/lib/dashboard/action-result'
+import { resolveResendFrom } from '@/lib/email/from'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -490,7 +491,7 @@ export async function sendWorkerEmailAction(
   if (resend) {
     for (let i = 0; i < finalRecipients.length; i += BATCH_SIZE) {
       const chunk = finalRecipients.slice(i, i + BATCH_SIZE)
-      const fromAddress = process.env.RESEND_FROM_EMAIL || 'ECCF Exco Portal <onboarding@resend.dev>'
+      const fromAddress = resolveResendFrom('ECCF Exco Portal')
 
       const batchPayload = chunk.map((r) => ({
         from: fromAddress,

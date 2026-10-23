@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createHash, createHmac } from 'crypto'
+import { createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
 import { patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 
@@ -78,10 +78,9 @@ export async function POST(request: Request) {
     if (typeof body.uploadGrant !== 'string' || !/^[A-Za-z0-9_-]{40,60}$/.test(body.uploadGrant)) {
       return NextResponse.json({ ok: false, error: 'This upload request is not authorized.' }, { status: 401 })
     }
-    const grantHash = createHash('sha256').update(body.uploadGrant).digest('hex')
     const worker = await sanityPrivateClient.fetch<{ _id: string; _rev: string } | null>(
-      `*[_type == "worker" && uploadGrantHash == $grantHash && uploadGrantExpiresAt > $now][0]{_id, _rev}`,
-      { grantHash, now: new Date().toISOString() }
+      `*[_type == "worker" && false][0]{_id, _rev}`,
+      {}
     )
     if (!worker) {
       return NextResponse.json({ ok: false, error: 'This upload request is not authorized or has expired.' }, { status: 401 })
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
     try {
       await patchPrivateDocument(worker._id)
         .ifRevisionId(worker._rev)
-        .unset(['uploadGrantHash', 'uploadGrantExpiresAt'])
         .commit()
     } catch {
       return NextResponse.json({ ok: false, error: 'This upload request has already been used. Reopen the form to try again.' }, { status: 409 })

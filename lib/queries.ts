@@ -266,7 +266,7 @@ export const SITE_SETTINGS_QUERY = `
     footerLogo,
     "footerLogoUrl": footerLogo.asset->url,
     footerMeetingVenue,
-    footerActiveMinistry,
+    footerServiceSummary,
     footerCopyright,
     footerNavColumns[] {
       title,

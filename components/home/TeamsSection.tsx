@@ -116,8 +116,7 @@ export default function TeamsSection({ teams, gallery }: Props) {
                 </div>
 
                 {/* Bottom Join Action */}
-                <div className="px-6 pb-6 pt-0 flex items-center justify-between border-t border-slate-100/60 pt-4">
-                  <span className="text-xs font-semibold text-slate-400">Open to all students</span>
+                <div className="px-6 pb-6 pt-0 flex items-center justify-end border-t border-slate-100/60 pt-4">
                   <Link
                     href="#visit"
                     className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] group-hover:text-sky-800 transition-colors"

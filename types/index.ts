@@ -154,10 +154,10 @@ export interface Worker {
 export type SafeWorker = Omit<Worker, 'phoneNumber' | 'roomNumber' | 'passwordHash' | 'phoneBlindIndex' | 'birthdayBlindIndex'>
 
 // ---------------------------------------------------------------------------
-// JWT Session (NextAuth)
+// Dashboard session shape (Clerk-backed)
 // ---------------------------------------------------------------------------
 
-/** JWT token shape — exactly {id, role, team}. Do not extend without updating CLAUDE.md */
+/** Dashboard session shape — exactly {id, role, team} plus resolved access fields. Do not extend without updating CLAUDE.md */
 export interface ECCFSession {
   id: string
   name?: string

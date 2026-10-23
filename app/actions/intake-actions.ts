@@ -4,6 +4,7 @@ import { createPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { encrypt, createBlindIndex } from '@/lib/encryption'
+import { resolveResendFrom } from '@/lib/email/from'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 
 // Initialize Resend with the API key from environment variables
@@ -66,7 +67,7 @@ export async function submitFirstTimer(formData: FormData) {
     // Email only a pointer; keep first-timer details inside the protected dashboard.
     if (resend) {
       await resend.emails.send({
-        from: 'ECCF Connect <onboarding@resend.dev>',
+        from: resolveResendFrom('ECCF Connect'),
         to: NOTIFY_EMAIL,
         subject: 'New first-timer form received',
         text: 'A first-timer form was submitted. Sign in to the ECCF dashboard to review it.',
@@ -109,7 +110,7 @@ export async function submitWelfareRequest(formData: FormData) {
     // Welfare details are sensitive; email only a pointer to the protected dashboard.
     if (resend) {
       await resend.emails.send({
-        from: 'ECCF Welfare <onboarding@resend.dev>',
+        from: resolveResendFrom('ECCF Welfare'),
         to: NOTIFY_EMAIL,
         subject: 'New welfare request received',
         text: 'A welfare request was submitted. Sign in to the ECCF dashboard to review it.',
@@ -184,7 +185,7 @@ export async function submitPrayerRequest(formData: FormData) {
     if (resend && recipients.length > 0) {
       try {
         await resend.emails.send({
-          from: 'ECCF Prayer Network <onboarding@resend.dev>',
+          from: resolveResendFrom('ECCF Prayer Network'),
           to: recipients,
           subject: 'New prayer request received',
           text: 'A prayer request was submitted. Sign in to the ECCF dashboard to review it.',
@@ -195,7 +196,7 @@ export async function submitPrayerRequest(formData: FormData) {
         if (recipients.length > 1 && NOTIFY_EMAIL) {
           try {
             await resend.emails.send({
-              from: 'ECCF Prayer Network <onboarding@resend.dev>',
+              from: resolveResendFrom('ECCF Prayer Network'),
               to: NOTIFY_EMAIL,
               subject: 'New prayer request received',
               text: 'A prayer request was submitted. Sign in to the ECCF dashboard to review it.',

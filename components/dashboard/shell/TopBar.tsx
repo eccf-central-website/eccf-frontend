@@ -40,7 +40,7 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1 border-b bg-background/90 px-2 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-14 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1 border-b bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-14 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
       <MobileNav sections={sections} />
 
       <div className="min-w-0 flex-1">

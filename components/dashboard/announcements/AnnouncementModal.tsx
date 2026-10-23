@@ -63,7 +63,6 @@ export default function AnnouncementModal({
   const [content, setContent] = useState('')
   const [isPinned, setIsPinned] = useState(false)
   const [isPublished, setIsPublished] = useState(true)
-  const [sendBroadcastOnPublish, setSendBroadcastOnPublish] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate form on edit mode change
@@ -78,7 +77,6 @@ export default function AnnouncementModal({
       setContent(portableTextToString(announcement.content))
       setIsPinned(Boolean(announcement.isPinned))
       setIsPublished(announcement.isPublished !== false)
-      setSendBroadcastOnPublish(Boolean(announcement.sendBroadcastOnPublish))
     } else {
       // Default new announcement values
       const today = new Date().toISOString().split('T')[0]
@@ -91,7 +89,6 @@ export default function AnnouncementModal({
       setContent('')
       setIsPinned(false)
       setIsPublished(true)
-      setSendBroadcastOnPublish(false)
     }
   }, [announcement, isOpen])
 
@@ -118,7 +115,6 @@ export default function AnnouncementModal({
           content: content.trim(),
           isPinned,
           isPublished,
-          sendBroadcastOnPublish,
         })
 
         if (!res.ok) {
@@ -138,7 +134,6 @@ export default function AnnouncementModal({
           content,
           isPinned,
           isPublished,
-          sendBroadcastOnPublish,
         })
         onClose()
       } else {
@@ -152,7 +147,6 @@ export default function AnnouncementModal({
           content: content.trim(),
           isPinned,
           isPublished,
-          sendBroadcastOnPublish,
         })
 
         if (!res.ok) {
@@ -225,7 +219,7 @@ export default function AnnouncementModal({
             {isEditing ? 'Edit Fellowship Announcement' : 'Create Sunday Announcement'}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground mt-1">
-            Configure announcement details, schedule date, event location, and broadcast preferences.
+            Configure announcement details, schedule date, and event location.
           </DialogDescription>
         </DialogHeader>
 

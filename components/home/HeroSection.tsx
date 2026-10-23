@@ -65,7 +65,7 @@ export interface SiteSettingsData {
   footerLogo?: unknown
   footerLogoUrl?: string
   footerMeetingVenue?: string
-  footerActiveMinistry?: string
+  footerServiceSummary?: string
   footerCopyright?: string
   footerNavColumns?: {
     title: string
