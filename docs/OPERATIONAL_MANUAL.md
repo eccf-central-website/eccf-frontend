@@ -168,7 +168,7 @@ If the email matches a worker record linked to a different sign-in method, the p
 #### New Worker Flow (8 Steps)
 1. **Phone Gateway:** Enter a phone number and complete the Turnstile bot check. The action rejects requests without a valid challenge. The system then checks whether the number already belongs to a worker.
 2. **Name:** First name, middle name (optional), and last name.
-3. **Email:** A valid personal email address. This becomes the identity used for Clerk sign-in and status access.
+3. **Email Confirmation:** Enter a valid personal email address, complete the Turnstile check, and select **"Send Confirmation Code."** A 6-digit code is emailed to the address (it expires in 10 minutes; the resend cooldown is 60 seconds and allows up to 5 attempts). Enter the code and select **"Confirm Email & Continue."** The next steps stay locked until the code proves the applicant can read the inbox. The confirmed address becomes the identity used for Clerk sign-in and status access. Editing the address after confirmation voids the proof and repeats this step.
 4. **Operational Teams:** Select one or more of the 14 fellowship teams. Multi-team membership is supported and expected.
 5. **Residence:** Select a hall of residence (Halls 1–8) and enter a room number. Room data is encrypted before storage.
 6. **Birthday:** Select the birthday **month and day**. The year is not collected.

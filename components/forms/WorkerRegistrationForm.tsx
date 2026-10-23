@@ -147,6 +147,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
   const [registrationOtpSent, setRegistrationOtpSent] = useState(false)
   const [registrationOtp, setRegistrationOtp] = useState('')
   const [registrationEmailVerified, setRegistrationEmailVerified] = useState(false)
+  const [registrationVerifiedEmail, setRegistrationVerifiedEmail] = useState<string | null>(null)
   const [registrationOtpNotice, setRegistrationOtpNotice] = useState<string | null>(null)
   const [registrationOtpError, setRegistrationOtpError] = useState<string | null>(null)
   const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false)
@@ -302,6 +303,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
     setRegistrationOtpSent(false)
     setRegistrationOtp('')
     setRegistrationEmailVerified(false)
+    setRegistrationVerifiedEmail(null)
     setRegistrationOtpNotice(null)
     setRegistrationOtpError(null)
     setEmailOtpCooldown(0)
@@ -400,35 +402,126 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       return
     }
 
+    // Already proven for this exact address — skip straight to teams.
+    if (registrationEmailVerified && registrationVerifiedEmail === clean.trim().toLowerCase()) {
+      setStep(4)
+      return
+    }
+
     setCheckingEmail(true)
+    setRegistrationOtpError(null)
+    setRegistrationOtpNotice(null)
     try {
-      const result = await requestWorkerSelfServiceLink({
-        identifier: clean,
-        purpose: 'profile',
+      const result = await requestRegistrationEmailOtp({
+        email: clean,
+        firstName,
         turnstileToken: turnstileToken || undefined,
       })
 
-      if (result.maskedEmail) {
-        setIsReturning(true)
-        setPhoneNumber(result.phoneNumber || phoneNumber)
-        setMaskedEmail(result.maskedEmail)
-        setVerificationPending(true)
-        setVerificationNotice(
-          result.message ||
-            `A 6-digit verification code and secure unlock link have been dispatched to ${result.maskedEmail}.`
-        )
-        setResendCooldown(60)
-        setStep(1)
+      if (!result.ok) {
+        setError(result.error || 'Unable to send the confirmation code. Please try again.')
         return
       }
 
-      setStep(4)
+      setRegistrationOtpSent(true)
+      setRegistrationOtp('')
+      setRegistrationOtpNotice(
+        result.message ||
+          `A 6-digit confirmation code has been sent to ${maskEmailDisplay(clean) || clean}. Check your inbox and spam folder.`
+      )
+      setEmailOtpCooldown(result.retryAfterSeconds ?? 60)
     } catch {
-      setError('An unexpected error occurred while checking your email. Please try again.')
+      setError('An unexpected error occurred while sending the confirmation code. Please try again.')
     } finally {
       setCheckingEmail(false)
       setTurnstileToken('')
       setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
+  async function handleVerifyRegistrationEmailOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    const cleanEmail = email.trim()
+    const cleanOtp = registrationOtp.trim().replace(/\s+/g, '')
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      setRegistrationOtpError('Enter the 6-digit confirmation code sent to your email.')
+      return
+    }
+
+    setVerifyingEmailOtp(true)
+    try {
+      const result = await verifyRegistrationEmailOtp({
+        email: cleanEmail,
+        otp: cleanOtp,
+      })
+
+      if (!result.ok) {
+        setRegistrationOtpError(result.error || 'That code is not correct. Please try again.')
+        return
+      }
+
+      setRegistrationOtp('')
+      setRegistrationEmailVerified(true)
+      setRegistrationVerifiedEmail(cleanEmail.toLowerCase())
+      setRegistrationOtpNotice(null)
+      setRegistrationOtpError(null)
+      setStep(4)
+      setError(null)
+    } catch {
+      setRegistrationOtpError('Unable to verify the confirmation code. Please try again.')
+    } finally {
+      setVerifyingEmailOtp(false)
+    }
+  }
+
+  async function handleResendRegistrationOtp() {
+    if (emailOtpCooldown > 0) return
+    setError(null)
+    setRegistrationOtpNotice(null)
+    setRegistrationOtpError(null)
+    setCheckingEmail(true)
+    try {
+      const result = await requestRegistrationEmailOtp({
+        email: email.trim(),
+        firstName,
+        turnstileToken: turnstileToken || undefined,
+      })
+
+      if (!result.ok) {
+        setRegistrationOtpError(result.error || 'Failed to resend the confirmation code. Please try again.')
+        return
+      }
+
+      setRegistrationOtp('')
+      setRegistrationOtpNotice(
+        result.message ||
+          `A fresh 6-digit confirmation code was sent to ${maskEmailDisplay(email) || email}. Check your inbox and spam folder.`
+      )
+      setEmailOtpCooldown(result.retryAfterSeconds ?? 60)
+    } catch {
+      setRegistrationOtpError('Could not resend the confirmation code. Please try again.')
+    } finally {
+      setCheckingEmail(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
+  function handleEmailChange(value: string) {
+    const prevClean = email.trim().toLowerCase()
+    const nextClean = value.trim().toLowerCase()
+    setEmail(value)
+    if (
+      prevClean &&
+      nextClean &&
+      prevClean !== nextClean &&
+      (registrationVerifiedEmail || registrationOtpSent)
+    ) {
+      // The proof only applies to the confirmed address; a different address
+      // must be verified again before it can be used.
+      resetRegistrationEmailVerification()
     }
   }
 
@@ -609,6 +702,36 @@ const [checkingEmail, setCheckingEmail] = useState(false)
           // fall through to error below
         }
         setError(registrationResult.error || 'A worker record was found matching those contact details. Verify your email to update your profile.')
+        return
+      }
+
+      if (registrationResult.requiresEmailVerification) {
+        // The email proof expired while the applicant filled the rest of the
+        // form. Send a fresh confirmation code and return to the email step.
+        try {
+          const retrigger = await requestRegistrationEmailOtp({
+            email,
+            firstName,
+            turnstileToken: turnstileToken || undefined,
+          })
+          if (retrigger.ok) {
+            setRegistrationEmailVerified(false)
+            setRegistrationVerifiedEmail(null)
+            setRegistrationOtpSent(true)
+            setRegistrationOtp('')
+            setRegistrationOtpError(null)
+            setRegistrationOtpNotice(
+              'Your email confirmation expired. A new 6-digit code has been sent — confirm your email, then submit again.'
+            )
+            setEmailOtpCooldown(retrigger.retryAfterSeconds ?? 60)
+            setStep(3)
+            return
+          }
+          setError(retrigger.error || 'Verify your email address before completing registration.')
+        } catch {
+          setError('Verify your email address to complete registration. Try again from the email step.')
+        }
+        setStep(3)
         return
       }
 
@@ -1800,42 +1923,197 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                   Step 3 of {totalSteps}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  What is your email address?
+                  {registrationEmailVerified
+                    ? 'Email address confirmed'
+                    : registrationOtpSent
+                      ? 'Check your inbox'
+                      : 'What is your email address?'}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Used for official correspondence and Clerk authentication.
+                  {registrationEmailVerified
+                    ? 'You confirmed this inbox is yours. Your profile will stay linked to this email.'
+                    : registrationOtpSent
+                      ? 'Enter the confirmation code to prove this email belongs to you before continuing.'
+                      : 'Used for official correspondence and Clerk authentication. We check you can read it before you continue.'}
                 </p>
               </div>
 
-              <div>
-                <input
-                  type="email"
-                  required
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="michael.akan@example.com"
-                  className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
-                />
-              </div>
+              {registrationEmailVerified ? (
+                <>
+                  <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-start gap-3.5">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="text-sm text-slate-700 leading-relaxed">
+                      <p>
+                        <strong className="text-slate-900">{email}</strong> is confirmed and belongs to you.
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        This confirmation lasts for a short while — complete your registration soon. Team selection
+                        is next.
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
-                >
-                  <ArrowLeft className="h-6 w-6 shrink-0" />
-                </button>
-                <button
-                  type="button"
-                  disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || checkingEmail}
-                  onClick={handleEmailNext}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
-                >
-                  {checkingEmail ? 'Checking...' : 'Next Step'} <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
-                </button>
-              </div>
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
+                    >
+                      <ArrowLeft className="h-6 w-6 shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(4)}
+                      className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
+                    </button>
+                  </div>
+                </>
+              ) : registrationOtpSent ? (
+                <>
+                  <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/80 border border-sky-200/90 flex items-start gap-3.5">
+                    <Mail className="h-5 w-5 text-[#0077cc] shrink-0 mt-0.5" />
+                    <div className="text-sm text-slate-700 leading-relaxed">
+                      <p>
+                        We sent a <strong>6-digit confirmation code</strong> to:
+                      </p>
+                      <p className="font-mono font-bold text-slate-950 text-base mt-1">
+                        {maskEmailDisplay(email) || email}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-2">
+                        Not seeing it? Check your spam or promotions folder before requesting another code.
+                      </p>
+                    </div>
+                  </div>
+
+                  {registrationOtpNotice && (
+                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800 flex items-start gap-2">
+                      <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{registrationOtpNotice}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleVerifyRegistrationEmailOtp} className="space-y-6">
+                    {registrationOtpError && (
+                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-800 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                        <span>{registrationOtpError}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <label htmlFor="registration-email-otp" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2 font-mono">
+                        6-Digit Confirmation Code
+                      </label>
+                      <input
+                        id="registration-email-otp"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        autoFocus
+                        value={registrationOtp}
+                        onChange={(e) => setRegistrationOtp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="• • • • • •"
+                        className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-center text-3xl font-mono font-bold tracking-[14px] text-slate-900 placeholder:text-slate-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={registrationOtp.length !== 6 || verifyingEmailOtp}
+                      className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-6 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+                    >
+                      {verifyingEmailOtp ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> Verifying Code...
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2">
+                          Confirm Email &amp; Continue <ArrowRight className="h-5 w-5 shrink-0" />
+                        </span>
+                      )}
+                    </button>
+                  </form>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-semibold text-slate-700">
+                      Complete the security check to send another code:
+                    </p>
+                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                  </div>
+
+                  <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleResendRegistrationOtp}
+                      disabled={emailOtpCooldown > 0 || checkingEmail || !turnstileToken}
+                      className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
+                    >
+                      {emailOtpCooldown > 0
+                        ? `Resend confirmation code (${emailOtpCooldown}s)`
+                        : 'Resend confirmation code'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={resetRegistrationEmailVerification}
+                      className="text-slate-500 hover:text-slate-900 underline"
+                    >
+                      Use a different email address
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <input
+                      type="email"
+                      required
+                      autoFocus
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      placeholder="michael.akan@example.com"
+                      className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="mb-3 text-xs font-semibold text-slate-700">
+                      Complete the security check to send your code:
+                    </p>
+                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
+                    >
+                      <ArrowLeft className="h-6 w-6 shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || checkingEmail || !turnstileToken}
+                      onClick={handleEmailNext}
+                      className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      {checkingEmail ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" /> Sending Code…
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2">
+                          Send Confirmation Code <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 
