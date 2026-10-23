@@ -21,8 +21,11 @@ import {
   Home,
   Users,
   ExternalLink,
+  LogOut,
+  BadgeCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useClerk } from '@clerk/nextjs'
 import {
   checkWorkerPhoneAndInitiateVerification,
   confirmWorkerSelfServiceLink,
@@ -30,6 +33,7 @@ import {
   requestWorkerSelfServiceLink,
   verifyWorkerOtp,
   uploadWorkerPhotoDirectAction,
+  type SignedInWorkerSnapshot,
   type WorkerRegistrationResult,
 } from '@/app/actions/worker-registration'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
@@ -70,12 +74,34 @@ function getDaysInMonth(monthStr: string): number {
   return 31
 }
 
+function maskEmailDisplay(value?: string | null): string | null {
+  if (!value || !value.includes('@')) return null
+  const [local, domain] = value.split('@')
+  if (!local || !domain) return null
+  if (local.length <= 2) return `${local[0]}***@${domain}`
+  return `${local[0]}***${local[local.length - 1]}@${domain}`
+}
+
+function getInitials(name?: string | null): string {
+  if (!name) return 'EC'
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
 export interface WorkerRegistrationFormProps {
   initialEmail?: string
   initialFirstName?: string
   initialLastName?: string
   clerkUserId?: string
   isClerkSignedIn?: boolean
+  emailVerified?: boolean
+  signedInWorker?: SignedInWorkerSnapshot
+  signedInNeedsVerification?: boolean
 }
 
 export function WorkerRegistrationForm({
@@ -84,13 +110,17 @@ export function WorkerRegistrationForm({
   initialLastName = '',
   clerkUserId,
   isClerkSignedIn = false,
+  emailVerified = false,
+  signedInWorker,
+  signedInNeedsVerification = false,
 }: WorkerRegistrationFormProps) {
   const searchParams = useSearchParams()
   const selfServiceToken = searchParams?.get('selfServiceToken') || ''
+  const { signOut } = useClerk()
 
   // Step & Flow State
-  const [step, setStep] = useState(1)
-  const [isReturning, setIsReturning] = useState(false)
+  const [step, setStep] = useState(signedInWorker ? 2 : 1)
+  const [isReturning, setIsReturning] = useState(Boolean(signedInWorker))
   const [isReturnerFlow, setIsReturnerFlow] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [requestingUpdateLink, setRequestingUpdateLink] = useState(false)
@@ -98,12 +128,14 @@ export function WorkerRegistrationForm({
   const [updateIdentifier, setUpdateIdentifier] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  const [signingOut, setSigningOut] = useState(false)
 
   // Existing Worker Detection & OTP Verification State
   const [checkingPhone, setCheckingPhone] = useState(false)
 const [checkingEmail, setCheckingEmail] = useState(false)
   const [verificationPending, setVerificationPending] = useState(false)
-  const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(signedInWorker?.email ? maskEmailDisplay(signedInWorker.email) : null)
+  const [profileFirstName, setProfileFirstName] = useState<string | null>(signedInWorker?.firstName || null)
   const [otpCode, setOtpCode] = useState('')
   const [verifyingOtp, setVerifyingOtp] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
@@ -118,13 +150,13 @@ const [checkingEmail, setCheckingEmail] = useState(false)
   }, [resendCooldown])
 
   // Form Fields
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [firstName, setFirstName] = useState(initialFirstName)
-  const [middleName, setMiddleName] = useState('')
-  const [lastName, setLastName] = useState(initialLastName)
+  const [phoneNumber, setPhoneNumber] = useState(signedInWorker?.phoneNumber || '')
+  const [firstName, setFirstName] = useState(signedInWorker?.firstName || initialFirstName)
+  const [middleName, setMiddleName] = useState(signedInWorker?.middleName || '')
+  const [lastName, setLastName] = useState(signedInWorker?.lastName || initialLastName)
   const fullName = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ')
-  const [email, setEmail] = useState(initialEmail)
-  const [teams, setTeams] = useState<string[]>([])
+  const [email, setEmail] = useState(signedInWorker?.email || initialEmail)
+  const [teams, setTeams] = useState<string[]>(signedInWorker?.teams || [])
 
   const toggleTeam = (t: string) => {
     setTeams((prev) =>
@@ -132,15 +164,19 @@ const [checkingEmail, setCheckingEmail] = useState(false)
     )
   }
 
-  const [hall, setHall] = useState('')
-  const [roomNumber, setRoomNumber] = useState('')
-  const [birthMonth, setBirthMonth] = useState('')
-  const [birthDay, setBirthDay] = useState('')
+  const [hall, setHall] = useState(signedInWorker?.hall || '')
+  const [roomNumber, setRoomNumber] = useState(signedInWorker?.roomNumber || '')
+  const [birthMonth, setBirthMonth] = useState(
+    signedInWorker?.birthMonth ? String(signedInWorker.birthMonth).padStart(2, '0') : ''
+  )
+  const [birthDay, setBirthDay] = useState(
+    signedInWorker?.birthDay ? String(signedInWorker.birthDay).padStart(2, '0') : ''
+  )
   const effectiveBirthDate =
     birthMonth && birthDay
       ? `${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
       : ''
-  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(signedInWorker?.profileImageUrl || null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [base64Image, setBase64Image] = useState<string | null>(null)
 
@@ -184,6 +220,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
         setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
         setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
         setExistingPhotoUrl(worker.profileImageUrl || null)
+        setProfileFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || null)
         setStep(2)
         setError(null)
       } else {
@@ -201,6 +238,45 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       active = false
     }
   }, [selfServiceToken])
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      // Return to the public form so the next person can register on this device.
+      await signOut({ redirectUrl: '/register' })
+    } catch {
+      window.location.href = '/login'
+    } finally {
+      setSigningOut(false)
+    }
+  }
+
+  const resetToNewRegistration = () => {
+    setSuccessResult(null)
+    setIsReturning(false)
+    setIsReturnerFlow(false)
+    setStep(1)
+    setPhoneNumber('')
+    setFirstName(initialFirstName)
+    setMiddleName('')
+    setLastName(initialLastName)
+    setEmail(initialEmail)
+    setTeams([])
+    setHall('')
+    setRoomNumber('')
+    setBirthMonth('')
+    setBirthDay('')
+    setBase64Image(null)
+    setImagePreview(null)
+    setExistingPhotoUrl(null)
+    setVerificationPending(false)
+    setVerificationNotice(null)
+    setProfileFirstName(null)
+    setMaskedEmail(null)
+    setOtpCode('')
+    setResendCooldown(0)
+    setError(null)
+  }
 
   // Total steps based on flow
   // Returning flow: Step 1 (Phone) -> Step 2 (Location) -> Step 3 (Photo) -> Step 4 (Confirm)
@@ -271,11 +347,12 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       // Existing worker detected -> OTP flow
       setVerificationPending(true)
       setMaskedEmail(result.maskedEmail || 'your registered email')
+      setProfileFirstName(result.firstName || null)
       setVerificationNotice(
         result.message ||
-          `A 6-digit verification code and secure unlock link have been dispatched to ${result.maskedEmail || 'your email'}.`
+          `A 6-digit verification code and secure unlock link have been sent to ${result.maskedEmail || 'your email'}.`
       )
-      setResendCooldown(60)
+      setResendCooldown(result.retryAfterSeconds ?? 60)
     } catch {
       setError('An unexpected error occurred while checking your phone number. Please try again.')
     } finally {
@@ -360,6 +437,8 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
       setBirthDay(worker.birthDay ? String(worker.birthDay).padStart(2, '0') : '')
       setExistingPhotoUrl(worker.profileImageUrl || null)
+      setProfileFirstName(worker.firstName || worker.fullName.split(/\s+/)[0] || null)
+      setMaskedEmail(worker.email ? maskEmailDisplay(worker.email) : maskedEmail)
 
       setVerificationPending(false)
       setOtpCode('')
@@ -382,9 +461,15 @@ const [checkingEmail, setCheckingEmail] = useState(false)
         phoneNumber,
         turnstileToken: turnstileToken || undefined,
       })
-      if (result.ok) {
-        setVerificationNotice(`A fresh 6-digit verification code was sent to ${result.maskedEmail || maskedEmail}.`)
-        setResendCooldown(60)
+      if (result.ok && result.exists) {
+        setVerificationNotice(
+          result.message || `A fresh 6-digit verification code was sent to ${result.maskedEmail || maskedEmail}. Check your inbox and spam folder.`
+        )
+        setMaskedEmail(result.maskedEmail || maskedEmail)
+        setProfileFirstName(result.firstName || profileFirstName)
+        setResendCooldown(result.retryAfterSeconds ?? 60)
+      } else if (result.ok && !result.exists) {
+        setError('No workforce profile matches that phone number anymore. Please use a different phone number.')
       } else {
         setError(result.error || 'Failed to resend code. Please try again.')
       }
@@ -402,6 +487,8 @@ const [checkingEmail, setCheckingEmail] = useState(false)
     setOtpCode('')
     setError(null)
     setVerificationNotice(null)
+    setResendCooldown(0)
+    setProfileFirstName(null)
   }
 
   async function handleRequestUpdateLink() {
@@ -417,6 +504,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       setUpdateLinkMessage(result.message)
       if (result.maskedEmail) {
         setMaskedEmail(result.maskedEmail)
+        setProfileFirstName(result.firstName || null)
         if (result.phoneNumber) {
           setPhoneNumber(result.phoneNumber)
         }
@@ -477,10 +565,11 @@ const [checkingEmail, setCheckingEmail] = useState(false)
             setIsReturning(true)
             setPhoneNumber(linkResult.phoneNumber || phoneNumber)
             setMaskedEmail(linkResult.maskedEmail)
+            setProfileFirstName(linkResult.firstName || null)
             setVerificationPending(true)
             setVerificationNotice(
               linkResult.message ||
-                `A 6-digit verification code and secure unlock link have been dispatched to ${linkResult.maskedEmail}.`
+                'If a matching worker profile exists, a verification code and secure unlock link have been sent. Check your inbox and spam folder.'
             )
             setResendCooldown(60)
             setStep(1)
@@ -611,13 +700,15 @@ const [checkingEmail, setCheckingEmail] = useState(false)
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold tracking-wide font-mono uppercase">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
-              Registration Confirmed
+              {isReturning ? 'Profile Updated' : 'Registration Confirmed'}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
               {isReturning ? `Welcome Back, ${firstName}!` : `Welcome to the Workforce, ${firstName}!`}
             </h1>
             <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
-              Your profile has been logged in the ECCF directory. Below is the breakdown of your application and verification status.
+              {isReturning
+                ? 'Your workforce profile has been updated. Below is the current status of your teams and approvals.'
+                : 'Your profile has been logged in the ECCF directory. Below is the breakdown of your application and verification status.'}
             </p>
             {successResult.message && (
               <div className="mx-auto max-w-lg mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 shadow-xs">
@@ -771,44 +862,164 @@ const [checkingEmail, setCheckingEmail] = useState(false)
           >
             Return to Homepage
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setSuccessResult(null)
-              setStep(1)
-              setPhoneNumber('')
-              setIsReturning(false)
-              setBase64Image(null)
-              setExistingPhotoUrl(null)
-            }}
-            className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
-          >
-            <RotateCcw className="h-4 w-4 shrink-0 mr-2" /> Register Another Member
-          </button>
+          {isClerkSignedIn ? (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all disabled:opacity-60"
+            >
+              <LogOut className="h-4 w-4 shrink-0 mr-2" />
+              {signingOut ? 'Signing out…' : 'Sign out to register another member'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={resetToNewRegistration}
+              className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
+            >
+              <RotateCcw className="h-4 w-4 shrink-0 mr-2" /> Register Another Member
+            </button>
+          )}
         </div>
       </div>
     )
   }
 
+  const signedInDisplayName =
+    signedInWorker?.fullName ||
+    [initialFirstName, initialLastName].filter(Boolean).join(' ') ||
+    initialEmail
+  const signedInEmail = initialEmail || signedInWorker?.email || ''
+  const signedInFirstName =
+    signedInWorker?.firstName || initialFirstName || signedInDisplayName.split(/\s+/)[0]
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
-      {/* Prefilled Clerk User Notice */}
-      {isClerkSignedIn && initialEmail && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900 shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Signed in with Clerk: <strong className="font-mono">{initialEmail}</strong></span>
+      {/* Signed-in account panel */}
+      {isClerkSignedIn && (
+        <div className="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
+          <div className="h-1.5 w-full bg-gradient-to-r from-[#0077cc] via-sky-400 to-emerald-500" />
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex items-start gap-3.5 min-w-0">
+                <div className="relative h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-slate-200 bg-sky-50 flex items-center justify-center shadow-sm">
+                  {signedInWorker?.profileImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={signedInWorker.profileImageUrl}
+                      alt={signedInDisplayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-mono text-sm sm:text-base font-bold text-[#0077cc]">
+                      {getInitials(signedInDisplayName)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 font-mono">
+                      Signed in with Clerk
+                    </span>
+                    {signedInWorker ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wide">
+                        <BadgeCheck className="h-3 w-3 shrink-0" />
+                        Profile linked
+                      </span>
+                    ) : signedInNeedsVerification ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase tracking-wide">
+                        <ShieldCheck className="h-3 w-3 shrink-0" />
+                        One more check
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-bold uppercase tracking-wide">
+                        New registration
+                      </span>
+                    )}
+                  </div>
+
+                  {signedInWorker ? (
+                    <>
+                      <h1 className="font-serif text-xl sm:text-2xl font-bold text-slate-950 tracking-tight">
+                        Welcome back, {signedInFirstName}
+                      </h1>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Your workforce record is already on file. You are here to refresh it — no new
+                        registration will be created.
+                      </p>
+                    </>
+                  ) : signedInNeedsVerification ? (
+                    <>
+                      <h1 className="font-serif text-xl sm:text-2xl font-bold text-slate-950 tracking-tight">
+                        We found a profile for this email
+                      </h1>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        It is linked to a different sign-in method. Use “Already registered as a
+                        worker?” below to confirm with a one-time email code.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="font-serif text-xl sm:text-2xl font-bold text-slate-950 tracking-tight">
+                        You&apos;re signed in, {signedInFirstName}
+                      </h1>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        No workforce profile is linked to this account yet. Complete the short form once
+                        and it will stay linked to this sign-in.
+                      </p>
+                    </>
+                  )}
+
+                  <p className="text-[11px] sm:text-xs text-slate-500 font-mono break-all">
+                    {signedInEmail}
+                    {emailVerified ? ' · verified email' : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap sm:flex-col items-stretch sm:items-end gap-2 shrink-0">
+                {signedInWorker && (
+                  <Link
+                    href="/register/status"
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    My status
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-60"
+                >
+                  <LogOut className="h-3.5 w-3.5 shrink-0" />
+                  {signingOut ? 'Signing out…' : 'Sign out'}
+                </button>
+              </div>
+            </div>
+
+            {signedInWorker && (
+              <div className="flex items-start gap-2.5 rounded-2xl bg-sky-50/70 border border-sky-200/80 px-3.5 py-2.5">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-[#0077cc] mt-0.5" />
+                <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
+                  Clerk has already confirmed this sign-in, so no second code is required to open your
+                  own profile. Contact-detail changes still need an administrator.
+                </p>
+              </div>
+            )}
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
-            Auto-linked
-          </span>
         </div>
       )}
 
       {/* Visual Progress Bar Header */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs font-bold tracking-wider uppercase text-slate-600 font-mono">
-          <span className="text-[#0077cc]">{isReturning ? 'Returning Worker Refresh' : 'New Worker Intake'}</span>
+          <span className="text-[#0077cc]">
+            {signedInWorker ? 'Profile Refresh' : isReturning ? 'Returning Worker Refresh' : 'New Worker Intake'}
+          </span>
           <span>
             Step {step} of {totalSteps}
           </span>
@@ -861,11 +1072,11 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                     <span>SECURITY VERIFICATION</span>
                   </div>
                   <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
-                    Enter Verification Code
+                    {profileFirstName ? `Welcome back, ${profileFirstName}` : 'Enter Verification Code'}
                   </h2>
                   <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                    A workforce profile matching <strong className="text-slate-950 font-mono">{phoneNumber}</strong> was found.
-                    For your privacy and security, personal details are locked until verified.
+                    We found your workforce profile on file. For your privacy, personal details stay
+                    locked until you confirm this request with the code below.
                   </p>
                 </div>
 
@@ -873,9 +1084,13 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                   <Mail className="h-5 w-5 text-[#0077cc] shrink-0 mt-0.5" />
                   <div className="text-sm text-slate-700 leading-relaxed">
                     <p>
-                      We have sent a <strong>6-digit security code</strong> and a <strong>direct unlock link</strong> to your email on file:
+                      We sent a <strong>6-digit security code</strong> and a <strong>direct unlock link</strong> to the
+                      email on file:
                     </p>
                     <p className="font-mono font-bold text-slate-950 text-base mt-1">{maskedEmail}</p>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Not seeing it? Check your spam or promotions folder before requesting another code.
+                    </p>
                   </div>
                 </div>
 
@@ -917,7 +1132,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
-                        Verify Code &amp; Unlock Profile <ArrowRight className="h-5 w-5 shrink-0" />
+                        Verify &amp; Open My Profile <ArrowRight className="h-5 w-5 shrink-0" />
                       </span>
                     )}
                   </button>
@@ -955,11 +1170,17 @@ const [checkingEmail, setCheckingEmail] = useState(false)
               >
                 <div className="space-y-2">
                   <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
-                    Worker Registration
+                    {isClerkSignedIn ? 'Link Your Workforce Profile' : 'Worker Registration'}
                   </span>
                   <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-slate-950 font-bold tracking-tight">
-                    Start with your phone number
+                    {isClerkSignedIn ? 'Confirm your phone number' : 'Start with your phone number'}
                   </h2>
+                  {isClerkSignedIn && (
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      We&apos;ll check whether a workforce record already exists before creating a new one
+                      for <strong className="font-mono text-slate-800">{initialEmail}</strong>.
+                    </p>
+                  )}
                 </div>
 
                 <form onSubmit={handlePhoneSubmit} className="space-y-6">
@@ -992,19 +1213,21 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                   </button>
                 </form>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsReturnerFlow(true)
-                    setError(null)
-                    setUpdateIdentifier('')
-                    setUpdateLinkMessage(null)
-                  }}
-                  className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-[#0077cc] hover:text-[#0077cc] hover:bg-slate-50 transition-all"
-                >
-                  <ArrowRight className="h-4 w-4 shrink-0" />
-                  <span>Already registered as a worker?</span>
-                </button>
+                {!signedInWorker && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsReturnerFlow(true)
+                      setError(null)
+                      setUpdateIdentifier('')
+                      setUpdateLinkMessage(null)
+                    }}
+                    className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-[#0077cc] hover:text-[#0077cc] hover:bg-slate-50 transition-all"
+                  >
+                    <ArrowRight className="h-4 w-4 shrink-0" />
+                    <span>Already registered as a worker?</span>
+                  </button>
+                )}
                 </motion.div>
 
                 {isReturnerFlow && (
@@ -1148,7 +1371,12 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                   </label>
                   <label className="text-xs font-semibold text-slate-600">
                     Phone on file
-                    <input type="tel" value={phoneNumber} readOnly className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600" />
+                    <input
+                      type="tel"
+                      value={phoneNumber || 'Not available — ask an admin'}
+                      readOnly
+                      className="mt-1 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600"
+                    />
                   </label>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1243,13 +1471,24 @@ const [checkingEmail, setCheckingEmail] = useState(false)
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
-                >
-                  <ArrowLeft className="h-6 w-6 shrink-0" />
-                </button>
+                {signedInWorker ? (
+                  <Link
+                    href="/register/status"
+                    aria-label="Cancel and view my status"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
+                  >
+                    <ArrowLeft className="h-6 w-6 shrink-0" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    aria-label="Back to phone verification"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-colors shrink-0"
+                  >
+                    <ArrowLeft className="h-6 w-6 shrink-0" />
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={!hall || !roomNumber || teams.length === 0}

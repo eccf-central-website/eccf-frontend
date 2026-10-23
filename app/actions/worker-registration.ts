@@ -16,7 +16,7 @@
 
 'use server'
 
-import { createHash, randomBytes } from 'crypto'
+import { createHash, createHmac, randomBytes } from 'crypto'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
@@ -90,8 +90,45 @@ export interface CheckWorkerPhoneResult {
   ok: boolean
   exists: boolean
   maskedEmail?: string
+  firstName?: string
   message?: string
   error?: string
+  /** True only when the email provider accepted the message. */
+  emailSent?: boolean
+  /** Seconds the caller must wait before requesting another code. */
+  retryAfterSeconds?: number
+}
+
+export interface SignedInWorkerSnapshot {
+  id: string
+  fullName: string
+  firstName?: string
+  middleName?: string
+  lastName?: string
+  email: string
+  phoneNumber?: string
+  hall?: string
+  roomNumber?: string
+  birthMonth?: number
+  birthDay?: number
+  profileImageUrl?: string
+  teams: string[]
+  isExco?: boolean
+  linkedBy: 'clerk' | 'verified-email'
+}
+
+export interface SignedInUserContext {
+  isSignedIn: boolean
+  clerkUserId?: string
+  email?: string
+  emailVerified?: boolean
+  firstName?: string
+  lastName?: string
+  fullName?: string
+  /** Present only when the signed-in Clerk account is trusted to edit the worker record. */
+  worker?: SignedInWorkerSnapshot
+  /** A profile exists but is linked to a different sign-in method; require an email code. */
+  needsVerification?: boolean
 }
 
 export interface VerifyWorkerOtpInput {
@@ -172,6 +209,54 @@ function maskEmail(email?: string | null): string {
   return `${local[0]}***${local[local.length - 1]}@${domain}`
 }
 
+/** Parses either MM-DD or YYYY-MM-DD into numeric month/day without a year. */
+function parseBirthdayParts(birthday?: string | null): { birthMonth?: number; birthDay?: number } {
+  if (!birthday || typeof birthday !== 'string') return {}
+  const parts = birthday.split('-')
+  if (parts.length === 3) {
+    const birthMonth = Number(parts[1])
+    const birthDay = Number(parts[2])
+    return Number.isFinite(birthMonth) && Number.isFinite(birthDay) ? { birthMonth, birthDay } : {}
+  }
+  if (parts.length === 2) {
+    const birthMonth = Number(parts[0])
+    const birthDay = Number(parts[1])
+    return Number.isFinite(birthMonth) && Number.isFinite(birthDay) ? { birthMonth, birthDay } : {}
+  }
+  return {}
+}
+
+/**
+ * Resolves the authenticated Clerk identity and whether the primary email is verified.
+ * Never trusts a client-supplied Clerk user id.
+ */
+async function getClerkSessionIdentity(): Promise<{
+  userId?: string
+  email?: string
+  emailVerified: boolean
+  firstName?: string
+  lastName?: string
+}> {
+  try {
+    const authState = await auth()
+    if (!authState?.userId) return { emailVerified: false }
+    const user = await currentUser().catch(() => null)
+    if (!user) return { userId: authState.userId, emailVerified: false }
+    const primary =
+      user.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId) ||
+      user.emailAddresses[0]
+    return {
+      userId: user.id,
+      email: primary?.emailAddress,
+      emailVerified: primary?.verification?.status === 'verified',
+      firstName: user.firstName || undefined,
+      lastName: user.lastName || undefined,
+    }
+  } catch {
+    return { emailVerified: false }
+  }
+}
+
 const SELF_SERVICE_COOKIE = 'eccf_worker_self_service'
 const SELF_SERVICE_TOKEN_TTL_MS = 15 * 60 * 1000
 const SELF_SERVICE_RESEND_COOLDOWN_MS = 60 * 1000
@@ -204,11 +289,19 @@ async function sendWorkerVerificationEmail({
   otp: string
   token: string
   baseUrl: string
-}): Promise<boolean> {
+}): Promise<{ sent: boolean; simulated: boolean; error?: string }> {
   const confirmationUrl = new URL('/register', baseUrl)
   confirmationUrl.searchParams.set('selfServiceToken', token)
   const fromAddress = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'ECCF Workforce <onboarding@resend.dev>'
   const subject = `[ECCF Workforce] Your Verification Code: ${otp}`
+
+  if (/@resend\.dev>?$/i.test(fromAddress)) {
+    console.warn(
+      '[sendWorkerVerificationEmail] RESEND_FROM_EMAIL is not set or still uses @resend.dev. ' +
+        'Resend only allows onboarding@resend.dev to send to the account owner. ' +
+        'Verify a domain at https://resend.com/domains and set RESEND_FROM_EMAIL to an address on it.'
+    )
+  }
 
   const emailHtml = `
     <!DOCTYPE html>
@@ -276,29 +369,45 @@ async function sendWorkerVerificationEmail({
   const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes.`
 
   if (!selfServiceEmailer) {
-    console.warn('[sendWorkerVerificationEmail] Missing selfServiceEmailer (RESEND_API_KEY). Simulating dispatch in log.')
+    console.warn('[sendWorkerVerificationEmail] Missing selfServiceEmailer (RESEND_API_KEY).')
+    if (process.env.NODE_ENV === 'production') {
+      return { sent: false, simulated: false, error: 'Email service is not configured.' }
+    }
     console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
-    return true
+    return { sent: true, simulated: true }
   }
 
   try {
-    await selfServiceEmailer.emails.send({
+    // Resend v6 returns { data, error } and does NOT throw on API errors.
+    const { error } = await selfServiceEmailer.emails.send({
       from: fromAddress,
       to: email,
       subject,
       text: plainText,
       html: emailHtml,
     })
-    return true
+
+    if (error) {
+      const message = error.message || 'Email provider rejected the message.'
+      const isTestingRestriction = /only send testing emails|not verified|domain/i.test(message)
+      console.error('[sendWorkerVerificationEmail] Resend rejected the message:', {
+        name: error.name,
+        message,
+        hint: isTestingRestriction
+          ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
+          : undefined,
+      })
+      return { sent: false, simulated: false, error: message }
+    }
+
+    return { sent: true, simulated: false }
   } catch (err: unknown) {
     console.error('[sendWorkerVerificationEmail] Resend dispatch error:', err)
-    const errMsg = err instanceof Error ? err.message : String(err)
-    if (errMsg.includes('only send testing emails to your own email address')) {
-      console.warn('[sendWorkerVerificationEmail] Resend testing domain notice. Simulating dispatch in log.')
-      console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
-      return true
+    return {
+      sent: false,
+      simulated: false,
+      error: err instanceof Error ? err.message : String(err),
     }
-    return false
   }
 }
 
@@ -407,7 +516,10 @@ export async function checkWorkerPhoneAndInitiateVerification(
         ok: true,
         exists: true,
         maskedEmail: maskEmail(email),
-        message: `A verification code was recently dispatched to ${maskEmail(email)}. Please check your inbox or wait a moment to request a new code.`,
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
+        emailSent: false,
+        retryAfterSeconds: Math.max(1, Math.ceil((SELF_SERVICE_RESEND_COOLDOWN_MS - (now - requestedAt)) / 1000)),
+        message: `A verification code was recently sent to ${maskEmail(email)}. Please check your inbox and spam folder, or wait a moment before requesting another one.`,
       }
     }
 
@@ -430,7 +542,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
       })
       .commit()
 
-    await sendWorkerVerificationEmail({
+    const delivery = await sendWorkerVerificationEmail({
       email,
       fullName: worker.firstName || worker.fullName || '',
       otp,
@@ -438,11 +550,33 @@ export async function checkWorkerPhoneAndInitiateVerification(
       baseUrl,
     })
 
+    if (!delivery.sent) {
+      // Do not leave the user stuck behind the resend cooldown when nothing was delivered.
+      await patchPrivateDocument(worker._id)
+        .unset(['selfServiceRequestedAt'])
+        .commit()
+        .catch(() => null)
+      return {
+        ok: false,
+        exists: true,
+        maskedEmail: maskEmail(email),
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
+        emailSent: false,
+        error:
+          'We found your profile, but the verification email could not be delivered right now. Please try again shortly, or contact an ECCF administrator for help.',
+      }
+    }
+
     return {
       ok: true,
       exists: true,
       maskedEmail: maskEmail(email),
-      message: `A 6-digit verification code and secure unlock link have been sent to ${maskEmail(email)}.`,
+      firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
+      emailSent: true,
+      retryAfterSeconds: 60,
+      message: delivery.simulated
+        ? `Development mode: the verification code was written to the server log instead of being emailed to ${maskEmail(email)}.`
+        : `A 6-digit verification code and secure unlock link have been sent to ${maskEmail(email)}. Check your inbox and spam folder.`,
     }
   } catch (err) {
     console.error('[checkWorkerPhoneAndInitiateVerification] Error:', err)
@@ -541,18 +675,7 @@ export async function verifyWorkerOtp(
     })
 
     const birthday = decrypt(worker.birthDate)
-    let birthMonth: number | undefined
-    let birthDay: number | undefined
-    if (birthday && birthday !== '[Encrypted Data]') {
-      const parts = birthday.split('-')
-      if (parts.length === 3) {
-        birthMonth = Number(parts[1])
-        birthDay = Number(parts[2])
-      } else if (parts.length === 2) {
-        birthMonth = Number(parts[0])
-        birthDay = Number(parts[1])
-      }
-    }
+    const { birthMonth, birthDay } = parseBirthdayParts(birthday)
 
     const roomNumber = decrypt(worker.roomNumber)
     const primaryPos = worker.positions?.[0] as any
@@ -579,7 +702,7 @@ export async function verifyWorkerOtp(
         team: worker.team || worker.teams?.[0] || 'General',
         teams: worker.teams?.filter(Boolean) || [],
         hall: worker.hall,
-        roomNumber: roomNumber === '[Encrypted Data]' ? '' : roomNumber,
+        roomNumber: roomNumber || '',
         birthMonth,
         birthDay,
         profileImageUrl: worker.profileImageUrl,
@@ -597,7 +720,7 @@ export async function requestWorkerSelfServiceLink(input: {
   identifier: string
   purpose: 'profile' | 'password'
   turnstileToken?: string
-}): Promise<{ ok: true; message: string; maskedEmail?: string; phoneNumber?: string }> {
+}): Promise<{ ok: true; message: string; maskedEmail?: string; firstName?: string; phoneNumber?: string }> {
   const genericResponse = selfServiceResponse()
   try {
     const identifier = input.identifier?.trim() || ''
@@ -644,8 +767,9 @@ export async function requestWorkerSelfServiceLink(input: {
     if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
       return {
         ok: true,
-        message: `A verification message was recently sent to ${maskEmail(email)}. Please check your inbox or wait a minute to request a new code.`,
+        message: `A verification message was recently sent to ${maskEmail(email)}. Please check your inbox and spam folder, or wait a minute before requesting another one.`,
         maskedEmail: maskEmail(email),
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
         phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
       }
     }
@@ -667,7 +791,7 @@ export async function requestWorkerSelfServiceLink(input: {
       })
       .commit()
 
-    await sendWorkerVerificationEmail({
+    const delivery = await sendWorkerVerificationEmail({
       email,
       fullName: worker.firstName || worker.fullName || '',
       otp,
@@ -675,10 +799,22 @@ export async function requestWorkerSelfServiceLink(input: {
       baseUrl,
     })
 
+    if (!delivery.sent) {
+      await patchPrivateDocument(worker._id)
+        .unset(['selfServiceRequestedAt'])
+        .commit()
+        .catch(() => null)
+      // Keep the public response generic so it cannot be used to enumerate worker accounts.
+      return genericResponse
+    }
+
     return {
       ok: true,
-      message: `A 6-digit verification code and secure unlock link have been dispatched to ${maskEmail(email)}.`,
+      message: delivery.simulated
+        ? `Development mode: the verification code for ${maskEmail(email)} was written to the server log instead of being emailed.`
+        : `A 6-digit verification code and secure unlock link have been sent to ${maskEmail(email)}. Check your inbox and spam folder.`,
       maskedEmail: maskEmail(email),
+      firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
       phoneNumber: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
     }
   } catch (err) {
@@ -727,18 +863,7 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
     })
 
     const birthday = decrypt(worker.birthDate)
-    let birthMonth: number | undefined
-    let birthDay: number | undefined
-    if (birthday && birthday !== '[Encrypted Data]') {
-      const parts = birthday.split('-')
-      if (parts.length === 3) {
-        birthMonth = Number(parts[1])
-        birthDay = Number(parts[2])
-      } else if (parts.length === 2) {
-        birthMonth = Number(parts[0])
-        birthDay = Number(parts[1])
-      }
-    }
+    const { birthMonth, birthDay } = parseBirthdayParts(birthday)
 
     const roomNumber = decrypt(worker.roomNumber)
     const primaryPos = worker.positions?.[0] as any
@@ -766,7 +891,7 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
         team: worker.team || worker.teams?.[0] || 'General',
         teams: worker.teams?.filter(Boolean) || [],
         hall: worker.hall,
-        roomNumber: roomNumber === '[Encrypted Data]' ? '' : roomNumber,
+        roomNumber: roomNumber || '',
         birthMonth,
         birthDay,
         profileImageUrl: worker.profileImageUrl,
@@ -952,7 +1077,15 @@ export async function registerWorker(
     if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
       return { ok: false, error: 'Please enter a valid email address.' }
     }
-    if (!input.phoneNumber || input.phoneNumber.trim().length < 8) {
+
+    // Resolve Clerk before phone validation. A linked account may refresh a
+    // record even when the stored phone number cannot be decrypted yet.
+    const clerkIdentity = await getClerkSessionIdentity()
+    const requestedPhone = input.phoneNumber?.trim() || ''
+    if (!requestedPhone && !clerkIdentity.userId) {
+      return { ok: false, error: 'Please enter a valid phone number.' }
+    }
+    if (requestedPhone && requestedPhone.length < 8) {
       return { ok: false, error: 'Please enter a valid phone number.' }
     }
 
@@ -1003,21 +1136,14 @@ export async function registerWorker(
       return { ok: false, error: 'Complete the security check and try again.' }
     }
 
-    // 2. Clerk Session & User ID Resolution
-    let resolvedClerkUserId = input.clerkUserId?.trim() || undefined
-    try {
-      const authState = await auth()
-      if (authState?.userId) {
-        resolvedClerkUserId = authState.userId
-      }
-    } catch {
-      // Clerk auth not available in background or unconfigured context
-    }
-
-    const cleanPhone = input.phoneNumber.trim().replace(/\s+/g, '')
-    const candidateBlindIndexes = getCandidateBlindIndexes(cleanPhone)
-    const phoneBlindIndex = createBlindIndex(cleanPhone)
-    const allBlindIndexes = Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
+    // 2. Clerk Session & User ID Resolution (never trust input.clerkUserId)
+    let resolvedClerkUserId = clerkIdentity.userId
+    const cleanPhone = requestedPhone.replace(/\s+/g, '')
+    const candidateBlindIndexes = cleanPhone ? getCandidateBlindIndexes(cleanPhone) : []
+    const phoneBlindIndex = cleanPhone ? createBlindIndex(cleanPhone) : ''
+    const allBlindIndexes = cleanPhone
+      ? Array.from(new Set([phoneBlindIndex, ...candidateBlindIndexes]))
+      : []
     const cleanEmail = input.email.trim().toLowerCase()
     if (!resolvedClerkUserId) {
       resolvedClerkUserId = await ensureClerkUserForWorkerEmail(
@@ -1083,20 +1209,36 @@ export async function registerWorker(
       ? await getWorkerBySelfServiceToken(selfServiceToken, 'profile').catch(() => null)
       : null
 
-    // If signed in via Clerk, do NOT auto-verify profile updates here.
-    // Contact changes require a verified self-service session (OTP) to prevent
-    // one user from overwriting another worker's record.
-    const existing = verifiedWorker
+    // Trust a Clerk account only when it is already attached to the record, or
+    // when Clerk has verified the same email and the record is not linked to a
+    // different Clerk user. Contact changes still require a self-service link.
+    const clerkLinkedWorker = resolvedClerkUserId
+      ? identityMatches.find((worker) => worker.clerkUserId === resolvedClerkUserId)
+      : undefined
+    const clerkEmailMatch =
+      clerkIdentity.emailVerified && clerkIdentity.email?.trim().toLowerCase() === cleanEmail
+        ? identityMatches.find(
+            (worker) => !worker.clerkUserId && worker.email?.trim().toLowerCase() === cleanEmail
+          )
+        : undefined
+    const clerkTrustedWorker = clerkLinkedWorker || clerkEmailMatch
+    const existing = verifiedWorker || clerkTrustedWorker
+    const isClerkTrusted = Boolean(clerkTrustedWorker && existing?._id === clerkTrustedWorker._id)
 
     if (existing) {
       const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === existing._id)
       const conflictsWithAnotherWorker = identityMatches.some((worker) => worker._id !== existing._id)
       const storedPhone = decrypt(existing.phoneNumber)
+      const contactFieldsUnchanged = existing.email?.trim().toLowerCase() === cleanEmail
+      const phoneUnchanged =
+        isClerkTrusted ||
+        !cleanPhone ||
+        (Boolean(storedPhone) && normalizePhone(storedPhone) === normalizePhone(cleanPhone))
       if (
         !belongsToVerifiedWorker ||
         conflictsWithAnotherWorker ||
-        (existing.email?.trim().toLowerCase() !== cleanEmail) ||
-        (!storedPhone || storedPhone === '[Encrypted Data]' || normalizePhone(storedPhone) !== normalizePhone(cleanPhone))
+        !contactFieldsUnchanged ||
+        !phoneUnchanged
       ) {
         return { ok: false, error: 'For account safety, phone or email changes must be handled by an ECCF administrator.' }
       }
@@ -1108,6 +1250,10 @@ export async function registerWorker(
         maskedEmail: maskEmail(matched.email || ''),
         error: 'A worker record was found matching those contact details. Verify your email to update your profile.',
       }
+    }
+
+    if (!existing && cleanPhone.length < 8) {
+      return { ok: false, error: 'Please enter a valid phone number.' }
     }
 
     // 4. Resolve Operational Team References
@@ -1297,7 +1443,9 @@ export async function registerWorker(
         .append('updateLog', deltaLogs)
         .commit()
 
-      cookies().delete(SELF_SERVICE_COOKIE)
+      if (verifiedWorker) {
+        cookies().delete(SELF_SERVICE_COOKIE)
+      }
       revalidatePath('/dashboard/workers')
       revalidatePath('/register/status')
 
@@ -1491,6 +1639,43 @@ export async function uploadWorkerPhotoDirectAction({
       .append('updateLog', [`Uploaded official headshot on ${new Date().toISOString().slice(0, 10)}`])
       .commit()
 
+    // Secondary Storage: Google Drive backup (if configured) — mirrors /api/upload-drive
+    const appScriptUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL
+    const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
+    if (appScriptUrl && signingSecret && Buffer.byteLength(signingSecret, 'utf8') >= 32) {
+      try {
+        const workerDoc = await sanityPrivateClient.fetch<{ fullName?: string; team?: string; teams?: string[] } | null>(
+          `*[_type == "worker" && _id == $id][0]{fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams)}`,
+          { id: workerId }
+        )
+        const cleanPart = (value: unknown, fallback: string) =>
+          String(value || fallback)
+            .normalize('NFKD')
+            .replace(/[^a-zA-Z0-9_-]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .slice(0, 50) || fallback
+        const cleanFileName = `${cleanPart(workerDoc?.fullName, 'Worker')}_${cleanPart(workerDoc?.team || workerDoc?.teams?.[0], 'General')}_Headshot`
+        const timestamp = Date.now().toString()
+        const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${base64Image}`
+        const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
+        await fetch(appScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64: base64Image,
+            cleanFileName: `${cleanFileName}.${ext}`,
+            mimeType,
+            timestamp,
+            signature,
+          }),
+          redirect: 'follow',
+          cache: 'no-store',
+        })
+      } catch (gasErr) {
+        console.warn('[uploadWorkerPhotoDirectAction] Optional Google Drive backup skipped:', gasErr)
+      }
+    }
+
     revalidatePath('/register/status')
     revalidatePath('/dashboard/workers')
 
@@ -1502,44 +1687,112 @@ export async function uploadWorkerPhotoDirectAction({
 }
 
 /**
- * Retrieves the signed-in user context from Clerk or active session.
- * Used to prefill verified email and profile info during registration.
+ * Retrieves the signed-in user context from Clerk and, when the account is
+ * trusted, the worker profile it is allowed to refresh.
+ *
+ * Trust rules:
+ * - clerkUserId already attached to the worker record, or
+ * - Clerk-verified primary email matches a record that is not linked to a
+ *   different Clerk user (the record is linked on the next save).
+ *
+ * Anything else returns `needsVerification` so the UI can require an email code.
  */
-export async function getSignedInUserContext(): Promise<{
-  isSignedIn: boolean
-  clerkUserId?: string
-  email?: string
-  firstName?: string
-  lastName?: string
-  fullName?: string
-}> {
+export async function getSignedInUserContext(): Promise<SignedInUserContext> {
   try {
-    const authState = await auth()
-    if (authState?.userId) {
-      const user = await currentUser()
-      if (user) {
-        const primaryEmail =
-          user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ||
-          user.emailAddresses[0]?.emailAddress
-        return {
-          isSignedIn: true,
-          clerkUserId: user.id,
-          email: primaryEmail,
-          firstName: user.firstName || undefined,
-          lastName: user.lastName || undefined,
-          fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || undefined,
-        }
-      }
-      return {
-        isSignedIn: true,
-        clerkUserId: authState.userId,
-      }
-    }
-  } catch {
-    // Clerk not configured or session absent
-  }
+    const identity = await getClerkSessionIdentity()
+    if (!identity.userId) return { isSignedIn: false }
 
-  return { isSignedIn: false }
+    const fullName = [identity.firstName, identity.lastName].filter(Boolean).join(' ') || undefined
+    const base: SignedInUserContext = {
+      isSignedIn: true,
+      clerkUserId: identity.userId,
+      email: identity.email,
+      emailVerified: identity.emailVerified,
+      firstName: identity.firstName,
+      lastName: identity.lastName,
+      fullName,
+    }
+
+    const email = identity.email?.trim()
+    if (!email || !email.includes('@')) return base
+
+    const worker = await sanityPrivateClient.fetch<{
+      _id: string
+      fullName?: string
+      firstName?: string
+      middleName?: string
+      lastName?: string
+      email?: string
+      phoneNumber?: string
+      hall?: string
+      roomNumber?: string
+      birthDate?: string
+      profileImageUrl?: string
+      clerkUserId?: string
+      "team": string[] | string | null
+      role?: WorkerRole
+      requestedRole?: WorkerRole
+      positions?: Array<Record<string, unknown>>
+    } | null>(
+      `*[_type == "worker" && (
+        clerkUserId == $clerkUserId ||
+        lower(email) == lower($email)
+      )] | order(defined(clerkUserId) desc, _updatedAt desc)[0]{
+        _id, fullName, firstName, middleName, lastName, email, phoneNumber,
+        hall, roomNumber, birthDate, profileImageUrl, clerkUserId,
+        "team": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        role, requestedRole, positions
+      }`,
+      { clerkUserId: identity.userId, email }
+    )
+
+    if (!worker) return base
+
+    const linkedByClerkId = worker.clerkUserId === identity.userId
+    const linkedByVerifiedEmail =
+      !worker.clerkUserId &&
+      identity.emailVerified &&
+      worker.email?.trim().toLowerCase() === email.toLowerCase()
+
+    if (!linkedByClerkId && !linkedByVerifiedEmail) {
+      return { ...base, needsVerification: true }
+    }
+
+    const phoneNumber = decrypt(worker.phoneNumber) || undefined
+    const roomNumber = decrypt(worker.roomNumber) || undefined
+    const birthday = parseBirthdayParts(decrypt(worker.birthDate))
+    const teams = (
+      Array.isArray(worker.team)
+        ? worker.team
+        : worker.team
+          ? [worker.team]
+          : []
+    ).filter((team): team is string => typeof team === 'string' && team.trim().length > 0)
+
+    return {
+      ...base,
+      worker: {
+        id: worker._id,
+        fullName: worker.fullName || fullName || email,
+        firstName: worker.firstName || identity.firstName,
+        middleName: worker.middleName,
+        lastName: worker.lastName || identity.lastName,
+        email: worker.email || email,
+        phoneNumber,
+        hall: worker.hall,
+        roomNumber,
+        birthMonth: birthday.birthMonth,
+        birthDay: birthday.birthDay,
+        profileImageUrl: worker.profileImageUrl,
+        teams,
+        isExco: Boolean(worker.role || worker.requestedRole || worker.positions?.length),
+        linkedBy: linkedByClerkId ? 'clerk' : 'verified-email',
+      },
+    }
+  } catch (err) {
+    console.error('[getSignedInUserContext] Error:', err)
+    return { isSignedIn: false }
+  }
 }
 
 /**
@@ -1710,10 +1963,10 @@ export async function getRegistrationStatus(): Promise<RegistrationStatusResult>
         middleName: worker.middleName as string | undefined,
         lastName: worker.lastName as string | undefined,
         email: worker.email as string,
-        phoneNumber: decryptedPhone === '[Encrypted Data]' ? undefined : decryptedPhone,
+        phoneNumber: decryptedPhone || undefined,
         hall: worker.hall as string,
-        roomNumber: decryptedRoom === '[Encrypted Data]' ? undefined : decryptedRoom,
-        birthDate: decryptedBirthDate === '[Encrypted Data]' ? undefined : decryptedBirthDate,
+        roomNumber: decryptedRoom || undefined,
+        birthDate: decryptedBirthDate || undefined,
         profileImageUrl: worker.profileImageUrl as string | undefined,
         clerkUserId: worker.clerkUserId as string | undefined,
         memberships: formattedMemberships,

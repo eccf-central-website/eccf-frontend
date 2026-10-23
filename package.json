@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:encryption": "node scripts/check-encryption-health.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.6",

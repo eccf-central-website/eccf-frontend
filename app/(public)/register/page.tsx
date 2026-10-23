@@ -27,6 +27,9 @@ export default async function RegisterPage() {
             initialLastName={userContext.lastName || ''}
             clerkUserId={userContext.clerkUserId}
             isClerkSignedIn={userContext.isSignedIn}
+            emailVerified={userContext.emailVerified}
+            signedInWorker={userContext.worker}
+            signedInNeedsVerification={userContext.needsVerification}
           />
         </Suspense>
       </div>

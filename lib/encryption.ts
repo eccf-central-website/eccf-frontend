@@ -123,10 +123,10 @@ export function decrypt(cipherText?: string | null): string {
     }
 
     console.error('[decrypt] Decryption failed across all candidate keys')
-    return '[Encrypted Data]'
+    return ''
   } catch (err) {
     console.error('[decrypt] Decryption failed:', err)
-    return '[Encrypted Data]'
+    return ''
   }
 }
 

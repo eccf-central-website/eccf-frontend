@@ -920,8 +920,8 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* WORKER DETAIL MODAL                                                  */}
       {/* ==================================================================== */}
       <Dialog open={!!activeWorkerDetail} onOpenChange={(open) => !open && setActiveWorkerDetail(null)}>
-        <DialogContent className="max-w-md rounded-2xl p-6">
-          <DialogHeader>
+        <DialogContent className="flex max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-6">
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="font-serif text-2xl font-black text-foreground">
               Worker Profile
             </DialogTitle>
@@ -931,7 +931,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
           </DialogHeader>
 
           {activeWorkerDetail && (
-            <div className="space-y-4 pt-2">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pt-4 pr-1 -mr-1">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden border border-border">
                   {activeWorkerDetail.profileImageUrl ? (
