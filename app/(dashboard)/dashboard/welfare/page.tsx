@@ -15,8 +15,8 @@ import { HeartHandshake } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function WelfarePage() {
-  await requireSection('welfare')
-  const rows = await listWelfare()
+  const session = await requireSection('welfare')
+  const rows = await listWelfare(session)
 
   if (rows.length === 0) {
     return (
@@ -38,7 +38,8 @@ export default async function WelfarePage() {
           </h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Review confidential welfare and student care requests. All personal contact records remain encrypted and restricted.
+          Review confidential welfare and student care requests. Requester phone numbers are shown only
+          to CSGB and Welfare &amp; Medical coordinators.
         </p>
       </div>
 

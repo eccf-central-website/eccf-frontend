@@ -360,6 +360,20 @@ export interface Subscriber {
 export type SafeFirstTimer = Omit<FirstTimer, 'phoneNumber' | 'roomNumber' | 'phoneBlindIndex'>
 export type SafeWelfareRequest = Omit<WelfareRequest, 'phoneNumber' | 'phoneBlindIndex'>
 
+/**
+ * Welfare request as returned by the dashboard data layer.
+ *
+ * The requester's phone is included only when the signed-in role is authorized
+ * to contact them (CSGB or the Welfare & Medical team). `canViewContact` is
+ * always present so the UI can distinguish "not allowed" from "no number on
+ * file / unreadable ciphertext".
+ */
+export type WelfareRequestRow = SafeWelfareRequest & {
+  canViewContact?: boolean
+  /** Decrypted contact phone; only present when `canViewContact` is true. */
+  phoneNumber?: string
+}
+
 // ---------------------------------------------------------------------------
 // Exco Dashboard view models (browser-safe — never carry phoneNumber/roomNumber)
 // ---------------------------------------------------------------------------

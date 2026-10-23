@@ -12,8 +12,10 @@
  * DASHBOARD_MOCK_STATE env var) to `empty`, `error` or `slow`.
  *
  * Every function takes the session (or is RBAC-checked by its caller) and
- * returns browser-safe shapes: projections never select phoneNumber or
- * roomNumber, and stripPII() runs on every result as a second safeguard.
+ * returns browser-safe shapes: most projections never select phoneNumber or
+ * roomNumber, and stripPII() runs as a second safeguard. The one deliberate
+ * exception is welfare contact details, which are decrypted only for CSGB and
+ * Welfare & Medical coordinators (see canViewWelfareContact).
  */
 
 import 'server-only'
@@ -29,10 +31,16 @@ import type {
   FirstTimerRow,
   PendingExecutiveApplication,
   PrayerRequest,
-  SafeWelfareRequest,
+  WelfareRequestRow,
   WorkerRow,
 } from '@/types'
-import { hasPermission, isHallScoped, isTeamScoped, isCSGBMember } from '../rbac'
+import {
+  canViewWelfareContact,
+  hasPermission,
+  isHallScoped,
+  isTeamScoped,
+  isCSGBMember,
+} from '../rbac'
 import { isDevMockState, type DevMockState } from '../shell'
 import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
 import {
@@ -360,15 +368,27 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
   }))
 }
 
-export async function listWelfare(): Promise<SafeWelfareRequest[]> {
-  const rows =
+export async function listWelfare(
+  session?: ECCFSession & { access?: { isWelfare?: boolean; isCSGB?: boolean } }
+): Promise<WelfareRequestRow[]> {
+  const rows: WelfareRequestRow[] =
     dataSource() === 'mock'
-      ? await fromMock(MOCK_WELFARE, [])
-      : await sanityPrivateClient.fetch<SafeWelfareRequest[]>(DASHBOARD_WELFARE_QUERY)
-  return stripPII(rows).map((row) => ({
-    ...row,
-    requestDetails: decrypt(row.requestDetails),
-  }))
+      ? await fromMock<WelfareRequestRow[]>(MOCK_WELFARE, [])
+      : await sanityPrivateClient.fetch<WelfareRequestRow[]>(DASHBOARD_WELFARE_QUERY)
+
+  const canViewContact = canViewWelfareContact(session)
+
+  return rows.map((row) => {
+    // Run the standard PII stripping guard first, then add the plain-text
+    // phone back only for viewers who are allowed to contact the requester.
+    const safe = stripPII([row])[0]
+    return {
+      ...safe,
+      requestDetails: decrypt(row.requestDetails),
+      canViewContact,
+      ...(canViewContact ? { phoneNumber: row.phoneNumber ? decrypt(row.phoneNumber) : '' } : {}),
+    }
+  })
 }
 
 export async function listPrayerRequests(): Promise<PrayerRequest[]> {

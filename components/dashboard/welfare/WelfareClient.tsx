@@ -11,8 +11,9 @@ import {
   AlertCircle,
   Loader2,
   User,
+  Phone,
 } from 'lucide-react'
-import type { SafeWelfareRequest } from '@/types'
+import type { WelfareRequestRow } from '@/types'
 import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
 import { Card, CardContent } from '@/components/dashboard/ui/card'
@@ -28,7 +29,7 @@ import { resolveWelfareRequest } from '@/app/actions/welfare-actions'
 import { toast } from 'sonner'
 
 interface WelfareClientProps {
-  initialRequests: SafeWelfareRequest[]
+  initialRequests: WelfareRequestRow[]
 }
 
 function formatFullDateTime(dateStr: string): string {
@@ -50,7 +51,7 @@ function formatFullDateTime(dateStr: string): string {
 }
 
 export default function WelfareClient({ initialRequests }: WelfareClientProps) {
-  const [requests, setRequests] = useState<SafeWelfareRequest[]>(initialRequests)
+  const [requests, setRequests] = useState<WelfareRequestRow[]>(initialRequests)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('all')
   const [resolvingId, setResolvingId] = useState<string | null>(null)
@@ -69,7 +70,8 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
       const matchesSearch =
         search === '' ||
         req.name.toLowerCase().includes(search.toLowerCase()) ||
-        req.requestDetails.toLowerCase().includes(search.toLowerCase())
+        req.requestDetails.toLowerCase().includes(search.toLowerCase()) ||
+        Boolean(req.phoneNumber?.toLowerCase().includes(search.toLowerCase()))
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -159,7 +161,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search student name or request details..."
+            placeholder="Search name, phone, or request details..."
             className="pl-9 bg-background"
           />
         </div>
@@ -224,6 +226,25 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                     <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3.5 rounded-xl border border-border/60">
                       {req.requestDetails}
                     </p>
+
+                    {req.canViewContact && (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          Contact phone
+                        </span>
+                        {req.phoneNumber ? (
+                          <a
+                            href={`tel:${req.phoneNumber.replace(/[^\d+]/g, '')}`}
+                            className="font-mono font-bold text-primary underline-offset-4 hover:underline"
+                          >
+                            {req.phoneNumber}
+                          </a>
+                        ) : (
+                          <span className="italic text-muted-foreground">Not available on this record</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {req.status === 'Pending' && (

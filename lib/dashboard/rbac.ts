@@ -114,6 +114,29 @@ export function isCSGBMember(
   )
 }
 
+/**
+ * Welfare requests contain a requester's phone number. Only the groups who
+ * actually coordinate care may see it: CSGB officers and the Welfare & Medical
+ * team. Other roles with welfare section access (e.g. hall reps) still see the
+ * request text and status, but not the contact number.
+ */
+export function canViewWelfareContact(
+  session?: {
+    role?: string
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+    access?: { isWelfare?: boolean; isCSGB?: boolean }
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.access) {
+    return Boolean(session.access.isWelfare || session.access.isCSGB)
+  }
+  return isCSGBMember(session)
+}
+
 export function isMediaLeader(
   session?: {
     access?: Record<string, any>

@@ -203,6 +203,7 @@ export const DASHBOARD_WELFARE_QUERY = `
     _id,
     _type,
     name,
+    phoneNumber,
     requestDetails,
     status,
     dateSubmitted

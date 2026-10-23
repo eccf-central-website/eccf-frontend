@@ -1,8 +1,10 @@
 /**
  * Mock fixtures for the Exco Dashboard — used when DASHBOARD_DATA_SOURCE is
  * "mock" (the default outside production). All names are fictional. Shapes
- * match the browser-safe view models, so no phone/room values exist here
- * at all. Dates are generated relative to today so "this month" / "this
+ * match the browser-safe view models. Worker contact fields are intentionally
+ * omitted; first-timer and welfare fixtures include fictional phone numbers so
+ * the follow-up and welfare desks can be exercised.
+ * Dates are generated relative to today so "this month" / "this
  * week" stats always have something to show.
  */
 
@@ -12,7 +14,7 @@ import type {
   FinanceRow,
   FirstTimerRow,
   PrayerRequest,
-  SafeWelfareRequest,
+  WelfareRequestRow,
   WorkerRow,
 } from '@/types'
 
@@ -146,12 +148,12 @@ export const MOCK_FIRST_TIMERS: FirstTimerRow[] = [
   { _id: 'mock-ft-08', _type: 'firstTimer', fullName: 'Paul Balogun', hall: 'Hall A', roomNumber: 'Room 003', phoneNumber: '07090123456', department: 'Law', level: '400', dateVisited: isoDate(43) },
 ]
 
-export const MOCK_WELFARE: SafeWelfareRequest[] = [
+export const MOCK_WELFARE: WelfareRequestRow[] = [
   { _id: 'mock-wf-01', _type: 'welfareRequest', name: 'Anonymous student', requestDetails: 'I need help with feeding until my allowance comes at the end of the month.', status: 'Pending', dateSubmitted: isoDateTime(0, 8) },
-  { _id: 'mock-wf-02', _type: 'welfareRequest', name: 'Eghosa Obaseki', requestDetails: 'Hospital bill after a malaria admission at the university clinic. About ₦18,000 outstanding.', status: 'Pending', dateSubmitted: isoDateTime(2) },
-  { _id: 'mock-wf-03', _type: 'welfareRequest', name: 'Amaka Eze', requestDetails: 'Lost my textbooks and notes in the hostel flood; would appreciate help replacing two course texts.', status: 'Pending', dateSubmitted: isoDateTime(5) },
-  { _id: 'mock-wf-04', _type: 'welfareRequest', name: 'Tunde Ogunleye', requestDetails: 'Transport fare home for a family emergency.', status: 'Resolved', dateSubmitted: isoDateTime(12) },
-  { _id: 'mock-wf-05', _type: 'welfareRequest', name: 'Ruth Ehigiator', requestDetails: 'Help with exam registration fee shortfall.', status: 'Resolved', dateSubmitted: isoDateTime(30) },
+  { _id: 'mock-wf-02', _type: 'welfareRequest', name: 'Eghosa Obaseki', phoneNumber: '08031234567', requestDetails: 'Hospital bill after a malaria admission at the university clinic. About ₦18,000 outstanding.', status: 'Pending', dateSubmitted: isoDateTime(2) },
+  { _id: 'mock-wf-03', _type: 'welfareRequest', name: 'Amaka Eze', phoneNumber: '08149876543', requestDetails: 'Lost my textbooks and notes in the hostel flood; would appreciate help replacing two course texts.', status: 'Pending', dateSubmitted: isoDateTime(5) },
+  { _id: 'mock-wf-04', _type: 'welfareRequest', name: 'Tunde Ogunleye', phoneNumber: '07065554433', requestDetails: 'Transport fare home for a family emergency.', status: 'Resolved', dateSubmitted: isoDateTime(12) },
+  { _id: 'mock-wf-05', _type: 'welfareRequest', name: 'Ruth Ehigiator', phoneNumber: '09012223344', requestDetails: 'Help with exam registration fee shortfall.', status: 'Resolved', dateSubmitted: isoDateTime(30) },
 ]
 
 export const MOCK_PRAYER_REQUESTS: PrayerRequest[] = [
