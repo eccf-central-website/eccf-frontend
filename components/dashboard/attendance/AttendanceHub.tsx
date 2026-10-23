@@ -56,7 +56,7 @@ export default function AttendanceHub({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               {!canUsher && isTeamLead
                 ? `${effectiveTeam} Worker Attendance`
                 : isUshering && !session.role.includes('admin')
@@ -80,11 +80,11 @@ export default function AttendanceHub({
 
         {/* Dual Tab Segmented Control (if Admin or Ushering Lead) */}
         {hasDualAccess && (
-          <div className="inline-flex rounded-xl bg-muted/80 p-1.5 text-xs font-semibold shadow-inner border border-border/50">
+          <div className="inline-flex w-full rounded-xl bg-muted/80 p-1.5 text-xs font-semibold shadow-inner border border-border/50 sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 transition-all ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3.5 py-2 transition-all sm:flex-none ${
                 activeTab === 'general'
                   ? 'bg-background text-foreground shadow-sm font-bold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -100,7 +100,7 @@ export default function AttendanceHub({
             <button
               type="button"
               onClick={() => setActiveTab('team')}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 transition-all ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3.5 py-2 transition-all sm:flex-none ${
                 activeTab === 'team'
                   ? 'bg-background text-foreground shadow-sm font-bold'
                   : 'text-muted-foreground hover:text-foreground'

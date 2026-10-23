@@ -649,8 +649,8 @@ export default function UsheringHeadcountView({
         </div>
 
         {/* History Table */}
-        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
-          <Table>
+        <div className="hidden md:block rounded-lg border bg-card shadow-sm overflow-x-auto">
+          <Table aria-label="Ushering headcount records">
             <TableHeader>
               <TableRow className="bg-muted/40">
                 <TableHead className="w-[140px]">Date</TableHead>
@@ -771,6 +771,84 @@ export default function UsheringHeadcountView({
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile history cards */}
+        <div className="md:hidden space-y-3">
+          {filteredRows.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                No general service headcount logs match your filter criteria.
+              </CardContent>
+            </Card>
+          ) : (
+            filteredRows.map((row) => (
+              <Card key={row._id} className="border border-border shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-medium text-foreground">{formatDate(row.date)}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        row.serviceType === 'Sunday Service'
+                          ? 'default'
+                          : row.serviceType === 'Wednesday Bible Study'
+                          ? 'secondary'
+                          : 'outline'
+                      }
+                      className="text-[10px] px-1.5 py-0 shrink-0"
+                    >
+                      {row.serviceType}
+                    </Badge>
+                  </div>
+                  {row.meetingTitle ? (
+                    <p className="text-sm font-semibold text-foreground line-clamp-2">{row.meetingTitle}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Regular service</p>
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="inline-flex flex-col">
+                      <span className="font-bold text-lg text-foreground">{row.totalCount.toLocaleString()}</span>
+                      <span className="text-[10px] text-muted-foreground">attendees</span>
+                    </div>
+                    {(row.menCount || row.womenCount || row.childrenCount || row.firstTimersCount) && (
+                      <div className="flex flex-wrap gap-1 text-[10px] justify-end">
+                        {row.menCount !== undefined && (
+                          <span className="rounded bg-sky-500/10 px-1.5 py-0.5 font-medium text-sky-700 dark:text-sky-300">
+                            M: {row.menCount}
+                          </span>
+                        )}
+                        {row.womenCount !== undefined && (
+                          <span className="rounded bg-rose-500/10 px-1.5 py-0.5 font-medium text-rose-700 dark:text-rose-300">
+                            W: {row.womenCount}
+                          </span>
+                        )}
+                        {row.childrenCount !== undefined && (
+                          <span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-700 dark:text-amber-300">
+                            C: {row.childrenCount}
+                          </span>
+                        )}
+                        {row.firstTimersCount !== undefined && (
+                          <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-700 dark:text-emerald-300">
+                            FT: {row.firstTimersCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {row.notes && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{row.notes}</p>
+                  )}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground border-t pt-2">
+                    <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">{row.loggedBy?.fullName || 'Ushering Exco'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -345,7 +345,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
               </span>
             )}
           </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-black text-foreground tracking-tight mt-1">
+          <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight mt-1">
             {isPresident
               ? 'Fellowship Workforce & Presidential CRM'
               : isAdmin
@@ -727,8 +727,8 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
 
 
       <div className="hidden md:block rounded-2xl border border-border bg-card shadow-xs overflow-x-auto">
-        <Table>
-          <TableHeader>
+      <Table aria-label="Workers records">
+        <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Member</TableHead>
               <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Team(s)</TableHead>

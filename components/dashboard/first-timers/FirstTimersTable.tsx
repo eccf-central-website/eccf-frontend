@@ -231,7 +231,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
 
       {/* First-Timers Table (Desktop) */}
       <div className="hidden rounded-lg border bg-card sm:block">
-        <Table>
+<Table aria-label="First-timers records">
           <TableHeader>
             <TableRow className="bg-muted/40">
               <TableHead className="font-semibold">Visitor</TableHead>

@@ -112,7 +112,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <HeartHandshake className="h-5 w-5 text-primary shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-foreground">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 {requests.length}
               </span>
             </div>
@@ -128,7 +128,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
                 {pendingCount}
               </span>
             </div>
@@ -144,7 +144,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
               <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
                 {resolvedCount}
               </span>
             </div>

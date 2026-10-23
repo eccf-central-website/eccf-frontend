@@ -32,7 +32,7 @@ export default function MobileNav({ sections }: { sections: readonly DashboardSe
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 focus-visible:ring-2 lg:hidden"
+          className="hidden h-9 w-9 shrink-0 focus-visible:ring-2 sm:inline-flex lg:hidden"
           aria-label="Open navigation menu"
         >
           <Menu className="size-5 shrink-0" aria-hidden="true" />

@@ -18,6 +18,7 @@ import DevSwitcher from '@/components/dashboard/shell/DevSwitcher'
 import AppSidebar from '@/components/dashboard/shell/AppSidebar'
 import SkipLink from '@/components/dashboard/shell/SkipLink'
 import TopBar from '@/components/dashboard/shell/TopBar'
+import BottomNav from '@/components/dashboard/shell/BottomNav'
 import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
 
 import type { Metadata } from 'next'
@@ -75,10 +76,11 @@ export default async function DashboardShellLayout({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto overflow-x-hidden focus:outline-none"
+          className="flex-1 overflow-y-auto overflow-x-hidden pb-20 focus:outline-none sm:pb-0"
         >
           {children}
         </main>
+        <BottomNav sections={sections} actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined} />
       </div>
     </div>
   )

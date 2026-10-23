@@ -77,6 +77,8 @@ export interface WorkerRegistrationResult {
   executiveApplication?: ExecutiveApplicationInput
   profileImageUrl?: string
   photoUploaded?: boolean
+  requiresVerification?: boolean
+  maskedEmail?: string
 }
 
 export interface CheckWorkerPhoneInput {
@@ -600,7 +602,7 @@ export async function requestWorkerSelfServiceLink(input: {
   try {
     const identifier = input.identifier?.trim() || ''
     if (!identifier || !['profile', 'password'].includes(input.purpose)) return genericResponse
-    if (!(await verifyTurnstileToken(input.turnstileToken))) return genericResponse
+    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) return genericResponse
     const baseUrl =
       process.env.NEXTAUTH_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
@@ -1081,12 +1083,10 @@ export async function registerWorker(
       ? await getWorkerBySelfServiceToken(selfServiceToken, 'profile').catch(() => null)
       : null
 
-    // If signed in via Clerk, worker can be verified directly by clerkUserId match
-    const clerkVerifiedWorker = resolvedClerkUserId
-      ? identityMatches.find((w) => w.clerkUserId === resolvedClerkUserId) || null
-      : null
-
-    const existing = clerkVerifiedWorker || verifiedWorker
+    // If signed in via Clerk, do NOT auto-verify profile updates here.
+    // Contact changes require a verified self-service session (OTP) to prevent
+    // one user from overwriting another worker's record.
+    const existing = verifiedWorker
 
     if (existing) {
       const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === existing._id)
@@ -1095,15 +1095,18 @@ export async function registerWorker(
       if (
         !belongsToVerifiedWorker ||
         conflictsWithAnotherWorker ||
-        (!clerkVerifiedWorker && existing.email?.trim().toLowerCase() !== cleanEmail) ||
-        (!clerkVerifiedWorker && (!storedPhone || storedPhone === '[Encrypted Data]' || normalizePhone(storedPhone) !== normalizePhone(cleanPhone)))
+        (existing.email?.trim().toLowerCase() !== cleanEmail) ||
+        (!storedPhone || storedPhone === '[Encrypted Data]' || normalizePhone(storedPhone) !== normalizePhone(cleanPhone))
       ) {
         return { ok: false, error: 'For account safety, phone or email changes must be handled by an ECCF administrator.' }
       }
     } else if (identityMatches.length > 0) {
+      const matched = identityMatches[0]
       return {
         ok: false,
-        error: 'A worker record was found matching those contact details. Sign in with your account or request a verification code to update your profile.',
+        requiresVerification: true,
+        maskedEmail: maskEmail(matched.email || ''),
+        error: 'A worker record was found matching those contact details. Verify your email to update your profile.',
       }
     }
 

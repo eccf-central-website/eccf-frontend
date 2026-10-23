@@ -63,7 +63,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
   const [search, setSearch] = useState('')
   const [topicFilter, setTopicFilter] = useState('all')
   const [originFilter, setOriginFilter] = useState<'all' | 'synced' | 'manual'>('all')
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false)
@@ -218,7 +218,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         <div>
           <div className="flex items-center gap-2 text-primary">
             <Radio className="h-6 w-6 shrink-0" />
-            <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               Sermon Vault &amp; Media Desk
             </h2>
           </div>
@@ -404,7 +404,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         /* Desktop & Tablet Table View */
         <div className="rounded-md border bg-card overflow-x-auto">
           <div className="overflow-x-auto">
-            <Table>
+      <Table aria-label="Sermon vault records">
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-[110px]">Source</TableHead>

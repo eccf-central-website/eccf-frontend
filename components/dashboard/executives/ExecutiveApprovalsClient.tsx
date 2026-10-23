@@ -307,7 +307,7 @@ export default function ExecutiveApprovalsClient({
               </span>
             )}
           </div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-black text-foreground tracking-tight mt-1">
+          <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight mt-1">
             Executive Appointments Console
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">

@@ -101,6 +101,7 @@ export function WorkerRegistrationForm({
 
   // Existing Worker Detection & OTP Verification State
   const [checkingPhone, setCheckingPhone] = useState(false)
+const [checkingEmail, setCheckingEmail] = useState(false)
   const [verificationPending, setVerificationPending] = useState(false)
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
   const [otpCode, setOtpCode] = useState('')
@@ -284,6 +285,46 @@ export function WorkerRegistrationForm({
     }
   }
 
+  async function handleEmailNext() {
+    setError(null)
+    const clean = email.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    setCheckingEmail(true)
+    try {
+      const result = await requestWorkerSelfServiceLink({
+        identifier: clean,
+        purpose: 'profile',
+        turnstileToken: turnstileToken || undefined,
+      })
+
+      if (result.maskedEmail) {
+        setIsReturning(true)
+        setPhoneNumber(result.phoneNumber || phoneNumber)
+        setMaskedEmail(result.maskedEmail)
+        setVerificationPending(true)
+        setVerificationNotice(
+          result.message ||
+            `A 6-digit verification code and secure unlock link have been dispatched to ${result.maskedEmail}.`
+        )
+        setResendCooldown(60)
+        setStep(1)
+        return
+      }
+
+      setStep(4)
+    } catch {
+      setError('An unexpected error occurred while checking your email. Please try again.')
+    } finally {
+      setCheckingEmail(false)
+      setTurnstileToken('')
+      setTurnstileResetSignal((v) => v + 1)
+    }
+  }
+
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -424,6 +465,33 @@ export function WorkerRegistrationForm({
         ndprConsent,
         isExco: false,
       })
+
+      if (registrationResult.requiresVerification) {
+        try {
+          const linkResult = await requestWorkerSelfServiceLink({
+            identifier: email,
+            purpose: 'profile',
+            turnstileToken: turnstileToken || undefined,
+          })
+          if (linkResult.maskedEmail) {
+            setIsReturning(true)
+            setPhoneNumber(linkResult.phoneNumber || phoneNumber)
+            setMaskedEmail(linkResult.maskedEmail)
+            setVerificationPending(true)
+            setVerificationNotice(
+              linkResult.message ||
+                `A 6-digit verification code and secure unlock link have been dispatched to ${linkResult.maskedEmail}.`
+            )
+            setResendCooldown(60)
+            setStep(1)
+            return
+          }
+        } catch {
+          // fall through to error below
+        }
+        setError(registrationResult.error || 'A worker record was found matching those contact details. Verify your email to update your profile.')
+        return
+      }
 
       if (registrationResult.ok) {
         let finalResult: WorkerRegistrationResult = {
@@ -1478,11 +1546,11 @@ export function WorkerRegistrationForm({
                 </button>
                 <button
                   type="button"
-                  disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
-                  onClick={() => setStep(4)}
+                  disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || checkingEmail}
+                  onClick={handleEmailNext}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
-                  Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
+                  {checkingEmail ? 'Checking...' : 'Next Step'} <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
               </div>
             </motion.div>

@@ -38,7 +38,7 @@ export default async function FirstTimersPage() {
     <PageContainer>
       {/* Header */}
       <div className="flex flex-col gap-2 border-b pb-5">
-        <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
           {pageTitle}
         </h2>
         <p className="text-sm text-muted-foreground">{pageDescription}</p>

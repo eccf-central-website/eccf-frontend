@@ -6,6 +6,7 @@ import { Calendar, Eye, Search, UserCheck, Users } from 'lucide-react'
 import type { AttendanceRow, ECCFSession } from '@/types'
 import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
+import { Card, CardContent } from '@/components/dashboard/ui/card'
 import { Input } from '@/components/dashboard/ui/input'
 import {
   Table,
@@ -160,8 +161,8 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
       </div>
 
       {/* Main Table */}
-      <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
-        <Table>
+      <div className="hidden sm:block rounded-lg border bg-card shadow-sm overflow-x-auto">
+  <Table aria-label="Attendance records">
           <TableHeader>
             <TableRow className="bg-muted/40">
               <TableHead className="w-[120px]">Date</TableHead>
@@ -254,6 +255,68 @@ export default function AttendanceTable({ rows, session }: AttendanceTableProps)
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile attendance cards */}
+      <div className="sm:hidden space-y-3">
+        {filteredRows.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              No attendance records found matching your filter criteria.
+            </CardContent>
+          </Card>
+        ) : (
+          filteredRows.map((row) => (
+            <Card key={row._id} className="border border-border shadow-sm">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                    <span className="font-medium text-foreground">{formatDate(row.date)}</span>
+                  </div>
+                  <Badge variant={getServiceBadgeVariant(row.serviceType)} className="text-[10px] px-1.5 py-0 shrink-0">
+                    {row.serviceType}
+                  </Badge>
+                </div>
+                {row.meetingTitle ? (
+                  <p className="text-sm font-semibold text-foreground line-clamp-2">{row.meetingTitle}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Standard meeting</p>
+                )}
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <div>
+                    {row.teamName ? (
+                      <Badge variant="outline" className="text-xs font-normal">{row.teamName}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">General Fellowship</span>
+                    )}
+                  </div>
+                  <div className="inline-flex flex-col items-end">
+                    <span className="font-semibold text-sm text-foreground">{row.totalCount}</span>
+                    {row.attendeeCount > 0 && (
+                      <span className="text-[10px] text-muted-foreground">{row.attendeeCount} registered</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t pt-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                    <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">{row.loggedBy?.fullName || 'Exco Member'}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-xs text-primary hover:text-primary shrink-0"
+                    onClick={() => setActiveAttendeeRecord(row)}
+                  >
+                    <Eye className="h-3.5 w-3.5 shrink-0" />
+                    Roster
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Attendee Roster Detail Modal */}

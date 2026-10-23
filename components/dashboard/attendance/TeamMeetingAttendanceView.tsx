@@ -116,6 +116,18 @@ export default function TeamMeetingAttendanceView({
     })
   }, [rows, session, selectedTeamFilter])
 
+  // History search filter
+  const filteredMeetingRows = useMemo(() => {
+    const q = historySearch.trim().toLowerCase()
+    if (!q) return teamRows
+    return teamRows.filter(
+      (r) =>
+        r.meetingTitle?.toLowerCase().includes(q) ||
+        r.teamName?.toLowerCase().includes(q) ||
+        r.loggedBy?.fullName?.toLowerCase().includes(q)
+    )
+  }, [teamRows, historySearch])
+
   // Workers belonging to the current target team
   const filteredTeamWorkers = useMemo(() => {
     return availableWorkers.filter((w) => {
@@ -618,8 +630,8 @@ export default function TeamMeetingAttendanceView({
         </div>
 
         {/* Meeting Logs Table */}
-        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
-          <Table>
+        <div className="hidden sm:block rounded-lg border bg-card shadow-sm overflow-x-auto">
+          <Table aria-label="Team meeting attendance records">
             <TableHeader>
               <TableRow className="bg-muted/40">
                 <TableHead className="w-[140px]">Date</TableHead>
@@ -631,24 +643,14 @@ export default function TeamMeetingAttendanceView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teamRows.length === 0 ? (
+              {filteredMeetingRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-sm">
                     No team meeting attendance records found yet. Click &quot;Take Meeting Attendance&quot; above to log your first meeting.
                   </TableCell>
                 </TableRow>
               ) : (
-                teamRows
-                  .filter((r) => {
-                    if (!historySearch.trim()) return true
-                    const q = historySearch.toLowerCase()
-                    return (
-                      r.meetingTitle?.toLowerCase().includes(q) ||
-                      r.teamName?.toLowerCase().includes(q) ||
-                      r.loggedBy?.fullName?.toLowerCase().includes(q)
-                    )
-                  })
-                  .map((row) => (
+                filteredMeetingRows.map((row) => (
                     <TableRow key={row._id} className="hover:bg-muted/20 transition-colors">
                       <TableCell className="font-medium text-xs whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-foreground">
@@ -715,9 +717,61 @@ export default function TeamMeetingAttendanceView({
             </TableBody>
           </Table>
         </div>
-      </div>
 
-      {/* Ticked Worker Roster Detail Dialog */}
+        {/* Mobile meeting cards */}
+        <div className="sm:hidden space-y-3">
+          {filteredMeetingRows.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                No team meeting attendance records found yet. Click &quot;Take Meeting Attendance&quot; above to log your first meeting.
+              </CardContent>
+            </Card>
+          ) : (
+            filteredMeetingRows.map((row) => (
+              <Card key={row._id} className="border border-border shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-medium text-foreground">{formatDate(row.date)}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs font-normal shrink-0">
+                      {row.teamName || 'Team Unit'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground line-clamp-2">
+                    {row.meetingTitle || 'Standard Team Meeting'}
+                  </p>
+                  {row.notes && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 italic">{row.notes}</p>
+                  )}
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <div className="inline-flex flex-col items-start">
+                      <span className="font-bold text-sm text-foreground">{row.totalCount} present</span>
+                      {row.attendeeCount > 0 && (
+                        <span className="text-[10px] text-muted-foreground">{row.attendeeCount} registered</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                      <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="truncate">{row.loggedBy?.fullName || 'Team Lead'}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-9 gap-1 text-xs text-primary hover:text-primary"
+                    onClick={() => setActiveRosterRecord(row)}
+                  >
+                    <Eye className="h-3.5 w-3.5 shrink-0" />
+                    View Roster
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
       <Dialog
         open={Boolean(activeRosterRecord)}
         onOpenChange={(open) => !open && setActiveRosterRecord(null)}
