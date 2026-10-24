@@ -104,7 +104,7 @@ The global public chrome adds:
 - **Chronological Milestones:** Timeline entries with year, badge, title, and description.
 - **Pillars of Faith:** Configurable pillars, each with a title, subtitle, scripture, description, and bullet points.
 - **Leadership Gallery:** Five tiers — **Patrons**, **CSGB**, **Hall Pastors (Halls 1–8)**, **Team Leaders**, and **Assistant Team Leaders**. The roster is driven by Sanity `publicLeader` records. Patrons use the `patron` Leadership Category; the curated Patron list remains only as a fallback when no Patron records exist.
-- **Operational Teams Directory:** Live `teamUnit` records describing the 14 ministry teams.
+- **Operational Teams Directory:** Live `teamUnit` records describing the ministry teams. The same records drive every team picker across registration, attendance, the worker directory, and email audiences.
 
 > [!NOTE]
 > There is no separate "resident pastor" tier. Hall Pastor cards deliberately omit personal hall/room labels so student residence information is not exposed publicly.
@@ -169,7 +169,7 @@ If the email matches a worker record linked to a different sign-in method, the p
 1. **Phone Gateway:** Enter a phone number and complete the Turnstile bot check. The action rejects requests without a valid challenge. The system then checks whether the number already belongs to a worker.
 2. **Name:** First name, middle name (optional), and last name.
 3. **Email Confirmation:** Enter a valid personal email address, complete the Turnstile check, and select **"Send Confirmation Code."** A 6-digit code is emailed to the address (it expires in 10 minutes; the resend cooldown is 60 seconds and allows up to 5 attempts). Enter the code and select **"Confirm Email & Continue."** The next steps stay locked until the code proves the applicant can read the inbox. The confirmed address becomes the identity used for Clerk sign-in and status access. Editing the address after confirmation voids the proof and repeats this step.
-4. **Operational Teams:** Select one or more of the 14 fellowship teams. Multi-team membership is supported and expected.
+4. **Operational Teams:** Select one or more published fellowship teams. The list is read live from **Teams & Units** in Sanity. Multi-team membership is supported and expected.
 5. **Residence:** Select a hall of residence (Halls 1–8) and enter a room number. Room data is encrypted before storage.
 6. **Birthday:** Select the birthday **month and day**. The year is not collected.
 7. **Birthday Photo (Optional):** Upload a celebratory photo, maximum 5 MB. The image is compressed before upload; the server rejects stored assets larger than 2 MB.
@@ -258,7 +258,7 @@ The overview greets the signed-in leader by name and shows their position badge,
 3. Filter with the category tabs:
    - **CSGB** central offices: President, VP Admin / Brothers' Coordinator, VP Evangelism / Sisters' Coordinator, General Secretary.
    - **Hall** positions: Hall Pastor / Assistant Hall Pastor for Halls 1–8.
-   - **Team** positions: Team Lead / Assistant Team Lead across the 14 operational teams.
+   - **Team** positions: Team Lead / Assistant Team Lead across the published operational teams.
 4. Review each card. The card shows the applicant's **name, photo, email, hall, requested position/rank, and submission date**. It does **not** show an academic level, because worker intake no longer collects one.
 5. Choose an action:
    - **"Approve Appointment"** — records the approved position, grants the corresponding dashboard capabilities immediately, and automatically verifies the related team membership when the appointment is a team position.
@@ -383,6 +383,8 @@ The dashboard summary counters show total announcements, published notices, draf
 3. Select **"Publish"**.
 
 > [!NOTE]
+> `teamUnit` is the single source of truth for team names. Once a team is **published**, it automatically appears in the registration picker, attendance team filters/rosters, the worker directory filter, and worker email audiences — no code change or redeploy is needed. The static list in `lib/dashboard/attendance-constants.ts` is an offline fallback used only when Sanity cannot be reached.
+>
 > Team meeting days and banners are not fields on `teamUnit`. Meeting logistics belong in the service schedule, announcements, or team communication.
 
 ### 4.8 Dashboard Sermon Management (`/dashboard/sermons`)
