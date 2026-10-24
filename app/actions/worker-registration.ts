@@ -944,7 +944,6 @@ export async function checkWorkerPhoneAndInitiateVerification(
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
 
-    const existingChallenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
     const requestedAt = (existingChallenge && existingChallenge.workerId === worker._id) ? (existingChallenge.sentAt || 0) : 0
     const now = Date.now()
 
