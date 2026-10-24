@@ -517,16 +517,14 @@ export async function sendWorkerEmailAction(
         } else if (deliveredCount === 0 && chunk.length === 1) {
           return {
             ok: false,
-            error: `Failed to dispatch email via Resend: ${errMsg}`,
+            error: 'Failed to dispatch email via Resend. Please check your domain configuration.',
           }
         }
       }
     }
   } else {
     // Mock / Simulated Dispatch
-    console.log(
-      `[sendWorkerEmailAction] Resend API key not set or in test mode. Simulated email dispatch to ${finalRecipients.length} recipients for audience "${audienceLabel}": "${subject}"`
-    )
+    // Simulated dispatch
     deliveredCount = finalRecipients.length
   }
 

@@ -51,7 +51,7 @@ export function resolveResendFrom(displayName = 'ECCF'): string {
   if (configured) {
     if (!configured.includes('@')) {
       const corrected = `team@${configured}`
-      console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
+      console.warn('[email] RESEND_FROM_EMAIL was missing mailbox prefix; auto-corrected to standard prefix.')
       configured = corrected
     }
     if (RESEND_SANDBOX_PATTERN.test(configured)) warnOnce('sandbox')

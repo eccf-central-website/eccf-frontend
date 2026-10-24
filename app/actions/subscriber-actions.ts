@@ -121,10 +121,10 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
           html: welcomeHtml,
         })
         if (sendError) {
-          console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery rejected by Resend:', sendError)
+          console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery rejected by Resend:', sendError?.message || sendError?.name || 'Rejected')
         }
       } catch (emailErr) {
-        console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery failed:', emailErr)
+        console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery failed:', emailErr instanceof Error ? emailErr.message : 'Unknown error')
       }
     }
 

@@ -362,8 +362,8 @@ function writeEncryptedCookie(name: string, payload: unknown, maxAgeSeconds: num
   try {
     cookies().set(name, encrypt(JSON.stringify(payload)), cookieOptions(maxAgeSeconds))
     return true
-  } catch (err) {
-    console.error(`[worker-registration] Could not write secure cookie ${name}:`, err)
+  } catch {
+    console.error(`[worker-registration] Could not write secure cookie ${name}`)
     return false
   }
 }
@@ -501,7 +501,6 @@ async function sendWorkerVerificationEmail({
     if (process.env.NODE_ENV === 'production') {
       return { sent: false, simulated: false, error: 'Email service is not configured.' }
     }
-    console.log(`[DEV OTP LOG] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
     return { sent: true, simulated: true }
   }
 
@@ -520,13 +519,11 @@ async function sendWorkerVerificationEmail({
       const isTestingRestriction = /only send testing emails|not verified|domain/i.test(message)
       console.error('[sendWorkerVerificationEmail] Resend rejected the message:', {
         name: error.name,
-        message,
         hint: isTestingRestriction
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEV OTP SIMULATION] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
         return { sent: true, simulated: true }
       }
       return { sent: false, simulated: false, error: message }
@@ -534,7 +531,7 @@ async function sendWorkerVerificationEmail({
 
     return { sent: true, simulated: false }
   } catch (err: unknown) {
-    console.error('[sendWorkerVerificationEmail] Resend dispatch error:', err)
+    console.error('[sendWorkerVerificationEmail] Resend dispatch error:', err instanceof Error ? err.message : 'Unknown dispatch error')
     return {
       sent: false,
       simulated: false,
@@ -616,7 +613,6 @@ async function sendRegistrationOtpEmail({
     if (process.env.NODE_ENV === 'production') {
       return { sent: false, simulated: false, error: 'Email service is not configured.' }
     }
-    console.log(`[DEV OTP LOG] Registration email: ${email} | Code: ${otp}`)
     return { sent: true, simulated: true }
   }
 
@@ -634,13 +630,11 @@ async function sendRegistrationOtpEmail({
       const isTestingRestriction = /only send testing emails|not verified|domain/i.test(message)
       console.error('[sendRegistrationOtpEmail] Resend rejected the message:', {
         name: error.name,
-        message,
         hint: isTestingRestriction
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEV REGISTRATION OTP SIMULATION] Email: ${email} | Code: ${otp}`)
         return { sent: true, simulated: true }
       }
       return { sent: false, simulated: false, error: message }
@@ -648,7 +642,7 @@ async function sendRegistrationOtpEmail({
 
     return { sent: true, simulated: false }
   } catch (err: unknown) {
-    console.error('[sendRegistrationOtpEmail] Resend dispatch error:', err)
+    console.error('[sendRegistrationOtpEmail] Resend dispatch error:', err instanceof Error ? err.message : 'Unknown dispatch error')
     return {
       sent: false,
       simulated: false,
