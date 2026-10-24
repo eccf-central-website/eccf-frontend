@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { WorkerRegistrationForm } from '@/components/forms/WorkerRegistrationForm'
 import { getSignedInUserContext } from '@/app/actions/worker-registration'
 import { getTeamUnitOptions } from '@/lib/teams'
@@ -17,7 +16,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RegisterPage() {
+interface RegisterPageProps {
+  searchParams?: {
+    selfServiceToken?: string
+  }
+}
+
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const [userContext, teamOptions] = await Promise.all([
     getSignedInUserContext(),
     getTeamUnitOptions(),
@@ -26,20 +31,18 @@ export default async function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#fafaf9] text-slate-950 pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
       <div className="max-w-4xl mx-auto px-6 sm:px-10 lg:px-12">
-        {/* Worker Form wrapped in Suspense for search params */}
-        <Suspense fallback={<div className="h-96 w-full max-w-2xl mx-auto animate-pulse bg-white rounded-3xl" />}>
-          <WorkerRegistrationForm
-            initialEmail={userContext.email || ''}
-            initialFirstName={userContext.firstName || ''}
-            initialLastName={userContext.lastName || ''}
-            clerkUserId={userContext.clerkUserId}
-            isClerkSignedIn={userContext.isSignedIn}
-            emailVerified={userContext.emailVerified}
-            signedInWorker={userContext.worker}
-            signedInNeedsVerification={userContext.needsVerification}
-            teamOptions={teamOptions}
-          />
-        </Suspense>
+        <WorkerRegistrationForm
+          initialEmail={userContext.email || ''}
+          initialFirstName={userContext.firstName || ''}
+          initialLastName={userContext.lastName || ''}
+          clerkUserId={userContext.clerkUserId}
+          isClerkSignedIn={userContext.isSignedIn}
+          emailVerified={userContext.emailVerified}
+          signedInWorker={userContext.worker}
+          signedInNeedsVerification={userContext.needsVerification}
+          teamOptions={teamOptions}
+          selfServiceToken={searchParams?.selfServiceToken || ''}
+        />
       </div>
     </div>
   )

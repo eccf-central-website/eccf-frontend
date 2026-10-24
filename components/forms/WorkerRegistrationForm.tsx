@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -108,6 +107,7 @@ export interface WorkerRegistrationFormProps {
   signedInNeedsVerification?: boolean;
   /** Published teams from Sanity. Falls back to the static list when omitted. */
   teamOptions?: TeamUnitOption[];
+  selfServiceToken?: string;
 }
 
 export function WorkerRegistrationForm({
@@ -120,9 +120,15 @@ export function WorkerRegistrationForm({
   signedInWorker,
   signedInNeedsVerification = false,
   teamOptions,
+  selfServiceToken: propSelfServiceToken = '',
 }: WorkerRegistrationFormProps) {
-  const searchParams = useSearchParams();
-  const selfServiceToken = searchParams?.get('selfServiceToken') || '';
+  const [selfServiceToken] = useState(
+    () =>
+      propSelfServiceToken ||
+      (typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('selfServiceToken') || ''
+        : '')
+  );
   const { signOut } = useClerk();
 
   const resolvedTeamOptions =
@@ -269,6 +275,79 @@ export function WorkerRegistrationForm({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Restore in-progress registration draft if the component mounts or network refreshes
+  useEffect(() => {
+    if (typeof window === 'undefined' || signedInWorker || propSelfServiceToken) return;
+    try {
+      const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft && typeof draft === 'object') {
+        if (typeof draft.step === 'number' && draft.step >= 1 && draft.step <= 8) setStep(draft.step);
+        if (typeof draft.phoneNumber === 'string') setPhoneNumber(draft.phoneNumber);
+        if (typeof draft.firstName === 'string') setFirstName(draft.firstName);
+        if (typeof draft.middleName === 'string') setMiddleName(draft.middleName);
+        if (typeof draft.lastName === 'string') setLastName(draft.lastName);
+        if (typeof draft.email === 'string') setEmail(draft.email);
+        if (typeof draft.registrationOtpSent === 'boolean') setRegistrationOtpSent(draft.registrationOtpSent);
+        if (typeof draft.registrationEmailVerified === 'boolean') setRegistrationEmailVerified(draft.registrationEmailVerified);
+        if (typeof draft.registrationVerifiedEmail === 'string') setRegistrationVerifiedEmail(draft.registrationVerifiedEmail);
+        if (Array.isArray(draft.teams)) setTeams(draft.teams);
+        if (typeof draft.hall === 'string') setHall(draft.hall);
+        if (typeof draft.roomNumber === 'string') setRoomNumber(draft.roomNumber);
+        if (typeof draft.birthMonth === 'string') setBirthMonth(draft.birthMonth);
+        if (typeof draft.birthDay === 'string') setBirthDay(draft.birthDay);
+      }
+    } catch {
+      // ignore
+    }
+  }, [signedInWorker, propSelfServiceToken]);
+
+  // Auto-save registration progress to sessionStorage
+  useEffect(() => {
+    if (typeof window === 'undefined' || signedInWorker || isReturning) return;
+    try {
+      sessionStorage.setItem(
+        'eccf_worker_reg_draft_v1',
+        JSON.stringify({
+          step,
+          phoneNumber,
+          firstName,
+          middleName,
+          lastName,
+          email,
+          registrationOtpSent,
+          registrationEmailVerified,
+          registrationVerifiedEmail,
+          teams,
+          hall,
+          roomNumber,
+          birthMonth,
+          birthDay,
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }, [
+    step,
+    phoneNumber,
+    firstName,
+    middleName,
+    lastName,
+    email,
+    registrationOtpSent,
+    registrationEmailVerified,
+    registrationVerifiedEmail,
+    teams,
+    hall,
+    roomNumber,
+    birthMonth,
+    birthDay,
+    signedInWorker,
+    isReturning,
+  ]);
+
   // Retain verified security status across registration steps
 
   // Auto-fill exec hall when hall changes
@@ -349,6 +428,13 @@ export function WorkerRegistrationForm({
   };
 
   const resetToNewRegistration = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('eccf_worker_reg_draft_v1');
+      } catch {
+        // ignore
+      }
+    }
     setSuccessResult(null);
     setIsReturning(false);
     setIsReturnerFlow(false);
@@ -908,6 +994,13 @@ export function WorkerRegistrationForm({
         toast.success(
           finalResult.message || 'Registration submitted successfully!',
         );
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.removeItem('eccf_worker_reg_draft_v1');
+          } catch {
+            // ignore
+          }
+        }
         setSuccessResult(finalResult);
       } else {
         setError(
