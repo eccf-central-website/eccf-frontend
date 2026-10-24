@@ -525,7 +525,7 @@ async function sendWorkerVerificationEmail({
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
-      if (process.env.NODE_ENV !== 'production' || isTestingRestriction) {
+      if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV OTP SIMULATION] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
         return { sent: true, simulated: true }
       }
@@ -639,7 +639,7 @@ async function sendRegistrationOtpEmail({
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
-      if (process.env.NODE_ENV !== 'production' || isTestingRestriction) {
+      if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEV REGISTRATION OTP SIMULATION] Email: ${email} | Code: ${otp}`)
         return { sent: true, simulated: true }
       }
