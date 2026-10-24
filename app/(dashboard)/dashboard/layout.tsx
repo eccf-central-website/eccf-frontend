@@ -57,7 +57,7 @@ export default async function DashboardShellLayout({
   }
 
   return (
-    <div className="fixed inset-0 flex h-dvh w-full overflow-hidden bg-background">
+    <div data-dashboard-root className="fixed inset-0 flex h-dvh w-full overflow-hidden bg-background">
       <SkipLink />
       <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">

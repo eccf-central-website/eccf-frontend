@@ -10,7 +10,7 @@
 import type { Metadata } from 'next'
 import { Toaster } from '@/components/dashboard/ui/sonner'
 import { TooltipProvider } from '@/components/dashboard/ui/tooltip'
-import { ThemeProvider } from '@/components/dashboard/theme/ThemeProvider'
+import { ThemeProvider, THEME_STORAGE_KEY } from '@/components/dashboard/theme/ThemeProvider'
 import './dashboard.css'
 
 export const metadata: Metadata = {
@@ -18,19 +18,35 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Blocking script: paints the dashboard dark before hydration so there is no
+// white flash. Only an explicitly stored 'light' preference opts out — keep
+// this in sync with the ThemeProvider defaults above.
+const themeBootScript = `(function(){try{if(localStorage.getItem('${THEME_STORAGE_KEY}')==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`
+
 export default function DashboardGroupLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <ThemeProvider>
-      <TooltipProvider delayDuration={200}>
-        <div className="flex min-h-dvh flex-1 flex-col bg-background text-foreground transition-colors duration-150">
-          {children}
-        </div>
-        <Toaster position="top-center" richColors closeButton />
-      </TooltipProvider>
-    </ThemeProvider>
+    <>
+      {/* Blocking script: paints the dashboard dark before hydration so there
+          is no white flash. Only an explicitly stored 'light' preference opts
+          out; kept in sync with the ThemeProvider defaults. */}
+      <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      <ThemeProvider>
+        <TooltipProvider delayDuration={200}>
+          <div
+            data-dashboard-root
+            className="flex min-h-dvh flex-1 flex-col bg-background text-foreground transition-colors duration-150"
+          >
+            {children}
+          </div>
+          {/* Toasts portal to body, outside the themed root — they still
+              pick up .dark because it is toggled on <html>. */}
+          <Toaster position="top-center" richColors closeButton />
+        </TooltipProvider>
+      </ThemeProvider>
+    </>
   )
 }

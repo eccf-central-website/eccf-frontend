@@ -38,7 +38,10 @@ import {
   type SignedInWorkerSnapshot,
   type WorkerRegistrationResult,
 } from '@/app/actions/worker-registration'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import {
+  FALLBACK_TEAM_UNIT_OPTIONS,
+  type TeamUnitOption,
+} from '@/lib/dashboard/attendance-constants'
 import { compressImage } from '@/lib/image-compression'
 import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
@@ -104,6 +107,8 @@ export interface WorkerRegistrationFormProps {
   emailVerified?: boolean
   signedInWorker?: SignedInWorkerSnapshot
   signedInNeedsVerification?: boolean
+  /** Published teams from Sanity. Falls back to the static list when omitted. */
+  teamOptions?: TeamUnitOption[]
 }
 
 export function WorkerRegistrationForm({
@@ -115,10 +120,15 @@ export function WorkerRegistrationForm({
   emailVerified = false,
   signedInWorker,
   signedInNeedsVerification = false,
+  teamOptions,
 }: WorkerRegistrationFormProps) {
   const searchParams = useSearchParams()
   const selfServiceToken = searchParams?.get('selfServiceToken') || ''
   const { signOut } = useClerk()
+
+  const resolvedTeamOptions =
+    teamOptions && teamOptions.length > 0 ? teamOptions : FALLBACK_TEAM_UNIT_OPTIONS
+  const availableTeamNames = resolvedTeamOptions.map((option) => option.name)
 
   // Step & Flow State
   const [step, setStep] = useState(signedInWorker ? 2 : 1)
@@ -176,7 +186,9 @@ const [checkingEmail, setCheckingEmail] = useState(false)
   const [lastName, setLastName] = useState(signedInWorker?.lastName || initialLastName)
   const fullName = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ')
   const [email, setEmail] = useState(signedInWorker?.email || initialEmail)
-  const [teams, setTeams] = useState<string[]>(signedInWorker?.teams || [])
+  const [teams, setTeams] = useState<string[]>(() =>
+    (signedInWorker?.teams || []).filter((team) => availableTeamNames.includes(team))
+  )
 
   const toggleTeam = (t: string) => {
     setTeams((prev) =>
@@ -234,7 +246,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
         setMiddleName(worker.middleName || '')
         setLastName(worker.lastName || '')
         setEmail(worker.email || '')
-        setTeams(worker.teams.length > 0 ? worker.teams : [worker.team])
+        setTeams(worker.teams.filter((team) => availableTeamNames.includes(team)))
         setHall(worker.hall || '')
         setRoomNumber(worker.roomNumber || '')
         setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
@@ -554,7 +566,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       setMiddleName(worker.middleName || '')
       setLastName(worker.lastName || '')
       setEmail(worker.email || '')
-      setTeams(worker.teams.length > 0 ? worker.teams : [worker.team])
+      setTeams(worker.teams.filter((team) => availableTeamNames.includes(team)))
       setHall(worker.hall || '')
       setRoomNumber(worker.roomNumber || '')
       setBirthMonth(worker.birthMonth ? String(worker.birthMonth).padStart(2, '0') : '')
@@ -1607,7 +1619,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                     )}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
-                    {FELLOWSHIP_TEAMS.map((t) => {
+                    {availableTeamNames.map((t) => {
                       const isSelected = teams.includes(t)
                       return (
                         <button
@@ -2147,7 +2159,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
-                {FELLOWSHIP_TEAMS.map((t) => {
+                {availableTeamNames.map((t) => {
                   const isSelected = teams.includes(t)
                   return (
                     <button

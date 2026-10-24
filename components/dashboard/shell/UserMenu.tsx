@@ -66,7 +66,7 @@ export default function UserMenu({ name, email, role, team, teams, excoPosition,
           className="h-10 gap-2 px-2 focus-visible:ring-2 sm:px-3"
           aria-label={`Account menu, signed in as ${displayName}`}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar text-sidebar-accent-foreground text-xs font-semibold">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
             {initials ? initials : <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />}
           </span>
           <span className="hidden text-sm font-medium sm:inline truncate max-w-[150px]">{displayName}</span>
@@ -86,7 +86,7 @@ export default function UserMenu({ name, email, role, team, teams, excoPosition,
             <Badge>{ROLE_LABELS[role]}</Badge>
             {excoPosition ? (
               <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary border border-primary/20">
-                [{excoPosition}]
+                • {excoPosition}
               </span>
             ) : (
               <span className="truncate text-xs font-medium text-muted-foreground">

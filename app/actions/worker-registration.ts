@@ -1142,7 +1142,7 @@ export async function verifyWorkerOtp(
         email: worker.email,
         phoneNumber: decrypt(worker.phoneNumber) || cleanPhone,
         team: worker.team || worker.teams?.[0] || 'General',
-        teams: worker.teams?.filter(Boolean) || [],
+        teams: sanitizeTeamNames(worker.teams),
         hall: worker.hall,
         roomNumber: roomNumber || '',
         birthMonth,
@@ -1333,7 +1333,7 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
         email: worker.email,
         phoneNumber: decrypt(worker.phoneNumber),
         team: worker.team || worker.teams?.[0] || 'General',
-        teams: worker.teams?.filter(Boolean) || [],
+        teams: sanitizeTeamNames(worker.teams),
         hall: worker.hall,
         roomNumber: roomNumber || '',
         birthMonth,
@@ -1354,6 +1354,34 @@ export async function getVerifiedWorkerProfile() {
   const worker = await getWorkerBySelfServiceToken(token, 'profile').catch(() => null)
   if (!worker) return { ok: false as const }
   return confirmWorkerSelfServiceLink(token)
+}
+
+/**
+ * Legacy worker records store "General" (or "Exco") when no specific team was
+ * recorded. Those are sentinels, not `teamUnit` documents, so they must never be
+ * offered as selectable teams or resolved into references.
+ */
+const PLACEHOLDER_TEAM_NAMES = new Set([
+  'general',
+  'exco',
+  'all',
+  'general fellowship',
+  'all fellowship',
+])
+
+function isConcreteTeamName(name: string): boolean {
+  return name.trim().length > 0 && !PLACEHOLDER_TEAM_NAMES.has(name.trim().toLowerCase())
+}
+
+/** Trims, de-duplicates, and drops blank/placeholder team names. */
+function sanitizeTeamNames(teams?: Array<string | null | undefined> | null): string[] {
+  return Array.from(
+    new Set(
+      (teams || [])
+        .map((team) => (typeof team === 'string' ? team.trim() : ''))
+        .filter(isConcreteTeamName)
+    )
+  )
 }
 
 function normalizeTeamComparisonString(str: string): string {
@@ -1543,7 +1571,10 @@ export async function registerWorker(
       .map((t) => t.trim())
       .filter((t) => t.length > 0)
 
-    if (selectedTeams.length === 0) {
+    // Drop legacy "General"/"Exco" sentinels before resolving references.
+    const cleanTeams = sanitizeTeamNames(selectedTeams)
+
+    if (cleanTeams.length === 0) {
       return { ok: false, error: 'Please select at least one operational team.' }
     }
     if (!input.hall || input.hall.trim().length === 0) {
@@ -1596,7 +1627,6 @@ export async function registerWorker(
         input.lastName
       )
     }
-    const cleanTeams = Array.from(new Set(selectedTeams))
     const today = new Date().toISOString().split('T')[0]
 
     // 3. Deduplication and Existing Profile Matching
@@ -1702,8 +1732,12 @@ export async function registerWorker(
 
     // 4. Resolve Operational Team References
     const resolvedTeamReferences = await Promise.all(cleanTeams.map((t) => resolveTeamReference(t)))
-    if (resolvedTeamReferences.some((team) => !team)) {
-      return { ok: false, error: 'One or more selected teams could not be found. Please refresh and select again.' }
+    const unresolvedTeams = cleanTeams.filter((_, index) => !resolvedTeamReferences[index])
+    if (unresolvedTeams.length > 0) {
+      return {
+        ok: false,
+        error: `These teams could not be matched: ${unresolvedTeams.join(', ')}. Please refresh and select again.`,
+      }
     }
     const cleanTeamRefs = resolvedTeamReferences.filter(
       (team): team is { _type: 'reference'; _ref: string } => Boolean(team)
@@ -1811,10 +1845,12 @@ export async function registerWorker(
       const currentRoom = decrypt(existing.roomNumber)
       const currentBirthDate = decrypt(existing.birthDate)
 
-      const prevTeams = (existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team || 'General'])
-        .filter(Boolean)
-        .sort()
-        .join(', ')
+      const prevTeams =
+        sanitizeTeamNames(
+          existing.teams && existing.teams.length > 0 ? existing.teams : [existing.team]
+        )
+          .sort()
+          .join(', ') || 'none'
       const newTeamsStr = cleanTeams.slice().sort().join(', ')
       if (prevTeams !== newTeamsStr) {
         deltaLogs.push(`Updated Teams from [${prevTeams}] to [${newTeamsStr}] on ${today}`)
@@ -2202,13 +2238,9 @@ export async function getSignedInUserContext(): Promise<SignedInUserContext> {
     const phoneNumber = decrypt(worker.phoneNumber) || undefined
     const roomNumber = decrypt(worker.roomNumber) || undefined
     const birthday = parseBirthdayParts(decrypt(worker.birthDate))
-    const teams = (
-      Array.isArray(worker.team)
-        ? worker.team
-        : worker.team
-          ? [worker.team]
-          : []
-    ).filter((team): team is string => typeof team === 'string' && team.trim().length > 0)
+    const teams = sanitizeTeamNames(
+      Array.isArray(worker.team) ? worker.team : worker.team ? [worker.team] : []
+    )
 
     return {
       ...base,

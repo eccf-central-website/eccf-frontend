@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
@@ -42,6 +42,7 @@ interface SendWorkerEmailDialogProps {
   onOpenChange: (open: boolean) => void
   session: ECCFSession
   workers: WorkerRow[]
+  teamOptions: TeamUnitOption[]
   preselectedWorker?: WorkerRow | null
   preselectedAudience?: EmailAudienceType
 }
@@ -51,9 +52,11 @@ export default function SendWorkerEmailDialog({
   onOpenChange,
   session,
   workers,
+  teamOptions,
   preselectedWorker,
   preselectedAudience,
 }: SendWorkerEmailDialogProps) {
+  const teamNames = teamOptions.map((option) => option.name)
   const isAdmin = session.role === 'admin'
   const [isPending, startTransition] = useTransition()
 
@@ -65,7 +68,7 @@ export default function SendWorkerEmailDialog({
   })
 
   const [targetTeam, setTargetTeam] = useState<string>(() => {
-    return session.team || FELLOWSHIP_TEAMS[0]
+    return session.team || teamNames[0] || ''
   })
 
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>(() => {
@@ -331,7 +334,7 @@ export default function SendWorkerEmailDialog({
                     <SelectValue placeholder="Choose a team..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    {FELLOWSHIP_TEAMS.map((t) => (
+                    {teamNames.map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>

@@ -35,10 +35,13 @@ import {
   approveExecutivePosition,
   rejectExecutivePosition,
 } from '@/app/actions/executive-approval-actions'
+import ExecutiveCsvImportDialog from '@/components/dashboard/executives/ExecutiveCsvImportDialog'
 import { toastSuccess, toastError } from '@/lib/dashboard/toast'
 
 interface ExecutiveApprovalsClientProps {
   applications: PendingExecutiveApplication[]
+  /** True when the session is a President/CSGB approver — shows the bulk CSV import action. */
+  canImport?: boolean
 }
 
 type CategoryFilter = 'all' | 'csgb' | 'hall' | 'team'
@@ -60,12 +63,20 @@ function formatDate(dateStr?: string): string {
 
 export default function ExecutiveApprovalsClient({
   applications: initialApplications,
+  canImport = false,
 }: ExecutiveApprovalsClientProps) {
   const [applications, setApplications] = useState<PendingExecutiveApplication[]>(initialApplications)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [, startTransition] = useTransition()
   const [processingKey, setProcessingKey] = useState<string | null>(null)
+
+  // Keep local state in sync with fresh server props — e.g. after the CSV
+  // import dialog triggers router.refresh(), newly imported pending entries
+  // appear here without a full page reload.
+  React.useEffect(() => {
+    setApplications(initialApplications)
+  }, [initialApplications])
 
   // Categorised applications
   const csgbApps = useMemo(
@@ -317,6 +328,7 @@ export default function ExecutiveApprovalsClient({
 
         {/* Category Stat Counters */}
         <div className="flex flex-wrap items-center gap-2">
+          {canImport && <ExecutiveCsvImportDialog className="w-full sm:w-auto" />}
           <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-center min-w-[75px]">
             <span className="block text-[10px] font-mono uppercase text-muted-foreground font-bold">Total</span>
             <span className="font-serif font-black text-lg text-foreground">{applications.length}</span>

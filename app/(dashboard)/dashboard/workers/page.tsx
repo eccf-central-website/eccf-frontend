@@ -12,10 +12,11 @@ import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
 import WorkersClient from '@/components/dashboard/workers/WorkersClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listWorkers } from '@/lib/dashboard/data'
+import { getTeamUnitOptions } from '@/lib/teams'
 
 export default async function WorkersPage() {
   const session = await requireSection('workers')
-  const rows = await listWorkers(session)
+  const [rows, teamOptions] = await Promise.all([listWorkers(session), getTeamUnitOptions()])
 
   if (rows.length === 0) {
     return (
@@ -29,7 +30,7 @@ export default async function WorkersPage() {
 
   return (
     <PageContainer>
-      <WorkersClient rows={rows} session={session} />
+      <WorkersClient rows={rows} session={session} teamOptions={teamOptions} />
     </PageContainer>
   )
 }

@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/dashboard/ui/select'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import { isMediaTeam } from '@/lib/dashboard/rbac'
 import { verifyWorkerMembership, toggleExcoApproval } from '@/app/actions/worker-actions'
 import { toastSuccess, toastError } from '@/lib/dashboard/toast'
@@ -124,11 +124,13 @@ function matchesWorkerTeam(
 interface WorkersClientProps {
   rows: WorkerRow[]
   session: ECCFSession & { access?: WorkerAccess }
+  teamOptions: TeamUnitOption[]
 }
 
 type StatusFilter = 'all' | 'pending' | 'verified' | 'rejected'
 
-export default function WorkersClient({ rows: initialRows, session }: WorkersClientProps) {
+export default function WorkersClient({ rows: initialRows, session, teamOptions }: WorkersClientProps) {
+  const teamNames = teamOptions.map((option) => option.name)
   const [rows, setRows] = useState<WorkerRow[]>(initialRows)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -403,7 +405,12 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
       {/* ==================================================================== */}
       {/* WORKFORCE EMAIL DISPATCH INPUT BOX                                   */}
       {/* ==================================================================== */}
-      <SendWorkerEmailCard session={session} workers={scopedWorkers} defaultExpanded={false} />
+      <SendWorkerEmailCard
+        session={session}
+        workers={scopedWorkers}
+        teamOptions={teamOptions}
+        defaultExpanded={false}
+      />
 
       {/* ==================================================================== */}
       {/* PENDING APPROVALS ALERT CAROUSEL / CALLOUT BANNER                    */}
@@ -562,7 +569,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Operational Teams</SelectItem>
-                  {FELLOWSHIP_TEAMS.map((t) => (
+                  {teamNames.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>
@@ -1045,6 +1052,7 @@ export default function WorkersClient({ rows: initialRows, session }: WorkersCli
         onOpenChange={setIsEmailDialogOpen}
         session={session}
         workers={scopedWorkers}
+        teamOptions={teamOptions}
         preselectedWorker={emailPreselectedWorker}
       />
     </div>

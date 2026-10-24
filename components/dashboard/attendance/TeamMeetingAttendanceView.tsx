@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/dashboard/ui/select'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import { recordTeamAttendanceAction } from '@/app/actions/attendance-actions'
 import { toastFromResult } from '@/lib/dashboard/toast'
 
@@ -58,6 +58,7 @@ interface TeamMeetingAttendanceViewProps {
     teams?: string[]
     hall: string
   }>
+  teamOptions: TeamUnitOption[]
   onSuccess?: () => void
 }
 
@@ -65,8 +66,10 @@ export default function TeamMeetingAttendanceView({
   session,
   rows,
   availableWorkers,
+  teamOptions,
   onSuccess,
 }: TeamMeetingAttendanceViewProps) {
+  const teamNames = teamOptions.map((option) => option.name)
   const [isPending, startTransition] = useTransition()
   const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -330,7 +333,7 @@ export default function TeamMeetingAttendanceView({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {FELLOWSHIP_TEAMS.map((t) => (
+                {teamNames.map((t) => (
                   <SelectItem key={t} value={t} className="text-xs">
                     {t}
                   </SelectItem>
@@ -414,7 +417,7 @@ export default function TeamMeetingAttendanceView({
                       <SelectValue placeholder="Select Team" />
                     </SelectTrigger>
                     <SelectContent>
-                      {FELLOWSHIP_TEAMS.map((t) => (
+                      {teamNames.map((t) => (
                         <SelectItem key={t} value={t} className="text-xs sm:text-sm">
                           {t}
                         </SelectItem>

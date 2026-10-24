@@ -56,10 +56,10 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
             className={cn(
               'relative flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
-              'before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-ring before:opacity-0 before:transition-opacity',
+              'border-l-[3px] border-transparent',
               active
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground before:opacity-100'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
+                ? 'bg-blue-600/20 text-blue-300 border-blue-400'
+                : 'text-sidebar-foreground hover:bg-white/5 hover:text-white',
               collapsed && 'justify-center px-0'
             )}
           >

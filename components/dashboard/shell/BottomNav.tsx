@@ -50,9 +50,11 @@ export default function BottomNav({
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium transition-colors',
+                    'flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                    active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                    active
+                      ? 'text-primary border-t-2 border-primary rounded-lg bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -68,7 +70,7 @@ export default function BottomNav({
                     type="button"
                     aria-label="More navigation and actions"
                     className={cn(
-                      'flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium transition-colors',
+                      'flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium transition-colors',
                       'text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
                     )}
                   >
@@ -97,7 +99,7 @@ export default function BottomNav({
                               className={cn(
                                 'flex flex-col items-center gap-1.5 rounded-xl p-3 text-xs font-medium transition-colors',
                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                active ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
+                                active ? 'bg-primary/10 text-primary border-t-2 border-primary' : 'hover:bg-muted'
                               )}
                             >
                               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />

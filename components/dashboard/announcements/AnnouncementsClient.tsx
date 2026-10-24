@@ -66,9 +66,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
     border: 'border-emerald-200 dark:border-emerald-900',
   },
   GENERAL: {
-    bg: 'bg-slate-50 dark:bg-stone-900/60',
-    text: 'text-slate-700 dark:text-stone-400',
-    border: 'border-slate-200 dark:border-stone-800',
+    bg: 'bg-slate-50 dark:bg-slate-900/60',
+    text: 'text-slate-700 dark:text-slate-400',
+    border: 'border-slate-200 dark:border-slate-800',
   },
 }
 

@@ -37,15 +37,19 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
   const pathname = usePathname()
   const section = sectionForPath(pathname || '') ?? 'overview'
   const title = navItemForSection(section).label
+  const SectionIcon = navItemForSection(section).icon
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-1 border-b bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-14 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1 border-b border-border/60 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
       <MobileNav sections={sections} />
 
       <div className="min-w-0 flex-1">
         {section === 'overview' ? (
-          <h1 className="truncate font-serif text-base text-foreground sm:text-lg lg:text-xl">{title}</h1>
+          <h1 className="truncate font-sans font-semibold text-base text-foreground sm:text-lg lg:text-xl">
+            <SectionIcon className="h-4 w-4 shrink-0 mr-2" aria-hidden="true" />
+            {title}
+          </h1>
         ) : (
           <nav aria-label="Breadcrumb">
             <ol className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -61,7 +65,8 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
                 <ChevronRight className="h-4 w-4 shrink-0" />
               </li>
               <li className="min-w-0">
-                <h1 aria-current="page" className="truncate font-serif text-base text-foreground sm:text-lg lg:text-xl">
+                <h1 aria-current="page" className="truncate font-sans font-semibold text-base text-foreground sm:text-lg lg:text-xl">
+                  <SectionIcon className="h-4 w-4 shrink-0 mr-2" aria-hidden="true" />
                   {title}
                 </h1>
               </li>
@@ -72,10 +77,8 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {isMediaLeaderUser && actions && <div className="hidden sm:block">{actions}</div>}
+        <ThemeToggle />
         <InstallPwaButton />
-        <div className="hidden sm:block">
-          <ThemeToggle />
-        </div>
         <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
       </div>
     </header>

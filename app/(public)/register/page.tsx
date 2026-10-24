@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { WorkerRegistrationForm } from '@/components/forms/WorkerRegistrationForm'
 import { getSignedInUserContext } from '@/app/actions/worker-registration'
+import { getTeamUnitOptions } from '@/lib/teams'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -14,7 +15,10 @@ export const metadata: Metadata = {
 }
 
 export default async function RegisterPage() {
-  const userContext = await getSignedInUserContext()
+  const [userContext, teamOptions] = await Promise.all([
+    getSignedInUserContext(),
+    getTeamUnitOptions(),
+  ])
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-slate-950 pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
@@ -30,6 +34,7 @@ export default async function RegisterPage() {
             emailVerified={userContext.emailVerified}
             signedInWorker={userContext.worker}
             signedInNeedsVerification={userContext.needsVerification}
+            teamOptions={teamOptions}
           />
         </Suspense>
       </div>

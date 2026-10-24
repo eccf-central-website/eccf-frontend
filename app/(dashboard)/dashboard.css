@@ -1,19 +1,18 @@
 /**
  * Exco Dashboard theme tokens (shadcn/ui convention: HSL channels, consumed
- * as hsl(var(--x) / <alpha>) via tailwind.config.ts).
+ * as hsl(var(--x) / <alpha>) via tailwind.dashboard.config.ts).
  *
  * Imported only by app/(dashboard)/layout.tsx. It compiles its own Tailwind
  * utilities from tailwind.dashboard.config.ts (dashboard files only), so the
  * public stylesheet app/globals.css never grows with dashboard classes.
  * Base/preflight come from globals.css, which every route already loads.
  *
- * Tokens sit on :root (not a
- * wrapper class) because Radix portals ΓÇö Dialog, Sheet, Select, Toaster ΓÇö
- * render directly into <body>, outside any dashboard wrapper. No public page
- * uses these variable names, so they are inert if this sheet lingers after a
- * client-side navigation back to the public site.
+ * Tokens sit on :root (not a wrapper class) because Radix portals — Dialog,
+ * Sheet, Select, Toaster — render directly into <body>, outside any dashboard
+ * wrapper. No public page uses these variable names, so they are inert if
+ * this sheet lingers after a client-side navigation back to the public site.
  *
- * Brand: sky #0095ff ┬╖ navy #090d16 ┬╖ gold #f59e0b.
+ * Brand: sky #0095ff · navy #090d16 · gold #f59e0b.
  * `primary` is the deeper brand blue #0077cc (already used for text accents
  * on the public site) so white button text meets WCAG AA; sky is kept for
  * focus rings and active indicators.
@@ -25,7 +24,7 @@
 @tailwind utilities;
 
 :root {
-  --background: 60 9% 98%; /* #fafaf9 ΓÇö matches the public site canvas */
+  --background: 60 9% 98%; /* #fafaf9 — matches the public site canvas */
   --foreground: 222 42% 6%; /* navy #090d16 */
 
   --card: 0 0% 100%;
@@ -38,7 +37,7 @@
   --secondary: 210 40% 96%; /* slate-100 */
   --secondary-foreground: 222 42% 6%;
   --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 42%; /* ΓëÑ4.5:1 on white */
+  --muted-foreground: 215 16% 42%; /* ≥4.5:1 on white */
   --accent: 205 100% 96%; /* sky-50 tint for hovers */
   --accent-foreground: 205 100% 30%;
 
@@ -62,53 +61,63 @@
 }
 
 .dark {
-  /* Soft warm-neutral canvas (Adobe Creative Cloud workstation tier) ΓÇö
-     low-contrast charcoal with a faint warm tint, gentle on the eyes. */
-  --background: 25 5% 13%; /* #21201f */
-  --foreground: 25 6% 82%; /* #d2cec9 */
+  /* ECCF Midnight — deep navy canvases tinted toward the brand navy
+     #090d16, layered from canvas → card → popover and suffused with
+     sky-blue atmosphere rather than warm grey. Cool neutrals for text. */
+  --background: 222 47% 7%; /* #0a0e19 */
+  --foreground: 216 28% 88%; /* #d8e0ea */
 
-  /* Layered elevation surfaces ΓÇö subtle steps, never pure black */
-  --card: 25 5% 16%; /* #282725 */
-  --card-foreground: 25 6% 82%;
-  --popover: 25 5% 18%; /* #2d2c2a */
-  --popover-foreground: 25 6% 82%;
+  /* Layered elevation surfaces — subtle steps, never pure black */
+  --card: 222 38% 10%; /* #121725 */
+  --card-foreground: 216 28% 88%;
+  --popover: 222 40% 12%; /* #161b2a */
+  --popover-foreground: 216 28% 88%;
 
-  /* Brand blue primary ΓÇö slightly muted for dark surfaces */
-  --primary: 205 88% 52%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 25 5% 20%; /* #32312f */
-  --secondary-foreground: 25 5% 78%;
-  --muted: 25 5% 20%;
-  --muted-foreground: 25 4% 58%; /* #9a9692 ΓÇö soft, readable */
-  --accent: 25 5% 22%; /* #373634 */
-  --accent-foreground: 205 88% 74%;
+  /* Sky-blue primary (brand #0095ff, lifted for dark surfaces) with navy
+     text on it for WCAG AA contrast. */
+  --primary: 205 100% 55%; /* #2196ff */
+  --primary-foreground: 222 47% 8%;
+  --secondary: 220 25% 16%; /* #212738 */
+  --secondary-foreground: 216 25% 86%;
+  --muted: 220 25% 15%;
+  --muted-foreground: 215 16% 62%; /* #8d99ad — readable, never muddy */
+  --accent: 206 90% 15%; /* deep sky tint for hovers */
+  --accent-foreground: 205 95% 78%;
 
   /* Status tokens calibrated for dark surfaces */
-  --destructive: 0 62% 55%;
+  --destructive: 0 70% 58%;
   --destructive-foreground: 0 0% 100%;
-  --success: 155 52% 44%;
+  --success: 155 65% 48%;
   --success-foreground: 0 0% 100%;
-  --warning: 38 82% 54%;
-  --warning-foreground: 25 5% 10%;
+  --warning: 38 95% 56%; /* brand gold, lifted */
+  --warning-foreground: 222 47% 8%;
 
   /* Refined hairline borders & inputs */
-  --border: 25 5% 22%;
-  --input: 25 5% 22%;
-  --ring: 205 88% 55%;
+  --border: 220 22% 16.5%;
+  --input: 220 22% 16.5%;
+  --ring: 206 100% 60%;
 
-  /* Grounded navigation sidebar ΓÇö slightly darker than canvas */
-  --sidebar: 25 5% 10%; /* #1a1918 */
-  --sidebar-foreground: 25 5% 72%; /* #b8b4b0 */
-  --sidebar-accent: 25 5% 16%;
-  --sidebar-accent-foreground: 205 88% 82%;
-  --sidebar-border: 25 5% 16%;
-  --sidebar-ring: 205 88% 55%;
+  /* Grounded navigation sidebar — deeper than canvas */
+  --sidebar: 225 50% 4.5%; /* #04060e */
+  --sidebar-foreground: 217 25% 76%;
+  --sidebar-accent: 206 85% 14%;
+  --sidebar-accent-foreground: 206 100% 82%;
+  --sidebar-border: 225 30% 13%;
+  --sidebar-ring: 206 100% 60%;
 }
 
-/* Soft warm-neutral workstation polish */
+/* Midnight atmosphere — a faint sky glow bleeding in from the top and a
+   deeper navy haze from the lower left, layered over --background. */
+.dark [data-dashboard-root] {
+  background-image:
+    radial-gradient(1100px 700px at 85% -10%, hsl(206 100% 50% / 0.06), transparent 60%),
+    radial-gradient(900px 650px at -5% 110%, hsl(225 65% 35% / 0.09), transparent 55%);
+}
+
+/* Midnight polish */
 .dark ::selection {
-  background-color: hsl(205 88% 52% / 0.30);
-  color: hsl(25 6% 92%);
+  background-color: hsl(206 100% 55% / 0.35);
+  color: hsl(216 30% 96%);
 }
 
 .dark ::-webkit-scrollbar {
@@ -117,16 +126,15 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: hsl(25 5% 13%);
+  background: hsl(222 47% 7%);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(25 5% 26%);
+  background: hsl(220 22% 24%);
   border-radius: 9999px;
-  border: 1px solid hsl(25 5% 13%);
+  border: 1px solid hsl(222 47% 7%);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(25 5% 34%);
+  background: hsl(220 22% 34%);
 }
-

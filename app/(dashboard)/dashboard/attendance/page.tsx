@@ -11,6 +11,7 @@ import PageContainer from '@/components/dashboard/shell/PageContainer'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listAttendance, fetchWorkersForAttendance } from '@/lib/dashboard/data'
 import { isUsheringTeam } from '@/lib/dashboard/rbac'
+import { getTeamUnitOptions } from '@/lib/teams'
 import AttendanceHub from '@/components/dashboard/attendance/AttendanceHub'
 
 interface AttendancePageProps {
@@ -23,9 +24,10 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
   const session = await requireSection('attendance')
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const [rows, availableWorkers] = await Promise.all([
+  const [rows, availableWorkers, teamOptions] = await Promise.all([
     listAttendance(session),
     fetchWorkersForAttendance(session),
+    getTeamUnitOptions(),
   ])
 
   const canUsher = session.role === 'admin' || isUsheringTeam(session)
@@ -42,6 +44,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         isTeamLead={isTeamLead}
         isUshering={isUshering}
         initialTab={resolvedSearchParams?.tab}
+        teamOptions={teamOptions}
       />
     </PageContainer>
   )

@@ -28,7 +28,10 @@ export default async function ExecutivesPage() {
 
   return (
     <PageContainer>
-      <ExecutiveApprovalsClient applications={applications} />
+      <ExecutiveApprovalsClient
+        applications={applications}
+        canImport={Boolean(session.access?.isPresident)}
+      />
     </PageContainer>
   )
 }

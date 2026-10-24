@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
-import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
@@ -32,6 +32,7 @@ import { toastSuccess, toastError } from '@/lib/dashboard/toast'
 interface SendWorkerEmailCardProps {
   session: ECCFSession
   workers: WorkerRow[]
+  teamOptions: TeamUnitOption[]
   defaultExpanded?: boolean
   className?: string
 }
@@ -39,9 +40,11 @@ interface SendWorkerEmailCardProps {
 export default function SendWorkerEmailCard({
   session,
   workers,
+  teamOptions,
   defaultExpanded = true,
   className = '',
 }: SendWorkerEmailCardProps) {
+  const teamNames = teamOptions.map((option) => option.name)
   const isAdmin = session.role === 'admin'
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const [isPending, startTransition] = useTransition()
@@ -50,7 +53,9 @@ export default function SendWorkerEmailCard({
   const [audienceType, setAudienceType] = useState<EmailAudienceType>(
     isAdmin ? 'all_workers' : 'team'
   )
-  const [targetTeam, setTargetTeam] = useState<string>(session.team || FELLOWSHIP_TEAMS[0])
+  const [targetTeam, setTargetTeam] = useState<string>(
+    session.team || teamNames[0] || ''
+  )
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>('')
   const [workerSearch, setWorkerSearch] = useState('')
   const [subject, setSubject] = useState('')
@@ -269,7 +274,7 @@ export default function SendWorkerEmailCard({
                   <SelectValue placeholder="Pick team..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {FELLOWSHIP_TEAMS.map((t) => (
+                  {teamNames.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>

@@ -72,7 +72,7 @@ function linkFor(role: WorkerRole, section: DashboardSection, session?: ECCFSess
 function StatGroup({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section aria-labelledby={id} className="space-y-3">
-      <h3 id={id} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h3 id={id} className="text-xs font-bold uppercase tracking-widest text-primary/80 border-b border-border pb-2 mb-1">
         {title}
       </h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{children}</div>

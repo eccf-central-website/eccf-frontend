@@ -44,7 +44,7 @@ export function SidebarBrand({ collapsed = false }: { collapsed?: boolean }) {
         className="h-8 w-8 shrink-0 object-contain"
       />
       <span className={cn('flex min-w-0 flex-col leading-none', collapsed && 'sr-only')}>
-        <span className="text-base font-black tracking-tight text-white">ECCF</span>
+        <span className="text-base font-semibold tracking-tight text-white">ECCF</span>
         <span className="mt-0.5 truncate text-xs font-semibold text-sidebar-foreground">Exco Dashboard</span>
       </span>
     </Link>

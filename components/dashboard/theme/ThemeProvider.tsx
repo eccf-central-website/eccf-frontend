@@ -15,22 +15,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export const THEME_STORAGE_KEY = 'eccf_dashboard_theme'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Default theme is explicitly 'light'
-  const [theme, setThemeState] = useState<Theme>('light')
+  // Dark is the dashboard's identity; only an explicitly stored 'light'
+  // choice opts the user back out.
+  const [theme, setThemeState] = useState<Theme>('dark')
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null
-      if (stored === 'dark') {
-        setThemeState('dark')
-        document.documentElement.classList.add('dark')
-      } else {
+      if (stored === 'light') {
         setThemeState('light')
         document.documentElement.classList.remove('dark')
+      } else {
+        setThemeState('dark')
+        document.documentElement.classList.add('dark')
       }
     } catch {
-      // localStorage unavailable or restricted
-      document.documentElement.classList.remove('dark')
+      // localStorage unavailable or restricted — fall back to dark
+      document.documentElement.classList.add('dark')
     }
 
     return () => {
@@ -67,7 +68,7 @@ export function useTheme() {
   const context = useContext(ThemeContext)
   if (!context) {
     return {
-      theme: 'light' as Theme,
+      theme: 'dark' as Theme,
       setTheme: () => {},
       toggleTheme: () => {},
     }

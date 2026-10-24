@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import { BarChart3, Users } from 'lucide-react'
 import type { AttendanceRow, ECCFSession } from '@/types'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import UsheringHeadcountView from '@/components/dashboard/attendance/UsheringHeadcountView'
 import TeamMeetingAttendanceView from '@/components/dashboard/attendance/TeamMeetingAttendanceView'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -22,6 +23,7 @@ interface AttendanceHubProps {
   isTeamLead: boolean
   isUshering: boolean
   initialTab?: string
+  teamOptions: TeamUnitOption[]
 }
 
 export default function AttendanceHub({
@@ -32,6 +34,7 @@ export default function AttendanceHub({
   isTeamLead,
   isUshering,
   initialTab,
+  teamOptions,
 }: AttendanceHubProps) {
   // Determine if dual view tabs should be shown:
   // Admin has access to both views.
@@ -124,6 +127,7 @@ export default function AttendanceHub({
             session={session}
             rows={rows}
             availableWorkers={availableWorkers}
+            teamOptions={teamOptions}
           />
         )
       ) : canUsher ? (
@@ -133,6 +137,7 @@ export default function AttendanceHub({
           session={session}
           rows={rows}
           availableWorkers={availableWorkers}
+          teamOptions={teamOptions}
         />
       )}
     </div>
