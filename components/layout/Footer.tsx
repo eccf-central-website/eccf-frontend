@@ -5,7 +5,7 @@
  * - Brand and a short mission statement first
  * - Two editable link columns plus a fixed, compact "Visit Us" block
  * - One slim newsletter band with the existing Turnstile-protected form
- * - A minimal legal bar: copyright and the privacy document only
+ * - A minimal legal bar: copyright plus the privacy and terms documents
  *
  * Accessibility notes:
  * - Text links use a 4.5:1+ brand blue; the old #0095ff is reserved for
@@ -482,12 +482,23 @@ export default function Footer({ settings }: FooterProps = {}) {
             <p>
               &copy; {currentYear} {copyrightText}
             </p>
-            <Link
-              href="/privacy"
-              className={`text-[13px] text-stone-500 transition-colors hover:text-[#0072c6] ${focusRing}`}
-            >
-              Privacy &amp; Data Care
-            </Link>
+            <nav aria-label="Legal" className="flex items-center gap-3">
+              <Link
+                href="/privacy"
+                className={`text-[13px] text-stone-500 transition-colors hover:text-[#0072c6] ${focusRing}`}
+              >
+                Privacy &amp; Data Care
+              </Link>
+              <span aria-hidden="true" className="text-stone-300">
+                &bull;
+              </span>
+              <Link
+                href="/terms"
+                className={`text-[13px] text-stone-500 transition-colors hover:text-[#0072c6] ${focusRing}`}
+              >
+                Terms of Use
+              </Link>
+            </nav>
           </div>
         </div>
       </div>
