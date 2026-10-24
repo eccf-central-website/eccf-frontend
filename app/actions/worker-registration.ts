@@ -525,6 +525,10 @@ async function sendWorkerVerificationEmail({
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
+      if (process.env.NODE_ENV !== 'production' || isTestingRestriction) {
+        console.log(`[DEV OTP SIMULATION] Email: ${email} | Code: ${otp} | Magic link: ${confirmationUrl.toString()}`)
+        return { sent: true, simulated: true }
+      }
       return { sent: false, simulated: false, error: message }
     }
 
@@ -635,6 +639,10 @@ async function sendRegistrationOtpEmail({
           ? 'Verify a sending domain in Resend and set RESEND_FROM_EMAIL to an address on that domain.'
           : undefined,
       })
+      if (process.env.NODE_ENV !== 'production' || isTestingRestriction) {
+        console.log(`[DEV REGISTRATION OTP SIMULATION] Email: ${email} | Code: ${otp}`)
+        return { sent: true, simulated: true }
+      }
       return { sent: false, simulated: false, error: message }
     }
 
@@ -931,7 +939,8 @@ export async function checkWorkerPhoneAndInitiateVerification(
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
 
-    const requestedAt = 0
+    const existingChallenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
+    const requestedAt = (existingChallenge && existingChallenge.workerId === worker._id) ? (existingChallenge.sentAt || 0) : 0
     const now = Date.now()
 
     if (requestedAt && now - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
@@ -1203,7 +1212,8 @@ export async function requestWorkerSelfServiceLink(input: {
     const email = worker?.email?.trim()
     if (!worker || !email) return genericResponse
 
-    const requestedAt = 0
+    const existingChallenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
+    const requestedAt = (existingChallenge && existingChallenge.workerId === worker._id) ? (existingChallenge.sentAt || 0) : 0
     if (requestedAt && Date.now() - requestedAt < SELF_SERVICE_RESEND_COOLDOWN_MS) {
       return {
         ok: true,

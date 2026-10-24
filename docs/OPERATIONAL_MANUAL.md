@@ -3,7 +3,7 @@
 *Edo State University Uzairue / Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 24 October 2026 against frontend commit `cd983ef` and backend commit `e6819d8`.
+**Last verified:** 24 October 2026 against frontend commit `ef50a17` and backend commit `59c9953`.
 
 > **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the President-only executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
@@ -82,7 +82,7 @@ Every student, alumnus, and campus visitor interacts with the public website at 
 The homepage is server-rendered from live Sanity content and currently renders these sections, in order:
 
 1. **Hero:** Fellowship headline, mission creed, introductory paragraph, a configurable top pill (default: *"Join us this week"*), and a five-photo **Formula 4 collage**. The collage is editable in Sanity; if fewer than five photos are configured, the built-in reference collage is used.
-2. **Who We Are:** Mission summary and fellowship statistics from Site Settings.
+2. **Who We Are:** Chapter kicker ("Who We Are"), master declaration ("Raised for Kingdom Impact & Academic Distinction"), manifesto statement, the fellowship's **Three Core Pillars** (Romans 12:11: Diligence, Fervency, Christ-Centred Service) loaded live from Sanity `aboutPage.pillar*` with one-liner summaries, a direct link ("Explore Our Pillars & Mandate" with horizontal arrow), and clean layered photography (minister portrait and inset fellowship gathering photo, with no overlay badges or caption clutter).
 3. **Weekly Service Schedule:** Day, time, title, badge, description, tags, and venue for each gathering.
 4. **Latest Sermons:** Recent messages with links to the Sermon Vault and streaming platforms.
 5. **Fellowship Moments:** Featured photo gallery.
@@ -126,6 +126,8 @@ The global public chrome adds:
 - **Pinned Notices:** Pinned bulletins sort to the top of the feed.
 - **Search:** Free-text search across titles and bulletin content.
 - **Subscribe to Broadcasts:** The subscription card collects an optional name and a required email address, protected by Turnstile. Subscribers receive manual broadcasts sent from the dashboard; subscribing does not automatically publish anything.
+- **Automated Welcome Email:** Upon completing subscription, an automated welcome email is dispatched to the subscriber's inbox via Resend (`Welcome to Fellowship Updates!`) detailing the weekly service schedule, timings, and campus venue (NLT 5, Faculty of Law, ESUI).
+- **Domain Verification Requirement:** Transactional delivery requires `RESEND_FROM_EMAIL` (or `EMAIL_FROM`) to be configured with an address on an active, verified custom domain (e.g., `contact@eccffamily.org` on `eccffamily.org` with DKIM and SPF configured). The development default `onboarding@resend.dev` will fail with a 403 `validation_error` when delivering to regular student or visitor email addresses.
 - **Preview Mode:** `/announcements/preview` is an internal preview surface. It is not part of the public navigation.
 
 ### 1.5 Connect Hub (`/connect`)
@@ -151,6 +153,13 @@ The PWA is intentionally an **Exco dashboard application**, not a public-site ap
 - **Already Installed:** The button hides automatically when the app is running in standalone mode.
 - **Public Site:** Install prompts are suppressed on public pages. Visitors browsing the marketing site will not be prompted to install the portal.
 - **No Offline Data Cache:** The project does not register a service worker. The installed app opens in a standalone window but still requires network access and a valid Clerk session for dashboard data.
+
+### 1.8 Page Maintenance Mode
+Any public route (`/`, `/about`, `/sermons`, `/announcements`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`) can be placed under maintenance directly from Sanity Studio (**Homepage & Site Settings → Maintenance Mode**).
+
+- **Visitor Experience:** When a page is under maintenance, visitors see a dedicated chrome-free full-screen banner (`PageMaintenance`) with the ECCF crest, the configured maintenance headline (default: *"We will be right back."*), explanation message, and optional timeframe badge (`maintenanceEta`).
+- **Path Nesting:** Ticking a parent path covers all nested sub-routes (e.g. ticking `/sermons` closes `/sermons` and all nested sermon routes; ticking `/` closes only the root homepage).
+- **Editor Bypass:** Authenticated editors viewing the site through Sanity Studio Live Web Preview (`?preview=true`) or Next.js Draft Mode bypass maintenance automatically, allowing media stewards to edit and review closed pages live.
 
 ---
 
@@ -321,6 +330,9 @@ The dashboard summary counters show total announcements, published notices, draf
      - `Hero Headline`, `Fellowship Credo / Motto`, and `Hero Mission Paragraph`.
      - `Hero Top Pill` — the visible pill above the headline (default *"Join us this week"*).
      - `Hero 5-Photo Collage` — upload/replace the five collage images and set their alt text and tag. If fewer than five are configured, the reference collage is displayed.
+     - `Who We Are: Minister / Pastor / President Photo (Left)` (`whoWeArePhotoMinister`) — portrait photograph of the Pastor or President displayed on the left of the Who We Are section.
+     - `Who We Are: Congregation / Audience Photo (Right)` (`whoWeArePhotoAudience`) — photograph of students or congregation displayed as the inset photo on the right.
+     - If left unassigned in Site Settings, the Who We Are section automatically falls back to curated high-resolution images from the published Photo Gallery.
      - `Hero Photo` — legacy single-photo field retained for compatibility.
      - `Live Status Text` — retained in the schema but not rendered by the current frontend.
    - **Metrics & Legacy:** `Active Members`, `Weekly Services`, and `Campus Legacy` statistics displayed in the Who We Are section.
@@ -354,6 +366,9 @@ The dashboard summary counters show total announcements, published notices, draf
      - `Show Leadership Gallery (CSGB & Directors)` (`showLeadership`)
      - `Show Operational Teams` (`showTeams`)
      - `Show Bottom Call-To-Action Banner` (`showCta`)
+
+> [!NOTE]
+> The Three Core Pillars configured in `aboutPage` (Romans 12:11: Diligence, Fervency, Christ-Centred Service) drive both the full detailed pillar cards on `/about#pillars` and the one-liner summary ledger in the homepage's **Who We Are** section (`/`). Updating pillar titles and subtitles here keeps both pages synchronized.
 3. Select **"Publish"**.
 
 ### 4.4 Managing the Photo Gallery (`galleryItem`)
@@ -723,7 +738,7 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 | `YOUTUBE_RSS_URL` | Frontend (server) | YouTube playlist RSS source |
 | `YOUTUBE_API_KEY` | Frontend (server) | Optional YouTube Data API v3 key for sermon enrichment; read by `lib/sermonSync.ts` but not listed in the sample `.env.example` |
 | `RESEND_API_KEY` | Frontend (server) | Transactional email and announcement broadcasts |
-| `RESEND_FROM_EMAIL` | Frontend (server) | Canonical sender for every Resend flow (worker verification, worker email, announcements, subscriber welcome, intake notifications). Must use a verified Resend domain. The fallback `onboarding@resend.dev` only delivers to the Resend account owner |
+| `RESEND_FROM_EMAIL` | Frontend (server) | Canonical sender for every Resend flow (worker verification, worker email, announcements, subscriber welcome, intake notifications). Must use an active, verified custom domain in Resend (e.g. `contact@eccffamily.org`). The fallback `onboarding@resend.dev` only delivers to the Resend account owner and will return a 403 validation error for public recipients |
 | `EMAIL_FROM` | Frontend (server) | Accepted alias for `RESEND_FROM_EMAIL`; use one or the other |
 | `NOTIFY_EMAIL` | Frontend (server) | Administrative notification recipient |
 | `DASHBOARD_MOCK_AUTH` | Local only | `1` enables a mock dashboard session outside production |

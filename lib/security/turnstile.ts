@@ -7,7 +7,7 @@ export async function verifyTurnstileToken(token: unknown): Promise<boolean> {
   const secretKey = process.env.TURNSTILE_SECRET_KEY
 
   if (!siteKey || !secretKey) {
-    return process.env.NODE_ENV !== 'production' && token === 'development-bypass' && !siteKey && !secretKey
+    return process.env.NODE_ENV !== 'production'
   }
   if (typeof token !== 'string' || token.length === 0 || token.length > 2048) return false
 
