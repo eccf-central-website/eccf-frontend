@@ -9,6 +9,18 @@ export function FirstTimerForm() {
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  // The bot check stays out of the layout until the visitor fills the required
+  // fields, so it never appears before they are ready to submit.
+  const [turnstileArmed, setTurnstileArmed] = useState(false)
+
+  function handleFormInput(e: React.FormEvent<HTMLFormElement>) {
+    if (turnstileArmed) return
+    const data = new FormData(e.currentTarget)
+    const first = String(data.get('firstName') ?? '').trim()
+    const last = String(data.get('lastName') ?? '').trim()
+    const phone = String(data.get('phoneNumber') ?? '').trim()
+    if (first && last && phone.length >= 7) setTurnstileArmed(true)
+  }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -23,6 +35,7 @@ export function FirstTimerForm() {
         if (form) form.reset()
         setTurnstileToken('')
         setTurnstileResetSignal((signal) => signal + 1)
+        setTurnstileArmed(false)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -45,7 +58,7 @@ export function FirstTimerForm() {
         </div>
       )}
 
-      <form id="first-timer-form" action={handleSubmit} className="space-y-4">
+      <form id="first-timer-form" action={handleSubmit} onInput={handleFormInput} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label htmlFor="firstName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
@@ -142,7 +155,9 @@ export function FirstTimerForm() {
           />
         </div>
 
-        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        {turnstileArmed && (
+          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        )}
 
         <button
           type="submit"

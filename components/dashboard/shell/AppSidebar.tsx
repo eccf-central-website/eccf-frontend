@@ -68,11 +68,11 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
     <aside
       data-state={collapsed ? 'collapsed' : 'expanded'}
       className={cn(
-        'hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex',
+        'hidden h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex',
         collapsed ? 'w-[4.25rem]' : 'w-64'
       )}
     >
-      <div className={cn('flex h-16 shrink-0 items-center border-b border-sidebar-border', collapsed ? 'px-3' : 'px-4')}>
+      <div className={cn('flex h-16 shrink-0 items-center', collapsed ? 'px-3' : 'px-4')}>
         <SidebarBrand collapsed={collapsed} />
       </div>
 
@@ -80,7 +80,7 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
         <NavLinks sections={sections} collapsed={collapsed} />
       </nav>
 
-      <div className="shrink-0 border-t border-sidebar-border p-3">
+      <div className="shrink-0 p-3">
         <Tooltip>
           <TooltipTrigger asChild>
             <button

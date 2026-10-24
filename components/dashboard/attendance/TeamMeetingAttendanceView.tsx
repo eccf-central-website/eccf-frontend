@@ -243,7 +243,7 @@ export default function TeamMeetingAttendanceView({
     <div className="space-y-6">
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Team Meetings</span>
@@ -260,7 +260,7 @@ export default function TeamMeetingAttendanceView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Avg Present</span>
@@ -277,7 +277,7 @@ export default function TeamMeetingAttendanceView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Registered Crew</span>
@@ -294,7 +294,7 @@ export default function TeamMeetingAttendanceView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Attendance Rate</span>
@@ -313,7 +313,7 @@ export default function TeamMeetingAttendanceView({
       </div>
 
       {/* Main Action Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+      <div className="flex flex-col gap-3 rounded-xl bg-card p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
         <div>
           <h3 className="font-serif text-lg font-bold text-foreground">
             {session.role === 'team_lead'
@@ -354,8 +354,8 @@ export default function TeamMeetingAttendanceView({
 
       {/* Interactive Worker Checklist Form (Collapsible / Expandable) */}
       {isFormOpen && (
-        <Card className="border-primary/30 shadow-md bg-gradient-to-b from-card to-card/95 transition-all">
-          <CardHeader className="pb-3 border-b border-border/40">
+        <Card className="shadow-md transition-all">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="font-serif text-lg font-bold">
@@ -428,8 +428,8 @@ export default function TeamMeetingAttendanceView({
               )}
 
               {/* Worker Checklist Box */}
-              <div className="rounded-xl border bg-card p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
+              <div className="rounded-xl bg-muted/30 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="flex items-center gap-1.5 text-sm font-semibold">
                       <Users className="h-4 w-4 shrink-0 text-primary" />
@@ -487,13 +487,15 @@ export default function TeamMeetingAttendanceView({
                       {visibleWorkers.map((worker) => {
                         const isChecked = selectedWorkerIds.has(worker._id)
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={worker._id}
                             onClick={() => toggleWorker(worker._id)}
-                            className={`flex cursor-pointer items-center justify-between rounded-lg p-2.5 transition-all select-none border ${
+                            aria-pressed={isChecked}
+                            className={`flex w-full cursor-pointer items-center justify-between rounded-xl p-2.5 text-left transition-all select-none ${
                               isChecked
-                                ? 'bg-primary/10 border-primary/40 shadow-xs'
-                                : 'hover:bg-muted/50 border-border/60 bg-card'
+                                ? 'bg-primary/10 shadow-xs'
+                                : 'bg-card hover:bg-muted/50'
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
@@ -521,7 +523,7 @@ export default function TeamMeetingAttendanceView({
                                 Absent
                               </span>
                             )}
-                          </div>
+                          </button>
                         )
                       })}
                     </div>
@@ -530,7 +532,7 @@ export default function TeamMeetingAttendanceView({
               </div>
 
               {/* Extra Guests / Probationary Attendees */}
-              <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 rounded-lg border bg-muted/20 p-3">
+              <div className="grid grid-cols-1 items-center gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="tm-extra" className="text-xs font-semibold text-foreground">
                     Guest / Visiting Attendees
@@ -610,7 +612,7 @@ export default function TeamMeetingAttendanceView({
 
       {/* History of Team Meetings */}
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+        <div className="flex flex-col gap-3 rounded-xl bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
           <div>
             <h3 className="font-serif text-base font-bold text-foreground">
               Past Meeting Attendance Logs
@@ -633,7 +635,7 @@ export default function TeamMeetingAttendanceView({
         </div>
 
         {/* Meeting Logs Table */}
-        <div className="hidden sm:block rounded-lg border bg-card shadow-sm overflow-x-auto">
+        <div className="hidden rounded-xl bg-card shadow-sm overflow-x-auto sm:block">
           <Table aria-label="Team meeting attendance records">
             <TableHeader>
               <TableRow className="bg-muted/40">
@@ -731,7 +733,7 @@ export default function TeamMeetingAttendanceView({
             </Card>
           ) : (
             filteredMeetingRows.map((row) => (
-              <Card key={row._id} className="border border-border shadow-sm">
+              <Card key={row._id}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -817,7 +819,7 @@ export default function TeamMeetingAttendanceView({
                 </h4>
 
                 {activeRosterRecord.attendees && activeRosterRecord.attendees.length > 0 ? (
-                  <div className="divide-y rounded-md border bg-card max-h-60 overflow-y-auto">
+                  <div className="divide-y divide-border/50 rounded-xl bg-card max-h-60 overflow-y-auto">
                     {activeRosterRecord.attendees.map((worker, i) => (
                       <div key={worker._id || i} className="flex items-center justify-between p-2.5 text-xs">
                         <span className="font-medium text-foreground">{worker.fullName}</span>
@@ -830,7 +832,7 @@ export default function TeamMeetingAttendanceView({
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+                  <div className="rounded-xl bg-muted/30 p-4 text-center text-xs text-muted-foreground">
                     {activeRosterRecord.totalCount > 0
                       ? `${activeRosterRecord.totalCount} attendees logged on this meeting entry.`
                       : 'No worker attendee entries.'}

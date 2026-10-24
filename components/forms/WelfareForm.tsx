@@ -9,6 +9,17 @@ export function WelfareForm() {
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  // Reveal the bot check only after the visitor has filled the request.
+  const [turnstileArmed, setTurnstileArmed] = useState(false)
+
+  function handleFormInput(e: React.FormEvent<HTMLFormElement>) {
+    if (turnstileArmed) return
+    const data = new FormData(e.currentTarget)
+    const name = String(data.get('name') ?? '').trim()
+    const phone = String(data.get('phoneNumber') ?? '').trim()
+    const details = String(data.get('requestDetails') ?? '').trim()
+    if (name && phone.length >= 7 && details.length >= 3) setTurnstileArmed(true)
+  }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -23,6 +34,7 @@ export function WelfareForm() {
         if (form) form.reset()
         setTurnstileToken('')
         setTurnstileResetSignal((signal) => signal + 1)
+        setTurnstileArmed(false)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -45,7 +57,7 @@ export function WelfareForm() {
         </div>
       )}
 
-      <form id="welfare-form" action={handleSubmit} className="space-y-4">
+      <form id="welfare-form" action={handleSubmit} onInput={handleFormInput} className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
             Full Name
@@ -88,7 +100,9 @@ export function WelfareForm() {
           />
         </div>
 
-        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        {turnstileArmed && (
+          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        )}
 
         <button
           type="submit"

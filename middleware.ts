@@ -21,6 +21,9 @@ const clerkHandler = clerkMiddleware((auth, req) => {
   const isPreview = isPreviewParam || isPreviewCookie
 
   const requestHeaders = new Headers(req.headers)
+  // Forward the resolved pathname so server components (public layout) can
+  // evaluate per-page maintenance switches from Sanity without a client hop.
+  requestHeaders.set('x-pathname', pathname)
   if (isPreview) {
     requestHeaders.set('x-preview-mode', 'true')
   }
@@ -81,7 +84,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     console.error('[Middleware] Clerk execution bypassed due to initialization error:', error)
     // If not a protected dashboard route, permit public pages to render cleanly
     if (!isDashboardRoute(req)) {
-      return NextResponse.next()
+      const fallbackHeaders = new Headers(req.headers)
+      fallbackHeaders.set('x-pathname', req.nextUrl.pathname)
+      return NextResponse.next({ request: { headers: fallbackHeaders } })
     }
     // If on a protected dashboard route, redirect to /login
     return NextResponse.redirect(new URL('/login', req.url))

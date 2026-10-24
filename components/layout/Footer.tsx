@@ -112,7 +112,7 @@ function SocialLinks({ links }: { links: SocialLink[] }) {
   if (links.length === 0) return null
 
   return (
-    <nav aria-label="Social media" className="mt-6">
+    <nav aria-label="Social media" className="mt-5 sm:mt-6">
       <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-stone-900">
         Follow Us
       </h2>
@@ -248,6 +248,11 @@ export default function Footer({ settings }: FooterProps = {}) {
   const [loading, setLoading] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  // The bot check is only mounted once the email field has been used, so it
+  // never occupies the footer before a visitor shows intent to subscribe.
+  // It stays mounted after blur so an in-flight challenge is not discarded.
+  const [turnstileArmed, setTurnstileArmed] = useState(false)
+  const showTurnstile = turnstileArmed || email.trim().length > 0
   const [status, setStatus] = useState<{
     success?: boolean
     message?: string
@@ -284,9 +289,9 @@ export default function Footer({ settings }: FooterProps = {}) {
 
   return (
     <footer className="border-t border-stone-200 bg-[#fafaf9] text-stone-700">
-      <div className="mx-auto w-full max-w-7xl px-5 pb-10 pt-14 sm:px-8 sm:pt-16 lg:px-10">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-12 sm:px-8 sm:pb-10 sm:pt-16 lg:px-10">
         {/* Brand, navigation directory, and visit details */}
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
+        <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-12 lg:gap-12">
           <div className="lg:col-span-4">
             <div className="flex items-center gap-3">
               <Image
@@ -294,26 +299,26 @@ export default function Footer({ settings }: FooterProps = {}) {
                 alt=""
                 width={44}
                 height={44}
-                className="h-11 w-11 shrink-0 object-contain"
+                className="h-10 w-10 shrink-0 object-contain sm:h-11 sm:w-11"
               />
-              <div>
-                <p className="font-serif text-2xl tracking-tight text-[#0072c6] sm:text-[28px]">
+              <div className="min-w-0">
+                <p className="font-serif text-[22px] leading-tight tracking-tight text-[#0072c6] sm:text-[28px]">
                   {brandTitle}
                 </p>
-                <p className="mt-0.5 text-[13px] font-semibold text-stone-600">
+                <p className="mt-1 text-[12px] font-semibold leading-snug text-stone-600 sm:mt-0.5 sm:text-[13px]">
                   {brandSubtitle}
                 </p>
               </div>
             </div>
 
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-stone-600">
+            <p className="mt-3.5 max-w-sm text-[13px] leading-relaxed text-stone-600 sm:mt-4 sm:text-sm">
               {missionStatement}
             </p>
 
             <SocialLinks links={socialLinks} />
           </div>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:col-span-8">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-10 lg:col-span-8">
             {navColumns.map((column) => (
               <nav key={column.title} aria-label={`Footer — ${column.title}`}>
                 <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-stone-900">
@@ -327,7 +332,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`${textLink} py-1.5 ${
+                          className={`${textLink} min-h-[36px] py-2 ${
                             link.highlight ? 'font-semibold text-[#0072c6]' : ''
                           }`}
                         >
@@ -336,7 +341,7 @@ export default function Footer({ settings }: FooterProps = {}) {
                       ) : (
                         <Link
                           href={link.url}
-                          className={`${textLink} py-1.5 ${
+                          className={`${textLink} min-h-[36px] py-2 ${
                             link.highlight ? 'font-semibold text-[#0072c6]' : ''
                           }`}
                         >
@@ -351,7 +356,7 @@ export default function Footer({ settings }: FooterProps = {}) {
 
             <section
               aria-labelledby="footer-visit-heading"
-              className="col-span-2 sm:col-span-1"
+              className="col-span-2 rounded-2xl border border-stone-200 bg-white/70 p-4 sm:col-span-1 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0"
             >
               <h2
                 id="footer-visit-heading"
@@ -359,7 +364,7 @@ export default function Footer({ settings }: FooterProps = {}) {
               >
                 Visit Us
               </h2>
-              <ul className="mt-3 space-y-3 text-sm text-stone-600">
+              <ul className="mt-3 space-y-3 text-[13px] leading-relaxed text-stone-600 sm:text-sm">
                 <li className="flex items-start gap-2.5">
                   <CalendarDays
                     className="mt-0.5 h-4 w-4 shrink-0 text-[#0072c6]"
@@ -379,7 +384,10 @@ export default function Footer({ settings }: FooterProps = {}) {
                     className="mt-0.5 h-4 w-4 shrink-0 text-[#0072c6]"
                     aria-hidden="true"
                   />
-                  <a href={`mailto:${fellowshipEmail}`} className={`${textLink} break-all`}>
+                  <a
+                    href={`mailto:${fellowshipEmail}`}
+                    className={`inline-flex items-center break-all text-[12px] leading-relaxed text-stone-600 transition-colors hover:text-[#0072c6] sm:text-sm ${focusRing}`}
+                  >
                     {fellowshipEmail}
                   </a>
                 </li>
@@ -396,13 +404,13 @@ export default function Footer({ settings }: FooterProps = {}) {
         </div>
 
         {/* Slim newsletter band */}
-        <div className="mt-12 border-t border-stone-200 pt-8 sm:mt-14 sm:pt-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+        <div className="mt-10 border-t border-stone-200 pt-8 sm:mt-14 sm:pt-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
             <div className="max-w-md">
-              <h2 className="font-serif text-xl text-stone-900 sm:text-2xl">
+              <h2 className="font-serif text-lg leading-snug text-stone-900 sm:text-2xl">
                 {newsletterHeading}
               </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-stone-600">
+              <p className="mt-1.5 text-[13px] leading-relaxed text-stone-600 sm:text-sm">
                 {newsletterDescription}
               </p>
             </div>
@@ -411,23 +419,43 @@ export default function Footer({ settings }: FooterProps = {}) {
               <label htmlFor={emailInputId} className="sr-only">
                 Email address for fellowship announcements
               </label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  id={emailInputId}
-                  type="email"
-                  name="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  autoComplete="email"
-                  className="h-12 w-full flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0072c6]"
-                />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <div className="w-full min-w-0 sm:flex-1">
+                  <input
+                    id={emailInputId}
+                    type="email"
+                    name="email"
+                    required
+                    value={email}
+                    onFocus={() => setTurnstileArmed(true)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setTurnstileArmed(true)
+                    }}
+                    placeholder="Enter your email address"
+                    autoComplete="email"
+                    className="h-11 w-full rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0072c6] sm:h-12"
+                  />
+
+                  {/* Mounted only after the visitor engages with the field,
+                      and constrained to the input's width on every breakpoint. */}
+                  {showTurnstile && (
+                    <div className="mt-2.5 w-full overflow-hidden rounded-lg">
+                      <TurnstileWidget
+                        onToken={setTurnstileToken}
+                        resetSignal={turnstileResetSignal}
+                        hideFallbackText
+                        size="flexible"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
                   aria-busy={loading}
-                  className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#0072c6] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#005fa3] active:bg-[#004f8a] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0072c6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fafaf9]"
+                  className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#0072c6] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#005fa3] active:bg-[#004f8a] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0072c6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fafaf9] sm:h-12 sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -438,15 +466,6 @@ export default function Footer({ settings }: FooterProps = {}) {
                     <span>Subscribe</span>
                   )}
                 </button>
-              </div>
-
-              <div className="mt-2">
-                <TurnstileWidget
-                  onToken={setTurnstileToken}
-                  resetSignal={turnstileResetSignal}
-                  hideFallbackText
-                  size="compact"
-                />
               </div>
 
               {status && (
@@ -477,15 +496,15 @@ export default function Footer({ settings }: FooterProps = {}) {
         </div>
 
         {/* Legal bar */}
-        <div className="mt-10 border-t border-stone-200 pt-6">
-          <div className="flex flex-col items-center gap-3 text-center text-[13px] text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:text-left">
-            <p>
+        <div className="mt-8 border-t border-stone-200 pt-6 sm:mt-10">
+          <div className="flex flex-col items-center gap-2.5 text-center text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left sm:text-[13px]">
+            <p className="max-w-xs sm:max-w-none">
               &copy; {currentYear} {copyrightText}
             </p>
-            <nav aria-label="Legal" className="flex items-center gap-3">
+            <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <Link
                 href="/privacy"
-                className={`text-[13px] text-stone-500 transition-colors hover:text-[#0072c6] ${focusRing}`}
+                className={`text-xs text-stone-500 transition-colors hover:text-[#0072c6] sm:text-[13px] ${focusRing}`}
               >
                 Privacy &amp; Data Care
               </Link>
@@ -494,7 +513,7 @@ export default function Footer({ settings }: FooterProps = {}) {
               </span>
               <Link
                 href="/terms"
-                className={`text-[13px] text-stone-500 transition-colors hover:text-[#0072c6] ${focusRing}`}
+                className={`text-xs text-stone-500 transition-colors hover:text-[#0072c6] sm:text-[13px] ${focusRing}`}
               >
                 Terms of Use
               </Link>

@@ -15,6 +15,8 @@ import PwaPromptSuppressor from "@/components/common/PwaPromptSuppressor";
 import { draftMode, headers, cookies } from "next/headers";
 import { getSanityClient } from "@/lib/sanity";
 import { SITE_SETTINGS_QUERY } from "@/lib/queries";
+import { isUnderMaintenance } from "@/lib/maintenance";
+import PageMaintenance from "@/components/common/PageMaintenance";
 import type { SiteSettingsData } from "@/components/home/HeroSection";
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +44,30 @@ export default async function PublicLayout({
       return null;
     });
 
+  // Per-page maintenance switches from Sanity (Site Settings → Maintenance Mode).
+  // Preview / draft mode always bypasses them so editors can keep working.
+  const pathname = headerList.get('x-pathname') || '';
+  const maintenanceActive =
+    !isPreview && isUnderMaintenance(pathname, settings?.maintenancePages);
+
+  if (maintenanceActive) {
+    return (
+      <>
+        <PwaPromptSuppressor />
+        <main className="flex min-h-screen w-full max-w-full flex-col">
+          <PageMaintenance
+            headline={settings?.maintenanceHeadline}
+            message={settings?.maintenanceMessage}
+            eta={settings?.maintenanceEta}
+            contactEmail={settings?.fellowshipEmail}
+            showHomeLink={pathname !== '/'}
+          />
+        </main>
+        <Toaster position="top-center" richColors closeButton />
+      </>
+    );
+  }
+
   return (
     <>
       <PwaPromptSuppressor />
@@ -49,7 +75,7 @@ export default async function PublicLayout({
         <NavigationProgressBar />
       </Suspense>
       <Navbar />
-      <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
+      <main className="flex-1 w-full max-w-full overflow-x-clip">{children}</main>
       <Footer settings={settings} />
       <TheLauncher />
       <ScrollToTop />

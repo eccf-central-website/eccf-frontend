@@ -114,14 +114,17 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
       `
 
       try {
-        await resend.emails.send({
+        const { error: sendError } = await resend.emails.send({
           from: resolveResendFrom('ECCF Bulletins'),
           to: email,
           subject: 'Welcome to ECCF Announcements & Bulletins',
           html: welcomeHtml,
         })
+        if (sendError) {
+          console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery rejected by Resend:', sendError)
+        }
       } catch (emailErr) {
-        console.warn('Welcome confirmation email delivery failed:', emailErr)
+        console.warn('[subscribeToAnnouncements] Welcome confirmation email delivery failed:', emailErr)
       }
     }
 

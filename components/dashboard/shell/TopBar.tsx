@@ -41,16 +41,13 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
   const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1 border-b border-border/60 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
       <MobileNav sections={sections} />
 
       <div className="min-w-0 flex-1">
-        {section === 'overview' ? (
-          <h1 className="truncate font-sans font-semibold text-base text-foreground sm:text-lg lg:text-xl">
-            <SectionIcon className="h-4 w-4 shrink-0 mr-2" aria-hidden="true" />
-            {title}
-          </h1>
-        ) : (
+        {/* The overview page renders its own big greeting as the h1, so the
+            top bar stays empty there — one title, like the reference app. */}
+        {section !== 'overview' && (
           <nav aria-label="Breadcrumb">
             <ol className="flex min-w-0 items-center gap-1.5 text-sm">
               <li className="hidden sm:block">

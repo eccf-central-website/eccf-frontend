@@ -19,11 +19,12 @@ import { cn } from '@/lib/utils'
 
 export type StatTone = 'primary' | 'success' | 'warning' | 'destructive' | 'muted'
 
+/** Soft tint-of-token chips — the reference style: colour as a wash, never a solid block. */
 const TONE_CHIP: Record<StatTone, string> = {
-  primary: 'bg-primary text-primary-foreground',
-  success: 'bg-success text-success-foreground',
-  warning: 'bg-warning text-warning-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
+  primary: 'bg-primary/10 text-primary',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/20 text-warning-foreground',
+  destructive: 'bg-destructive/10 text-destructive',
   muted: 'bg-muted text-muted-foreground',
 }
 
@@ -66,8 +67,8 @@ export default function StatCard({
     <article
       aria-labelledby={labelId}
       className={cn(
-        'relative flex flex-col rounded-xl border bg-card p-4 text-card-foreground shadow sm:p-5 lg:p-6 hover:shadow-md transition-shadow',
-        href && 'transition-colors hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring',
+        'relative flex flex-col rounded-2xl bg-card p-4 text-card-foreground shadow-sm sm:p-5 lg:p-6 transition-shadow hover:shadow-md',
+        href && 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
         className
       )}
     >
@@ -86,15 +87,15 @@ export default function StatCard({
         </div>
       </div>
 
-      <p className="mt-2 break-words font-mono font-bold text-2xl leading-tight text-foreground sm:text-3xl">
+      <p className="mt-2 break-words font-mono font-semibold tabular-nums tracking-tight text-2xl leading-none text-foreground sm:text-3xl">
         {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
       </p>
-      {caption && <p className="mt-1 text-sm text-muted-foreground">{caption}</p>}
+      {caption && <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">{caption}</p>}
 
       {href && linkLabel && (
         <Link
           href={href}
-          className="mt-3 inline-flex min-h-10 items-center gap-1 self-start text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:underline focus-visible:outline-none"
+          className="mt-3 inline-flex min-h-10 items-center gap-1 self-start rounded-md text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-2xl after:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {linkLabel}
           <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />

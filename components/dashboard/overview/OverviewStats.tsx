@@ -35,6 +35,7 @@ import type {
 import EmptyState from '@/components/dashboard/states/EmptyState'
 import { StatGridSkeleton } from '@/components/dashboard/states/StatCardSkeleton'
 import { Skeleton } from '@/components/dashboard/ui/skeleton'
+import { cn } from '@/lib/utils'
 import StatCard from './StatCard'
 
 /** True when the role's visible stats have nothing to show yet. */
@@ -69,13 +70,13 @@ function linkFor(role: WorkerRole, section: DashboardSection, session?: ECCFSess
   return canAccessSection(role, section, session) ? SECTION_PATHS[section] : undefined
 }
 
-function StatGroup({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function StatGroup({ id, title, className, children }: { id: string; title: string; className?: string; children: React.ReactNode }) {
   return (
     <section aria-labelledby={id} className="space-y-3">
-      <h3 id={id} className="text-xs font-bold uppercase tracking-widest text-primary/80 border-b border-border pb-2 mb-1">
+      <h3 id={id} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
+      <div className={cn('grid grid-cols-2 gap-3 sm:gap-4', className)}>{children}</div>
     </section>
   )
 }
@@ -86,7 +87,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
   const { lastService } = stats
 
   return (
-    <StatGroup id="overview-people" title="People">
+    <StatGroup id="overview-people" title="People" className="xl:grid-cols-5">
       <StatCard
         id="stat-first-timers"
         headingLevel="h4"
@@ -140,6 +141,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
         headingLevel="h4"
         label="Last service attendance"
         icon={<CalendarCheck />}
+        className="col-span-2 xl:col-span-1"
         value={lastService ? formatCount(lastService.totalCount) : '—'}
         rawValue={lastService?.totalCount}
         caption={
@@ -169,7 +171,7 @@ function FinanceCards({ stats, role }: { stats: FinanceStats; role: WorkerRole }
   const href = linkFor(role, 'finance')
 
   return (
-    <StatGroup id="overview-finance" title="Finance">
+    <StatGroup id="overview-finance" title="Finance" className="xl:grid-cols-3">
       <StatCard
         id="stat-income"
         headingLevel="h4"
@@ -199,6 +201,7 @@ function FinanceCards({ stats, role }: { stats: FinanceStats; role: WorkerRole }
         headingLevel="h4"
         label="Net this month"
         icon={<Scale />}
+        className="col-span-2 xl:col-span-1"
         value={formatNaira(net)}
         rawValue={net}
         caption={net > 0 ? 'Surplus' : net < 0 ? 'Deficit' : 'Break-even'}
@@ -237,13 +240,21 @@ export default async function OverviewStats({ session }: { session: ECCFSession 
  * grid announces "Loading statistics…".
  */
 export function OverviewStatsSkeleton({ people, finance }: { people: boolean; finance: boolean }) {
-  const groups = [...(people ? [PEOPLE_CARD_COUNT] : []), ...(finance ? [FINANCE_CARD_COUNT] : [])]
+  const groups = [
+    ...(people ? [{ count: PEOPLE_CARD_COUNT, grid: 'xl:grid-cols-5' }] : []),
+    ...(finance ? [{ count: FINANCE_CARD_COUNT, grid: 'xl:grid-cols-3' }] : []),
+  ]
   return (
     <div className="space-y-6">
-      {groups.map((count, i) => (
+      {groups.map(({ count, grid }, i) => (
         <div key={i} className="space-y-3">
           <Skeleton aria-hidden="true" className="h-3 w-16 shrink-0" />
-          <StatGridSkeleton count={count} label="Loading statistics…" announce={i === 0} />
+          <StatGridSkeleton
+            count={count}
+            gridClassName={cn('grid grid-cols-2 gap-3 sm:gap-4', grid)}
+            label="Loading statistics…"
+            announce={i === 0}
+          />
         </div>
       ))}
     </div>

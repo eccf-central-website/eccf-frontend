@@ -7,7 +7,6 @@ import { MoreHorizontal } from 'lucide-react'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
 import { NAV_ITEMS } from './nav-items'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/dashboard/ui/sheet'
-import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 
 const MAX_TABS = 4
@@ -20,8 +19,6 @@ export default function BottomNav({
   actions?: React.ReactNode
 }) {
   const pathname = usePathname()
-  const { theme, toggleTheme } = useTheme()
-  const isDark = theme === 'dark'
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -36,7 +33,7 @@ export default function BottomNav({
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="mx-auto flex max-w-lg items-stretch justify-around">
@@ -53,7 +50,7 @@ export default function BottomNav({
                     'flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium transition-colors',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                     active
-                      ? 'text-primary border-t-2 border-primary rounded-lg bg-primary/10'
+                      ? 'rounded-lg bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -99,7 +96,7 @@ export default function BottomNav({
                               className={cn(
                                 'flex flex-col items-center gap-1.5 rounded-xl p-3 text-xs font-medium transition-colors',
                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                active ? 'bg-primary/10 text-primary border-t-2 border-primary' : 'hover:bg-muted'
+                                active ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                               )}
                             >
                               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -110,15 +107,11 @@ export default function BottomNav({
                       </nav>
                     </>
                   )}
-                  <div className="mt-4 flex flex-col gap-2 border-t pt-4">
+                  <div className="mt-4 flex flex-col gap-2 pt-4">
                     {actions && <div className="flex justify-center">{actions}</div>}
-                    <button
-                      type="button"
-                      onClick={toggleTheme}
-                      className="flex h-11 items-center justify-center gap-2 rounded-md border text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {isDark ? 'Light theme' : 'Dark theme'}
-                    </button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      Theme lives in the account menu at the top right.
+                    </p>
                   </div>
                 </SheetContent>
               </Sheet>

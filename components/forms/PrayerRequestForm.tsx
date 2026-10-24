@@ -9,6 +9,14 @@ export function PrayerRequestForm() {
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  // Only surface the bot check once the request itself has been written.
+  const [turnstileArmed, setTurnstileArmed] = useState(false)
+
+  function handleFormInput(e: React.FormEvent<HTMLFormElement>) {
+    if (turnstileArmed) return
+    const data = new FormData(e.currentTarget)
+    if (String(data.get('request') ?? '').trim().length >= 3) setTurnstileArmed(true)
+  }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -23,6 +31,7 @@ export function PrayerRequestForm() {
         if (form) form.reset()
         setTurnstileToken('')
         setTurnstileResetSignal((signal) => signal + 1)
+        setTurnstileArmed(false)
       }
     } catch {
       setStatus({ success: false, error: 'An unexpected error occurred.' })
@@ -45,7 +54,7 @@ export function PrayerRequestForm() {
         </div>
       )}
 
-      <form id="prayer-form" action={handleSubmit} className="space-y-4">
+      <form id="prayer-form" action={handleSubmit} onInput={handleFormInput} className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
             Name (Optional)
@@ -73,7 +82,9 @@ export function PrayerRequestForm() {
           />
         </div>
 
-        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        {turnstileArmed && (
+          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+        )}
 
         <button
           type="submit"

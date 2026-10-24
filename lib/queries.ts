@@ -94,14 +94,25 @@ export const ANNOUNCEMENTS_QUERY = `
 // Gallery & Moments
 // ---------------------------------------------------------------------------
 
-/** Fetch all active gallery items, featured first, then newest */
+/**
+ * Homepage Fellowship Moments gallery.
+ *
+ * "Featured on Homepage" is a true visibility switch: only published gallery
+ * items with the box ticked are returned, so unticking a photo hides it
+ * from the public site without deleting it from the Studio.
+ *
+ * Manual "Display Order" wins (1, 2, 3 …). Photos left blank follow the
+ * numbered ones, newest upload first.
+ */
 export const GALLERY_QUERY = `
-  *[_type == "galleryItem"] | order(coalesce(featured, false) desc, _createdAt desc) {
+  *[_type == "galleryItem" && coalesce(featured, false) == true]
+    | order(coalesce(displayOrder, 9999) asc, _createdAt desc) {
     _id,
     title,
     caption,
     category,
     featured,
+    displayOrder,
     image,
     "imageUrl": image.asset->url
   }
@@ -195,7 +206,28 @@ export const ABOUT_PAGE_QUERY = `
     teamsLead,
     ctaTag,
     ctaHeadline,
-    ctaSubtitle
+    ctaSubtitle,
+    showHero,
+    showHistory,
+    showPillars,
+    showLeadership,
+    showTeams,
+    showCta
+  }
+`
+
+/** Fetch core pillars from the About Page to display on the homepage Who We Are section */
+export const HOMEPAGE_PILLARS_QUERY = `
+  *[_type == "aboutPage"][0]{
+    pillar1Title,
+    pillar1Subtitle,
+    pillar1Desc,
+    pillar2Title,
+    pillar2Subtitle,
+    pillar2Desc,
+    pillar3Title,
+    pillar3Subtitle,
+    pillar3Desc
   }
 `
 
@@ -290,6 +322,10 @@ export const SITE_SETTINGS_QUERY = `
       url,
       iconType,
       isExternal
-    }
+    },
+    maintenancePages,
+    maintenanceHeadline,
+    maintenanceMessage,
+    maintenanceEta
   }
 `

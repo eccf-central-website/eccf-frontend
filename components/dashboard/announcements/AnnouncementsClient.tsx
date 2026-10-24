@@ -44,31 +44,26 @@ interface AnnouncementsClientProps {
 
 type StatusFilter = 'ALL' | 'PUBLISHED' | 'DRAFT' | 'PINNED'
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   'WEEKLY SERVICES': {
     bg: 'bg-blue-50 dark:bg-blue-950/40',
     text: 'text-blue-700 dark:text-blue-400',
-    border: 'border-blue-200 dark:border-blue-900',
   },
   'ACADEMIC & EXAMS': {
     bg: 'bg-purple-50 dark:bg-purple-950/40',
     text: 'text-purple-700 dark:text-purple-400',
-    border: 'border-purple-200 dark:border-purple-900',
   },
   'BIBLE STUDY': {
     bg: 'bg-amber-50 dark:bg-amber-950/40',
     text: 'text-amber-700 dark:text-amber-400',
-    border: 'border-amber-200 dark:border-amber-900',
   },
   'EXCO UPDATES': {
     bg: 'bg-emerald-50 dark:bg-emerald-950/40',
     text: 'text-emerald-700 dark:text-emerald-400',
-    border: 'border-emerald-200 dark:border-emerald-900',
   },
   GENERAL: {
     bg: 'bg-slate-50 dark:bg-slate-900/60',
     text: 'text-slate-700 dark:text-slate-400',
-    border: 'border-slate-200 dark:border-slate-800',
   },
 }
 
@@ -250,22 +245,22 @@ export default function AnnouncementsClient({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Metric Pills */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-card text-xs font-medium text-foreground">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card shadow-xs text-xs font-medium text-foreground">
             <Megaphone className="w-3.5 h-3.5 text-primary" />
             <span>Total:</span>
             <strong className="text-foreground">{stats.total}</strong>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-emerald-500/5 text-xs font-medium text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-xs font-medium text-emerald-700 dark:text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Live:</span>
             <strong>{stats.published}</strong>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-amber-500/5 text-xs font-medium text-amber-700 dark:text-amber-400 border-amber-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-xs font-medium text-amber-700 dark:text-amber-400">
             <span className="w-2 h-2 rounded-full bg-amber-500" />
             <span>Drafts:</span>
             <strong>{stats.drafts}</strong>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-indigo-500/5 text-xs font-medium text-indigo-700 dark:text-indigo-400 border-indigo-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 text-xs font-medium text-indigo-700 dark:text-indigo-400">
             <Pin className="w-3.5 h-3.5 text-indigo-500" />
             <span>Pinned:</span>
             <strong>{stats.pinned}</strong>
@@ -322,7 +317,7 @@ export default function AnnouncementsClient({
           </select>
 
           {/* Status Tabs */}
-          <div className="flex items-center bg-muted/60 p-1 rounded-md border border-input/40 text-xs">
+          <div className="flex items-center bg-muted/60 p-1 rounded-md text-xs">
             {(['ALL', 'PUBLISHED', 'DRAFT', 'PINNED'] as StatusFilter[]).map((tab) => (
               <button
                 key={tab}
@@ -349,7 +344,7 @@ export default function AnnouncementsClient({
 
       {/* Announcements List / Cards */}
       {filteredAnnouncements.length === 0 ? (
-        <div className="border border-dashed rounded-2xl p-12 text-center bg-card/40">
+        <div className="rounded-2xl p-12 text-center bg-card shadow-sm">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
             <Megaphone className="w-6 h-6" />
           </div>
@@ -401,8 +396,8 @@ export default function AnnouncementsClient({
             return (
               <div
                 key={item._id}
-                className={`flex flex-col justify-between rounded-xl border bg-card transition-all duration-200 hover:shadow-md ${
-                  isPinned ? 'ring-2 ring-indigo-500/30 border-indigo-200 dark:border-indigo-900' : ''
+                className={`flex flex-col justify-between rounded-2xl bg-card shadow-sm transition-all duration-200 hover:shadow-md ${
+                  isPinned ? 'ring-2 ring-indigo-500/30' : ''
                 }`}
               >
                 {/* Card Header & Badges */}
@@ -410,7 +405,7 @@ export default function AnnouncementsClient({
                   <div className="flex items-center justify-between gap-2">
                     {/* Category Tag */}
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase border ${colors.bg} ${colors.text} ${colors.border}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${colors.bg} ${colors.text}`}
                     >
                       {item.category || 'GENERAL'}
                     </span>
@@ -418,16 +413,16 @@ export default function AnnouncementsClient({
                     {/* Status Badges */}
                     <div className="flex items-center gap-1.5">
                       {isPinned && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-500/15 text-indigo-700 dark:text-indigo-400">
                           <Pin className="w-3 h-3 fill-indigo-500" />
                           Pinned
                         </span>
                       )}
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                           isLive
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-900'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
                         }`}
                       >
                         <span
@@ -444,7 +439,7 @@ export default function AnnouncementsClient({
                   </h3>
 
                   {/* Event Details: Date, Time, Venue */}
-                  <div className="space-y-1.5 pt-1 text-xs text-muted-foreground border-t border-border/50">
+                  <div className="space-y-1.5 pt-2 text-xs text-muted-foreground">
                     {item.eventDate && (
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -480,7 +475,7 @@ export default function AnnouncementsClient({
                 {/* Card Footer: Broadcast Indicator & Actions */}
                 <div className="p-4 sm:p-5 pt-0 space-y-3">
                   {/* Subscriber broadcast indicator */}
-                  <div className="pt-2 border-t flex items-center justify-between text-xs">
+                  <div className="pt-2 flex items-center justify-between text-xs">
                     {isBroadcasted ? (
                       <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -499,10 +494,10 @@ export default function AnnouncementsClient({
                       onClick={() => handleTogglePin(item)}
                       disabled={pinningId === item._id}
                       title={isPinned ? 'Unpin from top' : 'Pin to top'}
-                      className={`p-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      className={`p-1.5 rounded-md text-xs font-medium transition-colors ${
                         isPinned
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400'
-                          : 'bg-muted/50 border-input text-muted-foreground hover:text-foreground'
+                          ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
+                          : 'bg-muted/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {pinningId === item._id ? (
@@ -632,7 +627,7 @@ export default function AnnouncementsClient({
           </DialogHeader>
 
           {broadcastingItem?.sentToSubscribers && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-400">
+            <div className="p-3 bg-amber-500/10 rounded-lg flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-400">
               <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
               <span>
                 Notice: This announcement was already broadcasted earlier. Confirming will dispatch another email bulletin.

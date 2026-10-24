@@ -326,7 +326,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       {/* ==================================================================== */}
       {/* SECTION HEADER                                                       */}
       {/* ==================================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
@@ -341,7 +341,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                 : `${session.leadingTeam || session.team || leadsTeamKeys[0] || 'Ministry'} Team Roster`}
             </span>
             {pendingWorkers.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
                 <Clock className="h-3 w-3 shrink-0" />
                 {pendingWorkers.length} Pending
               </span>
@@ -385,16 +385,16 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
             {isAdmin ? 'Broadcast Mail' : 'Email Workers'}
           </Button>
 
-          <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-center">
+          <div className="px-3.5 py-2 rounded-xl bg-card shadow-sm text-center">
             <span className="block text-xs font-mono uppercase text-muted-foreground font-bold">Total</span>
             <span className="font-serif font-black text-lg text-foreground">{scopedWorkers.length}</span>
           </div>
-          <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 shadow-xs text-center">
+          <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 shadow-sm text-center">
             <span className="block text-xs font-mono uppercase text-emerald-600 dark:text-emerald-400 font-bold">Verified</span>
             <span className="font-serif font-black text-lg text-emerald-700 dark:text-emerald-300">{verifiedWorkers.length}</span>
           </div>
           {pendingWorkers.length > 0 && (
-            <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 shadow-xs text-center">
+            <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 shadow-sm text-center">
               <span className="block text-xs font-mono uppercase text-amber-600 dark:text-amber-400 font-bold">Pending</span>
               <span className="font-serif font-black text-lg text-amber-700 dark:text-amber-300">{pendingWorkers.length}</span>
             </div>
@@ -416,7 +416,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       {/* PENDING APPROVALS ALERT CAROUSEL / CALLOUT BANNER                    */}
       {/* ==================================================================== */}
       {pendingWorkers.length > 0 && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-card border border-amber-500/30 shadow-xs space-y-3">
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-card shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold">
@@ -456,7 +456,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
               return (
                 <div
                   key={worker._id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-card border border-amber-500/25 shadow-xs hover:border-amber-500/50 transition-all"
+                  className="flex items-center justify-between p-3 rounded-xl bg-card shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 font-serif font-bold text-sm overflow-hidden">
@@ -522,7 +522,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       {/* ==================================================================== */}
       {/* FILTER & SEARCH BAR                                                  */}
       {/* ==================================================================== */}
-      <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-3">
+      <div className="p-4 rounded-2xl bg-card shadow-sm space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -538,7 +538,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
 
           {/* Hall Filter (hidden for Hall Reps whose view is locked to their assigned hall) */}
           {isHallRep ? (
-            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-primary/10 border border-primary/25 text-primary text-xs font-bold shrink-0">
+            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-primary/10 text-primary text-xs font-bold shrink-0">
               <Building className="h-4 w-4 shrink-0 text-primary" />
               <span>{session.hall || 'Assigned Hall'}</span>
             </div>
@@ -581,7 +581,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
 
           {/* Fixed Team Badge for Unit Leaders */}
           {isTeamLead && !isMedia && (
-            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-muted/40 border border-border text-foreground text-xs font-bold shrink-0">
+            <div className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-muted/40 text-foreground text-xs font-bold shrink-0">
               <Users className="h-4 w-4 shrink-0 text-primary" />
               <span>{session.leadingTeam || session.team}</span>
             </div>
@@ -589,7 +589,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <span className="text-xs font-mono font-bold text-muted-foreground uppercase mr-1">Status:</span>
           {[
             { id: 'all', label: `All (${scopedWorkers.length})` },
@@ -607,7 +607,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : tab.alert
-                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-extrabold'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
@@ -622,7 +622,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       {/* WORKERS TABLE                                                        */}
       {/* ==================================================================== */}
       {/* Mobile: flat divided rows */}
-      <div className="md:hidden rounded-2xl border border-border bg-card shadow-xs divide-y divide-border">
+      <div className="md:hidden rounded-2xl bg-card shadow-sm divide-y divide-border/50">
         {filteredRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
             <Users className="h-8 w-8 text-muted-foreground/50 stroke-1 shrink-0" />
@@ -637,7 +637,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
             return (
               <div key={worker._id} className="flex flex-col gap-2.5 p-3.5">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-foreground font-serif font-bold text-sm overflow-hidden">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-serif font-bold text-sm overflow-hidden">
                     {worker.profileImageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={worker.profileImageUrl} alt={worker.fullName} className="h-full w-full object-cover" />
@@ -649,7 +649,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-bold text-sm text-foreground">{worker.fullName}</span>
                       {worker.role && worker.role !== 'team_lead' && (
-                        <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-primary/30">
+                        <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-transparent">
                           {worker.role}
                         </Badge>
                       )}
@@ -669,8 +669,8 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                           key={t + idx}
                           className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
                             t === worker.leadingTeam
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold'
-                              : 'bg-muted text-muted-foreground border border-border/50'
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                              : 'bg-muted text-muted-foreground'
                           }`}
                         >
                           {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 mr-1 text-amber-500 shrink-0" />}
@@ -685,17 +685,17 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                   </div>
                   <div className="shrink-0">
                     {status === 'verified' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" /> Verified
                       </span>
                     )}
                     {status === 'pending' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                         <Clock className="h-3 w-3 text-amber-500 shrink-0" /> Pending
                       </span>
                     )}
                     {status === 'rejected' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                         <XCircle className="h-3 w-3 text-rose-500 shrink-0" /> Declined
                       </span>
                     )}
@@ -733,7 +733,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       </div>
 
 
-      <div className="hidden md:block rounded-2xl border border-border bg-card shadow-xs overflow-x-auto">
+      <div className="hidden md:block rounded-2xl bg-card shadow-sm overflow-x-auto">
       <Table aria-label="Workers records">
         <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -766,7 +766,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                     {/* Member Name + Photo */}
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-foreground font-serif font-bold text-sm overflow-hidden">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-serif font-bold text-sm overflow-hidden">
                           {worker.profileImageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -782,7 +782,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-sm text-foreground">{worker.fullName}</span>
                             {worker.role && worker.role !== 'team_lead' && (
-                              <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-primary/30">
+                              <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-transparent">
                                 {worker.role}
                               </Badge>
                             )}
@@ -810,8 +810,8 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                             key={t + idx}
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
                               t === worker.leadingTeam
-                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold'
-                                : 'bg-muted text-muted-foreground border border-border/50'
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                                : 'bg-muted text-muted-foreground'
                             }`}
                           >
                             {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 shrink-0 mr-1 text-amber-500" />}
@@ -832,19 +832,19 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                     {/* Verification Status */}
                     <TableCell>
                       {status === 'verified' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                           <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                           Verified
                         </span>
                       )}
                       {status === 'pending' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
                           <Clock className="h-3.5 w-3.5 shrink-0 text-amber-500" />
                           Pending Review
                         </span>
                       )}
                       {status === 'rejected' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                           <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
                           Declined
                         </span>
@@ -927,7 +927,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
       {/* WORKER DETAIL MODAL                                                  */}
       {/* ==================================================================== */}
       <Dialog open={!!activeWorkerDetail} onOpenChange={(open) => !open && setActiveWorkerDetail(null)}>
-        <DialogContent className="flex max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-6">
+        <DialogContent className="flex max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl p-6">
           <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="font-serif text-2xl font-black text-foreground">
               Worker Profile
@@ -939,8 +939,8 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
 
           {activeWorkerDetail && (
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pt-4 pr-1 -mr-1">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden border border-border">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden">
                   {activeWorkerDetail.profileImageUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -961,7 +961,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
               </div>
 
               {/* Birthday Banner & Media Flyer Download */}
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-card border border-primary/20 space-y-2.5">
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-card space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -990,7 +990,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                 </div>
 
                 {activeWorkerDetail.profileImageUrl && (
-                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-background border border-primary/25">
+                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-background">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={activeWorkerDetail.profileImageUrl}
@@ -1002,7 +1002,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                <div className="p-3 rounded-xl bg-muted/40">
                   <span className="text-muted-foreground font-bold block mb-1">Operational Teams</span>
                   <span className="font-semibold text-foreground">
                     {(activeWorkerDetail.teams && activeWorkerDetail.teams.length > 0
@@ -1011,7 +1011,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                     ).join(', ')}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                <div className="p-3 rounded-xl bg-muted/40">
                   <span className="text-muted-foreground font-bold block mb-1">Verification Status</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
                     {activeWorkerDetail.verificationStatus || 'Verified'}
@@ -1030,11 +1030,11 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
 
               {/* Audit Delta History */}
               {activeWorkerDetail.updateLog && activeWorkerDetail.updateLog.length > 0 && (
-                <div className="pt-2 border-t border-border">
+                <div className="pt-2">
                   <h5 className="font-mono text-xs font-bold uppercase text-muted-foreground mb-2">Audit History</h5>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                     {activeWorkerDetail.updateLog.map((log, idx) => (
-                      <p key={idx} className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border/60">
+                      <p key={idx} className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg">
                         {log}
                       </p>
                     ))}

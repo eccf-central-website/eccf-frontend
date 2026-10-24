@@ -36,6 +36,7 @@ const DEFAULT_PILLARS = [
     scripture: 'Acts 1:8',
     icon: Flame,
     color: 'border-sky-500',
+    accentBar: 'bg-sky-500',
     accentBg: 'bg-sky-50 text-[#0077cc]',
     desc: 'Cultivating students who burn with uncompromised faith, apostolic prayer fervency, and practical holiness across lecture rooms and student hostels.',
     bulletPoints: [
@@ -52,6 +53,7 @@ const DEFAULT_PILLARS = [
     scripture: 'Daniel 1:17, 20',
     icon: GraduationCap,
     color: 'border-amber-500',
+    accentBar: 'bg-amber-500',
     accentBg: 'bg-amber-50 text-amber-700',
     desc: 'Destroying academic apathy and mediocrity. We believe the Spirit of God is a spirit of excellence that inspires top-tier scholarship.',
     bulletPoints: [
@@ -68,6 +70,7 @@ const DEFAULT_PILLARS = [
     scripture: '1 Peter 4:10',
     icon: HeartHandshake,
     color: 'border-emerald-500',
+    accentBar: 'bg-emerald-500',
     accentBg: 'bg-emerald-50 text-emerald-700',
     desc: 'A vibrant campus family where no student falls through the cracks. We provide practical welfare, emotional care, and lifelong kingdom friendships.',
     bulletPoints: [
@@ -147,8 +150,8 @@ export default function AboutPillars({
           </p>
         </motion.div>
 
-        {/* 3-Column Editorial Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
+        {/* Responsive pillar grid — 1-up on phones, 2-up (third spans) on tablets, 3-up on desktop */}
+        <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {pillars.map((pillar, idx) => {
             const Icon = pillar.icon
             return (
@@ -159,45 +162,52 @@ export default function AboutPillars({
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="group flex flex-col self-start h-auto p-6 sm:p-8 rounded-3xl bg-white border border-stone-200 shadow-sm hover:shadow-xl transition-all"
+                className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-shadow duration-300 hover:shadow-xl ${
+                  idx === 2 ? 'sm:col-span-2 lg:col-span-1' : ''
+                }`}
               >
-                <div>
+                {/* Accent rule — distinctives stay colour-coded per pillar */}
+                <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${pillar.accentBar}`} />
+
+                <div className="flex flex-1 flex-col p-6 sm:p-7 lg:p-8">
                   {/* Top Bar with Number and Icon */}
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-serif font-black text-3xl sm:text-4xl text-[#0095ff]">
+                  <div className="mb-4 flex items-center justify-between sm:mb-5">
+                    <span className="font-serif text-3xl font-black text-[#0095ff] sm:text-4xl">
                       {pillar.num}
                     </span>
-                    <div className={`p-3 rounded-2xl ${pillar.accentBg}`}>
-                      <Icon className="h-6 w-6 shrink-0" />
+                    <div className={`rounded-2xl p-2.5 sm:p-3 ${pillar.accentBg}`}>
+                      <Icon className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" />
                     </div>
                   </div>
 
                   {/* Header & Subtitle */}
                   <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0077cc]">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-[10.5px] font-mono font-bold uppercase tracking-wider text-[#0077cc] sm:text-[11px]">
                         {pillar.subtitle}
                       </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-[11px] font-mono font-semibold text-slate-400">
+                      <span className="hidden text-slate-300 sm:inline" aria-hidden="true">
+                        •
+                      </span>
+                      <span className="text-[10.5px] font-mono font-semibold text-slate-400 sm:text-[11px]">
                         {pillar.scripture}
                       </span>
                     </div>
-                    <h3 className="font-serif font-bold text-2xl text-slate-950 leading-tight">
+                    <h3 className="font-serif text-[22px] font-bold leading-tight text-slate-950 sm:text-2xl">
                       {pillar.title}
                     </h3>
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-6 font-normal">
+                  <p className="mb-5 text-[13.5px] leading-relaxed text-slate-600 sm:mb-6 sm:text-[15px]">
                     {pillar.desc}
                   </p>
 
-                  {/* Bullet points */}
-                  <ul className="space-y-2.5 pt-4 border-t border-stone-100">
+                  {/* Bullet points — pinned to the card base so every column ends level */}
+                  <ul className="mt-auto space-y-2.5 border-t border-stone-100 pt-4">
                     {pillar.bulletPoints.map((point) => (
-                      <li key={point} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
-                        <Check className="h-4 w-4 text-[#0095ff] shrink-0 mt-0.5" />
+                      <li key={point} className="flex items-start gap-2.5 text-[12.5px] text-slate-700 sm:text-sm">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0095ff]" aria-hidden="true" />
                         <span>{point}</span>
                       </li>
                     ))}

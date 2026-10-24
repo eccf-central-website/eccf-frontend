@@ -69,7 +69,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'A valid image is required.' }, { status: 400 })
     }
 
-    const imageBytes = Buffer.from(body.base64, 'base64')
+    // Tolerate a data-URL prefix; strip it so decoding is always clean Base64.
+    const cleanBase64 = body.base64.includes('base64,')
+      ? body.base64.slice(body.base64.indexOf('base64,') + 7).replace(/\s/g, '')
+      : body.base64
+    const imageBytes = Buffer.from(cleanBase64, 'base64')
     const mimeType = getImageMimeType(imageBytes)
     if (!mimeType || imageBytes.length === 0 || imageBytes.length > MAX_IMAGE_BYTES) {
       return NextResponse.json({ ok: false, error: 'Use a JPEG, PNG, or WebP image up to 2 MB.' }, { status: 400 })
@@ -133,15 +137,19 @@ export async function POST(request: Request) {
     if (appScriptUrl && signingSecret && Buffer.byteLength(signingSecret, 'utf8') >= 32) {
       try {
         const timestamp = Date.now().toString()
-        const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${body.base64}`
+        // Sign exactly what the body sends — the Apps Script hashes the
+        // payload's fields verbatim, so the filename (with extension) must
+        // be consistent in both places.
+        const signedFileName = `${cleanFileName}.${fileExtension}`
+        const signaturePayload = `${timestamp}\n${signedFileName}\n${mimeType}\n${cleanBase64}`
         const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
 
         const gasResponse = await fetch(appScriptUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            base64: body.base64,
-            cleanFileName: `${cleanFileName}.${fileExtension}`,
+            base64: cleanBase64,
+            cleanFileName: signedFileName,
             mimeType,
             timestamp,
             signature,
@@ -157,7 +165,11 @@ export async function POST(request: Request) {
             await patchPrivateDocument(worker._id)
               .set({ profileImageUrl: uploadedUrl, updatedAt: new Date().toISOString() })
               .commit()
+          } else {
+            console.warn('[/api/upload-drive] Google Drive webhook did not save the file:', JSON.stringify(data ?? 'non-JSON response'))
           }
+        } else {
+          console.warn(`[/api/upload-drive] Google Drive webhook returned HTTP ${gasResponse.status}`)
         }
       } catch (gasErr) {
         console.warn('[/api/upload-drive] Optional Google Drive backup skipped:', gasErr)

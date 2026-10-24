@@ -48,7 +48,7 @@ export default function EmptyState({
     <div
       role={variant === 'no-results' ? 'status' : undefined}
       className={cn(
-        'flex flex-col items-center rounded-xl border border-dashed bg-card px-6 py-12 text-center sm:py-16',
+        'flex flex-col items-center rounded-2xl bg-card/60 px-6 py-12 text-center sm:py-16',
         className
       )}
     >

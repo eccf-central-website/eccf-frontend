@@ -54,12 +54,11 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
               onNavigate?.()
             }}
             className={cn(
-              'relative flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+              'relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
-              'border-l-[3px] border-transparent',
               active
-                ? 'bg-blue-600/20 text-blue-300 border-blue-400'
-                : 'text-sidebar-foreground hover:bg-white/5 hover:text-white',
+                ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
               collapsed && 'justify-center px-0'
             )}
           >

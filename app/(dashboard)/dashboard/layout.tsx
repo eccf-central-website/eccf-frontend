@@ -76,7 +76,7 @@ export default async function DashboardShellLayout({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto overflow-x-hidden pb-20 focus:outline-none sm:pb-0"
+          className="flex-1 overflow-y-auto overflow-x-hidden focus:outline-none"
         >
           {children}
         </main>

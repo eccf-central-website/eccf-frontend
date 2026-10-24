@@ -67,6 +67,10 @@ export interface SiteSettingsData {
   footerMeetingVenue?: string
   footerServiceSummary?: string
   footerCopyright?: string
+  maintenancePages?: string[]
+  maintenanceHeadline?: string
+  maintenanceMessage?: string
+  maintenanceEta?: string
   footerNavColumns?: {
     title: string
     links?: {

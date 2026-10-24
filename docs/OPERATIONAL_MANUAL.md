@@ -3,7 +3,7 @@
 *Edo State University Uzairue / Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 23 October 2026 against frontend commit `a46ccdc` and backend commit `e6819d8`.
+**Last verified:** 24 October 2026 against frontend commit `cd983ef` and backend commit `e6819d8`.
 
 > **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the President-only executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
@@ -96,7 +96,7 @@ The homepage is server-rendered from live Sanity content and currently renders t
 The global public chrome adds:
 - **Navbar links:** Sermons, Giving (`/#giving`), About, Announcements, Connect.
 - **The Launcher:** a floating bottom-right "next steps" card with an inline Connect Card plus configurable quick links. Default actions include Join A Team / Registrations (worker intake), Weekly Podcasts & Messages (`/sermons`), and Give Online (`/give`). The quick links are editable in Sanity under **Launcher Quick Links**.
-- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns, copyright, and social links.
+- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns, copyright, legal links (**Privacy & Data Care** and **Terms of Use**), and social links.
 
 ### 1.2 About Page (`/about`)
 - **Mission & Vision:** The fellowship's spiritual mandate for Edo State University.
@@ -105,6 +105,7 @@ The global public chrome adds:
 - **Pillars of Faith:** Configurable pillars, each with a title, subtitle, scripture, description, and bullet points.
 - **Leadership Gallery:** Five tiers — **Patrons**, **CSGB**, **Hall Pastors (Halls 1–8)**, **Team Leaders**, and **Assistant Team Leaders**. The roster is driven by Sanity `publicLeader` records. Patrons use the `patron` Leadership Category; the curated Patron list remains only as a fallback when no Patron records exist.
 - **Operational Teams Directory:** Live `teamUnit` records describing the ministry teams. The same records drive every team picker across registration, attendance, the worker directory, and email audiences.
+- **Section Visibility:** Every major section (Hero, Fellowship History & Milestones, Pillars, Leadership Gallery, Operational Teams, and Call-to-Action) can be hidden or shown via Studio toggles. When a section is unticked in Sanity, it disappears cleanly from the public site without deleting the underlying text, photos, or timeline.
 
 > [!NOTE]
 > There is no separate "resident pastor" tier. Hall Pastor cards deliberately omit personal hall/room labels so student residence information is not exposed publicly.
@@ -229,24 +230,24 @@ Routing notes:
 The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form.
 
 ### 3.1 Overview Dashboard (`/dashboard`)
-The overview greets the signed-in leader by name and shows their position badge, role badge, and teams.
+The overview opens with a large **"Welcome back, {name}"** greeting that doubles as the page title. A single quiet info line underneath shows the leader's role, executive position (when held), and operational teams, and the workforce mail button sits beside it on wide screens. The greeting and info line appear identically at every screen width; team pills are no longer hidden on phones.
 
 **Available actions and panels:**
-- **Broadcast Mail to Workers** (admins) or **Send Mail to [Team]** (team leaders): opens the workforce email workflow.
-- **People statistics** (admins, team leads, hall reps):
+- **Mail All Workers** (admins) or **Mail [Team]** (team leaders): opens the workforce email workflow. This is the page's only top-level action.
+- **People statistics** (admins, team leads, hall reps), laid out as two cards per row on phones and five across on desktop:
   - First-timers this month
   - Pending welfare requests
   - Prayer requests in the last 7 days
   - Workers (scoped caption: "In your hall" for Hall Reps, otherwise "Across all halls")
-  - Last service attendance with service type and relative date
-- **Finance statistics** (admins and finance role):
+  - Last service attendance with service type and relative date (full-width row on phones and tablets)
+- **Finance statistics** (admins and finance role), three cards on desktop:
   - Income this month
   - Expenses this month
-  - Net this month (Surplus / Deficit / Break-even)
+  - Net this month (Surplus / Deficit / Break-even; full-width row on phones and tablets)
 - **Recent First-Timers** and **Recent Welfare Requests** lists, shown only to roles that can access those sections.
 
 > [!IMPORTANT]
-> The overview no longer contains an attendance trends chart or a generic quick-actions grid. Its only top-level action is the workforce email link. The "last service attendance" card is the current at-a-glance attendance indicator.
+> The overview no longer contains an attendance trends chart or a generic quick-actions grid, and it no longer repeats a section title in the top bar (the greeting itself is the title). Its only top-level action is the workforce mail link. The "last service attendance" card is the current at-a-glance attendance indicator.
 
 ### 3.2 Presidential Executive Approvals Console (`/dashboard/executives`)
 > [!IMPORTANT]
@@ -327,6 +328,11 @@ The dashboard summary counters show total announcements, published notices, draf
    - **Giving Accounts:** Bank name, account name, 10-digit account number, and transfer instructions.
    - **Website Footer:** Newsletter heading and description, brand title/subtitle, mission statement, logo, meeting venue, active ministry, copyright, and footer navigation columns.
    - **Social Channels:** Fellowship email, YouTube, Instagram, Facebook, TikTok, Telegram, X/Twitter, and WhatsApp URLs.
+   - **Maintenance Mode:**
+     - `Put Pages Under Maintenance` (`maintenancePages`) — checklist of public routes (`/`, `/about`, `/sermons`, `/announcements`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`). Ticking any route displays a dedicated full-screen maintenance notice to visitors instead of the normal page content and navigation. Sanity live web preview and draft mode bypass maintenance automatically so editors can work on closed pages without interruption.
+     - `Maintenance Headline` (`maintenanceHeadline`) — primary heading on paused pages (default: *"We will be right back."*).
+     - `Maintenance Message` (`maintenanceMessage`) — visitor guidance text beneath the headline.
+     - `Expected Back` (`maintenanceEta`) — optional timeframe badge (e.g. *"Back before Sunday service"*). Leave blank to omit.
    - **Launcher Quick Links:** Title, subtitle, target URL/anchor, icon type (podcast, visit, give, announcement, portal), and external-link flag for the floating launcher.
 3. Select **"Publish"**. The public site is server-rendered with `force-dynamic`, so published changes appear on the next request.
 
@@ -341,6 +347,13 @@ The dashboard summary counters show total announcements, published notices, draf
    - **Leadership:** section headline and subtitle.
    - **Teams:** section headline and subtitle.
    - **CTA:** tag, headline, and subtitle.
+   - **Section Visibility:** Checkbox controls under the "Section Visibility" fieldset:
+     - `Show Hero & Mission Manifesto` (`showHero`)
+     - `Show Fellowship History & Milestones` (`showHistory`) — untick this while the history narrative and timeline are still being drafted. The section disappears cleanly from the public page while preserving all text, photos, and milestones saved in Sanity.
+     - `Show Core Pillars (Romans 12:11)` (`showPillars`)
+     - `Show Leadership Gallery (CSGB & Directors)` (`showLeadership`)
+     - `Show Operational Teams` (`showTeams`)
+     - `Show Bottom Call-To-Action Banner` (`showCta`)
 3. Select **"Publish"**.
 
 ### 4.4 Managing the Photo Gallery (`galleryItem`)
@@ -350,8 +363,12 @@ The dashboard summary counters show total announcements, published notices, draf
    - **Category** — `Sunday Service`, `Bible Study`, `Student Life`, `Prayer Night`, `Excellence`, `Outreach`, or `Exco Roster`
    - **Photo Image** — upload a high-resolution image and set the hotspot/focal point
    - **Caption / Short Description**
-   - **Featured on Homepage** — controls whether the image is eligible for the homepage gallery
+   - **Featured on Homepage** — the homepage visibility switch. Ticked = shown on the public homepage; unticked = hidden from the site but kept safely in the Studio
+   - **Display Order** — optional. `1` appears first, `2` second, and so on. Leave blank to place the photo after all numbered photos, newest first
 3. Select **"Publish"**.
+
+> [!NOTE]
+> The homepage gallery only shows photos with **Featured on Homepage** ticked (8 at a time, with a "View All" button for the rest). Unticking the box hides a photo from the public site without deleting it or its uploaded image. **Display Order** controls the sequence; blank or duplicate numbers fall back to newest upload first.
 
 > [!NOTE]
 > The gallery schema no longer has a separate "Event Date" field. Use the caption or title if a date needs to be shown.
@@ -850,6 +867,7 @@ Notes:
 - `/connect` — Connect Hub (First Timer, Welfare, Prayer)
 - `/give` — Giving & Stewardship (Bank transfer details only)
 - `/privacy` — Operational Privacy & Data Protection Policy
+- `/terms` — Terms of Use & Acceptable Conduct (registration, sign-in, member data stewardship, content usage)
 - `/register` — Worker Registration & Profile Update Intake
 - `/register/status` — Registration Status Tracker (Clerk sign-in required)
 - `/qa` — QA Testing Portal (public, noindex)

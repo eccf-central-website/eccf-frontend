@@ -209,8 +209,8 @@ export default function AnnouncementModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0 gap-0 border-border bg-background shadow-2xl">
-        <DialogHeader className="p-6 pb-4 border-b bg-muted/30">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0 gap-0 border-0 bg-background shadow-2xl">
+        <DialogHeader className="p-6 pb-4 bg-muted/30">
           <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
             <FileText className="w-4 h-4" />
             <span>{isEditing ? 'Edit Notice' : 'New Notice'}</span>
@@ -225,7 +225,7 @@ export default function AnnouncementModal({
 
         {/* Quick template chips */}
         {!isEditing && (
-          <div className="px-6 py-2.5 bg-muted/40 border-b flex items-center gap-2 overflow-x-auto text-xs">
+          <div className="px-6 py-2.5 bg-muted/40 flex items-center gap-2 overflow-x-auto text-xs">
             <span className="flex items-center gap-1 text-muted-foreground font-medium shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               Templates:
@@ -233,28 +233,28 @@ export default function AnnouncementModal({
             <button
               type="button"
               onClick={() => applyTemplate('sunday')}
-              className="px-2.5 py-1 rounded-full bg-background border hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
             >
               Sunday Service
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('midweek')}
-              className="px-2.5 py-1 rounded-full bg-background border hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
             >
               Wednesday Study
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('vigil')}
-              className="px-2.5 py-1 rounded-full bg-background border hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
             >
               Night Vigil
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('exam')}
-              className="px-2.5 py-1 rounded-full bg-background border hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
             >
               Exams Clinic
             </button>
@@ -386,7 +386,7 @@ export default function AnnouncementModal({
           </div>
 
           {/* Toggles: Pin to Top & Publish Now */}
-          <div className="rounded-xl border bg-card/60 p-4 space-y-3.5">
+          <div className="rounded-xl bg-card/60 p-4 space-y-3.5">
             {/* Pin to top */}
             <label className="flex items-center justify-between cursor-pointer group">
               <div className="flex items-center gap-3">
@@ -410,7 +410,6 @@ export default function AnnouncementModal({
               />
             </label>
 
-            <div className="border-t border-border/60" />
 
             {/* Publish Now */}
             <label className="flex items-center justify-between cursor-pointer group">
@@ -438,7 +437,7 @@ export default function AnnouncementModal({
             </label>
           </div>
 
-          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row gap-2 border-t">
+          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"

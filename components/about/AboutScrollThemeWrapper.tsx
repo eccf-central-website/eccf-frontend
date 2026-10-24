@@ -46,6 +46,7 @@ export default function AboutScrollThemeWrapper({
   const backgroundColor = useTransform(
     [entryProgress, exitProgress],
     (values: number[]) => {
+      if (!leadership) return 'rgb(250, 250, 249)'
       const entry = values[0] ?? 0
       const exit = values[1] ?? 0
       if (exit <= 0) {

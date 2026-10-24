@@ -37,7 +37,10 @@ const workSans = Work_Sans({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#0077cc",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0e19" },
+  ],
   width: "device-width",
   initialScale: 1,
 };

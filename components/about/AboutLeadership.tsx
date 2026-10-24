@@ -8,11 +8,14 @@
  *   4. Hall Pastors (Halls 1 through 8)
  *   5. Operational Team Leaders
  *   6. Assistant Team Leaders
- * - JNAC-inspired 3:4 portrait cards with Playfair serif names & metallic badges
+ * - JNAC-inspired glossy portrait cards: photo framed in a glass well with the
+ *   name and role set beneath it (never over the face)
+ * - Editorial tier system: mono eyebrow ("Tier 02 — The Cabinet"), serif title,
+ *   live leader count, and a sky gradient hairline rule
+ * - Sticky glass tier rail with counts, doubling as an index of the roster
  * - Grand initials monograms for officers awaiting photography
- * - Strict removal of personal hall labels (no student room/hostel exposure)
  * - Seamless, gradual scroll transition from light (#fafaf9) to dark (#0d1117)
- * - Mobile-first 2-column portrait grid with horizontal-scrolling category pills
+ * - Mobile-first 2-column portrait grid with horizontally scrollable tier rail
  */
 
 'use client'
@@ -20,7 +23,7 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Shield, BookOpen, Users, Compass, Award } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 export interface LeaderCard {
   _id?: string
@@ -406,6 +409,58 @@ type LeaderTier =
   | 'team_leaders'
   | 'assistant_leaders'
 
+type TierKey = Exclude<LeaderTier, 'all'>
+
+/**
+ * Editorial metadata for each tier — the eyebrow carries the "chapter" label
+ * (Cabinet, Directorates, Deputies) while the title stays the official name.
+ */
+const TIER_META: Record<
+  TierKey,
+  { short: string; eyebrow: string; title: string; subtitle: string; grid: string }
+> = {
+  patrons: {
+    short: 'Patrons',
+    eyebrow: 'Tier 01 — Institutional Covering',
+    title: 'Board of Patrons & Staff Advisers',
+    subtitle:
+      'Faculty mentors and staff patrons who give counsel, institutional wisdom, and spiritual covering to the fellowship.',
+    grid: 'grid-cols-2 sm:grid-cols-3',
+  },
+  csgb: {
+    short: 'Cabinet',
+    eyebrow: 'Tier 02 — The Cabinet',
+    title: 'Central Student Governing Body',
+    subtitle:
+      'The executive cabinet directing vision, administration, finance, and the spiritual life of the fellowship.',
+    grid: 'grid-cols-2 sm:grid-cols-3',
+  },
+  hall_pastors: {
+    short: 'Hall Pastors',
+    eyebrow: 'Tier 03 — Pastoral Care',
+    title: 'Residence Hall Pastors',
+    subtitle:
+      'Shepherds assigned across the residence halls, caring for students where they live.',
+    grid: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  },
+  team_leaders: {
+    short: 'Directors',
+    eyebrow: 'Tier 04 — Directorates',
+    title: 'Operational Team Leaders',
+    subtitle:
+      'Directors of the fourteen service units that carry the weekly work of the fellowship.',
+    grid: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  },
+  assistant_leaders: {
+    short: 'Deputies',
+    eyebrow: 'Tier 05 — Deputies',
+    title: 'Assistant Team Leaders',
+    subtitle:
+      'Deputy heads supporting each directorate in execution and continuity.',
+    grid: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  },
+}
+
 export default function AboutLeadership({
   excos,
   headline,
@@ -456,6 +511,28 @@ export default function AboutLeadership({
     return matched.length > 0 ? matched : PATRONS_LIST
   }, [excos])
 
+  const tiers: { key: TierKey; members: LeaderCard[] }[] = [
+    { key: 'patrons', members: patronsList },
+    { key: 'csgb', members: csgbList },
+    { key: 'hall_pastors', members: hallPastorsList },
+    { key: 'team_leaders', members: teamLeadersList },
+    { key: 'assistant_leaders', members: assistantLeadersList },
+  ]
+
+  const totalLeaders = tiers.reduce((sum, tier) => sum + tier.members.length, 0)
+
+  const tabs: { id: LeaderTier; label: string; count: number }[] = [
+    { id: 'all', label: 'All Leadership', count: totalLeaders },
+    ...tiers.map((tier) => ({
+      id: tier.key as LeaderTier,
+      label: TIER_META[tier.key].short,
+      count: tier.members.length,
+    })),
+  ]
+
+  const visibleTiers =
+    activeTier === 'all' ? tiers : tiers.filter((tier) => tier.key === activeTier)
+
   const getInitials = (name: string) => {
     return (
       name
@@ -469,224 +546,235 @@ export default function AboutLeadership({
     )
   }
 
-  // Render helper for single 3:4 portrait card (clean headshot + leader name)
-  const renderCard = (leader: LeaderCard, idx: number) => {
+  /** Scrolls the grid back under the sticky rail when the roster is filtered. */
+  const handleTierChange = (tier: LeaderTier) => {
+    setActiveTier(tier)
+    const anchor = document.getElementById('leadership-grid')
+    if (!anchor) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const headerOffset = window.innerWidth >= 640 ? 148 : 128
+    const top = anchor.getBoundingClientRect().top + window.scrollY - headerOffset
+    window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' })
+  }
+
+  // Glossy glass portrait card — photo framed in a glass well, caption beneath.
+  // `featured` turns the tier lead into a row-spanning hero: full-bleed on
+  // phones, wide portrait + editorial caption on larger screens.
+  const renderCard = (leader: LeaderCard, idx: number, featured = false) => {
     const initials = getInitials(leader.fullName)
+    const role = leader.excoPosition || leader.role || ''
 
     return (
-      <motion.div
+      <motion.article
         layout
         key={leader._id || leader.fullName + idx}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.35, delay: idx * 0.03 }}
-        whileHover={{ y: -6, transition: { duration: 0.2 } }}
-        className="group relative aspect-[3/4] w-full overflow-hidden rounded-xl sm:rounded-3xl bg-slate-900 border border-slate-800 hover:border-sky-400/50 shadow-md hover:shadow-2xl transition-all cursor-pointer"
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.45, delay: Math.min(idx * 0.03, 0.24), ease: [0.22, 1, 0.36, 1] }}
+        className={`group relative flex overflow-hidden rounded-[22px] bg-gradient-to-b from-white/[0.11] via-white/[0.045] to-white/[0.02] ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_24px_48px_-30px_rgba(2,6,23,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1.5 hover:ring-sky-400/40 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_32px_60px_-28px_rgba(2,6,23,1)] sm:rounded-[26px] ${
+          featured
+            ? 'col-span-2 flex-row sm:col-span-3'
+            : 'flex-col'
+        }`}
       >
-        {/* Photo or Monogram Fallback */}
-        {leader.profileImageUrl ? (
-          <Image
-            src={leader.profileImageUrl}
-            alt={leader.fullName}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-700"
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-slate-400 p-3 text-center">
-            <span className="font-serif text-3xl sm:text-5xl font-bold text-sky-400/70 tracking-wider">
-              {initials}
-            </span>
-            <span className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-slate-500">
-              Leadership
-            </span>
-          </div>
-        )}
+        {/* Gloss hairline across the top edge */}
+        <span className="pointer-events-none absolute inset-x-5 top-0 z-20 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
 
-        {/* Gradient Overlay with Position and Name only */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-transparent flex flex-col justify-end p-3.5 sm:p-5 text-left pointer-events-none">
-          {(leader.excoPosition || leader.role) && (
-            <span className="text-[11px] sm:text-xs font-semibold text-sky-400 block mb-1 uppercase tracking-wide line-clamp-1">
-              {leader.excoPosition || leader.role}
+        {/* Portrait well */}
+        <div
+          className={`relative overflow-hidden rounded-[17px] ring-1 ring-white/10 sm:rounded-[20px] ${
+            featured
+              ? 'm-1.5 aspect-[3/4] w-[40%] shrink-0 self-center sm:m-2 sm:aspect-[4/5] sm:w-[38%] sm:self-auto lg:w-[42%]'
+              : 'm-1.5 aspect-[3/4] sm:m-2'
+          }`}
+        >
+          {leader.profileImageUrl ? (
+            <Image
+              src={leader.profileImageUrl}
+              alt={leader.fullName}
+              fill
+              sizes={
+                featured
+                  ? '(max-width: 640px) 40vw, (max-width: 1024px) 38vw, 42vw'
+                  : '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+              }
+              className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.06]"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/60 bg-[radial-gradient(circle_at_50%_0%,rgba(0,149,255,0.30),transparent_62%)] p-3 text-center">
+              <span className="font-serif text-3xl font-bold tracking-wider text-sky-300/85 sm:text-5xl">
+                {initials}
+              </span>
+              <span className="h-px w-8 bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+              <span className="font-mono text-[8.5px] uppercase tracking-[0.24em] text-slate-400 sm:text-[9.5px]">
+                ECCF Leadership
+              </span>
+            </div>
+          )}
+
+          {/* Glossy light sweep */}
+          <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.30)_0%,rgba(255,255,255,0.06)_32%,rgba(255,255,255,0)_52%,rgba(255,255,255,0.10)_100%)] opacity-50 mix-blend-screen transition-opacity duration-500 group-hover:opacity-80" />
+          {/* Blend the photo base into the caption */}
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950/60 to-transparent" />
+        </div>
+
+        {/* Caption */}
+        <div
+          className={`relative text-left ${
+            featured
+              ? 'flex flex-1 flex-col justify-center px-4 py-4 sm:px-7 sm:py-8 lg:px-10'
+              : 'px-3 pb-3.5 pt-0.5 sm:px-3.5 sm:pb-4'
+          }`}
+        >
+          {featured && (
+            <span className="mb-3 hidden items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-sky-300/80 sm:inline-flex">
+              <span className="h-px w-6 bg-gradient-to-r from-sky-400/80 to-transparent" />
+              {leader.badgeLabel || 'Presiding Officer'}
             </span>
           )}
-          <h4 className="font-serif font-bold text-sm sm:text-lg text-white leading-tight line-clamp-2">
+          <h4
+            className={`font-serif font-bold leading-snug text-white ${
+              featured
+                ? 'line-clamp-3 text-[16px] leading-[1.15] sm:line-clamp-2 sm:text-[26px] sm:leading-[1.15] lg:text-[32px]'
+                : 'line-clamp-2 text-[15px] sm:text-[17px]'
+            }`}
+          >
             {leader.fullName}
           </h4>
+          {role && (
+            <p
+              title={role}
+              className={`mt-1 font-mono uppercase leading-relaxed tracking-[0.14em] text-sky-300/85 line-clamp-2 ${
+                featured
+                  ? 'text-[11px] sm:text-[11px] lg:text-[12px]'
+                  : 'text-[9px] sm:text-[10px]'
+              }`}
+            >
+              {role}
+            </p>
+          )}
+          {featured && leader.teamName && (
+            <p className="mt-3 hidden font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400 sm:block">
+              {leader.teamName}
+            </p>
+          )}
+          {featured && leader.bio && (
+            <>
+              <span className="mt-5 hidden h-px w-full bg-gradient-to-r from-white/20 via-white/10 to-transparent sm:block" />
+              <p className="mt-5 hidden max-w-xl text-sm leading-relaxed text-slate-300/90 sm:line-clamp-4 lg:text-[15px]">
+                {leader.bio}
+              </p>
+            </>
+          )}
         </div>
-      </motion.div>
+      </motion.article>
     )
   }
 
   return (
-    <section
-      id="leadership"
-      className="py-16 sm:py-24 bg-transparent text-white relative overflow-hidden"
-    >
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-[#0095ff]/10 rounded-full blur-[140px] pointer-events-none z-0" />
-      <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
+    <section id="leadership" className="relative overflow-x-clip bg-transparent py-16 text-white sm:py-24">
+      {/* Ambient light */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.07),transparent_58%)]" />
+      <div aria-hidden="true" className="pointer-events-none absolute right-0 top-1/4 h-[520px] w-[520px] rounded-full bg-[#0095ff]/10 blur-[140px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute bottom-1/3 left-0 h-[420px] w-[420px] rounded-full bg-sky-500/[0.07] blur-[120px]" />
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
-        
+      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         {/* ================================================================ */}
-        {/* SECTION HEADER — Grand & Authoritative                           */}
+        {/* CHAPTER HEADER                                                    */}
         {/* ================================================================ */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-16 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-            className="text-left max-w-2xl"
-          >
-            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold tracking-widest text-sky-400 uppercase font-mono mb-3">
-              <Shield className="h-4 w-4 shrink-0" />
-              OUR TEAM &amp; MINISTERIAL HIERARCHY
-            </span>
-            <h2 className="font-serif font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
-              {headline || 'Stewards of the Vision & Altar.'}
-            </h2>
-            <p className="mt-4 text-base sm:text-xl text-slate-300 leading-relaxed font-normal">
-              {lead ||
-                'Meet the distinguished patrons, student governing executives, hall pastors, and operational leaders who guide our fellowship life.'}
-            </p>
-          </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl text-left"
+        >
+          <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-sky-400 sm:text-xs">
+            <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            Our Team &amp; Ministerial Hierarchy
+          </span>
+          <h2 className="mt-3 font-serif text-3xl leading-[1.1] tracking-tight text-white sm:text-4xl lg:text-5xl">
+            {headline || 'Stewards of the Vision & Altar.'}
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-lg">
+            {lead ||
+              'Meet the distinguished patrons, student governing executives, hall pastors, and operational leaders who guide our fellowship life.'}
+          </p>
+        </motion.div>
 
-          {/* Category Filter Pills — Wrap cleanly with zero scrollbars on mobile and desktop */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 self-start md:self-end max-w-2xl">
-            {[
-              { id: 'all', label: 'All Leadership' },
-              { id: 'patrons', label: 'Patrons' },
-              { id: 'csgb', label: 'CSGB' },
-              { id: 'hall_pastors', label: 'Hall Pastors' },
-              { id: 'team_leaders', label: 'Team Leaders' },
-              { id: 'assistant_leaders', label: 'Assistant Leads' },
-            ].map((tab) => {
-              const isActive = activeTier === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTier(tab.id as LeaderTier)}
-                  className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-[#0095ff] text-white shadow-md shadow-sky-500/25 font-bold ring-2 ring-sky-400/30'
-                      : 'bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
+        {/* ================================================================ */}
+        {/* STICKY TIER RAIL — counts double as an index of the roster        */}
+        {/* ================================================================ */}
+        <div className="sticky top-16 z-30 mt-8 sm:top-20 sm:mt-12">
+          <div className="rounded-2xl bg-[#0d1117]/80 p-1.5 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.9)] ring-1 ring-white/10 backdrop-blur-xl">
+            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%_-_28px),transparent)] sm:[mask-image:none]" role="group" aria-label="Filter leadership by tier">
+              {tabs.map((tab) => {
+                const isActive = activeTier === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => handleTierChange(tab.id)}
+                    className={`shrink-0 whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] font-semibold transition-all sm:px-3.5 sm:text-xs ${
+                      isActive
+                        ? 'bg-gradient-to-b from-sky-400 to-[#0077cc] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_10px_22px_-10px_rgba(0,149,255,0.85)]'
+                        : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                    <span
+                      className={`ml-1.5 font-mono text-[9.5px] ${
+                        isActive ? 'text-white/80' : 'text-slate-500'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
         {/* ================================================================ */}
-        {/* TIER 1: BOARD OF PATRONS                                         */}
+        {/* TIER SECTIONS                                                    */}
         {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'patrons') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Award className="h-5 w-5 shrink-0 text-amber-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Board of Patrons &amp; Staff Advisers
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Institutional &amp; Faculty Mentorship
-              </span>
-            </div>
+        <div id="leadership-grid" className="mt-10 scroll-mt-28 space-y-14 sm:mt-14 sm:space-y-20">
+          {visibleTiers.map(({ key, members }) => {
+            const meta = TIER_META[key]
+            return (
+              <section key={key} id={`leadership-${key}`} aria-label={meta.title} className="scroll-mt-32">
+                <div className="mb-5 sm:mb-7">
+                  <div className="flex items-end justify-between gap-3 sm:gap-4">
+                    <div className="min-w-0">
+                      <span className="block font-mono text-[9.5px] uppercase tracking-[0.26em] text-sky-400/90 sm:text-[10.5px]">
+                        {meta.eyebrow}
+                      </span>
+                      <h3 className="mt-2 font-serif text-[22px] leading-[1.12] text-white sm:text-3xl lg:text-[34px]">
+                        {meta.title}
+                      </h3>
+                    </div>
+                    <span className="mb-1 shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-300 ring-1 ring-white/10">
+                      {String(members.length).padStart(2, '0')} leaders
+                    </span>
+                  </div>
+                  <p className="mt-2 max-w-2xl text-[12.5px] leading-relaxed text-slate-400 sm:text-sm">
+                    {meta.subtitle}
+                  </p>
+                  <div className="mt-4 h-px w-full bg-gradient-to-r from-sky-400/45 via-white/10 to-transparent" />
+                </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {patronsList.map((patron, idx) => renderCard(patron, idx))}
-            </div>
-            </div>
-        )}
-        {/* ================================================================ */}
-        {/* TIER 3: CENTRAL STUDENT GOVERNING BODY (CSGB)                    */}
-        {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'csgb') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Shield className="h-5 w-5 shrink-0 text-sky-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Central Student Governing Body (CSGB)
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Executive Student Governance
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-6">
-              {csgbList.map((officer, idx) => renderCard(officer, idx))}
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TIER 4: RESIDENCE HALL PASTORS (Halls 1 to 8)                     */}
-        {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'hall_pastors') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Compass className="h-5 w-5 shrink-0 text-emerald-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Residence Hall Pastors
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Pastoral Care Across Halls 1 to 8
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {hallPastorsList.map((hp, idx) => renderCard(hp, idx))}
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TIER 5: OPERATIONAL TEAM LEADERS                                 */}
-        {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'team_leaders') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <Users className="h-5 w-5 shrink-0 text-sky-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Operational Team Leaders
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Heads of Specialized Service Units
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {teamLeadersList.map((tl, idx) => renderCard(tl, idx))}
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TIER 6: ASSISTANT TEAM LEADERS                                   */}
-        {/* ================================================================ */}
-        {(activeTier === 'all' || activeTier === 'assistant_leaders') && (
-          <div className="mb-14 sm:mb-20">
-            <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/10 text-left">
-              <BookOpen className="h-5 w-5 shrink-0 text-purple-400" />
-              <h3 className="font-serif font-bold text-xl sm:text-2xl text-white tracking-tight">
-                Assistant Team Leaders
-              </h3>
-              <span className="text-xs font-mono text-slate-400 ml-auto hidden sm:inline-block">
-                Deputy Heads Supporting Service Units
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-              {assistantLeadersList.map((atl, idx) => renderCard(atl, idx))}
-            </div>
-          </div>
-        )}
-
+                <div className={`grid gap-3 sm:gap-5 ${meta.grid}`}>
+                  {members.map((member, idx) =>
+                    renderCard(member, idx, key === 'csgb' && idx === 0)
+                  )}
+                </div>
+              </section>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

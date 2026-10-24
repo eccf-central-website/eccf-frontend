@@ -56,7 +56,7 @@ export default function AttendanceHub({
   return (
     <div className="space-y-6">
       {/* Dynamic Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
@@ -83,7 +83,7 @@ export default function AttendanceHub({
 
         {/* Dual Tab Segmented Control (if Admin or Ushering Lead) */}
         {hasDualAccess && (
-          <div className="inline-flex w-full rounded-xl bg-muted/80 p-1.5 text-xs font-semibold shadow-inner border border-border/50 sm:w-auto">
+          <div className="inline-flex w-full rounded-xl bg-muted/70 p-1.5 text-xs font-semibold sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('general')}

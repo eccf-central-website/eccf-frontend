@@ -660,10 +660,6 @@ const [checkingEmail, setCheckingEmail] = useState(false)
   // Final Submission
   async function handleFinalSubmit() {
     setError(null)
-    if (!turnstileToken) {
-      setError('Complete the security check before submitting the form.')
-      return
-    }
     setSubmitting(true)
 
     try {
@@ -748,6 +744,8 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       }
 
       if (registrationResult.ok) {
+        const newPortrait: string | undefined = base64Image ?? undefined
+        const pickedNewPhoto = Boolean(newPortrait)
         let finalResult: WorkerRegistrationResult = {
           ...registrationResult,
           fullName: registrationResult.fullName || fullName,
@@ -756,42 +754,64 @@ const [checkingEmail, setCheckingEmail] = useState(false)
           hall: registrationResult.hall || hall,
           roomNumber: registrationResult.roomNumber || roomNumber,
           teams: registrationResult.teams || teams,
-          profileImageUrl: existingPhotoUrl || undefined,
-          photoUploaded: Boolean(existingPhotoUrl),
+          profileImageUrl: pickedNewPhoto ? newPortrait : existingPhotoUrl || undefined,
+          photoUploaded: pickedNewPhoto ? false : Boolean(existingPhotoUrl),
         }
 
-        if (base64Image && registrationResult.uploadGrant) {
-          try {
-            const uploadRes = await fetch('/api/upload-drive', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                base64: base64Image,
-                fullName,
-                team: teams[0] || 'General',
-                uploadGrant: registrationResult.uploadGrant,
-              }),
-            })
-            if (uploadRes.ok) {
-              const uploadData = await uploadRes.json()
-              finalResult = {
-                ...finalResult,
-                profileImageUrl: uploadData.fileUrl || base64Image,
-                photoUploaded: true,
+        if (newPortrait) {
+          let stored = false
+
+          // Preferred: hand the fresh portrait to the Drive-backed endpoint
+          // when the registration granted an upload token.
+          if (registrationResult.uploadGrant) {
+            try {
+              const uploadRes = await fetch('/api/upload-drive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  base64: newPortrait,
+                  fullName,
+                  team: teams[0] || 'General',
+                  uploadGrant: registrationResult.uploadGrant,
+                }),
+              })
+              if (uploadRes.ok) {
+                const uploadData = await uploadRes.json()
+                if (uploadData.fileUrl) {
+                  finalResult = { ...finalResult, profileImageUrl: uploadData.fileUrl, photoUploaded: true }
+                  stored = true
+                }
               }
-            } else {
-              finalResult = {
-                ...finalResult,
-                photoUploaded: false,
-              }
-            }
-          } catch {
-            finalResult = {
-              ...finalResult,
-              photoUploaded: false,
+            } catch {
+              // fall through to the direct-to-Sanity action
             }
           }
+
+          // Fallback: store the portrait straight into the content lake and
+          // patch the worker record, bypassing the Drive endpoint entirely.
+          if (!stored && registrationResult.workerId) {
+            try {
+              const direct = await uploadWorkerPhotoDirectAction({
+                workerId: registrationResult.workerId,
+                base64Image: newPortrait,
+              })
+              if (direct.ok && direct.fileUrl) {
+                finalResult = { ...finalResult, profileImageUrl: direct.fileUrl, photoUploaded: true }
+                stored = true
+              }
+            } catch {
+              // fall through to the preview-only state
+            }
+          }
+
+          // Last resort: keep showing the *new* portrait as a data-URL
+          // preview and mark the upload as pending, rather than silently
+          // resurfacing the previous profile photo.
+          if (!stored) {
+            finalResult = { ...finalResult, profileImageUrl: newPortrait, photoUploaded: false }
+          }
         }
+
         toast.success(finalResult.message || 'Registration submitted successfully!')
         setSuccessResult(finalResult)
       } else {
@@ -819,7 +839,9 @@ const [checkingEmail, setCheckingEmail] = useState(false)
       const compressed = await compressImage(file)
       const res = await uploadWorkerPhotoDirectAction({
         workerId: successResult.workerId,
-        base64Image: compressed.dataUrl,
+        // Clean base64 (no data-URL prefix) — the action's signer and the
+        // Drive webhook both expect the raw payload.
+        base64Image: compressed.base64,
       })
 
       if (res.ok && res.fileUrl) {
@@ -887,7 +909,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
         <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm space-y-6 text-left">
           {/* Identity & Avatar Row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-0">
               <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 shrink-0 shadow-xs flex items-center justify-center">
                 {hasPhoto && successResult.profileImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -899,21 +921,21 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                 ) : (
                   <User className="h-8 w-8 shrink-0 text-slate-400" />
                 )}
-                {hasPhoto && (
-                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-white" title="Photo Attached" />
+                {successResult.photoUploaded && (
+                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-white" title="Photo Uploaded" />
                 )}
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">{successResult.fullName || fullName}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 break-words">{successResult.fullName || fullName}</h2>
                   <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 text-[11px] font-semibold">
                     {isReturning ? 'Updated Member' : 'New Intake'}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500 font-mono flex items-center gap-1.5">
+                <p className="text-xs sm:text-sm text-slate-500 font-mono flex items-center gap-1.5 min-w-0">
                   <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                  <span>{successResult.email || email}</span>
+                  <span className="break-all">{successResult.email || email}</span>
                 </p>
                 <p className="text-xs text-slate-500 flex items-center gap-1.5">
                   <Home className="h-3.5 w-3.5 shrink-0 text-slate-400" />
@@ -924,7 +946,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
 
             {/* Photo upload status badge */}
             <div className="self-stretch sm:self-center">
-              {hasPhoto ? (
+              {successResult.photoUploaded ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
                   <Check className="h-4 w-4 shrink-0 text-emerald-600" />
                   <span>Portrait Attached</span>
@@ -1023,7 +1045,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
         <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/"
-            className="flex h-13 items-center justify-center rounded-2xl bg-slate-950 px-8 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
+            className="flex min-h-14 items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-md"
           >
             Return to Homepage
           </Link>
@@ -1032,7 +1054,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
               type="button"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all disabled:opacity-60"
+              className="flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all disabled:opacity-60"
             >
               <LogOut className="h-4 w-4 shrink-0 mr-2" />
               {signingOut ? 'Signing out…' : 'Sign out to register another member'}
@@ -1041,7 +1063,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
             <button
               type="button"
               onClick={resetToNewRegistration}
-              className="flex h-13 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
+              className="flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-all"
             >
               <RotateCcw className="h-4 w-4 shrink-0 mr-2" /> Register Another Member
             </button>
@@ -1201,13 +1223,6 @@ const [checkingEmail, setCheckingEmail] = useState(false)
 
       {/* Main Interactive Container */}
       <div className="space-y-6">
-        {((isReturning && step === 4) || (!isReturning && step === 8)) && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-            <p className="mb-2 text-xs font-semibold text-slate-700">Complete the security check to continue.</p>
-            <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
-          </div>
-        )}
-
         {/* Error Notification */}
         {error && (
           <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 text-sm font-semibold flex items-start gap-3 shadow-xs">
@@ -1368,12 +1383,14 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                     />
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-semibold text-slate-700">
-                      Complete the security check to look up your number:
-                    </p>
-                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
-                  </div>
+                  {phoneNumber.trim().length >= 8 && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="mb-3 text-xs font-semibold text-slate-700">
+                        Complete the security check to proceed.
+                      </p>
+                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -1449,7 +1466,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                         />
                       </div>
 
-                      {Boolean(updateIdentifier.trim()) && (
+                      {updateIdentifier.trim().length >= 5 && (
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                           <p className="mb-3 text-xs font-semibold text-slate-700">
                             Complete the security check to receive your link:
@@ -1461,7 +1478,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                       <button
                         type="button"
                         onClick={handleRequestUpdateLink}
-                        disabled={requestingUpdateLink || !updateIdentifier.trim() || !turnstileToken}
+                        disabled={requestingUpdateLink || updateIdentifier.trim().length < 5 || !turnstileToken}
                         className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                       >
                         {requestingUpdateLink ? (
@@ -1814,7 +1831,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                 </button>
                 <button
                   type="button"
-                  disabled={submitting || !turnstileToken}
+                  disabled={submitting}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-emerald-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -2092,12 +2109,14 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                     />
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-semibold text-slate-700">
-                      Complete the security check to send your code:
-                    </p>
-                    <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
-                  </div>
+                  {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="mb-3 text-xs font-semibold text-slate-700">
+                        Complete the security check to send your code:
+                      </p>
+                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                    </div>
+                  )}
 
                   <div className="flex gap-3 pt-2">
                     <button
@@ -2549,7 +2568,7 @@ const [checkingEmail, setCheckingEmail] = useState(false)
                 </button>
                 <button
                   type="button"
-                  disabled={submitting || !ndprConsent || !turnstileToken}
+                  disabled={submitting || !ndprConsent}
                   onClick={handleFinalSubmit}
                   className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >

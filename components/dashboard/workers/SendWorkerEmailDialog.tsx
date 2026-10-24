@@ -204,8 +204,8 @@ export default function SendWorkerEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-border text-card-foreground">
-        <DialogHeader className="pb-3 border-b border-border">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-0 shadow-2xl text-card-foreground">
+        <DialogHeader className="pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-primary">
             <Mail className="h-4 w-4 shrink-0" />
             <span>Exco Communication Portal</span>
@@ -235,10 +235,10 @@ export default function SendWorkerEmailDialog({
                   <button
                     type="button"
                     onClick={() => setAudienceType('all_workers')}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                    className={`flex items-start gap-3 p-3.5 rounded-xl text-left transition-all ${
                       audienceType === 'all_workers'
-                        ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
-                        : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
+                        ? 'bg-primary/15 shadow-sm ring-2 ring-primary/40'
+                        : 'bg-muted/30 hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -255,10 +255,10 @@ export default function SendWorkerEmailDialog({
                   <button
                     type="button"
                     onClick={() => setAudienceType('all_excos')}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                    className={`flex items-start gap-3 p-3.5 rounded-xl text-left transition-all ${
                       audienceType === 'all_excos'
-                        ? 'border-purple-500 bg-purple-500/15 shadow-xs ring-1 ring-purple-500'
-                        : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
+                        ? 'bg-purple-500/15 shadow-sm ring-2 ring-purple-500/40'
+                        : 'bg-muted/30 hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400">
@@ -278,10 +278,10 @@ export default function SendWorkerEmailDialog({
               <button
                 type="button"
                 onClick={() => setAudienceType('team')}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                className={`flex items-start gap-3 p-3.5 rounded-xl text-left transition-all ${
                   audienceType === 'team'
-                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
-                    : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
+                    ? 'bg-primary/15 shadow-sm ring-2 ring-primary/40'
+                    : 'bg-muted/30 hover:bg-muted/50'
                 }`}
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
@@ -303,10 +303,10 @@ export default function SendWorkerEmailDialog({
               <button
                 type="button"
                 onClick={() => setAudienceType('specific_worker')}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                className={`flex items-start gap-3 p-3.5 rounded-xl text-left transition-all ${
                   audienceType === 'specific_worker'
-                    ? 'border-primary bg-primary/10 shadow-xs ring-1 ring-primary'
-                    : 'border-border hover:border-muted-foreground/30 bg-muted/20 hover:bg-muted/40'
+                    ? 'bg-primary/15 shadow-sm ring-2 ring-primary/40'
+                    : 'bg-muted/30 hover:bg-muted/50'
                 }`}
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
@@ -326,7 +326,7 @@ export default function SendWorkerEmailDialog({
           {/* CONDITIONAL CONTROLS (Team Picker / Worker Picker)               */}
           {/* ================================================================ */}
           {audienceType === 'team' && (
-            <div className="space-y-1.5 p-3.5 rounded-xl bg-muted/30 border border-border">
+            <div className="space-y-1.5 p-3.5 rounded-xl bg-muted/30">
               <Label className="text-xs font-bold text-foreground">Select Target Team</Label>
               {isAdmin ? (
                 <Select value={targetTeam} onValueChange={setTargetTeam}>
@@ -355,7 +355,7 @@ export default function SendWorkerEmailDialog({
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-2.5 rounded-lg bg-background border border-border text-xs font-bold text-foreground flex items-center gap-2">
+                <div className="p-2.5 rounded-lg bg-background text-xs font-bold text-foreground flex items-center gap-2">
                   <Users className="h-4 w-4 shrink-0 text-primary" />
                   <span>{session.team}</span>
                 </div>
@@ -364,7 +364,7 @@ export default function SendWorkerEmailDialog({
           )}
 
           {audienceType === 'specific_worker' && (
-            <div className="space-y-2 p-3.5 rounded-xl bg-muted/30 border border-border">
+            <div className="space-y-2 p-3.5 rounded-xl bg-muted/30">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-foreground">
                   Select Recipient Worker
@@ -387,7 +387,7 @@ export default function SendWorkerEmailDialog({
               </div>
 
               {/* Worker Dropdown / List */}
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/60">
+              <div className="max-h-40 overflow-y-auto rounded-lg bg-card divide-y divide-border/50">
                 {searchedWorkers.length === 0 ? (
                   <div className="p-3 text-center text-xs text-muted-foreground">
                     No matching workers found.
@@ -438,7 +438,7 @@ export default function SendWorkerEmailDialog({
               </div>
 
               {selectedWorkerObj && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/25 text-xs text-primary">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 text-xs text-primary">
                   <User className="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span>
                     Selected: <strong>{selectedWorkerObj.fullName}</strong> ({selectedWorkerObj.team})
@@ -539,7 +539,7 @@ export default function SendWorkerEmailDialog({
           {/* ================================================================ */}
           {/* ESTIMATED RECIPIENTS BANNER                                      */}
           {/* ================================================================ */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border text-xs">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <AlertCircle className="h-4 w-4 shrink-0 text-primary" />
               <span>
@@ -555,7 +555,7 @@ export default function SendWorkerEmailDialog({
           </div>
         </div>
 
-        <DialogFooter className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <DialogFooter className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="text-[11px] text-muted-foreground flex items-center gap-1">
             <span>Sender:</span>
             <strong className="text-foreground">{session.role === 'admin' ? 'CSGB Admin' : session.team}</strong>

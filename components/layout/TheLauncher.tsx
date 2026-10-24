@@ -34,7 +34,6 @@ import {
   Calendar,
   Radio,
   Footprints,
-  Lock,
 } from 'lucide-react'
 import { submitFirstTimer } from '@/app/actions/intake-actions'
 import TurnstileWidget from '@/components/forms/TurnstileWidget'
@@ -48,6 +47,7 @@ export default function TheLauncher() {
   const [formLoading, setFormLoading] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
+  const [connectArmed, setConnectArmed] = useState(false)
   const [formStatus, setFormStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -90,6 +90,16 @@ export default function TheLauncher() {
     }
   }, [isOpen])
 
+  /** Reveal the bot check only once the required connect-card fields are filled. */
+  function handleConnectInput(e: React.FormEvent<HTMLFormElement>) {
+    if (connectArmed) return
+    const data = new FormData(e.currentTarget)
+    const first = String(data.get('firstName') ?? '').trim()
+    const last = String(data.get('lastName') ?? '').trim()
+    const phone = String(data.get('phoneNumber') ?? '').trim()
+    if (first && last && phone.length >= 7) setConnectArmed(true)
+  }
+
   async function handleConnectSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setFormLoading(true)
@@ -104,6 +114,7 @@ export default function TheLauncher() {
         ;(e.target as HTMLFormElement).reset()
         setTurnstileToken('')
         setTurnstileResetSignal((signal) => signal + 1)
+        setConnectArmed(false)
       }
     } catch {
       setFormStatus({ success: false, error: 'Connection failed. Please try again.' })
@@ -329,7 +340,7 @@ export default function TheLauncher() {
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleConnectSubmit} className="space-y-3 my-auto">
+                    <form onSubmit={handleConnectSubmit} onInput={handleConnectInput} className="space-y-3 my-auto">
                       <p className="text-xs text-slate-300">
                         First time at ECCF, or visiting campus? Let us connect with you!
                       </p>
@@ -397,7 +408,13 @@ export default function TheLauncher() {
                         />
                       </div>
 
-                      <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+                      {connectArmed && (
+                        <TurnstileWidget
+                          onToken={setTurnstileToken}
+                          resetSignal={turnstileResetSignal}
+                          theme="dark"
+                        />
+                      )}
 
                       <button
                         type="submit"
@@ -459,7 +476,7 @@ export default function TheLauncher() {
                     >
                       <div className="flex items-center gap-3">
                         <Calendar className="h-5 w-5 text-sky-400 shrink-0" />
-                        <span className="text-sm sm:text-base font-bold text-white">Plan A Campus Visit</span>
+                        <span className="text-sm sm:text-base font-bold text-white">Plan A Visit</span>
                       </div>
                       <span className="text-xs text-slate-300 font-medium">Sundays 8am</span>
                     </Link>
@@ -486,18 +503,6 @@ export default function TheLauncher() {
                         <span className="text-sm sm:text-base font-bold text-white">Spotify & YouTube Podcasts</span>
                       </div>
                       <span className="text-xs text-slate-300 font-medium">Audio/Video</span>
-                    </Link>
-
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/5 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Lock className="h-5 w-5 text-amber-400 shrink-0" />
-                        <span className="text-sm sm:text-base font-bold text-white">Worker & Exco Portal</span>
-                      </div>
-                      <span className="text-xs text-slate-300 font-medium">CRM</span>
                     </Link>
                   </div>
                 </div>

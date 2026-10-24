@@ -164,10 +164,10 @@ export default function SendWorkerEmailCard({
 
   return (
     <div
-      className={`rounded-2xl border border-border bg-card p-5 shadow-xs transition-all ${className}`}
+      className={`rounded-2xl bg-card p-5 shadow-sm transition-all ${className}`}
     >
       {/* Header bar with toggle */}
-      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 pb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
             <Mail className="h-4 w-4 shrink-0" />
@@ -215,7 +215,7 @@ export default function SendWorkerEmailCard({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       audienceType === 'all_workers'
                         ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/20'
-                        : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     <Users className="h-3.5 w-3.5 shrink-0" />
@@ -228,7 +228,7 @@ export default function SendWorkerEmailCard({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       audienceType === 'all_excos'
                         ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-500/20'
-                        : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
@@ -243,7 +243,7 @@ export default function SendWorkerEmailCard({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   audienceType === 'team'
                     ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20'
-                    : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                    : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <Users className="h-3.5 w-3.5 shrink-0" />
@@ -256,7 +256,7 @@ export default function SendWorkerEmailCard({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   audienceType === 'specific_worker'
                     ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-500/20'
-                    : 'bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                    : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <User className="h-3.5 w-3.5 shrink-0" />
@@ -285,7 +285,7 @@ export default function SendWorkerEmailCard({
           )}
 
           {audienceType === 'specific_worker' && (
-            <div className="space-y-2 p-3 rounded-xl bg-muted/30 border border-border">
+            <div className="space-y-2 p-3 rounded-xl bg-muted/30">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-foreground">Select Worker</Label>
                 <span className="text-[11px] text-muted-foreground">{eligibleWorkers.length} workers eligible</span>
@@ -302,7 +302,7 @@ export default function SendWorkerEmailCard({
                 />
               </div>
 
-              <div className="max-h-36 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/60">
+              <div className="max-h-36 overflow-y-auto rounded-lg bg-card divide-y divide-border/50">
                 {searchedWorkers.map((w) => {
                   const isSelected = selectedWorkerId === w._id
                   return (

@@ -214,7 +214,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
   return (
     <div className="space-y-6">
       {/* Media Management Desk Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-primary">
             <Radio className="h-6 w-6 shrink-0" />
@@ -238,7 +238,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
       {/* KPI Stats Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="bg-card/70 border-border/80 shadow-xs">
+        <Card>
           <CardContent className="p-4 flex flex-col justify-between">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Total Messages
@@ -252,7 +252,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/70 border-border/80 shadow-xs">
+        <Card>
           <CardContent className="p-4 flex flex-col justify-between">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Auto-Synced (RSS)
@@ -266,7 +266,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/70 border-border/80 shadow-xs">
+        <Card>
           <CardContent className="p-4 flex flex-col justify-between">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Manually Curated
@@ -280,7 +280,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/70 border-border/80 shadow-xs">
+        <Card>
           <CardContent className="p-4 flex flex-col justify-between">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Ministers / Speakers
@@ -296,7 +296,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card p-3 rounded-lg border">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card p-3 rounded-xl shadow-sm">
         <div className="flex flex-1 flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[200px]">
@@ -349,7 +349,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         </div>
 
         {/* View Mode Toggle (Table vs Cards) */}
-        <div className="flex items-center gap-1 self-end sm:self-auto border rounded-md p-0.5 bg-muted/40">
+        <div className="flex items-center gap-1 self-end sm:self-auto rounded-lg p-0.5 bg-muted/40">
           <Button
             type="button"
             variant={viewMode === 'table' ? 'secondary' : 'ghost'}
@@ -377,7 +377,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
       {/* Sermons Display */}
       {filteredSermons.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center">
+        <div className="rounded-2xl bg-card/60 p-10 text-center">
           <Radio className="mx-auto h-10 w-10 shrink-0 text-muted-foreground/50 mb-3" />
           <h3 className="text-base font-semibold text-foreground">No sermons found</h3>
           <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
@@ -402,7 +402,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         </div>
       ) : viewMode === 'table' ? (
         /* Desktop & Tablet Table View */
-        <div className="rounded-md border bg-card overflow-x-auto">
+        <div className="rounded-2xl bg-card shadow-sm">
           <div className="overflow-x-auto">
       <Table aria-label="Sermon vault records">
               <TableHeader className="bg-muted/50">
@@ -426,7 +426,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                         {sermon.isAutoSynced ? (
                           <Badge
                             variant="outline"
-                            className="text-[11px] font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 whitespace-nowrap"
+                            className="text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 whitespace-nowrap"
                           >
                             <RefreshCw className="h-3 w-3 shrink-0" />
                             RSS
@@ -434,7 +434,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-[11px] font-medium border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1 whitespace-nowrap"
+                            className="text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1 whitespace-nowrap"
                           >
                             <Sparkles className="h-3 w-3 shrink-0" />
                             Curated
@@ -574,14 +574,14 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
           {filteredSermons.map((sermon) => {
             const isPlaying = playingSermonId === sermon._id
             return (
-              <Card key={sermon._id} className="flex flex-col justify-between border-border/80 hover:border-primary/40 transition-colors">
+              <Card key={sermon._id} className="flex flex-col justify-between transition-shadow hover:shadow-md">
                 <CardContent className="p-4 space-y-3">
                   {/* Top row: badge + date */}
                   <div className="flex items-center justify-between gap-2">
                     {sermon.isAutoSynced ? (
                       <Badge
                         variant="outline"
-                        className="text-[11px] font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1"
+                        className="text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1"
                       >
                         <RefreshCw className="h-3 w-3 shrink-0" />
                         Auto-Synced (RSS)
@@ -589,7 +589,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                     ) : (
                       <Badge
                         variant="outline"
-                        className="text-[11px] font-medium border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1"
+                        className="text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1"
                       >
                         <Sparkles className="h-3 w-3 shrink-0" />
                         Curated
@@ -648,7 +648,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                   )}
 
                   {/* Audio Test Bar & External Links */}
-                  <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center justify-between pt-3 mt-1">
                     <Button
                       size="sm"
                       variant={isPlaying ? 'default' : 'outline'}
@@ -724,7 +724,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
       {/* Floating Audio Stream Player Bar (active when test audio is playing) */}
       {audioUrl && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-[460px] z-50 rounded-xl border border-primary/20 bg-background/95 backdrop-blur-md p-3.5 shadow-2xl animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-[460px] z-50 rounded-xl bg-background/95 backdrop-blur-md p-3.5 shadow-2xl animate-in slide-in-from-bottom duration-200">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="min-w-0 flex-1">
               <span className="text-[10px] font-bold tracking-wider uppercase text-primary font-mono block">

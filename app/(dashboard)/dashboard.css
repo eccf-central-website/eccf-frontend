@@ -24,6 +24,8 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+
   --background: 60 9% 98%; /* #fafaf9 — matches the public site canvas */
   --foreground: 222 42% 6%; /* navy #090d16 */
 
@@ -61,6 +63,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* ECCF Midnight — deep navy canvases tinted toward the brand navy
      #090d16, layered from canvas → card → popover and suffused with
      sky-blue atmosphere rather than warm grey. Cool neutrals for text. */

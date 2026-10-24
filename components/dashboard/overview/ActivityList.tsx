@@ -20,8 +20,8 @@ interface ActivityListProps {
 
 export default function ActivityList({ id, title, viewAllHref, viewAllNoun, children }: ActivityListProps) {
   return (
-    <section aria-labelledby={id} className="flex min-w-0 flex-col rounded-xl border bg-card text-card-foreground shadow">
-      <div className="flex items-center justify-between gap-3 border-b px-3 py-2 sm:px-4 sm:py-2.5">
+    <section aria-labelledby={id} className="flex min-w-0 flex-col rounded-2xl bg-card text-card-foreground shadow-sm">
+      <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-4 sm:px-5 sm:pt-5">
         <h3 id={id} className="font-serif text-base text-foreground sm:text-lg">
           {title}
         </h3>
@@ -41,7 +41,7 @@ export default function ActivityList({ id, title, viewAllHref, viewAllNoun, chil
 /** One row: primary text + meta on the left, a date (or status) on the right. */
 export function ActivityItem({ children, aside }: { children: React.ReactNode; aside: React.ReactNode }) {
   return (
-    <li className="flex items-start justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+    <li className="flex items-start justify-between gap-3 px-4 py-2.5 sm:gap-4 sm:px-5 sm:py-3">
       <div className="min-w-0">{children}</div>
       <div className="flex shrink-0 flex-col items-end gap-1 text-right text-xs text-muted-foreground">{aside}</div>
     </li>

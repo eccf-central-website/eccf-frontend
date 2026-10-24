@@ -24,7 +24,9 @@ body {
   background: var(--site-bg);
   font-family: var(--font-work-sans), var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
+  /* `clip` hides horizontal overflow without creating a scroll container,
+     which would otherwise stop `position: sticky` from working. */
+  overflow-x: clip;
   max-width: 100vw;
   width: 100%;
   position: relative;

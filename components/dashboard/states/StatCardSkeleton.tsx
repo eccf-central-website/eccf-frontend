@@ -1,8 +1,10 @@
 /**
  * StatCardSkeleton / StatGridSkeleton — placeholders for the overview stat
- * cards (feature/dashboard-overview). The grid matches the real one:
- * 1 column, 2 from `sm`, 4 from `xl`. Each card mirrors a Card with a
- * label + icon row, a large figure and a short caption.
+ * cards (feature/dashboard-overview). The grid + spans mirror the real one
+ * (`OverviewStats` StatGroup: 2 columns from the base breakpoint, wider
+ * card groups at `xl`), so nothing jumps when the cards stream in. Each
+ * card mirrors the borderless StatCard: label + chip row, large figure,
+ * short caption.
  */
 
 import { cn } from '@/lib/utils'
@@ -11,10 +13,10 @@ import LoadingRegion from './LoadingRegion'
 
 export function StatCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-xl border bg-card p-6 shadow', className)}>
+    <div className={cn('rounded-2xl bg-card p-5 shadow-sm sm:p-6', className)}>
       <div className="flex items-center justify-between gap-4">
         <Skeleton className="h-4 w-32 shrink-0" />
-        <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
       </div>
       <Skeleton className="mt-4 h-8 w-20 shrink-0" />
       <Skeleton className="mt-3 h-3 w-40 shrink-0 max-w-full" />
@@ -23,8 +25,10 @@ export function StatCardSkeleton({ className }: { className?: string }) {
 }
 
 interface StatGridSkeletonProps {
-  /** Number of cards; the overview shows up to 4 per role. */
+  /** Number of cards. */
   count?: number
+  /** Tailwind grid-template classes matching the live group. */
+  gridClassName?: string
   label?: string
   announce?: boolean
   className?: string
@@ -32,13 +36,14 @@ interface StatGridSkeletonProps {
 
 export function StatGridSkeleton({
   count = 4,
+  gridClassName = 'grid grid-cols-2 gap-3 sm:gap-4',
   label = 'Loading statistics…',
   announce = true,
   className,
 }: StatGridSkeletonProps) {
   return (
     <LoadingRegion label={label} announce={announce} className={className}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className={gridClassName}>
         {Array.from({ length: count }, (_, i) => (
           <StatCardSkeleton key={i} />
         ))}

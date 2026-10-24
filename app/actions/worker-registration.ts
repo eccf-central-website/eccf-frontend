@@ -1607,9 +1607,12 @@ export async function registerWorker(
     if (!input.ndprConsent) {
       return { ok: false, error: 'You must consent to data processing per NDPR guidelines.' }
     }
-    if (!(await verifyTurnstileToken(input.turnstileToken))) {
+    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
       return { ok: false, error: 'Complete the security check and try again.' }
     }
+    // No token is expected at submit time: the form's security checks happen
+    // once at the start (phone/e-mail OTP steps), and first-time registration
+    // here is still gated by the encrypted email-proof cookie below.
 
     // 2. Clerk Session & User ID Resolution (never trust input.clerkUserId)
     let resolvedClerkUserId = clerkIdentity.userId
@@ -2079,7 +2082,13 @@ export async function uploadWorkerPhotoDirectAction({
       return { ok: false, error: 'Worker ID and image data are required.' }
     }
 
-    const imageBytes = Buffer.from(base64Image, 'base64')
+    // Clients may send either a raw Base64 payload or a full data URL
+    // ("data:image/jpeg;base64,..."). Buffer.from would happily decode the
+    // prefix into corrupt leading bytes, so strip it before decoding.
+    const cleanBase64 = base64Image.includes('base64,')
+      ? base64Image.slice(base64Image.indexOf('base64,') + 7).replace(/\s/g, '')
+      : base64Image
+    const imageBytes = Buffer.from(cleanBase64, 'base64')
     if (imageBytes.length === 0 || imageBytes.length > 2 * 1024 * 1024) {
       return { ok: false, error: 'Photo must be 2MB or smaller.' }
     }
@@ -2133,24 +2142,47 @@ export async function uploadWorkerPhotoDirectAction({
             .slice(0, 50) || fallback
         const cleanFileName = `${cleanPart(workerDoc?.fullName, 'Worker')}_${cleanPart(workerDoc?.team || workerDoc?.teams?.[0], 'General')}_Headshot`
         const timestamp = Date.now().toString()
-        const signaturePayload = `${timestamp}\n${cleanFileName}\n${mimeType}\n${base64Image}`
+        // Sign exactly what the body sends — the Apps Script hashes the
+        // payload's fields verbatim, so the filename must be consistent
+        // (including the extension) in both places.
+        const signedFileName = `${cleanFileName}.${ext}`
+        const signaturePayload = `${timestamp}\n${signedFileName}\n${mimeType}\n${cleanBase64}`
         const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
-        await fetch(appScriptUrl, {
+        const gasPayload = JSON.stringify({
+          base64: cleanBase64,
+          cleanFileName: signedFileName,
+          mimeType,
+          timestamp,
+          signature,
+        })
+        const gasResponse = await fetch(appScriptUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            base64: base64Image,
-            cleanFileName: `${cleanFileName}.${ext}`,
-            mimeType,
-            timestamp,
-            signature,
-          }),
+          body: gasPayload,
           redirect: 'follow',
           cache: 'no-store',
         })
+        if (!gasResponse.ok) {
+          console.warn(`[uploadWorkerPhotoDirectAction] Google Drive webhook returned HTTP ${gasResponse.status}`)
+        } else {
+          const gasData = (await gasResponse.json().catch(() => null)) as {
+            ok?: boolean
+            fileUrl?: string
+          } | null
+          if (gasData?.ok && gasData.fileUrl) {
+            console.info(`[uploadWorkerPhotoDirectAction] Google Drive backup stored: ${gasData.fileUrl}`)
+          } else {
+            console.warn(
+              '[uploadWorkerPhotoDirectAction] Google Drive webhook did not save the file:',
+              JSON.stringify(gasData ?? 'non-JSON response (check Apps Script deployment access)')
+            )
+          }
+        }
       } catch (gasErr) {
         console.warn('[uploadWorkerPhotoDirectAction] Optional Google Drive backup skipped:', gasErr)
       }
+    } else {
+      console.info('[uploadWorkerPhotoDirectAction] Google Drive backup not configured (missing GOOGLE_APPS_SCRIPT_WEBHOOK_URL or a <32-byte GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET)')
     }
 
     revalidatePath('/register/status')

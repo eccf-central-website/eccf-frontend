@@ -198,7 +198,7 @@ export default function UsheringHeadcountView({
     <div className="space-y-6">
       {/* Headcount Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Services Counted</span>
@@ -215,7 +215,7 @@ export default function UsheringHeadcountView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Sunday Avg Count</span>
@@ -232,7 +232,7 @@ export default function UsheringHeadcountView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Highest Peak</span>
@@ -249,7 +249,7 @@ export default function UsheringHeadcountView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
+        <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Latest Service</span>
@@ -270,8 +270,8 @@ export default function UsheringHeadcountView({
       </div>
 
       {/* Primary Action Console: Fast Headcount Logger Card */}
-      <Card className="border-primary/20 shadow-md bg-gradient-to-b from-card to-card/95">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="shadow-md">
+        <CardHeader className="pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -380,7 +380,7 @@ export default function UsheringHeadcountView({
             </div>
 
             {/* Row 3: Total Headcount Input (Prominent & Large) */}
-            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 sm:p-5">
+            <div className="rounded-xl bg-primary/5 p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <Label htmlFor="headcount-total" className="text-sm font-bold text-foreground">
@@ -443,7 +443,7 @@ export default function UsheringHeadcountView({
             </div>
 
             {/* Optional Demographic Breakdown Accordion / Toggle */}
-            <div className="rounded-lg border bg-card/60 p-3 sm:p-4">
+            <div className="rounded-xl bg-muted/30 p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <button
@@ -596,7 +596,7 @@ export default function UsheringHeadcountView({
 
       {/* Headcount History Ledger */}
       <div className="space-y-4 pt-2">
-        <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+        <div className="flex flex-col gap-3 rounded-xl bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
           <div>
             <h3 className="font-serif text-base font-bold text-foreground">
               General Service Attendance History
@@ -649,7 +649,7 @@ export default function UsheringHeadcountView({
         </div>
 
         {/* History Table */}
-        <div className="hidden md:block rounded-lg border bg-card shadow-sm overflow-x-auto">
+        <div className="hidden rounded-xl bg-card shadow-sm overflow-x-auto md:block">
           <Table aria-label="Ushering headcount records">
             <TableHeader>
               <TableRow className="bg-muted/40">
@@ -783,7 +783,7 @@ export default function UsheringHeadcountView({
             </Card>
           ) : (
             filteredRows.map((row) => (
-              <Card key={row._id} className="border border-border shadow-sm">
+              <Card key={row._id}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

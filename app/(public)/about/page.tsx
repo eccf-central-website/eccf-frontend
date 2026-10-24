@@ -117,6 +117,12 @@ interface RawSanityAboutPage {
   ctaTag?: string
   ctaHeadline?: string
   ctaSubtitle?: string
+  showHero?: boolean
+  showHistory?: boolean
+  showPillars?: boolean
+  showLeadership?: boolean
+  showTeams?: boolean
+  showCta?: boolean
 }
 
 export default async function AboutPage({
@@ -188,92 +194,115 @@ export default async function AboutPage({
     aboutData?.storyPhoto2Url ||
     '/gallery/gallery-3.jpg'
 
+  // Section visibility — unset means visible, so existing documents keep
+  // rendering exactly as before until an editor explicitly unticks a section.
+  const showHero = aboutData?.showHero !== false
+  const showHistory = aboutData?.showHistory !== false
+  const showPillars = aboutData?.showPillars !== false
+  const showLeadership = aboutData?.showLeadership !== false
+  const showTeams = aboutData?.showTeams !== false
+  const showCta = aboutData?.showCta !== false
+
   return (
-    <div className="relative min-h-screen w-full max-w-full bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0077cc] selection:text-white overflow-x-hidden pt-16 sm:pt-20">
+    <div className="relative min-h-screen w-full max-w-full bg-[#fafaf9] text-slate-900 font-sans selection:bg-[#0077cc] selection:text-white overflow-x-clip pt-16 sm:pt-20">
       {/* 1. Hero & Mission Manifesto */}
-      <AboutHero
-        badge={aboutData?.heroBadge}
-        subheading={aboutData?.heroSubheading}
-        headline={aboutData?.heroHeadline}
-        subtitle={aboutData?.heroSubtitle}
-        missionCreed={aboutData?.missionCreed}
-        heroImage={heroImage}
-        stats={{
-          operationalTeams: aboutData?.metricOperationalTeams || '14',
-          residenceHalls: aboutData?.metricResidenceHalls || '8',
-          weeklyEncounters:
-            aboutData?.metricWeeklyEncounters ||
-            settings?.statsWeeklyServices ||
-            '3',
-          studentImpact: aboutData?.metricStudentImpact || '100%',
-          activeMembers: settings?.statsActiveMembers,
-          weeklyServices: settings?.statsWeeklyServices,
-          campusLegacy: settings?.statsCampusLegacy,
-        }}
-      />
+      {showHero && (
+        <AboutHero
+          badge={aboutData?.heroBadge}
+          subheading={aboutData?.heroSubheading}
+          headline={aboutData?.heroHeadline}
+          subtitle={aboutData?.heroSubtitle}
+          missionCreed={aboutData?.missionCreed}
+          heroImage={heroImage}
+          stats={{
+            operationalTeams: aboutData?.metricOperationalTeams || '14',
+            residenceHalls: aboutData?.metricResidenceHalls || '8',
+            weeklyEncounters:
+              aboutData?.metricWeeklyEncounters ||
+              settings?.statsWeeklyServices ||
+              '3',
+            studentImpact: aboutData?.metricStudentImpact || '100%',
+            activeMembers: settings?.statsActiveMembers,
+            weeklyServices: settings?.statsWeeklyServices,
+            campusLegacy: settings?.statsCampusLegacy,
+          }}
+        />
+      )}
 
       {/* 2. Our Story & Chronological Milestones */}
-      <AboutHistory
-        headline={aboutData?.storyHeadline}
-        lead={aboutData?.storyLead}
-        paragraphs={aboutData?.storyParagraphs}
-        quote={aboutData?.storyQuote}
-        photo1={storyPhoto1}
-        photo2={storyPhoto2}
-        milestones={aboutData?.milestones}
-      />
+      {showHistory && (
+        <AboutHistory
+          headline={aboutData?.storyHeadline}
+          lead={aboutData?.storyLead}
+          paragraphs={aboutData?.storyParagraphs}
+          quote={aboutData?.storyQuote}
+          photo1={storyPhoto1}
+          photo2={storyPhoto2}
+          milestones={aboutData?.milestones}
+        />
+      )}
 
       {/* 3, 4, 5. Dynamic Scroll-Driven Theme Transition: Pillars -> Leadership -> Teams */}
-      <AboutScrollThemeWrapper
-        pillars={
-          <AboutPillars
-            headline={aboutData?.pillarsHeadline}
-            lead={aboutData?.pillarsLead}
-            pillar1={{
-              title: aboutData?.pillar1Title,
-              subtitle: aboutData?.pillar1Subtitle,
-              scripture: aboutData?.pillar1Scripture,
-              desc: aboutData?.pillar1Desc,
-              points: aboutData?.pillar1Points,
-            }}
-            pillar2={{
-              title: aboutData?.pillar2Title,
-              subtitle: aboutData?.pillar2Subtitle,
-              scripture: aboutData?.pillar2Scripture,
-              desc: aboutData?.pillar2Desc,
-              points: aboutData?.pillar2Points,
-            }}
-            pillar3={{
-              title: aboutData?.pillar3Title,
-              subtitle: aboutData?.pillar3Subtitle,
-              scripture: aboutData?.pillar3Scripture,
-              desc: aboutData?.pillar3Desc,
-              points: aboutData?.pillar3Points,
-            }}
-          />
-        }
-        leadership={
-          <AboutLeadership
-            headline={aboutData?.leadershipHeadline}
-            lead={aboutData?.leadershipLead}
-            excos={excos}
-          />
-        }
-        teams={
-          <AboutTeams
-            headline={aboutData?.teamsHeadline}
-            lead={aboutData?.teamsLead}
-            teams={teams}
-          />
-        }
-      />
+      {(showPillars || showLeadership || showTeams) && (
+        <AboutScrollThemeWrapper
+          pillars={
+            showPillars ? (
+              <AboutPillars
+                headline={aboutData?.pillarsHeadline}
+                lead={aboutData?.pillarsLead}
+                pillar1={{
+                  title: aboutData?.pillar1Title,
+                  subtitle: aboutData?.pillar1Subtitle,
+                  scripture: aboutData?.pillar1Scripture,
+                  desc: aboutData?.pillar1Desc,
+                  points: aboutData?.pillar1Points,
+                }}
+                pillar2={{
+                  title: aboutData?.pillar2Title,
+                  subtitle: aboutData?.pillar2Subtitle,
+                  scripture: aboutData?.pillar2Scripture,
+                  desc: aboutData?.pillar2Desc,
+                  points: aboutData?.pillar2Points,
+                }}
+                pillar3={{
+                  title: aboutData?.pillar3Title,
+                  subtitle: aboutData?.pillar3Subtitle,
+                  scripture: aboutData?.pillar3Scripture,
+                  desc: aboutData?.pillar3Desc,
+                  points: aboutData?.pillar3Points,
+                }}
+              />
+            ) : null
+          }
+          leadership={
+            showLeadership ? (
+              <AboutLeadership
+                headline={aboutData?.leadershipHeadline}
+                lead={aboutData?.leadershipLead}
+                excos={excos}
+              />
+            ) : null
+          }
+          teams={
+            showTeams ? (
+              <AboutTeams
+                headline={aboutData?.teamsHeadline}
+                lead={aboutData?.teamsLead}
+                teams={teams}
+              />
+            ) : null
+          }
+        />
+      )}
 
       {/* 6. High-Impact Action CTA */}
-      <AboutCTA
-        tag={aboutData?.ctaTag}
-        headline={aboutData?.ctaHeadline}
-        subtitle={aboutData?.ctaSubtitle}
-      />
+      {showCta && (
+        <AboutCTA
+          tag={aboutData?.ctaTag}
+          headline={aboutData?.ctaHeadline}
+          subtitle={aboutData?.ctaSubtitle}
+        />
+      )}
 
       {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/about" />}
     </div>
