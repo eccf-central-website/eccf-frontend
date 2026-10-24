@@ -236,6 +236,7 @@ export default function QAPortal({ initialData }: QAPortalProps) {
       refreshLiveState(false)
     }, 15000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 3. Toggle Test Item (Optimistic + Direct Server Action + Retries + Tamper Protection)

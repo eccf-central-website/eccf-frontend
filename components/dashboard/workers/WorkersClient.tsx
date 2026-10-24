@@ -144,8 +144,8 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
 
   const access = session.access
   const isPresident = Boolean(access?.isPresident)
-  const leadsTeamIds = access?.leadsTeamIds || []
-  const leadsTeamKeys = access?.leadsTeamKeys || []
+  const leadsTeamIds = useMemo(() => access?.leadsTeamIds || [], [access?.leadsTeamIds])
+  const leadsTeamKeys = useMemo(() => access?.leadsTeamKeys || [], [access?.leadsTeamKeys])
   const isTeamLead = session.role === 'team_lead'
   const isLeadOrAssistant = leadsTeamIds.length > 0 || leadsTeamKeys.length > 0 || isTeamLead
   const isAdmin = session.role === 'admin'

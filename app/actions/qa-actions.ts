@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { randomUUID, randomBytes, createHash } from 'crypto'
 import { sanityWriteClient } from '@/lib/sanity'
+import { constantTimeStringEqual } from '@/lib/security/constant-time'
 import type {
   QAChecklistDoc,
   QADefect,
@@ -13,7 +14,7 @@ import type {
 const QA_DOC_ID = 'qaMasterChecklist'
 const PIN_SALT = process.env.QA_PIN_SALT || 'eccf_qa_pin_salt_v1'
 const TOKEN_SALT = process.env.QA_TOKEN_SALT || 'eccf_qa_token_salt_v1'
-const QA_LEAD_PIN = process.env.QA_LEAD_PIN || 'eccf2026'
+const QA_LEAD_PIN = process.env.QA_LEAD_PIN || (process.env.NODE_ENV !== 'production' ? 'eccf2026' : '')
 
 export interface QATesterRecord {
   id: string
@@ -287,7 +288,7 @@ export async function toggleQATestItem(input: {
     const hyphenKey = testId.trim().replace(/_/g, '-')
     const now = new Date().toISOString()
 
-    const isLeadOverride = Boolean(leadPin && leadPin.trim() === QA_LEAD_PIN)
+    const isLeadOverride = Boolean(QA_LEAD_PIN && leadPin && constantTimeStringEqual(leadPin.trim(), QA_LEAD_PIN.trim()))
 
     if (!cleanTester && !isLeadOverride) {
       return {
@@ -467,7 +468,7 @@ export async function updateQADefectStatus(input: {
 }
 
 export async function verifyLeadPin(pin: string): Promise<{ success: boolean }> {
-  return { success: Boolean(pin && pin.trim() === QA_LEAD_PIN) }
+  return { success: Boolean(QA_LEAD_PIN && pin && constantTimeStringEqual(pin.trim(), QA_LEAD_PIN.trim())) }
 }
 
 export async function resetAllQATests(input?: {
@@ -476,7 +477,7 @@ export async function resetAllQATests(input?: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const leadPin = input?.leadPin?.trim() || ''
-    if (leadPin !== QA_LEAD_PIN) {
+    if (!QA_LEAD_PIN || !leadPin || !constantTimeStringEqual(leadPin, QA_LEAD_PIN.trim())) {
       return {
         success: false,
         error: 'Invalid QA Lead Passcode. Resetting the checklist requires the Lead Passcode.',

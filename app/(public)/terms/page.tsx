@@ -52,7 +52,7 @@ export default async function TermsPage() {
             </h1>
 
             <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-sans">
-              Edo State University Christian Campus Fellowship (ECCF) &mdash; Uzairue / Iyamho, Edo State, Nigeria.
+              Edo State University Christian Campus Fellowship (ECCF) &mdash; ESUI, Edo State, Nigeria.
             </p>
 
             {/* Document Metadata Table / Registry Details */}
@@ -452,7 +452,7 @@ export default async function TermsPage() {
                 <div className="text-sm text-slate-600 space-y-1">
                   <p>Central Student Governing Body (CSGB) &bull; Secretariat</p>
                   <p>Meeting Venue: Lecture Theatre 5 (NLT 5), Faculty of Law</p>
-                  <p>Edo State University Uzairue, Iyamho, Edo State, Nigeria</p>
+                  <p>Edo State University Iyamho (ESUI), Edo State, Nigeria</p>
                 </div>
                 <div className="pt-2">
                   <a

@@ -173,6 +173,11 @@ export async function POST(req: NextRequest) {
         })
       : null
 
+    const appUrl = (
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://eccf-frontend.vercel.app')
+    ).replace(/\/$/, '')
+
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 14px; background-color: #ffffff;">
         <!-- Header -->
@@ -213,7 +218,7 @@ export async function POST(req: NextRequest) {
 
         <!-- Web Link Button -->
         <div style="text-align: center; margin-bottom: 26px;">
-          <a href="https://eccf-frontend.vercel.app/announcements" style="display: inline-block; background-color: #0095ff; color: #ffffff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 28px; border-radius: 9999px; text-decoration: none;">
+          <a href="${appUrl}/announcements" style="display: inline-block; background-color: #0095ff; color: #ffffff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 28px; border-radius: 9999px; text-decoration: none;">
             View Online Bulletins &rarr;
           </a>
         </div>

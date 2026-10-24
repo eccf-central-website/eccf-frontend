@@ -87,9 +87,9 @@ export interface RawWorkerDoc {
   email?: string
   clerkUserId?: string
   canApproveExecutives?: boolean
-  positions?: any[]
-  memberships?: any[]
-  [key: string]: any
+  positions?: RawWorkerPosition[]
+  memberships?: RawWorkerMembership[]
+  [key: string]: unknown
 }
 
 export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAccess {

@@ -1,6 +1,6 @@
 # ECCF Central Platform — Master Operational Manual
 **Edo State University Christian Campus Fellowship (ECCF)**  
-*Edo State University Uzairue / Iyamho (ESUI)*  
+*Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
 **Last verified:** 24 October 2026 against frontend commit `ef50a17` and backend commit `59c9953`.

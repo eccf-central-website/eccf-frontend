@@ -34,7 +34,11 @@ dev-server.log
 skills-lock.json
 
 # local env files
+.env
 .env*.local
+.env.production
+.env.development
+!.env.example
 
 # scratch scripts
 capture-who.cjs
@@ -46,12 +50,9 @@ check-mobile.cjs
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
 # dev server output
 dev-server.out
-"
-
-.vercel
-.env*
 
 # stale editor backups
 *.bak

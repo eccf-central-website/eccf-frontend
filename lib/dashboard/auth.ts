@@ -16,7 +16,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { currentUser } from '@clerk/nextjs/server'
 import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
-import { deriveAccess, type WorkerAccess } from './access'
+import { deriveAccess, type WorkerAccess, type RawWorkerPosition, type RawWorkerMembership } from './access'
 import type { ECCFSession, WorkerRole } from '@/types'
 import {
   canAccessSection,
@@ -51,8 +51,8 @@ interface SanityWorkerSessionDoc {
   hall?: string
   leadingTeam?: { name?: string } | string
   teams?: Array<{ name?: string } | string>
-  positions?: unknown[]
-  memberships?: unknown[]
+  positions?: RawWorkerPosition[]
+  memberships?: RawWorkerMembership[]
   [key: string]: unknown
 }
 
@@ -142,13 +142,11 @@ export async function getSession(): Promise<DashboardSession | null> {
 
   if (!clerkUser) return null
 
-  const primaryEmail = (
-    clerkUser.emailAddresses?.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
-    clerkUser.emailAddresses?.[0]?.emailAddress ||
-    ''
-  )
-    .toLowerCase()
-    .trim()
+  const primaryEmailObj =
+    clerkUser.emailAddresses?.find((e) => e.id === clerkUser.primaryEmailAddressId) ||
+    clerkUser.emailAddresses?.[0]
+  const isEmailVerified = primaryEmailObj?.verification?.status === 'verified'
+  const primaryEmail = (primaryEmailObj?.emailAddress || '').toLowerCase().trim()
 
   const clerkUserId = clerkUser.id
   if (!primaryEmail && !clerkUserId) return null
@@ -158,7 +156,7 @@ export async function getSession(): Promise<DashboardSession | null> {
     worker = await sanityPrivateClient.fetch<SanityWorkerSessionDoc | null>(
       `*[_type == "worker" && (
         (defined(clerkUserId) && clerkUserId == $clerkUserId) ||
-        (defined(email) && lower(email) == $primaryEmail)
+        ($isEmailVerified && defined(email) && lower(email) == $primaryEmail)
       )][0]{
         _id,
         _rev,
@@ -187,7 +185,7 @@ export async function getSession(): Promise<DashboardSession | null> {
           status
         }
       }`,
-      { clerkUserId, primaryEmail }
+      { clerkUserId, primaryEmail, isEmailVerified }
     )
   } catch (err) {
     console.error('[getSession] Error querying worker from Sanity:', err)
@@ -196,18 +194,19 @@ export async function getSession(): Promise<DashboardSession | null> {
 
   if (!worker) return null
 
-  // If matched by email without clerkUserId, or clerkUserId has changed, patch in Sanity
+  // If matched by email without clerkUserId, or clerkUserId has changed, patch in Sanity (only if email is verified)
   if (worker._id && (!worker.clerkUserId || worker.clerkUserId !== clerkUserId)) {
-    try {
-      await patchPrivateDocument(String(worker._id))
-        .set({ clerkUserId })
-        .commit()
-      worker.clerkUserId = clerkUserId
-    } catch (patchErr) {
-      console.warn('[getSession] Failed to patch clerkUserId to worker in Sanity:', patchErr)
+    if (isEmailVerified) {
+      try {
+        await patchPrivateDocument(String(worker._id))
+          .set({ clerkUserId })
+          .commit()
+        worker.clerkUserId = clerkUserId
+      } catch (patchErr) {
+        console.warn('[getSession] Failed to patch clerkUserId to worker in Sanity:', patchErr)
+      }
     }
   }
-
   const access = deriveAccess(worker)
 
   // Derive backwards-compatible WorkerRole

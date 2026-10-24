@@ -487,7 +487,7 @@ async function sendWorkerVerificationEmail({
 
         <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
           <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI, Uzairue, Edo State &bull; Official Workforce Portal</p>
+          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
         </div>
       </div>
     </body>
@@ -602,7 +602,7 @@ async function sendRegistrationOtpEmail({
 
         <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
           <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI, Uzairue, Edo State &bull; Official Workforce Portal</p>
+          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
         </div>
       </div>
     </body>
@@ -838,7 +838,39 @@ function isRegistrationEmailVerified(email: string): boolean {
   return proof.email === email.trim().toLowerCase()
 }
 
-async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 'password'): Promise<any> {
+export interface WorkerSelfServiceDoc {
+  _id: string
+  _rev?: string
+  fullName: string
+  firstName?: string
+  middleName?: string
+  lastName?: string
+  email?: string
+  phoneNumber?: string
+  team?: string
+  teams?: string[]
+  memberships?: Array<Record<string, unknown>>
+  positions?: Array<{
+    kind?: 'csgb' | 'hall' | 'team'
+    office?: string
+    hall?: string
+    team?: { name?: string }
+    rank?: 'lead' | 'assistant'
+    status?: string
+  }>
+  hall?: string
+  roomNumber?: string
+  birthDate?: string
+  profileImageUrl?: string
+  role?: WorkerRole
+  requestedRole?: WorkerRole
+  clerkUserId?: string
+  isExcoApproved?: boolean
+  passwordHash?: string
+  updateLog?: string[]
+}
+
+async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 'password'): Promise<WorkerSelfServiceDoc | null> {
   const payload = readSelfServiceToken(token)
   if (!payload) return null
   if (purpose && payload.purpose !== purpose) return null
@@ -1133,9 +1165,17 @@ export async function verifyWorkerOtp(
     const { birthMonth, birthDay } = parseBirthdayParts(birthday)
 
     const roomNumber = decrypt(worker.roomNumber)
-    const primaryPos = worker.positions?.[0] as any
+    const primaryPos = worker.positions?.[0] as
+      | {
+          kind?: 'csgb' | 'hall' | 'team'
+          office?: string
+          hall?: string
+          team?: { name?: string }
+          rank?: 'lead' | 'assistant'
+        }
+      | undefined
     let executiveApplication: ExecutiveApplicationInput | undefined
-    if (primaryPos) {
+    if (primaryPos && primaryPos.kind) {
       executiveApplication = {
         kind: primaryPos.kind,
         office: primaryPos.office,
@@ -1324,9 +1364,17 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
     const { birthMonth, birthDay } = parseBirthdayParts(birthday)
 
     const roomNumber = decrypt(worker.roomNumber)
-    const primaryPos = worker.positions?.[0] as any
+    const primaryPos = worker.positions?.[0] as
+      | {
+          kind?: 'csgb' | 'hall' | 'team'
+          office?: string
+          hall?: string
+          team?: { name?: string }
+          rank?: 'lead' | 'assistant'
+        }
+      | undefined
     let executiveApplication: ExecutiveApplicationInput | undefined
-    if (primaryPos) {
+    if (primaryPos && primaryPos.kind) {
       executiveApplication = {
         kind: primaryPos.kind,
         office: primaryPos.office,
@@ -1763,12 +1811,6 @@ export async function registerWorker(
       _type: 'reference' as const,
       _ref: cleanTeamRefs[0]._ref,
     }
-    // Each reference in an array must have a unique _key for Sanity Studio validation
-    const teamReferences = cleanTeamRefs.map((ref) => ({
-      _key: `team_${ref._ref.replace(/[^a-zA-Z0-9]/g, '').slice(-8)}_${Math.random().toString(36).substring(2, 7)}`,
-      _type: 'reference' as const,
-      _ref: ref._ref,
-    }))
 
     // 5. Structure Operational Team Memberships
     // Maps selected teams into memberships[] with status: 'pending' (preserving existing verification if updating)
@@ -2139,7 +2181,7 @@ export async function uploadWorkerPhotoDirectAction({
       .append('updateLog', [`Uploaded official headshot on ${new Date().toISOString().slice(0, 10)}`])
       .commit()
 
-    // Secondary Storage: Google Drive backup (if configured) — mirrors /api/upload-drive
+    // Secondary Storage: Google Drive backup (if configured)
     const appScriptUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL
     const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
     if (appScriptUrl && signingSecret && Buffer.byteLength(signingSecret, 'utf8') >= 32) {

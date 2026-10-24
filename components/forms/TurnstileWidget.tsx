@@ -58,6 +58,11 @@ export default function TurnstileWidget({
   const base = BASE_SIZES[size]
   const [scale, setScale] = useState(1)
 
+  const onTokenRef = useRef(onToken)
+  useEffect(() => {
+    onTokenRef.current = onToken
+  }, [onToken])
+
   // Shrink to fit the parent card, however narrow the viewport is.
   useEffect(() => {
     if (!siteKey) return
@@ -85,7 +90,7 @@ export default function TurnstileWidget({
 
   useEffect(() => {
     if (!siteKey) {
-      if (process.env.NODE_ENV !== 'production') onToken('development-bypass')
+      if (process.env.NODE_ENV !== 'production') onTokenRef.current('development-bypass')
       return
     }
 
@@ -97,9 +102,9 @@ export default function TurnstileWidget({
         sitekey: siteKey,
         theme,
         size,
-        callback: (token) => onToken(token),
-        'expired-callback': () => onToken(''),
-        'error-callback': () => onToken(''),
+        callback: (token) => onTokenRef.current(token),
+        'expired-callback': () => onTokenRef.current(''),
+        'error-callback': () => onTokenRef.current(''),
       })
     }
 
@@ -125,17 +130,17 @@ export default function TurnstileWidget({
         widgetIdRef.current = null
       }
     }
-  }, [siteKey, onToken, size, theme])
+  }, [siteKey, size, theme])
 
   useEffect(() => {
     if (resetSignal === 0) return
     if (!siteKey && process.env.NODE_ENV !== 'production') {
-      onToken('development-bypass')
+      onTokenRef.current('development-bypass')
       return
     }
-    onToken('')
+    onTokenRef.current('')
     if (widgetIdRef.current && window.turnstile) window.turnstile.reset(widgetIdRef.current)
-  }, [resetSignal, onToken, siteKey])
+  }, [resetSignal, siteKey])
 
   if (!siteKey) {
     return (

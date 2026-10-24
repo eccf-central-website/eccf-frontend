@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -145,6 +145,11 @@ export function WorkerRegistrationForm({
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const [isHumanVerified, setIsHumanVerified] = useState(isClerkSignedIn);
   const [signingOut, setSigningOut] = useState(false);
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+    if (token) setIsHumanVerified(true);
+  }, []);
 
   // Existing Worker Detection & OTP Verification State
   const [checkingPhone, setCheckingPhone] = useState(false);
@@ -329,7 +334,7 @@ export function WorkerRegistrationForm({
     return () => {
       active = false;
     };
-  }, [selfServiceToken]);
+  }, [selfServiceToken, availableTeamNames]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -1653,16 +1658,13 @@ export function WorkerRegistrationForm({
                     />
                   </div>
 
-                  {!isClerkSignedIn && (
+                  {!isClerkSignedIn && phoneNumber.trim().replace(/\s+/g, '').length >= 8 && (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="mb-3 text-xs font-semibold text-slate-700">
                         Complete the security check to proceed.
                       </p>
                       <TurnstileWidget
-                        onToken={(token) => {
-                          setTurnstileToken(token);
-                          if (token) setIsHumanVerified(true);
-                        }}
+                        onToken={handleTurnstileToken}
                         resetSignal={turnstileResetSignal}
                       />
                     </div>
@@ -1671,7 +1673,7 @@ export function WorkerRegistrationForm({
                   <button
                     type="submit"
                     disabled={
-                      phoneNumber.trim().length < 8 ||
+                      phoneNumber.trim().replace(/\s+/g, '').length < 8 ||
                       checkingPhone ||
                       (!isClerkSignedIn && !isHumanVerified && !turnstileToken)
                     }

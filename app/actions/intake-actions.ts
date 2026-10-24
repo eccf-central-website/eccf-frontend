@@ -154,7 +154,9 @@ export async function submitPrayerRequest(formData: FormData) {
         *[_type == "worker" && defined(email) && email != "" && (
           excoPosition == "Prayer Coordinator" ||
           excoPosition match "*Prayer*" ||
-          (role in ["admin", "team_lead"] && (team->name match "*Prayer*" || team match "*Prayer*"))
+          (role in ["admin", "team_lead"] && (team->name match "*Prayer*" || team match "*Prayer*")) ||
+          count(positions[kind == "csgb" && office match "*Prayer*" && status == "approved"]) > 0 ||
+          count(positions[kind == "team" && (team->key == "prayer" || team->name match "*Prayer*") && status == "approved"]) > 0
         )].email
       `)
     } catch (queryErr) {
