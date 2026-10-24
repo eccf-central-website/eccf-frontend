@@ -42,10 +42,78 @@ export type DashboardPermission =
 export const ROLES: readonly WorkerRole[] = ['admin', 'team_lead', 'finance', 'hall_rep']
 
 export const ROLE_LABELS: Record<WorkerRole, string> = {
-  admin: 'CSGB Admin',
+  admin: 'CSGB Executive',
   team_lead: 'Team Leader',
   finance: 'Finance',
-  hall_rep: 'Hall Rep',
+  hall_rep: 'Hall Pastor',
+}
+
+export interface LeaderPostContext {
+  role: WorkerRole
+  excoPosition?: string | null
+  leadingTeam?: string | null
+  team?: string | null
+  hall?: string | null
+  access?: {
+    isPresident?: boolean
+    isVP?: boolean
+    isChaplain?: boolean
+    isFinance?: boolean
+    isCSGB?: boolean
+    titles?: string[]
+    repsHalls?: string[]
+  } | null
+}
+
+/**
+ * Returns a prominent, human-readable ministerial post/office for a dashboard leader
+ * (e.g. "Vice President", "President", "General Secretary", "Media Coordinator", "Hall Pastor (Hall 1)").
+ * Avoids generic fallbacks like "CSGB Admin" or raw team membership strings.
+ */
+export function getLeaderPostTitle(context: LeaderPostContext): string {
+  // 1. Explicit excoPosition (e.g., "Vice President", "President", "General Secretary", "Media Coordinator")
+  const rawPosition = context.excoPosition?.trim()
+  if (rawPosition) {
+    const leadMatch = rawPosition.match(/^Lead\s*\((.+)\)$/i)
+    if (leadMatch) return `${leadMatch[1]} Lead`
+    const asstMatch = rawPosition.match(/^Assistant\s+Lead\s*\((.+)\)$/i)
+    if (asstMatch) return `Assistant ${asstMatch[1]} Lead`
+    return rawPosition
+  }
+
+  // 2. First title from approved positions in access
+  if (context.access?.titles && context.access.titles.length > 0) {
+    const raw = context.access.titles[0].trim()
+    const leadMatch = raw.match(/^Lead\s*\((.+)\)$/i)
+    if (leadMatch) return `${leadMatch[1]} Lead`
+    const asstMatch = raw.match(/^Assistant\s+Lead\s*\((.+)\)$/i)
+    if (asstMatch) return `Assistant ${asstMatch[1]} Lead`
+    return raw
+  }
+
+  // 3. Specific leadership flags
+  if (context.access?.isPresident) return 'President'
+  if (context.access?.isVP) return 'Vice President'
+  if (context.access?.isChaplain) return 'Fellowship Chaplain'
+  if (context.access?.isFinance) return 'Financial Secretary'
+
+  // 4. Role-based fallback with contextual team/hall assignment
+  if (context.role === 'admin') {
+    return 'CSGB Executive'
+  }
+  if (context.role === 'team_lead') {
+    const teamName = context.leadingTeam || context.team
+    return teamName && teamName.toLowerCase() !== 'exco' ? `${teamName} Lead` : 'Team Leader'
+  }
+  if (context.role === 'hall_rep') {
+    const hallName = context.hall || context.access?.repsHalls?.[0]
+    return hallName ? `Hall Pastor (${hallName})` : 'Hall Pastor'
+  }
+  if (context.role === 'finance') {
+    return 'Financial Secretary'
+  }
+
+  return ROLE_LABELS[context.role] || 'Fellowship Executive'
 }
 
 /** URL path for each section. Intake paths match revalidatePath() calls in app/actions/intake-actions.ts. */

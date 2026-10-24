@@ -143,6 +143,7 @@ export function WorkerRegistrationForm({
   const [updateIdentifier, setUpdateIdentifier] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const [isHumanVerified, setIsHumanVerified] = useState(isClerkSignedIn);
   const [signingOut, setSigningOut] = useState(false);
 
   // Existing Worker Detection & OTP Verification State
@@ -263,9 +264,7 @@ export function WorkerRegistrationForm({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setTurnstileToken('');
-  }, [step]);
+  // Retain verified security status across registration steps
 
   // Auto-fill exec hall when hall changes
 
@@ -430,7 +429,7 @@ export function WorkerRegistrationForm({
       return;
     }
 
-    if (!turnstileToken && process.env.NODE_ENV === 'production') {
+    if (!isClerkSignedIn && !isHumanVerified && !turnstileToken && process.env.NODE_ENV === 'production') {
       setError('Please complete the security check before continuing.');
       return;
     }
@@ -443,6 +442,11 @@ export function WorkerRegistrationForm({
       });
 
       if (!result.ok) {
+        if (result.error?.toLowerCase().includes('security') || result.error?.toLowerCase().includes('verification')) {
+          setTurnstileToken('');
+          setIsHumanVerified(false);
+          setTurnstileResetSignal((v) => v + 1);
+        }
         setError(
           result.error || 'Unable to check phone number. Please try again.',
         );
@@ -471,8 +475,6 @@ export function WorkerRegistrationForm({
       );
     } finally {
       setCheckingPhone(false);
-      setTurnstileToken('');
-      setTurnstileResetSignal((v) => v + 1);
     }
   }
 
@@ -500,7 +502,6 @@ export function WorkerRegistrationForm({
       const result = await requestRegistrationEmailOtp({
         email: clean,
         firstName,
-        turnstileToken: turnstileToken || undefined,
       });
 
       if (!result.ok) {
@@ -524,8 +525,6 @@ export function WorkerRegistrationForm({
       );
     } finally {
       setCheckingEmail(false);
-      setTurnstileToken('');
-      setTurnstileResetSignal((v) => v + 1);
     }
   }
 
@@ -582,7 +581,6 @@ export function WorkerRegistrationForm({
       const result = await requestRegistrationEmailOtp({
         email: email.trim(),
         firstName,
-        turnstileToken: turnstileToken || undefined,
       });
 
       if (!result.ok) {
@@ -605,8 +603,6 @@ export function WorkerRegistrationForm({
       );
     } finally {
       setCheckingEmail(false);
-      setTurnstileToken('');
-      setTurnstileResetSignal((v) => v + 1);
     }
   }
 
@@ -719,8 +715,6 @@ export function WorkerRegistrationForm({
       setError('Could not resend code. Please try again.');
     } finally {
       setCheckingPhone(false);
-      setTurnstileToken('');
-      setTurnstileResetSignal((v) => v + 1);
     }
   }
 
@@ -759,8 +753,6 @@ export function WorkerRegistrationForm({
       );
     } finally {
       setRequestingUpdateLink(false);
-      setTurnstileToken('');
-      setTurnstileResetSignal((value) => value + 1);
     }
   }
 
@@ -1519,23 +1511,11 @@ export function WorkerRegistrationForm({
                   </button>
                 </form>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="mb-3 text-xs font-semibold text-slate-700">
-                    Complete the security check to resend your code:
-                  </p>
-                  <TurnstileWidget
-                    onToken={setTurnstileToken}
-                    resetSignal={turnstileResetSignal}
-                  />
-                </div>
-
                 <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
                   <button
                     type="button"
                     onClick={handleResendCode}
-                    disabled={
-                      resendCooldown > 0 || checkingPhone || !turnstileToken
-                    }
+                    disabled={resendCooldown > 0 || checkingPhone}
                     className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
                   >
                     {resendCooldown > 0
@@ -1598,25 +1578,12 @@ export function WorkerRegistrationForm({
                     />
                   </div>
 
-                  {updateIdentifier.trim().length >= 5 && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="mb-3 text-xs font-semibold text-slate-700">
-                        Complete the security check to receive your link:
-                      </p>
-                      <TurnstileWidget
-                        onToken={setTurnstileToken}
-                        resetSignal={turnstileResetSignal}
-                      />
-                    </div>
-                  )}
-
                   <button
                     type="button"
                     onClick={handleRequestUpdateLink}
                     disabled={
                       requestingUpdateLink ||
-                      updateIdentifier.trim().length < 5 ||
-                      !turnstileToken
+                      updateIdentifier.trim().length < 5
                     }
                     className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                   >
@@ -1697,7 +1664,14 @@ export function WorkerRegistrationForm({
                   )}
                 </div>
 
-                <form onSubmit={handlePhoneSubmit} className="space-y-6">
+                <form
+                  action="#"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handlePhoneSubmit(e);
+                  }}
+                  className="space-y-6"
+                >
                   <div>
                     <input
                       type="tel"
@@ -1705,27 +1679,38 @@ export function WorkerRegistrationForm({
                       autoFocus
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void handlePhoneSubmit(e);
+                        }
+                      }}
                       placeholder="0801 234 5678"
                       className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                     />
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-semibold text-slate-700">
-                      Complete the security check to proceed.
-                    </p>
-                    <TurnstileWidget
-                      onToken={setTurnstileToken}
-                      resetSignal={turnstileResetSignal}
-                    />
-                  </div>
+                  {!isClerkSignedIn && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="mb-3 text-xs font-semibold text-slate-700">
+                        Complete the security check to proceed.
+                      </p>
+                      <TurnstileWidget
+                        onToken={(token) => {
+                          setTurnstileToken(token);
+                          if (token) setIsHumanVerified(true);
+                        }}
+                        resetSignal={turnstileResetSignal}
+                      />
+                    </div>
+                  )}
 
                   <button
                     type="submit"
                     disabled={
                       phoneNumber.trim().length < 8 ||
                       checkingPhone ||
-                      !turnstileToken
+                      (!isClerkSignedIn && !isHumanVerified && !turnstileToken)
                     }
                     className="flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-4 sm:px-8 text-sm sm:text-base md:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
                   >
@@ -2376,23 +2361,11 @@ export function WorkerRegistrationForm({
                     </button>
                   </form>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 text-xs font-semibold text-slate-700">
-                      Complete the security check to send another code:
-                    </p>
-                    <TurnstileWidget
-                      onToken={setTurnstileToken}
-                      resetSignal={turnstileResetSignal}
-                    />
-                  </div>
-
                   <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
                     <button
                       type="button"
                       onClick={handleResendRegistrationOtp}
-                      disabled={
-                        emailOtpCooldown > 0 || checkingEmail || !turnstileToken
-                      }
+                      disabled={emailOtpCooldown > 0 || checkingEmail}
                       className="font-semibold text-[#0077cc] hover:underline disabled:text-slate-400 disabled:no-underline"
                     >
                       {emailOtpCooldown > 0
@@ -2423,17 +2396,7 @@ export function WorkerRegistrationForm({
                     />
                   </div>
 
-                  {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="mb-3 text-xs font-semibold text-slate-700">
-                        Complete the security check to send your code:
-                      </p>
-                      <TurnstileWidget
-                        onToken={setTurnstileToken}
-                        resetSignal={turnstileResetSignal}
-                      />
-                    </div>
-                  )}
+                  
 
                   <div className="flex gap-3 pt-2">
                     <button
@@ -2447,8 +2410,7 @@ export function WorkerRegistrationForm({
                       type="button"
                       disabled={
                         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-                        checkingEmail ||
-                        !turnstileToken
+                        checkingEmail
                       }
                       onClick={handleEmailNext}
                       className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"

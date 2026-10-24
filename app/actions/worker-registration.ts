@@ -898,7 +898,12 @@ export async function checkWorkerPhoneAndInitiateVerification(
       return { ok: false, exists: false, error: 'Please enter a valid phone number (at least 8 digits).' }
     }
 
-    if (!(await verifyTurnstileToken(input.turnstileToken))) {
+    const clerkIdentity = await getClerkSessionIdentity()
+    const isAuthed = Boolean(clerkIdentity.userId)
+    const existingChallenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
+    const hasValidExistingChallenge = Boolean(existingChallenge && existingChallenge.expiresAt > Date.now())
+
+    if (!isAuthed && !hasValidExistingChallenge && !(await verifyTurnstileToken(input.turnstileToken))) {
       return { ok: false, exists: false, error: 'Complete the security verification and try again.' }
     }
 

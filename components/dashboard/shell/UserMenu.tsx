@@ -11,8 +11,7 @@
 import { ChevronDown, ExternalLink, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 import type { WorkerRole } from '@/types'
-import { ROLE_LABELS } from '@/lib/dashboard/rbac'
-import { Badge } from '@/components/dashboard/ui/badge'
+import { getLeaderPostTitle } from '@/lib/dashboard/rbac'
 import { Button } from '@/components/dashboard/ui/button'
 import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
 import {
@@ -83,16 +82,9 @@ export default function UserMenu({ name, email, role, team, teams, excoPosition,
             <span className="text-xs text-muted-foreground truncate">{email}</span>
           )}
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge>{ROLE_LABELS[role]}</Badge>
-            {excoPosition ? (
-              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary border border-primary/20">
-                • {excoPosition}
-              </span>
-            ) : (
-              <span className="truncate text-xs font-medium text-muted-foreground">
-                {displayTeam} team
-              </span>
-            )}
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+              {getLeaderPostTitle({ role, excoPosition, team, teams })}
+            </span>
           </div>
           {excoPosition && (
             <span className="text-xs text-muted-foreground">{displayTeam} team</span>

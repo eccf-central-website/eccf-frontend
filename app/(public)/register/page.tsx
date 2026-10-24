@@ -4,6 +4,9 @@ import { getSignedInUserContext } from '@/app/actions/worker-registration'
 import { getTeamUnitOptions } from '@/lib/teams'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'Worker Registration & CRM — ECCF',
   description:
