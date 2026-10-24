@@ -11,7 +11,7 @@
 import { ChevronDown, ExternalLink, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 import type { WorkerRole } from '@/types'
-import { getLeaderPostTitle } from '@/lib/dashboard/rbac'
+import { ROLE_LABELS, getLeaderPostTitle } from '@/lib/dashboard/rbac'
 import { Button } from '@/components/dashboard/ui/button'
 import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
 import {

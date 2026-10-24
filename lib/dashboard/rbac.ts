@@ -53,6 +53,7 @@ export interface LeaderPostContext {
   excoPosition?: string | null
   leadingTeam?: string | null
   team?: string | null
+  teams?: string[] | null
   hall?: string | null
   access?: {
     isPresident?: boolean
