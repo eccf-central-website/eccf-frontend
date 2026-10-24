@@ -57,6 +57,10 @@ export interface SiteSettingsData {
   socialTelegram?: string
   socialTwitter?: string
   socialWhatsApp?: string
+  socialBannerLabel?: string
+  socialBannerHeadline1?: string
+  socialBannerHeadline2?: string
+  socialBannerHeadline3?: string
   footerNewsletterHeading?: string
   footerNewsletterDescription?: string
   footerBrandTitle?: string

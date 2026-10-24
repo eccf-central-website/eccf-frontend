@@ -129,6 +129,10 @@ export default async function Home({
 
       {/* 7. High-Impact Social Media Banner (Follow Us for Exclusive Content) */}
       <SocialMediaBanner
+        label={settings?.socialBannerLabel}
+        headlineLine1={settings?.socialBannerHeadline1}
+        headlineLine2={settings?.socialBannerHeadline2}
+        headlineLine3={settings?.socialBannerHeadline3}
         youtubeUrl={settings?.socialYouTube}
         instagramUrl={settings?.socialInstagram}
         facebookUrl={settings?.socialFacebook}

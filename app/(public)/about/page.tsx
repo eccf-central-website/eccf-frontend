@@ -226,6 +226,13 @@ export default async function AboutPage({
             weeklyServices: settings?.statsWeeklyServices,
             campusLegacy: settings?.statsCampusLegacy,
           }}
+          visibleSections={{
+            history: showHistory,
+            pillars: showPillars,
+            leadership: showLeadership,
+            teams: showTeams,
+            cta: showCta,
+          }}
         />
       )}
 

@@ -28,16 +28,21 @@ export interface SocialMediaBannerProps {
 }
 
 export default function SocialMediaBanner({
-  label = 'SOCIAL MEDIA',
-  headlineLine1 = 'FOLLOW US FOR',
-  headlineLine2 = 'EXCLUSIVE',
-  headlineLine3 = 'CONTENT',
+  label,
+  headlineLine1,
+  headlineLine2,
+  headlineLine3,
   youtubeUrl = 'https://youtube.com',
   instagramUrl = 'https://instagram.com',
   facebookUrl = 'https://facebook.com',
   tiktokUrl = 'https://tiktok.com',
   telegramUrl = 'https://t.me',
 }: SocialMediaBannerProps) {
+  const tagLabel = label?.trim() || 'SOCIAL MEDIA'
+  const line1 = headlineLine1?.trim() || 'FOLLOW US FOR'
+  const line2 = headlineLine2?.trim() || 'EXCLUSIVE'
+  const line3 = headlineLine3?.trim() || 'CONTENT'
+
   const socialPlatforms = [
     {
       name: 'YouTube',
@@ -136,14 +141,14 @@ export default function SocialMediaBanner({
           >
             {/* Overline Label — Styling font: Geist Mono */}
             <span className="block text-xs sm:text-sm font-mono font-bold tracking-[0.25em] text-slate-900 uppercase mb-3 sm:mb-4">
-              {label}
+              {tagLabel}
             </span>
 
             {/* Massive Headline — Headings font: Belleza */}
             <h2 className="font-heading text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] text-slate-950 tracking-normal leading-[1.14] sm:leading-[1.08] lg:leading-[1.02] uppercase select-none">
-              <span className="block">{headlineLine1}</span>
-              <span className="block">{headlineLine2}</span>
-              <span className="block">{headlineLine3}</span>
+              {line1 && <span className="block">{line1}</span>}
+              {line2 && <span className="block">{line2}</span>}
+              {line3 && <span className="block">{line3}</span>}
             </h2>
           </motion.div>
 

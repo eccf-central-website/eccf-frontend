@@ -645,10 +645,10 @@ export default function AboutLeadership({
           {role && (
             <p
               title={role}
-              className={`mt-1 font-mono uppercase leading-relaxed tracking-[0.14em] text-sky-300/85 line-clamp-2 ${
+              className={`mt-1 font-mono font-semibold uppercase leading-relaxed tracking-[0.08em] text-sky-300 line-clamp-2 ${
                 featured
-                  ? 'text-[11px] sm:text-[11px] lg:text-[12px]'
-                  : 'text-[9px] sm:text-[10px]'
+                  ? 'text-xs sm:text-sm lg:text-[14.5px]'
+                  : 'text-xs sm:text-[13px]'
               }`}
             >
               {role}
@@ -707,8 +707,8 @@ export default function AboutLeadership({
         {/* STICKY TIER RAIL — counts double as an index of the roster        */}
         {/* ================================================================ */}
         <div className="sticky top-16 z-30 mt-8 sm:top-20 sm:mt-12">
-          <div className="rounded-2xl bg-[#0d1117]/80 p-1.5 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.9)] ring-1 ring-white/10 backdrop-blur-xl">
-            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%_-_28px),transparent)] sm:[mask-image:none]" role="group" aria-label="Filter leadership by tier">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#0d1117]/85 p-1.5 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.9)] ring-1 ring-white/10 backdrop-blur-xl">
+            <div className="no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%_-_28px),transparent)] sm:[mask-image:none]" role="group" aria-label="Filter leadership by tier">
               {tabs.map((tab) => {
                 const isActive = activeTier === tab.id
                 return (
@@ -734,6 +734,17 @@ export default function AboutLeadership({
                   </button>
                 )
               })}
+            </div>
+
+            {/* Session & Roster Info */}
+            <div className="hidden md:flex items-center gap-2.5 px-3 py-1 font-mono text-xs shrink-0 text-slate-400">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-medium text-slate-300 ring-1 ring-white/10">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                2026/2027 Session
+              </span>
+              <span className="text-[11px] text-slate-400">
+                <strong className="font-semibold text-white">{totalLeaders}</strong> Appointed Stewards
+              </span>
             </div>
           </div>
         </div>

@@ -31,15 +31,14 @@ export interface AboutHeroProps {
     weeklyServices?: string | number | null
     campusLegacy?: string | number | null
   } | null
+  visibleSections?: {
+    history?: boolean
+    pillars?: boolean
+    leadership?: boolean
+    teams?: boolean
+    cta?: boolean
+  }
 }
-
-const NAV_ANCHORS = [
-  { label: 'Our Story', href: '#story' },
-  { label: 'Core Mandate', href: '#pillars' },
-  { label: 'Executive Leadership', href: '#leadership' },
-  { label: 'Operational Units', href: '#teams' },
-  { label: 'Get Involved', href: '#get-involved' },
-]
 
 export default function AboutHero({
   badge,
@@ -49,7 +48,15 @@ export default function AboutHero({
   missionCreed,
   heroImage,
   stats,
+  visibleSections,
 }: AboutHeroProps) {
+  const visibleAnchors = [
+    visibleSections?.history !== false && { label: 'Our Story', href: '#story' },
+    visibleSections?.pillars !== false && { label: 'Core Mandate', href: '#pillars' },
+    visibleSections?.leadership !== false && { label: 'Executive Leadership', href: '#leadership' },
+    visibleSections?.teams !== false && { label: 'Operational Units', href: '#teams' },
+    visibleSections?.cta !== false && { label: 'Get Involved', href: '#get-involved' },
+  ].filter(Boolean) as { label: string; href: string }[]
   const primaryPhoto = heroImage || '/gallery/gallery-1.jpg'
 
   return (
@@ -197,31 +204,33 @@ export default function AboutHero({
           </div>
         </motion.div>
 
-        {/* TPUSA-Style Quick Jump Anchor Rail */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-8 sm:mt-10 pt-6 border-t border-stone-200/80 flex items-center justify-between flex-wrap gap-3"
-        >
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <Compass className="h-4 w-4 shrink-0 text-[#0095ff]" />
-            <span>Explore Page:</span>
-          </div>
+        {/* Quick Jump Anchor Rail — only visible if at least one target section is active */}
+        {visibleAnchors.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-8 sm:mt-10 pt-6 border-t border-stone-200/80 flex items-center justify-between flex-wrap gap-3"
+          >
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Compass className="h-4 w-4 shrink-0 text-[#0095ff]" />
+              <span>Explore Page:</span>
+            </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {NAV_ANCHORS.map((anchor) => (
-              <a
-                key={anchor.href}
-                href={anchor.href}
-                className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0077cc] border border-stone-200 transition-colors shadow-2xs inline-flex items-center gap-1"
-              >
-                <span>{anchor.label}</span>
-                <ArrowDown className="h-3 w-3 shrink-0 opacity-60" />
-              </a>
-            ))}
-          </div>
-        </motion.div>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              {visibleAnchors.map((anchor) => (
+                <a
+                  key={anchor.href}
+                  href={anchor.href}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0077cc] border border-stone-200 transition-colors shadow-2xs inline-flex items-center gap-1"
+                >
+                  <span>{anchor.label}</span>
+                  <ArrowDown className="h-3 w-3 shrink-0 opacity-60" />
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
       </div>
     </section>
