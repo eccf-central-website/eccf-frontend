@@ -50,15 +50,9 @@ export function resolveResendFrom(displayName = 'ECCF'): string {
 
   if (configured) {
     if (!configured.includes('@')) {
-      if (configured.startsWith('contact.')) {
-        const corrected = 'contact@' + configured.slice('contact.'.length)
-        console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
-        configured = corrected
-      } else {
-        const corrected = `notifications@${configured}`
-        console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
-        configured = corrected
-      }
+      const corrected = `team@${configured}`
+      console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
+      configured = corrected
     }
     if (RESEND_SANDBOX_PATTERN.test(configured)) warnOnce('sandbox')
     // A configured value that already contains a mailbox must be used verbatim,

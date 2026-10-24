@@ -871,64 +871,27 @@ export function WorkerRegistrationForm({
           photoUploaded: pickedNewPhoto ? false : Boolean(existingPhotoUrl),
         };
 
-        if (newPortrait) {
-          let stored = false;
-
-          // Preferred: hand the fresh portrait to the Drive-backed endpoint
-          // when the registration granted an upload token.
-          if (registrationResult.uploadGrant) {
-            try {
-              const uploadRes = await fetch('/api/upload-drive', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  base64: newPortrait,
-                  fullName,
-                  team: teams[0] || 'General',
-                  uploadGrant: registrationResult.uploadGrant,
-                }),
-              });
-              if (uploadRes.ok) {
-                const uploadData = await uploadRes.json();
-                if (uploadData.fileUrl) {
-                  finalResult = {
-                    ...finalResult,
-                    profileImageUrl: uploadData.fileUrl,
-                    photoUploaded: true,
-                  };
-                  stored = true;
-                }
-              }
-            } catch {
-              // fall through to the direct-to-Sanity action
+        if (newPortrait && registrationResult.workerId) {
+          try {
+            const direct = await uploadWorkerPhotoDirectAction({
+              workerId: registrationResult.workerId,
+              base64Image: newPortrait,
+            });
+            if (direct.ok && direct.fileUrl) {
+              finalResult = {
+                ...finalResult,
+                profileImageUrl: direct.fileUrl,
+                photoUploaded: true,
+              };
             }
-          }
-
-          // Fallback: store the portrait straight into the content lake and
-          // patch the worker record, bypassing the Drive endpoint entirely.
-          if (!stored && registrationResult.workerId) {
-            try {
-              const direct = await uploadWorkerPhotoDirectAction({
-                workerId: registrationResult.workerId,
-                base64Image: newPortrait,
-              });
-              if (direct.ok && direct.fileUrl) {
-                finalResult = {
-                  ...finalResult,
-                  profileImageUrl: direct.fileUrl,
-                  photoUploaded: true,
-                };
-                stored = true;
-              }
-            } catch {
-              // fall through to the preview-only state
-            }
+          } catch {
+            // fall through to the preview-only state
           }
 
           // Last resort: keep showing the *new* portrait as a data-URL
           // preview and mark the upload as pending, rather than silently
           // resurfacing the previous profile photo.
-          if (!stored) {
+          if (!finalResult.photoUploaded) {
             finalResult = {
               ...finalResult,
               profileImageUrl: newPortrait,

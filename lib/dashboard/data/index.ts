@@ -443,7 +443,7 @@ export async function listPendingExecutiveApplications(): Promise<PendingExecuti
               teamId: pos.teamId,
               teamKey: pos.teamKey,
               teamName: pos.teamName || (typeof pos.team === 'string' ? pos.team : undefined),
-              status: pos.status,
+              status: 'pending',
               submittedAt: w.createdAt,
             },
           })
@@ -454,7 +454,27 @@ export async function listPendingExecutiveApplications(): Promise<PendingExecuti
   }
 
   try {
-    const rawDocs = await sanityPrivateClient.fetch<any[]>(DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY)
+    interface RawExecutivePendingDoc {
+      _id: string
+      fullName?: string
+      email?: string
+      hall?: string
+      profileImageUrl?: string
+      createdAt?: string
+      _createdAt?: string
+      positions?: Array<{
+        _key?: string
+        kind: 'team' | 'hall' | 'csgb'
+        office?: string
+        hall?: string
+        rank?: 'lead' | 'assistant'
+        teamId?: string
+        teamKey?: string
+        teamName?: string
+        status?: string
+      }>
+    }
+    const rawDocs = await sanityPrivateClient.fetch<RawExecutivePendingDoc[]>(DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY)
     const apps: PendingExecutiveApplication[] = []
     for (const doc of rawDocs) {
       const positions = Array.isArray(doc.positions) ? doc.positions : []
@@ -468,7 +488,7 @@ export async function listPendingExecutiveApplications(): Promise<PendingExecuti
             profileImageUrl: doc.profileImageUrl,
             createdAt: doc.createdAt || doc._createdAt,
             position: {
-              key: pos._key,
+              key: pos._key || '',
               kind: pos.kind,
               office: pos.office,
               hall: pos.hall,

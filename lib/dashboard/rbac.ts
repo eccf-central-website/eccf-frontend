@@ -208,7 +208,7 @@ export function canViewWelfareContact(
 
 export function isMediaLeader(
   session?: {
-    access?: Record<string, any>
+    access?: { isMedia?: boolean; [key: string]: unknown }
     role?: string
     team?: string
     teams?: string[]
@@ -217,8 +217,8 @@ export function isMediaLeader(
   } | null
 ): boolean {
   if (!session) return false
-  if (session.access && typeof (session.access as any).isMedia === 'boolean') {
-    return (session.access as any).isMedia === true
+  if (session.access && typeof session.access.isMedia === 'boolean') {
+    return session.access.isMedia
   }
 
   const team = (session.team || '').toLowerCase()
@@ -300,9 +300,8 @@ export function canAccessSection(
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
   if (section === 'executives') {
-    const hasAccess = currentSession && 'access' in currentSession && (currentSession as any).access
-    if (hasAccess && typeof (currentSession as any).access.isPresident === 'boolean') {
-      return (currentSession as any).access.isPresident
+    if (currentSession?.access && typeof currentSession.access.isPresident === 'boolean') {
+      return currentSession.access.isPresident
     }
     const pos = (currentSession.excoPosition || '').toLowerCase()
     return Boolean(pos.includes('president'))

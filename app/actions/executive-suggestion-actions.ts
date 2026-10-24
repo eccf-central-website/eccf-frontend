@@ -49,7 +49,7 @@ export async function suggestPositionsFromCsv(
     return { ok: false, imported: 0, skipped: [], error: 'No file provided.' }
   }
 
-  let rows: any[] = []
+  let rows: Array<Record<string, unknown>> = []
   try {
     const buffer = await file.arrayBuffer()
     const workbook = XLSX.read(buffer, { type: 'array' })
@@ -65,13 +65,26 @@ export async function suggestPositionsFromCsv(
     return { ok: false, imported: 0, skipped: [], error: 'The file contains no data rows.' }
   }
 
-  let workers: any[] = []
-  let teams: any[] = []
+  interface WorkerLookupItem {
+    _id: string
+    fullName: string
+    email?: string
+    firstName?: string
+    lastName?: string
+  }
+  interface TeamLookupItem {
+    _id: string
+    name: string
+    key?: string
+  }
+
+  let workers: WorkerLookupItem[] = []
+  let teams: TeamLookupItem[] = []
   try {
-    workers = await sanityPrivateClient.fetch<any[]>(
+    workers = await sanityPrivateClient.fetch<WorkerLookupItem[]>(
       `*[_type == "worker"]{ _id, fullName, email, firstName, lastName }`
     )
-    teams = await sanityPrivateClient.fetch<any[]>(
+    teams = await sanityPrivateClient.fetch<TeamLookupItem[]>(
       `*[_type == "teamUnit"]{ _id, name, "key": coalesce(key, slug.current) }`
     )
   } catch (err) {
@@ -79,11 +92,11 @@ export async function suggestPositionsFromCsv(
     return { ok: false, imported: 0, skipped: [], error: 'Failed to load workers.' }
   }
 
-  const byName = new Map<string, any>()
+  const byName = new Map<string, WorkerLookupItem>()
   for (const w of workers) {
     if (w?.fullName) byName.set(normalizeName(w.fullName), w)
   }
-  const teamByName = new Map<string, any>()
+  const teamByName = new Map<string, TeamLookupItem>()
   for (const t of teams) {
     if (t?.name) teamByName.set(t.name.trim().toLowerCase(), t)
     if (t?.key) teamByName.set(String(t.key).trim().toLowerCase(), t)

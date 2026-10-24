@@ -111,11 +111,25 @@ export async function approveExecutivePosition(
 
   // Live Sanity update
   try {
+    interface ApprovalPositionItem {
+      _key?: string
+      kind?: string
+      office?: string
+      hall?: string
+      rank?: string
+      status?: string
+      teamRef?: string
+    }
+    interface ApprovalMembershipItem {
+      _key?: string
+      status?: string
+      teamRef?: string
+    }
     const worker = await sanityPrivateClient.fetch<{
       _id: string
       fullName: string
-      positions?: any[]
-      memberships?: any[]
+      positions?: ApprovalPositionItem[]
+      memberships?: ApprovalMembershipItem[]
     }>(
       `*[_type == "worker" && _id == $workerId][0]{
         _id,

@@ -58,6 +58,7 @@ export interface WorkerAccess {
   titles: string[]
   positions: WorkerPosition[]
   memberships: WorkerMembership[]
+  [key: string]: unknown
 }
 
 export interface RawWorkerPosition {
