@@ -46,9 +46,20 @@ function warnOnce(kind: 'fallback' | 'sandbox') {
 }
 
 export function resolveResendFrom(displayName = 'ECCF'): string {
-  const configured = process.env.RESEND_FROM_EMAIL?.trim() || process.env.EMAIL_FROM?.trim()
+  let configured = process.env.RESEND_FROM_EMAIL?.trim() || process.env.EMAIL_FROM?.trim()
 
   if (configured) {
+    if (!configured.includes('@')) {
+      if (configured.startsWith('contact.')) {
+        const corrected = 'contact@' + configured.slice('contact.'.length)
+        console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
+        configured = corrected
+      } else {
+        const corrected = `notifications@${configured}`
+        console.warn(`[email] RESEND_FROM_EMAIL "${configured}" was missing "@". Auto-corrected to "${corrected}".`)
+        configured = corrected
+      }
+    }
     if (RESEND_SANDBOX_PATTERN.test(configured)) warnOnce('sandbox')
     // A configured value that already contains a mailbox must be used verbatim,
     // otherwise the environment's own display name would be overwritten.
