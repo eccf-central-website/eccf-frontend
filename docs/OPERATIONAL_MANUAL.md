@@ -3,7 +3,7 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 24 October 2026 against frontend commit `ef50a17` and backend commit `59c9953`.
+**Last verified:** 25 October 2026 against frontend commit `2442b8a` and backend commit `5bf71fc`.
 
 > **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the President-only executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
@@ -176,27 +176,30 @@ You can update names, birthday month/day, hall/room, operational teams, and the 
 If the email matches a worker record linked to a different sign-in method, the page shows **"One more check"** and requires the email code. If no worker profile is linked yet, the page starts a new registration and links the new record to the signed-in Clerk account on save.
 
 #### New Worker Flow (8 Steps)
-1. **Phone Gateway:** Enter a phone number and complete the Turnstile bot check. The action rejects requests without a valid challenge. The system then checks whether the number already belongs to a worker.
+1. **Phone Gateway:** Enter a phone number. Signed-out visitors then complete the **Turnstile** bot check — the widget appears as soon as 8+ digits are typed. The check is presented **once** for the whole form: passing it is remembered through every later step (email confirmation, review, and submission), and Clerk-signed-in users bypass it entirely. The action rejects requests without a valid challenge, then checks whether the number already belongs to a worker.
 2. **Name:** First name, middle name (optional), and last name.
-3. **Email Confirmation:** Enter a valid personal email address, complete the Turnstile check, and select **"Send Confirmation Code."** A 6-digit code is emailed to the address (it expires in 10 minutes; the resend cooldown is 60 seconds and allows up to 5 attempts). Enter the code and select **"Confirm Email & Continue."** The next steps stay locked until the code proves the applicant can read the inbox. The confirmed address becomes the identity used for Clerk sign-in and status access. Editing the address after confirmation voids the proof and repeats this step.
+3. **Email Confirmation:** Enter a valid personal email address and select **"Send Confirmation Code."** A 6-digit code is emailed to the address (it expires in 10 minutes; the resend cooldown is 60 seconds and allows up to 5 attempts). Enter the code and select **"Confirm Email & Continue."** The next steps stay locked until the code proves the applicant can read the inbox. The confirmed address becomes the identity used for Clerk sign-in and status access. Editing the address after confirmation voids the proof and repeats this step.
 4. **Operational Teams:** Select one or more published fellowship teams. The list is read live from **Teams & Units** in Sanity. Multi-team membership is supported and expected.
 5. **Residence:** Select a hall of residence (Halls 1–8) and enter a room number. Room data is encrypted before storage.
 6. **Birthday:** Select the birthday **month and day**. The year is not collected.
 7. **Birthday Photo (Optional):** Upload a celebratory photo, maximum 5 MB. The image is compressed before upload; the server rejects stored assets larger than 2 MB.
-8. **Review & Consent:** Review name, email, phone, selected teams, hostel/room, and birthday. Check the **NDPR consent** box, complete the final Turnstile check, and select **"Complete Registration"**.
+8. **Review & Consent:** Review name, email, phone, selected teams, hostel/room, and birthday. Check the **NDPR consent** box and select **"Complete Registration"** (no second security check is required — it was passed once at step 1).
 
 > [!NOTE]
 > The intake form does **not** collect academic department, academic level, password, or an executive application. Executive positions are appointed separately and approved by the President.
 
+> [!NOTE]
+> Draft persistence: in-progress entries for **signed-out new-worker registrations** are auto-saved to the browser tab's session storage (`eccf_worker_reg_draft_v1`) — the current step, names, phone, email and its confirmation state, selected teams, hall/room, and birthday. Reopening `/register` in the same browser tab restores the draft where it left off. It does not carry to other tabs or survive a closed tab, and it is wiped as soon as registration completes successfully. Signed-in profile refreshes and self-service-token sessions do not use the draft store.
+
 #### Returning Worker Flow (4 Steps)
 **Signed-in trusted workers** use the Profile Refresh path above and start at step 2.
 
-**Signed-out workers** can either enter the phone number on file at step 1, or select **"Already registered as a worker?"** and enter the registered email or phone number; the recovery form requires Turnstile. The system sends a **6-digit verification code and a secure unlock link** to the email on file. Both expire after **15 minutes** (the resend cooldown is 60 seconds).
+**Signed-out workers** can either enter the phone number on file at step 1, or select **"Already registered as a worker?"** and enter the registered email or phone number; recovery reuses the flow's one-time security check instead of a second widget. The system sends a **6-digit verification code and a secure unlock link** to the email on file. Both expire after **15 minutes** (the resend cooldown is 60 seconds).
 
 1. Verify ownership with the phone number, or with the registered email/phone recovery form, and the emailed code/link.
 2. Review and update your profile: first/middle/last name, birthday month and day, hall and room, and operational team memberships. The email and phone on file are shown read-only.
 3. Replace the optional birthday photo.
-4. Confirm the profile, complete the security check, and select **"Save Profile Updates"**.
+4. Confirm the profile and select **"Save Profile Updates"** (no second security check — the step-1 check covers the whole flow).
 
 #### What Happens After Submission
 - The worker profile is stored as a private operational draft.
@@ -239,7 +242,7 @@ Routing notes:
 The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form.
 
 ### 3.1 Overview Dashboard (`/dashboard`)
-The overview opens with a large **"Welcome back, {name}"** greeting that doubles as the page title. A single quiet info line underneath shows the leader's role, executive position (when held), and operational teams, and the workforce mail button sits beside it on wide screens. The greeting and info line appear identically at every screen width; team pills are no longer hidden on phones.
+The overview opens with a large **"Welcome, {name}"** greeting that doubles as the page title, finished in brand blue by the leader's **official appointed post** — resolved from the exco position or approved executive/Hall Pastor position (for example "Vice President", "Media Team Lead", "Hall Pastor (Hall 1)"; admins without a specific office show "CSGB Executive"). A quiet subtitle line follows and the workforce mail button sits beside it on wide screens. Serving teams no longer appear in the heading; they remain visible in the profile menu and workforce directory.
 
 **Available actions and panels:**
 - **Mail All Workers** (admins) or **Mail [Team]** (team leaders): opens the workforce email workflow. This is the page's only top-level action.
@@ -751,6 +754,8 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 > [!IMPORTANT]
 > Every server-side Resend send site now uses `lib/email/from.ts`, which resolves `RESEND_FROM_EMAIL`, then `EMAIL_FROM`, then the development fallback `onboarding@resend.dev`. The fallback logs a warning and Resend will only deliver from it to the Resend account owner. Production delivery to other recipients requires a verified Resend domain and a sender address on that domain.
 >
+> Two October 2026 refinements: a configured value missing the mailbox prefix (a bare domain such as `eccffamily.org`) is auto-corrected to `team@eccffamily.org` with a logged warning, and production no longer silently simulates a rejected send — real Resend rejections surface to the user as a delivery error and are logged for the technical administrator.
+>
 > `NEXTAUTH_SECRET` and `NEXTAUTH_URL` are no longer required. Clerk is the only identity provider. If an older deployment used `NEXTAUTH_SECRET` or `AUTH_SECRET` as an encryption or HMAC key, add the old value to `ENCRYPTION_LEGACY_KEYS` and `HMAC_LEGACY_PEPPERS` before upgrading. Do not delete those keys until `node scripts/check-encryption-health.mjs` reports zero unreadable fields.
 
 ### 12.2 Private Operational Drafts & Data Scripts
@@ -804,7 +809,7 @@ Non-technical testers can follow the plain-English steps on each card before eve
 ### 12.4 Integrations, Webhooks & Scheduled Jobs
 - **`/api/sync-sermons`** — scheduled/manual sermon sync endpoint, protected by `CRON_SECRET`.
 - **`/api/webhooks/announcement`** — Sanity announcement webhook, verified with `SANITY_WEBHOOK_SECRET`.
-- **`/api/upload-drive`** — private Google Apps Script bridge for large media uploads.
+- **`/api/upload-drive`** — private Google Apps Script bridge for large media uploads. Drive backup files are named `FullName_Team1_and_Team2…` (all of a worker's assigned teams, or `Workforce` when none is known), the endpoint tolerates data-URL-prefixed images, and a failed Drive sync is logged instead of failing the worker photo upload silently.
 - **Background sermon sync** — triggered by homepage/Sermon Vault visits, throttled to one run per 15 minutes per server instance.
 - **PWA manifest** — `/manifest.webmanifest`, scope and start URL `/dashboard`, with shortcuts for Attendance, Workers, First Timers, and Finance.
 
@@ -840,6 +845,9 @@ Production frontend hosting is Vercel; the Studio is hosted at `https://eccf-bac
 ## Appendix A: Role-Based Access Control (RBAC) Matrix
 
 Roles are `admin`, `team_lead`, `finance`, and `hall_rep`. Position flags refine what a role can see: `isPresident`, `isCSGB`, `isFinance`, `isWelfare`, `isMedia`, `isOutreachLeader`, and `isUsheringTeam`. "CSGB Admin" below means an admin who is not the President.
+
+> [!NOTE]
+> The dashboard UI labels these roles as **CSGB Executive** (admin), **Team Leader** (team_lead), **Finance** (finance), and **Hall Pastor** (hall_rep), and an approved office sharpens that label in the overview greeting and profile menu (for example "President", "Media Team Lead", or "Hall Pastor (Hall 3)"). The matrix below keeps the plain role names.
 
 | Section / Capability | President (admin) | CSGB Admin (admin) | Team Lead (scoped) | Outreach Lead | Media Lead | Hall Rep | Finance |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -945,6 +953,9 @@ The site is server-rendered on each request, so the change appears on the next l
 
 ### Q10: Why are announcements not appearing on the homepage?
 **A:** By design. The current homepage has no announcements ticker. Publish the notice and it appears on `/announcements`; use the per-card **Broadcast** action to email subscribers.
+
+### Q11: Why does a public page show a **"We will be right back"** notice?
+**A:** A technical administrator placed that route under maintenance in Sanity. Open **Site Settings → Maintenance Mode**, where **Put Pages Under Maintenance** ticks public routes (a ticked route also covers everything nested beneath it), and **Maintenance Headline / Message / Expected Back** supply the notice text, guidance, and optional timeframe badge. The notice page is marked `noindex` for search engines, the Exco Dashboard is never affected, and Sanity's live web preview bypasses it so editors can keep working. Untick the route and select **Publish** to restore the page on the next request.
 
 ---
 
