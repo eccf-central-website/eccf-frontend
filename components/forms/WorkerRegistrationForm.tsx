@@ -309,7 +309,6 @@ export function WorkerRegistrationForm({
         }
         if (typeof draft.maskedEmail === 'string') setMaskedEmail(draft.maskedEmail);
         if (typeof draft.profileFirstName === 'string') setProfileFirstName(draft.profileFirstName);
-        if (typeof draft.verificationNotice === 'string') setVerificationNotice(draft.verificationNotice);
         if (typeof draft.firstName === 'string') setFirstName(draft.firstName);
         if (typeof draft.middleName === 'string') setMiddleName(draft.middleName);
         if (typeof draft.lastName === 'string') setLastName(draft.lastName);
@@ -340,7 +339,6 @@ export function WorkerRegistrationForm({
           verificationPending,
           maskedEmail,
           profileFirstName,
-          verificationNotice,
           firstName,
           middleName,
           lastName,
@@ -364,7 +362,6 @@ export function WorkerRegistrationForm({
     verificationPending,
     maskedEmail,
     profileFirstName,
-    verificationNotice,
     firstName,
     middleName,
     lastName,
@@ -587,13 +584,10 @@ export function WorkerRegistrationForm({
       }
 
       // Existing worker detected -> OTP flow
-      const notice =
-        result.message ||
-        `A 6-digit verification code and secure unlock link have been sent to ${result.maskedEmail || 'your email'}.`;
       setVerificationPending(true);
       setMaskedEmail(result.maskedEmail || 'your registered email');
       setProfileFirstName(result.firstName || null);
-      setVerificationNotice(notice);
+      setVerificationNotice(null);
       setResendCooldown(result.retryAfterSeconds ?? 60);
 
       // Immediately write challenge to sessionStorage so any router refresh retains the OTP screen
@@ -601,6 +595,7 @@ export function WorkerRegistrationForm({
         try {
           const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
           const draft = raw ? JSON.parse(raw) : {};
+          delete draft.verificationNotice;
           sessionStorage.setItem(
             'eccf_worker_reg_draft_v1',
             JSON.stringify({
@@ -610,7 +605,6 @@ export function WorkerRegistrationForm({
               verificationPending: true,
               maskedEmail: result.maskedEmail || 'your registered email',
               profileFirstName: result.firstName || null,
-              verificationNotice: notice,
             }),
           );
         } catch {
@@ -662,10 +656,7 @@ export function WorkerRegistrationForm({
 
       setRegistrationOtpSent(true);
       setRegistrationOtp('');
-      setRegistrationOtpNotice(
-        result.message ||
-          `A 6-digit confirmation code has been sent to ${maskEmailDisplay(clean) || clean}. Check your inbox and spam folder.`,
-      );
+      setRegistrationOtpNotice(null);
       setEmailOtpCooldown(result.retryAfterSeconds ?? 60);
     } catch {
       setError(
@@ -862,8 +853,7 @@ export function WorkerRegistrationForm({
       });
       if (result.ok && result.exists) {
         setVerificationNotice(
-          result.message ||
-            `A fresh 6-digit verification code was sent to ${result.maskedEmail || maskedEmail}. Check your inbox and spam folder.`,
+          `A fresh 6-digit verification code has been sent to ${result.maskedEmail || maskedEmail}.`,
         );
         setMaskedEmail(result.maskedEmail || maskedEmail);
         setProfileFirstName(result.firstName || profileFirstName);
@@ -935,6 +925,7 @@ export function WorkerRegistrationForm({
           try {
             const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
             const draft = raw ? JSON.parse(raw) : {};
+            delete draft.verificationNotice;
             sessionStorage.setItem(
               'eccf_worker_reg_draft_v1',
               JSON.stringify({
@@ -944,7 +935,6 @@ export function WorkerRegistrationForm({
                 verificationPending: true,
                 maskedEmail: result.maskedEmail,
                 profileFirstName: result.firstName || null,
-                verificationNotice: result.message || null,
               }),
             );
           } catch {
@@ -983,9 +973,9 @@ export function WorkerRegistrationForm({
         birthDate: effectiveBirthDate,
         birthMonth,
         birthDay,
-        profileImageUrl: base64Image
-          ? undefined
-          : existingPhotoUrl || undefined,
+        // Only send the photo when the user actually picked a new one.
+        // The server preserves the existing image when this is omitted —
+        // echoing it back caused valid Sanity-hosted photos to be rejected.
         requestPhotoUpload: Boolean(base64Image),
         turnstileToken,
         clerkUserId,
@@ -1006,10 +996,7 @@ export function WorkerRegistrationForm({
             setMaskedEmail(linkResult.maskedEmail);
             setProfileFirstName(linkResult.firstName || null);
             setVerificationPending(true);
-            setVerificationNotice(
-              linkResult.message ||
-                'If a matching worker profile exists, a verification code and secure unlock link have been sent. Check your inbox and spam folder.',
-            );
+            setVerificationNotice(null);
             setResendCooldown(60);
             setStep(1);
             return;
@@ -1214,14 +1201,9 @@ export function WorkerRegistrationForm({
             </h1>
             <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
               {isReturning
-                ? 'Your workforce profile has been updated. Below is the current status of your teams and approvals.'
-                : 'Your profile has been logged in the ECCF directory. Below is the breakdown of your application and verification status.'}
+                ? 'Your workforce profile has been updated.'
+                : 'Your registration has been submitted to your Team Lead(s) for verification.'}
             </p>
-            {successResult.message && (
-              <div className="mx-auto max-w-lg mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 shadow-xs">
-                {successResult.message}
-              </div>
-            )}
           </div>
         </div>
 
@@ -2575,17 +2557,23 @@ export function WorkerRegistrationForm({
                         checkingEmail
                       }
                       onClick={handleEmailNext}
-                      className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
+                      className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-5 text-base font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50 sm:px-8 sm:text-lg"
                     >
                       {checkingEmail ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" />{' '}
+                        <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                          <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                           Sending Code…
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2">
-                          Send Confirmation Code{' '}
-                          <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
+                        <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                          <span className="sm:hidden">Send Code</span>
+                          <span className="hidden sm:inline">
+                            Send Confirmation Code
+                          </span>
+                          <ArrowRight
+                            className="h-5 w-5 shrink-0"
+                            aria-hidden="true"
+                          />
                         </span>
                       )}
                     </button>
@@ -2958,57 +2946,67 @@ export function WorkerRegistrationForm({
                 </p>
               </div>
 
-              <div className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-3 shadow-sm text-sm">
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">Name:</span>
-                  <span className="font-bold text-slate-900">{fullName}</span>
+              <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white px-5 py-2 shadow-sm sm:px-6">
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Name
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
+                    {fullName}
+                  </dd>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">Email:</span>
-                  <span className="font-bold text-slate-900">{email}</span>
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Email
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
+                    {email}
+                  </dd>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">Phone:</span>
-                  <span className="font-bold text-slate-900">
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Phone
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
                     {phoneNumber}
-                  </span>
+                  </dd>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">
-                    Operational Team{teams.length > 1 ? 's' : ''}:
-                  </span>
-                  <span className="font-bold text-slate-900">
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Operational Team{teams.length > 1 ? 's' : ''}
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
                     {teams.join(', ')}
-                  </span>
+                  </dd>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">
-                    Hostel / Room:
-                  </span>
-                  <span className="font-bold text-slate-900">
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Hostel / Room
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
                     {hall}, {roomNumber}
-                  </span>
+                  </dd>
                 </div>
                 {birthMonth && birthDay && (
-                  <div className="flex justify-between py-1.5 border-b border-slate-100">
-                    <span className="text-slate-500 font-medium">
-                      Birthday:
-                    </span>
-                    <span className="font-bold text-slate-900">
+                  <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                    <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                      Birthday
+                    </dt>
+                    <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-slate-900">
                       {MONTHS.find((m) => m.value === birthMonth)?.label}{' '}
                       {parseInt(birthDay, 10)}
-                    </span>
+                    </dd>
                   </div>
                 )}
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-500 font-medium">
-                    Designation:
-                  </span>
-                  <span className="font-bold text-[#0077cc]">
+                <div className="grid grid-cols-[minmax(0,40%)_1fr] items-start gap-x-5 py-3.5">
+                  <dt className="text-sm font-medium leading-relaxed text-slate-500">
+                    Designation
+                  </dt>
+                  <dd className="min-w-0 break-words text-right text-sm font-bold leading-relaxed text-[#0077cc]">
                     Volunteer Worker (Pending Lead Verification)
-                  </span>
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
               <div className="flex items-start gap-3 p-2">
                 <input

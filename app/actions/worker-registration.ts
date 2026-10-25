@@ -2254,7 +2254,14 @@ export async function registerWorker(
     if (profileImageUrl) {
       try {
         const photoUrl = new URL(profileImageUrl)
-        const trustedPhotoHost = ['lh3.googleusercontent.com', 'drive.google.com'].includes(photoUrl.hostname)
+        // Photos uploaded through the app are stored as Sanity assets
+        // (cdn.sanity.io). Google avatars and Drive backups are also trusted.
+        // Anything else must go through the in-app uploader.
+        const trustedPhotoHost = [
+          'lh3.googleusercontent.com',
+          'drive.google.com',
+          'cdn.sanity.io',
+        ].includes(photoUrl.hostname)
         if (photoUrl.protocol !== 'https:' || !trustedPhotoHost) {
           return { ok: false, error: 'Please upload a profile image using the provided upload control.' }
         }
@@ -2455,8 +2462,8 @@ export async function registerWorker(
         teams: selectedTeams,
         executiveApplication: input.executiveApplication,
         message: input.isExco
-          ? `Welcome to ECCF, ${cleanFullName}! Your workforce registration and executive application have been successfully submitted.`
-          : `Welcome to the Workforce, ${cleanFullName}! Your registration has been submitted to your Team Lead(s) for verification.`,
+          ? 'Your registration and executive application have been submitted for verification.'
+          : 'Your registration has been submitted to your Team Lead(s) for verification.',
       }
     }
   } catch (err) {
