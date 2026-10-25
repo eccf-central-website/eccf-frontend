@@ -43,8 +43,7 @@ const clerkHandler = clerkMiddleware((auth, req) => {
   }
 
   if (pathname === '/dashboard/sign-up' || pathname === '/dashboard/sign-up/') {
-    // Signup is handled exclusively at /register (worker intake form)
-    const signUpUrl = new URL('/register', req.url)
+    const signUpUrl = new URL('/sign-up', req.url)
     req.nextUrl.searchParams.forEach((value, key) => {
       signUpUrl.searchParams.set(key, value)
     })

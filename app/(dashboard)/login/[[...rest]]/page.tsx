@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { SignIn } from '@clerk/nextjs'
 import LoadingState from '@/components/common/LoadingState'
 import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
@@ -16,6 +17,8 @@ const NAVY = {
 }
 
 function ClerkLoginCard() {
+  const searchParams = useSearchParams()
+  const isApprovalPending = searchParams?.get('denied') === 'approval_pending'
   const [ready, setReady] = useState(false)
   const [activateEmail, setActivateEmail] = useState('')
   const [activateStatus, setActivateStatus] = useState<{ ok?: boolean; message?: string; error?: string } | null>(null)
@@ -53,14 +56,19 @@ function ClerkLoginCard() {
         />
       ) : (
         <div className="w-full max-w-md flex flex-col items-center space-y-6 animate-in fade-in duration-500">
+          {isApprovalPending && (
+            <div className="w-full p-4 rounded-2xl bg-amber-950/40 border border-amber-800/60 text-amber-200 text-xs text-center space-y-1 shadow-lg">
+              <p className="font-semibold text-amber-100">Executive Approval Required</p>
+              <p className="text-amber-300/90 leading-relaxed">
+                Your sign-in succeeded, but this account does not have an approved executive appointment in fellowship records. If you were recently appointed, please ensure your position is approved by the President or fellowship administrator.
+              </p>
+            </div>
+          )}
+
           <SignIn
             routing="path"
             path="/login"
-            // Signup is handled exclusively at /register. When a social
-            // sign-in (e.g. Continue with Google) finds no existing account,
-            // Clerk transfers the flow here — send them to the worker
-            // registration form instead of a Clerk sign-up page.
-            signUpUrl="/register"
+            signUpUrl="/sign-up"
             afterSignInUrl="/dashboard"
             appearance={{
               variables: {

@@ -209,6 +209,10 @@ export async function getSession(): Promise<DashboardSession | null> {
   }
   const access = deriveAccess(worker)
 
+  if (!access.isExecutive) {
+    return null
+  }
+
   // Derive backwards-compatible WorkerRole
   let role: WorkerRole = 'team_lead'
   if (isWorkerRole(worker.role)) {
@@ -256,7 +260,7 @@ export async function getSession(): Promise<DashboardSession | null> {
 /** For pages/layouts: redirect to /login when there is no session. */
 export async function requireSession(): Promise<DashboardSession> {
   const session = await getSession()
-  if (!session) redirect('/login')
+  if (!session) redirect('/login?denied=approval_pending')
   return session
 }
 
