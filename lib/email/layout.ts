@@ -392,16 +392,16 @@ export function renderEmailLayout({
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f7fb;">
+<body bgcolor="#f4f7fb" style="margin:0;padding:0;background-color:#f4f7fb;">
   ${
     preheader
       ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f4f7fb;opacity:0;">${escapeHtml(preheader)}&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;</div>`
       : ''
   }
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f4f7fb;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7fb" style="width:100%;background-color:#f4f7fb;">
     <tr>
       <td align="center" class="eccf-shell" style="padding:36px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e7edf5;border-radius:16px;overflow:hidden;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e7edf5;border-radius:16px;overflow:hidden;">
           <tr>
             <td class="eccf-pad" style="padding:26px 34px 0 34px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
