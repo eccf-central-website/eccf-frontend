@@ -55,7 +55,7 @@ flowchart TD
         SanityDrafts["Private Operational Drafts\n(Encrypted Worker CRM, Finance, Intake)"]
     end
 
-    Web -->|Published Content Only| SanityStudio
+    Web -->|Server-Side Authenticated Read| SanityStudio
     WorkerReg -->|Public Intake, Encrypted| SanityDrafts
     Clerk -->|Session + Role Bridge| ExcoDash
     ExcoDash -->|Authenticated Read/Write Token| SanityDrafts
@@ -63,7 +63,7 @@ flowchart TD
 ```
 
 ### Core Security & Privacy Safeguards
-1. **Private Operational Drafts Boundary:** Sensitive records (worker profiles, financial entries, attendance rosters, first-timer contacts, welfare requests, prayer requests) are written as Sanity private drafts. Public, unauthenticated queries only return published content such as sermons, announcements, gallery items, and leadership profiles.
+1. **Private Dataset & Drafts Boundary:** The Sanity production dataset is set to access mode **private**, so an unauthenticated query returns nothing at all — not even published content such as sermons, announcements, gallery items, or leadership profiles. Every read is a server-side request authenticated with `SANITY_READ_TOKEN` (`lib/sanity.ts`, `useCdn: false` — there is no public CDN). A second, code-level boundary still applies: public pages query with the **published** perspective only, while sensitive records (worker profiles, financial entries, attendance rosters, first-timer contacts, welfare requests, prayer requests) are held as unpublished drafts that only the dashboard's drafts-perspective client can read.
 2. **Field-Level AES-256-GCM Encryption:** Phone numbers and hostel room numbers are encrypted before they reach Sanity. Legacy keys are supported only for controlled re-encryption, via `ENCRYPTION_LEGACY_KEYS` and `HMAC_LEGACY_PEPPERS`.
 3. **One-Way HMAC-SHA256 Blind Indexing:** Phone lookups and deduplication use a blind index, so searchable plain-text contact numbers are never stored.
 4. **Clerk Identity + Strict RBAC:** Dashboard routes and server actions verify the Clerk session, resolve the worker record, and derive permissions from approved positions. Unauthorised sections are removed from navigation and blocked on direct URL access.
@@ -718,7 +718,7 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 | :--- | :--- | :--- |
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | Frontend | Sanity project identifier (`ynnot4j0`) |
 | `NEXT_PUBLIC_SANITY_DATASET` | Frontend | Target dataset (`production`) |
-| `SANITY_READ_TOKEN` | Frontend (server) | Authenticated reads, including private drafts |
+| `SANITY_READ_TOKEN` | Frontend (server) | **Required for every Sanity read** — the dataset is private, so even public pages authenticate with it (queries use the published perspective; draft mode and the dashboard use the drafts perspective) |
 | `SANITY_WRITE_TOKEN` | Frontend (server) | Mutations, intake, ledgers, broadcasts |
 | `ENCRYPTION_KEY` | Frontend (server) | 32-byte key for AES-256-GCM field encryption |
 | `HMAC_PEPPER` | Frontend (server) | Secret for HMAC-SHA256 blind indexing |
@@ -759,12 +759,12 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 > `NEXTAUTH_SECRET` and `NEXTAUTH_URL` are no longer required. Clerk is the only identity provider. If an older deployment used `NEXTAUTH_SECRET` or `AUTH_SECRET` as an encryption or HMAC key, add the old value to `ENCRYPTION_LEGACY_KEYS` and `HMAC_LEGACY_PEPPERS` before upgrading. Do not delete those keys until `node scripts/check-encryption-health.mjs` reports zero unreadable fields.
 
 ### 12.2 Private Operational Drafts & Data Scripts
-Operational records (`worker`, `attendanceLedger`, `financeLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`) must remain in the private draft space. Public queries are limited to published content.
+Operational records (`worker`, `attendanceLedger`, `financeLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`) must remain unpublished drafts. The production dataset itself is **private** — anonymous API access is denied even for published content — and public pages read only through the server with `SANITY_READ_TOKEN` at the published perspective, so an operational draft can never appear in a public response.
 
 Useful scripts in `eccf-frontend/scripts`:
 
 ```bash
-# Confirm that unauthenticated Sanity queries return zero operational documents
+# Confirm unauthenticated Sanity queries cannot read operational data (the private-dataset API is expected to reject the request)
 node scripts/verify-unauthenticated.mjs
 
 # Encrypt legacy plaintext phone/room fields
