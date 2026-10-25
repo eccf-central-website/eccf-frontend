@@ -96,35 +96,40 @@ function ClerkLoginCard() {
             }}
           />
 
-          {/* Activation for previously registered workers */}
-          <div className="w-full border-t border-[#1c2438] pt-4 space-y-3">
-            <p className="text-xs text-slate-400 text-center">
-              Registered before but cannot sign in? Activate your login below.
-            </p>
-            <form onSubmit={handleActivate} className="space-y-2">
-              <input
-                type="email"
-                value={activateEmail}
-                onChange={(e) => setActivateEmail(e.target.value)}
-                placeholder="Your registered email"
-                className="w-full h-10 rounded-xl bg-[#141b2c] border border-[#1e2740] text-slate-100 px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                required
-              />
-              <button
-                type="submit"
-                disabled={activating}
-                className="w-full h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-100 text-sm font-medium transition-all disabled:opacity-50"
-              >
-                {activating ? 'Activating...' : 'Activate Login'}
-              </button>
-            </form>
-            {activateStatus?.ok && (
-              <p className="text-xs text-emerald-400 text-center">{activateStatus.message}</p>
-            )}
-            {activateStatus && !activateStatus.ok && (
-              <p className="text-xs text-red-400 text-center">{activateStatus.error}</p>
-            )}
-          </div>
+          {/* Subtle Troubleshooting Helper for Legacy Profile Sync */}
+          <details className="w-full text-center group pt-1">
+            <summary className="text-[11px] text-slate-500 hover:text-slate-400 cursor-pointer transition-colors list-none select-none">
+              Trouble accessing your account with Google?
+            </summary>
+            <div className="mt-3 p-4 rounded-xl bg-[#141b2c]/60 border border-[#1e2740] space-y-3 text-left">
+              <p className="text-xs text-slate-400 text-center">
+                Enter your registered workforce email below to sync your login access.
+              </p>
+              <form onSubmit={handleActivate} className="space-y-2">
+                <input
+                  type="email"
+                  value={activateEmail}
+                  onChange={(e) => setActivateEmail(e.target.value)}
+                  placeholder="Your registered email"
+                  className="w-full h-10 rounded-xl bg-[#161d2e] border border-[#1e2740] text-slate-100 px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={activating}
+                  className="w-full h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium transition-all disabled:opacity-50"
+                >
+                  {activating ? 'Syncing...' : 'Sync Account Access'}
+                </button>
+              </form>
+              {activateStatus?.ok && (
+                <p className="text-xs text-emerald-400 text-center">{activateStatus.message}</p>
+              )}
+              {activateStatus && !activateStatus.ok && (
+                <p className="text-xs text-red-400 text-center">{activateStatus.error}</p>
+              )}
+            </div>
+          </details>
 
           {/* Footer Navigation */}
           <div className="text-center">
