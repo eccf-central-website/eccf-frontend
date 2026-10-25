@@ -61,6 +61,7 @@ export const DASHBOARD_WORKERS_QUERY = `
       "worker"
     ),
     "excoPosition": coalesce(
+      positions[status == "approved"][0].csgbRole->title,
       positions[status == "approved"][0].office,
       select(
         positions[status == "approved"][0].kind == "hall" => positions[status == "approved"][0].hall + " Pastor",
@@ -88,7 +89,10 @@ export const DASHBOARD_WORKERS_QUERY = `
     "positions": positions[]{
       _key,
       kind,
-      office,
+      "office": coalesce(csgbRole->title, office),
+      "csgbRoleId": coalesce(csgbRole._ref, csgbRole->_id),
+      "csgbRoleKey": coalesce(csgbRole->slug.current, csgbRole->key),
+      "canApproveExecutives": coalesce(csgbRole->canApproveExecutives, false),
       hall,
       rank,
       status,
@@ -125,7 +129,10 @@ export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
     "positions": positions[status == "pending"]{
       _key,
       kind,
-      office,
+      "office": coalesce(csgbRole->title, office),
+      "csgbRoleId": coalesce(csgbRole._ref, csgbRole->_id),
+      "csgbRoleKey": coalesce(csgbRole->slug.current, csgbRole->key),
+      "canApproveExecutives": coalesce(csgbRole->canApproveExecutives, false),
       hall,
       rank,
       status,

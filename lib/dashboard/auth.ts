@@ -175,8 +175,9 @@ export async function getSession(): Promise<DashboardSession | null> {
         positions[] {
           kind,
           "team": team->{ _id, name, "key": coalesce(key, slug.current) },
+          "csgbRole": csgbRole->{ _id, title, "key": coalesce(slug.current, key), canApproveExecutives },
           hall,
-          office,
+          "office": coalesce(csgbRole->title, office),
           rank,
           status
         },
