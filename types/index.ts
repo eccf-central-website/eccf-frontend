@@ -59,6 +59,9 @@ export interface WorkerPosition {
   teamId?: string
   teamKey?: string
   teamName?: string
+  csgbRoleId?: string
+  csgbRoleKey?: string
+  canApproveExecutives?: boolean
   hall?: string
   office?: string
   rank?: 'lead' | 'assistant'
@@ -89,6 +92,9 @@ export interface PendingExecutiveApplication {
     key: string
     kind: 'csgb' | 'hall' | 'team'
     office?: string
+    csgbRoleId?: string
+    csgbRoleKey?: string
+    canApproveExecutives?: boolean
     hall?: string
     rank?: 'lead' | 'assistant'
     teamId?: string

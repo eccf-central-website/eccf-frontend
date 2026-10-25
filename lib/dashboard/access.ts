@@ -20,6 +20,10 @@ export interface WorkerPosition {
   teamId?: string
   teamKey?: string
   teamName?: string
+  csgbRole?: { _ref?: string; _id?: string; title?: string; key?: string; canApproveExecutives?: boolean } | string
+  csgbRoleId?: string
+  csgbRoleKey?: string
+  canApproveExecutives?: boolean
   hall?: string
   office?: string
   rank?: 'lead' | 'assistant'
@@ -66,6 +70,10 @@ export interface RawWorkerPosition {
   _key?: string
   kind: 'team' | 'hall' | 'csgb'
   team?: { _ref?: string; _id?: string; name?: string; key?: string } | string
+  csgbRole?: { _ref?: string; _id?: string; title?: string; key?: string; canApproveExecutives?: boolean } | string
+  csgbRoleId?: string
+  csgbRoleKey?: string
+  canApproveExecutives?: boolean
   hall?: string
   office?: string
   rank?: 'lead' | 'assistant'
@@ -125,6 +133,12 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     const teamKey = teamObj?.key || undefined
     const teamName = teamObj?.name || undefined
 
+    const csgbObj = typeof pos.csgbRole === 'object' && pos.csgbRole !== null ? pos.csgbRole : undefined
+    const csgbRoleId = pos.csgbRoleId || csgbObj?._id || csgbObj?._ref || (typeof pos.csgbRole === 'string' ? pos.csgbRole : undefined)
+    const csgbRoleKey = pos.csgbRoleKey || csgbObj?.key || undefined
+    const office = pos.office || csgbObj?.title || undefined
+    const canApproveExecutives = Boolean(pos.canApproveExecutives || csgbObj?.canApproveExecutives)
+
     return {
       _key: pos._key,
       kind: pos.kind,
@@ -132,8 +146,12 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       teamId,
       teamKey,
       teamName,
+      csgbRole: pos.csgbRole,
+      csgbRoleId,
+      csgbRoleKey,
+      canApproveExecutives,
       hall: pos.hall,
-      office: pos.office,
+      office,
       rank: pos.rank || 'lead',
       status: pos.status || 'pending',
       decidedBy: pos.decidedBy,
@@ -172,7 +190,11 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
 
   const isPresident =
     Boolean(worker.canApproveExecutives) ||
-    approvedPositions.some((p) => p.kind === 'csgb' && p.office?.toLowerCase().includes('president')) ||
+    approvedPositions.some(
+      (p) =>
+        p.canApproveExecutives ||
+        (p.kind === 'csgb' && (p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president'))
+    ) ||
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president'))
 
   const isVP =
@@ -187,7 +209,10 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
   const isPrayerCoordinator =
     approvedPositions.some(
       (p) =>
-        (p.kind === 'csgb' && (p.office?.toLowerCase().includes('prayer') || p.office?.toLowerCase().includes('coordinator'))) ||
+        (p.kind === 'csgb' &&
+          (p.office?.toLowerCase().includes('prayer') ||
+            p.office?.toLowerCase().includes('coordinator') ||
+            p.csgbRoleKey === 'prayer-coordinator')) ||
         (p.kind === 'team' && (p.teamKey === 'prayer' || p.teamName?.toLowerCase().includes('prayer')) && p.rank === 'lead')
     ) ||
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('prayer'))
