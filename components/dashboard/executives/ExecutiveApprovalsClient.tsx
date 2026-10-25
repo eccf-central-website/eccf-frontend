@@ -5,7 +5,7 @@
  *
  * Implements Phase 4 of Clerk Migration:
  * - Displays pending executive applications grouped by category:
- *   1. CSGB Central Student Governing Board Offices
+ *   1. CSGB Christian Student Governing Board Offices
  *   2. Hall Pastors & Assistants
  *   3. Ministry Team Leads & Assistants
  * - Shows applicant's name, email, hall, requested position, rank, and submission date.
@@ -431,7 +431,7 @@ export default function ExecutiveApprovalsClient({
       ) : categoryFilter === 'all' ? (
         // Render Grouped by Category when "All" is active
         <div className="space-y-6">
-          {/* Category 1: CSGB Central Student Governing Board */}
+          {/* Category 1: CSGB Christian Student Governing Board */}
           {csgbApps.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-1">
@@ -440,7 +440,7 @@ export default function ExecutiveApprovalsClient({
                     <Award className="h-4 w-4 shrink-0" />
                   </div>
                   <h2 className="font-serif font-bold text-lg text-foreground">
-                    CSGB Central Student Governing Board Offices
+                    CSGB Christian Student Governing Board Offices
                   </h2>
                 </div>
                 <span className="text-xs font-mono font-bold text-muted-foreground">

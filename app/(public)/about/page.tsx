@@ -9,7 +9,7 @@
  * - High-energy Mission & Impact Hero
  * - Fellowship History & Chronological Milestones
  * - Core Values & Three Pillars
- * - Central Student Governing Body (CSGB) & Ministry Directors ("Our Team")
+ * - Christian Student Governing Board (CSGB) & Ministry Directors ("Our Team")
  * - Complete 14 Fellowship Operational Units (relocated from homepage)
  * - High-impact Get-Involved CTA
  */

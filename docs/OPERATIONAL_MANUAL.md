@@ -13,7 +13,7 @@
 1. [Executive Summary & System Architecture](#1-executive-summary--system-architecture)
 2. [Chapter 1: Fellowship Members & General Students (Public Website & PWA)](#chapter-1-fellowship-members--general-students-public-website--pwa)
 3. [Chapter 2: Fellowship Workers & Volunteer Onboarding](#chapter-2-fellowship-workers--volunteer-onboarding)
-4. [Chapter 3: President & Central Student Governing Board (CSGB)](#chapter-3-president--central-student-governing-board-csgb)
+4. [Chapter 3: President & Christian Student Governing Board (CSGB)](#chapter-3-president--christian-student-governing-board-csgb)
 5. [Chapter 4: Media Team & Content Stewards (Sanity Studio & Sermons)](#chapter-4-media-team--content-stewards-sanity-studio--sermons)
 6. [Chapter 5: Team Leaders & Assistant Leads (14 Ministry Teams)](#chapter-5-team-leaders--assistant-leads-14-ministry-teams)
 7. [Chapter 6: Hall Representatives (Hostel / Campus Residence Pastors)](#chapter-6-hall-representatives-hostel--campus-residence-pastors)
@@ -237,7 +237,7 @@ Routing notes:
 
 ---
 
-## Chapter 3: President & Central Student Governing Board (CSGB)
+## Chapter 3: President & Christian Student Governing Board (CSGB)
 
 The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form.
 
@@ -959,4 +959,4 @@ The site is server-rendered on each request, so the change appears on the next l
 
 ---
 
-*Document approved for fellowship operations by the Central Student Governing Board (CSGB) — Edo State University Christian Campus Fellowship.*
+*Document approved for fellowship operations by the Christian Student Governing Board (CSGB) — Edo State University Christian Campus Fellowship.*

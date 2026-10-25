@@ -327,7 +327,7 @@ export default async function RegistrationStatusPage() {
                             <h4 className="font-bold text-base sm:text-lg text-slate-950">{pos.title}</h4>
                           </div>
                           <p className="text-xs text-slate-600">
-                            {pos.kind === 'csgb' && 'Central Student Governing Board & Executive Council.'}
+                            {pos.kind === 'csgb' && 'Christian Student Governing Board & Executive Council.'}
                             {pos.kind === 'hall' && `Hostel ministry shepherd for ${pos.hall || 'hall'}.`}
                             {pos.kind === 'team' && `Ministry coordinator for ${pos.teamName || 'team'}.`}
                           </p>

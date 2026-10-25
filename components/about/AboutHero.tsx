@@ -199,7 +199,7 @@ export default function AboutHero({
               Student-Led Impact
             </span>
             <p className="text-xs text-slate-500 mt-1 font-normal hidden sm:block">
-              Governed by the Central Governing Body
+              Governed by the Christian Student Governing Board
             </p>
           </div>
         </motion.div>

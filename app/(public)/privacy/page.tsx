@@ -233,7 +233,7 @@ export default async function PrivacyPage() {
                     Clause 3.4 &mdash; Central Executive Body (CSGB Admin)
                   </h3>
                   <p className="mt-1 text-sm sm:text-base">
-                    The Central Student Governing Body maintains administrative oversight to coordinate fellowship-wide rosters, verify
+                    The Christian Student Governing Board maintains administrative oversight to coordinate fellowship-wide rosters, verify
                     leadership appointments, and handle urgent pastoral escalations.
                   </p>
                 </div>
@@ -324,7 +324,7 @@ export default async function PrivacyPage() {
                   Edo State University Christian Campus Fellowship (ECCF)
                 </div>
                 <div className="text-sm text-slate-600 space-y-1">
-                  <p>Central Student Governing Body (CSGB) &bull; Secretariat</p>
+                  <p>Christian Student Governing Board (CSGB) &bull; Secretariat</p>
                   <p>Meeting Venue: Lecture Theatre 5 (NLT 5), Faculty of Law</p>
                   <p>Edo State University Iyamho (ESUI), Edo State, Nigeria</p>
                 </div>
@@ -340,7 +340,7 @@ export default async function PrivacyPage() {
               </div>
 
               <div className="pt-6 text-xs text-slate-400 font-mono text-center sm:text-left">
-                Ratified by the Central Student Governing Body (CSGB) in consultation with the Pastoral Advisory Directorate.
+                Ratified by the Christian Student Governing Board (CSGB) in consultation with the Pastoral Advisory Directorate.
               </div>
             </section>
           </div>

@@ -155,7 +155,7 @@ export default async function TermsPage() {
                   </h3>
                   <p className="mt-1">
                     Accounts are intended for registered workers and leaders whose details have been verified by the
-                    Central Student Governing Body (CSGB) or an authorised unit head. Submitting a registration form
+                    Christian Student Governing Board (CSGB) or an authorised unit head. Submitting a registration form
                     does not automatically grant portal access.
                   </p>
                 </div>
@@ -450,7 +450,7 @@ export default async function TermsPage() {
                   Edo State University Christian Campus Fellowship (ECCF)
                 </div>
                 <div className="text-sm text-slate-600 space-y-1">
-                  <p>Central Student Governing Body (CSGB) &bull; Secretariat</p>
+                  <p>Christian Student Governing Board (CSGB) &bull; Secretariat</p>
                   <p>Meeting Venue: Lecture Theatre 5 (NLT 5), Faculty of Law</p>
                   <p>Edo State University Iyamho (ESUI), Edo State, Nigeria</p>
                 </div>
@@ -466,7 +466,7 @@ export default async function TermsPage() {
               </div>
 
               <div className="pt-6 text-xs text-slate-400 font-mono text-center sm:text-left">
-                Ratified by the Central Student Governing Body (CSGB) in consultation with the Pastoral Advisory
+                Ratified by the Christian Student Governing Board (CSGB) in consultation with the Pastoral Advisory
                 Directorate. Read together with the{' '}
                 <Link href="/privacy" className="underline hover:text-slate-600">
                   Privacy &amp; Data Care Charter

@@ -50,7 +50,7 @@ const DEFAULT_MILESTONES: MilestoneItem[] = [
   },
   {
     year: '2021',
-    title: 'Central Student Governing Body (CSGB)',
+    title: 'Christian Student Governing Board (CSGB)',
     desc: 'Adoption of the official ECCF Constitution and creation of the CSGB executive council, standardizing leadership succession and inter-departmental operations.',
     badge: 'GOVERNANCE',
     bgImage: '/gallery/gallery-5.jpg',

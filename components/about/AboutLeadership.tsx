@@ -4,7 +4,7 @@
  * Implements:
  * - 5 Hierarchical Leadership Sections:
  *   1. Patrons (curated fallback; Sanity `publicLeader` records with role `patron` override it)
- *   2. CSGB (Central Student Governing Body)
+ *   2. CSGB (Christian Student Governing Board)
  *   4. Hall Pastors (Halls 1 through 8)
  *   5. Operational Team Leaders
  *   6. Assistant Team Leaders
@@ -78,14 +78,14 @@ const PATRONS_LIST: LeaderCard[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// 3. CSGB (Central Student Governing Body)
+// 3. CSGB (Christian Student Governing Board)
 // ---------------------------------------------------------------------------
 const CSGB_LIST: LeaderCard[] = [
   {
     _id: 'csgb-1',
     fullName: 'Bro. Emmanuel Okafor',
     excoPosition: 'President & Executive Shepherd',
-    teamName: "Christian Students' Governing Board",
+    teamName: "Christian Student Governing Board",
     bio: 'Oversees the apostolic vision, pastoral direction, constitutional integrity, and central campus governance of ECCF at Edo State University.',
     badgeLabel: 'CSGB PRESIDENT',
   },
@@ -430,7 +430,7 @@ const TIER_META: Record<
   csgb: {
     short: 'Cabinet',
     eyebrow: 'Tier 02 — The Cabinet',
-    title: 'Central Student Governing Body',
+    title: 'Christian Student Governing Board',
     subtitle:
       'The executive cabinet directing vision, administration, finance, and the spiritual life of the fellowship.',
     grid: 'grid-cols-2 sm:grid-cols-3',
