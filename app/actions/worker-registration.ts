@@ -2151,8 +2151,65 @@ export async function uploadWorkerPhotoDirectAction({
     }
 
     const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
+
+    // Query worker document to build a descriptive filename representing the worker's name and all their teams
+    const workerDoc = await sanityPrivateClient.fetch<{
+      fullName?: string
+      team?: string
+      teams?: string[]
+      membershipTeams?: Array<string | null>
+    } | null>(
+      `*[_type == "worker" && _id == $id][0]{
+        fullName,
+        "team": coalesce(team->name, team),
+        "teams": coalesce(teams[]->name, teams),
+        "membershipTeams": memberships[]{ "name": coalesce(team->name, teamName) }.name
+      }`,
+      { id: workerId }
+    )
+
+    const cleanName = String(workerDoc?.fullName || 'Worker')
+      .normalize('NFKD')
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_-]+/g, '')
+      .replace(/^_+|_+$/g, '') || 'Worker'
+
+    const cleanTeam = (val: string) =>
+      val
+        .normalize('NFKD')
+        .trim()
+        .replace(/[/\\|]+/g, '-') // Replace slashes with hyphens so team names like "Bible Study/Sunday School" don't break file paths
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_-]+/g, '')
+        .replace(/^_+|_+$/g, '')
+
+    const allTeams: string[] = []
+    const addUniqueTeam = (name?: string | null) => {
+      if (!name || typeof name !== 'string') return
+      const cleaned = cleanTeam(name)
+      if (cleaned && !allTeams.includes(cleaned)) {
+        allTeams.push(cleaned)
+      }
+    }
+
+    if (Array.isArray(workerDoc?.membershipTeams)) {
+      for (const m of workerDoc.membershipTeams) addUniqueTeam(m)
+    }
+    if (Array.isArray(workerDoc?.teams)) {
+      for (const t of workerDoc.teams) addUniqueTeam(t)
+    }
+    if (workerDoc?.team) {
+      addUniqueTeam(workerDoc.team)
+    }
+
+    const teamsPart = allTeams.length > 0 ? allTeams.join('_and_') : 'Workforce'
+    // Build descriptive base filename (name + teams, no 'General', no 'Headshot')
+    const cleanFileName = `${cleanName}_${teamsPart}`.slice(0, 105).replace(/^_+|_+$/g, '')
+    const signedFileName = `${cleanFileName}.${ext}`
+
     const sanityAsset = await sanityWriteClient.assets.upload('image', imageBytes, {
-      filename: `headshot_${workerId.replace(/[^a-zA-Z0-9]/g, '')}.${ext}`,
+      filename: signedFileName,
       contentType: mimeType,
     })
 
@@ -2172,7 +2229,7 @@ export async function uploadWorkerPhotoDirectAction({
         },
         updatedAt: new Date().toISOString(),
       })
-      .append('updateLog', [`Uploaded official headshot on ${new Date().toISOString().slice(0, 10)}`])
+      .append('updateLog', [`Uploaded official photo on ${new Date().toISOString().slice(0, 10)}`])
       .commit()
 
     // Secondary Storage: Google Drive backup (if configured)
@@ -2180,22 +2237,10 @@ export async function uploadWorkerPhotoDirectAction({
     const signingSecret = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET
     if (appScriptUrl && signingSecret && Buffer.byteLength(signingSecret, 'utf8') >= 32) {
       try {
-        const workerDoc = await sanityPrivateClient.fetch<{ fullName?: string; team?: string; teams?: string[] } | null>(
-          `*[_type == "worker" && _id == $id][0]{fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams)}`,
-          { id: workerId }
-        )
-        const cleanPart = (value: unknown, fallback: string) =>
-          String(value || fallback)
-            .normalize('NFKD')
-            .replace(/[^a-zA-Z0-9_-]+/g, '_')
-            .replace(/^_+|_+$/g, '')
-            .slice(0, 50) || fallback
-        const cleanFileName = `${cleanPart(workerDoc?.fullName, 'Worker')}_${cleanPart(workerDoc?.team || workerDoc?.teams?.[0], 'General')}_Headshot`
         const timestamp = Date.now().toString()
         // Sign exactly what the body sends — the Apps Script hashes the
         // payload's fields verbatim, so the filename must be consistent
         // (including the extension) in both places.
-        const signedFileName = `${cleanFileName}.${ext}`
         const signaturePayload = `${timestamp}\n${signedFileName}\n${mimeType}\n${cleanBase64}`
         const signature = createHmac('sha256', signingSecret).update(signaturePayload).digest('hex')
         const gasPayload = JSON.stringify({

@@ -79,11 +79,11 @@ function doPost(e) {
       return createJsonResponse({ ok: false, error: 'Unsupported image type.' }, 400);
     }
 
-    // Default file name if missing: [FullName]_[Team]_BirthdayPic.jpg
+    // Default file name if missing: [FullName]_[Team].jpg
     if (!cleanFileName) {
       var namePart = (payload.fullName || 'Worker').toString().replace(/\s+/g, '_');
-      var teamPart = (payload.team || 'General').toString().replace(/\s+/g, '_');
-      cleanFileName = namePart + '_' + teamPart + '_BirthdayPic.jpg';
+      var teamPart = (payload.team || 'Workforce').toString().replace(/\s+/g, '_');
+      cleanFileName = namePart + '_' + teamPart + '.jpg';
     }
 
     // Decode Base64 to Binary Blob

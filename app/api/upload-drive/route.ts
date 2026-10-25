@@ -23,14 +23,40 @@ function getImageMimeType(bytes: Buffer): string | null {
   return null
 }
 
-function safeFileName(fullName: unknown, team: unknown): string {
-  const cleanPart = (value: unknown, fallback: string) =>
-    String(value || fallback)
+function safeFileName(fullName: unknown, teamOrTeams: unknown): string {
+  const cleanName = String(fullName || 'Worker')
+    .normalize('NFKD')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]+/g, '')
+    .replace(/^_+|_+$/g, '') || 'Worker'
+
+  const cleanTeam = (val: string) =>
+    val
       .normalize('NFKD')
-      .replace(/[^a-zA-Z0-9_-]+/g, '_')
+      .trim()
+      .replace(/[/\\|]+/g, '-')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_-]+/g, '')
       .replace(/^_+|_+$/g, '')
-      .slice(0, 50) || fallback
-  return `${cleanPart(fullName, 'Worker')}_${cleanPart(team, 'General')}_Headshot`
+
+  const allTeams: string[] = []
+  const addUnique = (name?: unknown) => {
+    if (!name || typeof name !== 'string') return
+    const cleaned = cleanTeam(name)
+    if (cleaned && !allTeams.includes(cleaned)) {
+      allTeams.push(cleaned)
+    }
+  }
+
+  if (Array.isArray(teamOrTeams)) {
+    for (const t of teamOrTeams) addUnique(t)
+  } else if (typeof teamOrTeams === 'string') {
+    addUnique(teamOrTeams)
+  }
+
+  const teamsPart = allTeams.length > 0 ? allTeams.join('_and_') : 'Workforce'
+  return `${cleanName}_${teamsPart}`.slice(0, 105).replace(/^_+|_+$/g, '')
 }
 
 function isSameOrigin(request: Request): boolean {
