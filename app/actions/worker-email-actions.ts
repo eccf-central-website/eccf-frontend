@@ -6,6 +6,14 @@ import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import { resolveResendFrom } from '@/lib/email/from'
+import {
+  emailButton,
+  emailDetails,
+  emailPlainBody,
+  escapeHtml,
+  renderEmailLayout,
+  resolveSiteUrl,
+} from '@/lib/email/layout'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -33,15 +41,6 @@ interface WorkerRecipient {
   teams?: string[]
   role?: string
   excoPosition?: string
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
 }
 
 function isMockMode(): boolean {
@@ -431,58 +430,35 @@ export async function sendWorkerEmailAction(
   const senderRoleLabel = ROLE_LABELS[session.role] || 'Fellowship Exco'
   const senderPosition = session.excoPosition ? `${session.excoPosition}` : senderRoleLabel
   const senderTeam = session.team || 'Executive Council'
+  const siteUrl = resolveSiteUrl()
 
-  // Format message paragraphs with HTML
-  const formattedParagraphs = message
-    .split(/\n{2,}|\r\n\r\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => `<p style="margin: 0 0 14px 0; line-height: 1.65; color: #334155; font-size: 15px;">${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
-    .join('')
-
-  const emailHtml = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 28px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-      <!-- Header Brand -->
-      <div style="border-bottom: 2px solid #0095ff; padding-bottom: 16px; margin-bottom: 20px;">
-        <h2 style="color: #0077cc; margin: 0 0 4px 0; font-size: 21px; font-weight: 800; letter-spacing: -0.01em;">ESUI Christian Campus Fellowship</h2>
-        <p style="color: #64748b; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Fellowship Leadership &amp; Workforce Portal</p>
-      </div>
-
-      <!-- Scope Badge -->
-      <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-        <span style="display: inline-block; background-color: #e0f2fe; color: #0284c7; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 9999px;">
-          Audience: ${escapeHtml(audienceLabel)}
-        </span>
-        <span style="display: inline-block; background-color: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 9999px;">
-          Sent by ${escapeHtml(senderPosition)} (${escapeHtml(senderTeam)})
-        </span>
-      </div>
-
-      <!-- Subject Title -->
-      <h1 style="color: #0f172a; font-size: 22px; line-height: 1.35; margin: 0 0 20px 0; font-weight: 800;">
-        ${escapeHtml(subject)}
-      </h1>
-
-      <!-- Message Content Box -->
-      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 22px; margin-bottom: 24px;">
-        ${formattedParagraphs}
-      </div>
-
-      <!-- Call to Action Link -->
-      <div style="text-align: center; margin-bottom: 28px;">
-        <a href="https://eccf-frontend.vercel.app/dashboard" style="display: inline-block; background-color: #0077cc; color: #ffffff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 28px; border-radius: 9999px; text-decoration: none;">
-          Open Exco Portal &rarr;
-        </a>
-      </div>
-
-      <!-- Official Footer -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 18px; font-size: 12px; color: #94a3b8; line-height: 1.55;">
-        <p style="margin: 0 0 6px 0; color: #64748b; font-weight: 600;">Edo State University Christian Campus Fellowship (ECCF)</p>
-        <p style="margin: 0 0 6px 0;">NLT 5, Faculty of Law, ESUI &bull; Sunday Service: 08:00 AM &bull; Wednesday Bible Study: 04:50 PM</p>
-        <p style="margin: 0; font-size: 11px; color: #94a3b8;">This is an official communication dispatched from the ECCF Exco Dashboard to active fellowship workers.</p>
-      </div>
-    </div>
-  `
+  const emailHtml = renderEmailLayout({
+    preheader: subject,
+    eyebrow: `Leadership message · ${escapeHtml(audienceLabel)}`,
+    title: escapeHtml(subject),
+    siteUrl,
+    content: [
+      emailDetails([
+        { label: 'Audience', value: escapeHtml(audienceLabel) },
+        {
+          label: 'Sent by',
+          value: `${escapeHtml(senderPosition)}<br /><span style="font-weight:500;color:#71809a;">${escapeHtml(senderTeam)}</span>`,
+        },
+      ]),
+      emailPlainBody(message),
+      emailButton({
+        href: `${siteUrl}/dashboard`,
+        label: 'Open the Exco portal',
+        siteUrl,
+      }),
+    ].join(''),
+    signature: {
+      name: senderPosition,
+      role: senderTeam,
+    },
+    footerNote:
+      'This is an official communication dispatched from the ECCF Exco Dashboard to active fellowship workers.',
+  })
 
   // 5. Dispatch via Resend
   let deliveredCount = 0

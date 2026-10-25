@@ -24,6 +24,20 @@ import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { createPrivateDocument, patchPrivateDocument, sanityPrivateClient, sanityWriteClient } from '@/lib/sanity'
 import { FELLOWSHIP_TEAMS } from '@/lib/dashboard/attendance-constants'
 import { resolveResendFrom } from '@/lib/email/from'
+import {
+  ECCF_EMAIL,
+  emailButton,
+  emailCodeBlock,
+  emailDetails,
+  emailDivider,
+  emailList,
+  emailNotice,
+  emailParagraph,
+  emailSectionTitle,
+  escapeHtml,
+  renderEmailLayout,
+  resolveSiteUrl,
+} from '@/lib/email/layout'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import type { WorkerRole } from '@/types'
@@ -427,73 +441,42 @@ async function sendWorkerVerificationEmail({
   token: string
   baseUrl: string
 }): Promise<{ sent: boolean; simulated: boolean; error?: string }> {
-  const confirmationUrl = new URL('/register', baseUrl)
+  const siteUrl = resolveSiteUrl(baseUrl)
+  const confirmationUrl = new URL('/register', siteUrl)
   confirmationUrl.searchParams.set('selfServiceToken', token)
   const fromAddress = resolveResendFrom('ECCF Workforce')
   const subject = `[ECCF Workforce] Your Verification Code: ${otp}`
 
-  const emailHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>ECCF Worker Profile Verification</title>
-    </head>
-    <body style="margin: 0; padding: 24px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-      <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <div style="background: #0f172a; padding: 28px 24px; text-align: center;">
-          <p style="margin: 0 0 6px 0; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-            Edo State University Christian Campus Fellowship
-          </p>
-          <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
-            Worker Profile Security Verification
-          </h1>
-        </div>
-
-        <div style="padding: 32px 28px;">
-          <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
-            Hello ${fullName || 'Beloved Worker'},
-          </p>
-          <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-            We received a request to access and update your workforce profile on the ECCF portal. For your protection and privacy, personal details are kept locked until verified.
-          </p>
-
-          <div style="margin: 28px 0; padding: 22px; background: #f0f9ff; border: 2px dashed #0077cc; border-radius: 14px; text-align: center;">
-            <span style="display: block; font-size: 11px; font-weight: 700; color: #0077cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-              Your 6-Digit Verification Code
-            </span>
-            <span style="font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #0f172a; display: inline-block;">
-              ${otp}
-            </span>
-            <span style="display: block; font-size: 12px; color: #64748b; margin-top: 8px;">
-              Enter this code directly on the registration page to unlock your profile.
-            </span>
-          </div>
-
-          <div style="text-align: center; margin: 20px 0; color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-            &mdash; OR USE ONE-CLICK UNLOCK &mdash;
-          </div>
-
-          <div style="text-align: center; margin: 24px 0;">
-            <a href="${confirmationUrl.toString()}" style="display: inline-block; background: #0077cc; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 119, 204, 0.25);">
-              Unlock My Worker Profile &rarr;
-            </a>
-          </div>
-
-          <div style="background: #f8fafc; border-radius: 10px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.5; color: #64748b; margin-top: 28px;">
-            <strong style="color: #334155;">Security Notice:</strong> This verification code and link will expire in <strong>15 minutes</strong>. If you did not make this request, you can safely ignore this email.
-          </div>
-        </div>
-
-        <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
-          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+  const emailHtml = renderEmailLayout({
+    preheader: `Your ECCF verification code is ${otp}. It expires in 15 minutes.`,
+    eyebrow: 'Workforce · Security check',
+    title: 'Verify your worker profile',
+    siteUrl,
+    content: [
+      emailParagraph(`Hello ${escapeHtml(fullName || 'Beloved Worker')},`),
+      emailParagraph(
+        'We received a request to open and update your workforce profile on the ECCF portal. For your protection and privacy, your details stay locked until this check is complete.'
+      ),
+      emailCodeBlock({
+        code: otp,
+        caption: 'Your 6-digit verification code',
+        note: 'Enter this code on the registration page to unlock your profile.',
+      }),
+      emailParagraph('Prefer one click? Use the button below instead of typing the code.'),
+      emailButton({
+        href: confirmationUrl.toString(),
+        label: 'Unlock my worker profile',
+        siteUrl,
+      }),
+      emailNotice({
+        title: 'This code expires in 15 minutes',
+        body: 'If you did not ask to update your profile, you can safely ignore this email. Nothing will change until the code is used.',
+        tone: 'neutral',
+      }),
+    ].join(''),
+    footerNote:
+      'You received this email because someone requested access to a worker profile linked to this address.',
+  })
 
   const plainText = `ECCF Worker Profile Security Verification\n\nHello ${fullName || 'Worker'},\n\nYour 6-digit verification code is: ${otp}\n\nAlternatively, you can unlock your profile using this secure link:\n${confirmationUrl.toString()}\n\nThis code and link expire in 15 minutes.`
 
@@ -553,59 +536,32 @@ async function sendRegistrationOtpEmail({
   const fromAddress = resolveResendFrom('ECCF Workforce')
   const subject = `[ECCF Workforce] Confirm your email: ${otp}`
   const greeting = firstName?.trim() || 'Beloved Worker'
+  const siteUrl = resolveSiteUrl()
 
-  const emailHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Confirm your ECCF worker email</title>
-    </head>
-    <body style="margin: 0; padding: 24px; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-      <div style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden;">
-        <div style="background: #0f172a; padding: 28px 24px; text-align: center;">
-          <p style="margin: 0 0 6px 0; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-            Edo State University Christian Campus Fellowship
-          </p>
-          <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
-            Confirm your email address
-          </h1>
-        </div>
-
-        <div style="padding: 32px 28px;">
-          <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
-            Hello ${greeting},
-          </p>
-          <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
-            You started a worker registration on the ECCF portal. Enter the code below on the registration page to confirm that this email address belongs to you.
-          </p>
-
-          <div style="margin: 28px 0; padding: 22px; background: #f0f9ff; border: 2px dashed #0077cc; border-radius: 14px; text-align: center;">
-            <span style="display: block; font-size: 11px; font-weight: 700; color: #0077cc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-              Your 6-Digit Confirmation Code
-            </span>
-            <span style="font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #0f172a; display: inline-block;">
-              ${otp}
-            </span>
-            <span style="display: block; font-size: 12px; color: #64748b; margin-top: 8px;">
-              This code expires in 10 minutes.
-            </span>
-          </div>
-
-          <div style="background: #f8fafc; border-radius: 10px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.5; color: #64748b; margin-top: 28px;">
-            <strong style="color: #334155;">Security Notice:</strong> Never share this code with anyone. If you did not start a worker registration, you can safely ignore this email.
-          </div>
-        </div>
-
-        <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
-          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+  const emailHtml = renderEmailLayout({
+    preheader: `Your ECCF confirmation code is ${otp}. It expires in 10 minutes.`,
+    eyebrow: 'Workforce · Email confirmation',
+    title: 'Confirm your email address',
+    siteUrl,
+    content: [
+      emailParagraph(`Hello ${escapeHtml(greeting)},`),
+      emailParagraph(
+        'You started a worker registration on the ECCF portal. Enter the code below on the registration page to confirm that this email address belongs to you.'
+      ),
+      emailCodeBlock({
+        code: otp,
+        caption: 'Your 6-digit confirmation code',
+        note: 'The code expires in 10 minutes.',
+      }),
+      emailNotice({
+        title: 'Keep this code to yourself',
+        body: 'ECCF will never ask you to share this code with anyone. If you did not start a worker registration, you can ignore this email.',
+        tone: 'neutral',
+      }),
+    ].join(''),
+    footerNote:
+      'You received this email because a worker registration was started with this address.',
+  })
 
   const plainText = `ECCF Worker Registration\n\nHello ${greeting},\n\nYour 6-digit email confirmation code is: ${otp}\n\nEnter it on the registration page to continue. This code expires in 10 minutes.\n\nIf you did not start a worker registration, you can ignore this email.`
 
@@ -652,15 +608,6 @@ async function sendRegistrationOtpEmail({
   }
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
-
 function formatExecutiveAppSummary(app?: ExecutiveApplicationInput, isExco?: boolean): string {
   if (!isExco || !app) return 'None (General Worker)'
   if (app.kind === 'csgb') {
@@ -699,82 +646,42 @@ async function sendFellowshipNewWorkerNotificationEmail(
 
   const executiveSummary = formatExecutiveAppSummary(input.executiveApplication, input.isExco)
   const teamsList = input.teams.length > 0 ? input.teams.join(', ') : 'None'
+  const siteUrl = resolveSiteUrl()
 
   const subject = `[ECCF Workforce] New Worker Registered: ${input.fullName}`
-  const emailHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <title>${escapeHtml(subject)}</title>
-    </head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
-      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <!-- Top Banner -->
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); padding: 24px 28px; color: #ffffff;">
-          <h1 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">Edo State University Christian Campus Fellowship</h1>
-          <p style="margin: 0; font-size: 13px; color: #93c5fd; font-weight: 500;">Workforce Intake • Admin Notification</p>
-        </div>
-
-        <div style="padding: 28px;">
-          <div style="margin-bottom: 20px;">
-            <span style="display: inline-block; background-color: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 9999px;">
-              New Worker Registered
-            </span>
-          </div>
-
-          <h2 style="font-size: 18px; color: #0f172a; margin: 0 0 16px 0; font-weight: 700;">
-            ${escapeHtml(input.fullName)} has registered on the Workforce Platform.
-          </h2>
-
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <tbody>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 38%;">Full Name</td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 700;">${escapeHtml(input.fullName)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Email Address</td>
-                  <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(input.email)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Phone Number</td>
-                  <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(input.phoneNumber)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Hall &amp; Room</td>
-                  <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(input.hall)}, Room ${escapeHtml(input.roomNumber)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Operational Teams</td>
-                  <td style="padding: 8px 0; color: #0284c7; font-weight: 600;">${escapeHtml(teamsList)}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Executive Application</td>
-                  <td style="padding: 8px 0; color: ${input.isExco ? '#b45309' : '#64748b'}; font-weight: 600;">
-                    ${escapeHtml(executiveSummary)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div style="text-align: center; margin-bottom: 24px;">
-            <a href="https://eccf-frontend.vercel.app/dashboard/workers" style="display: inline-block; background-color: #0077cc; color: #ffffff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 28px; border-radius: 9999px; text-decoration: none;">
-              View Workers in Exco Dashboard &rarr;
-            </a>
-          </div>
-        </div>
-
-        <div style="background: #f1f5f9; padding: 18px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
-          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+  const emailHtml = renderEmailLayout({
+    preheader: `${input.fullName} has just completed worker registration.`,
+    eyebrow: 'Workforce intake',
+    title: 'A new worker has registered',
+    siteUrl,
+    content: [
+      emailParagraph(
+        `<strong>${escapeHtml(input.fullName)}</strong> has just completed registration on the ECCF workforce platform. Here is the summary on record.`
+      ),
+      emailDetails([
+        { label: 'Full name', value: escapeHtml(input.fullName) },
+        { label: 'Email address', value: escapeHtml(input.email) },
+        { label: 'Phone number', value: escapeHtml(input.phoneNumber) },
+        {
+          label: 'Hall & room',
+          value: `${escapeHtml(input.hall)}, Room ${escapeHtml(input.roomNumber)}`,
+        },
+        { label: 'Operational teams', value: escapeHtml(teamsList), accent: true },
+        {
+          label: 'Executive application',
+          value: escapeHtml(executiveSummary),
+          muted: !input.isExco,
+        },
+      ]),
+      emailButton({
+        href: `${siteUrl}/dashboard/workers`,
+        label: 'Review in the Exco dashboard',
+        siteUrl,
+      }),
+    ].join(''),
+    footerNote:
+      'You received this notification because you manage worker intake for the fellowship.',
+  })
 
   const plainText = `ECCF Workforce — New Worker Registration\n\n` +
     `A new worker has completed registration:\n\n` +
@@ -784,7 +691,7 @@ async function sendFellowshipNewWorkerNotificationEmail(
     `Hall & Room: ${input.hall}, Room ${input.roomNumber}\n` +
     `Operational Teams: ${teamsList}\n` +
     `Executive Application: ${executiveSummary}\n\n` +
-    `Review worker records on the Exco Portal: https://eccf-frontend.vercel.app/dashboard/workers`
+    `Review worker records on the Exco Portal: ${siteUrl}/dashboard/workers`
 
   await selfServiceEmailer.emails.send({
     from: resolveResendFrom('ECCF Workforce Intake'),
@@ -819,141 +726,76 @@ async function sendWorkerWelcomeEmail(
   const displayName = input.firstName?.trim() || input.fullName.split(' ')[0] || input.fullName
   const teamsList = input.teams.length > 0 ? input.teams.join(', ') : 'Assigned Unit'
   const executiveSummary = formatExecutiveAppSummary(input.executiveApplication, input.isExco)
+  const siteUrl = resolveSiteUrl()
+  const registerUrl = `${siteUrl}/register`
 
   const subject = `Welcome to the ECCF Workforce Platform, ${displayName}!`
-  const emailHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <title>${escapeHtml(subject)}</title>
-    </head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
-      <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        <!-- Top Banner -->
-        <div style="background: linear-gradient(135deg, #0077cc 0%, #004c8c 100%); padding: 28px 28px; color: #ffffff;">
-          <h1 style="margin: 0 0 6px 0; font-size: 21px; font-weight: 800; letter-spacing: -0.01em;">ESUI Christian Campus Fellowship</h1>
-          <p style="margin: 0; font-size: 13px; color: #e0f2fe; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Workforce Member Onboarding</p>
-        </div>
-
-        <div style="padding: 28px;">
-          <!-- Welcome Salutation -->
-          <h2 style="font-size: 20px; color: #0f172a; margin: 0 0 14px 0; font-weight: 800;">
-            Welcome to the Workforce Family, ${escapeHtml(displayName)}!
-          </h2>
-
-          <p style="font-size: 15px; line-height: 1.65; color: #334155; margin: 0 0 20px 0;">
-            We are overjoyed to welcome you into the workforce family of the <strong>Edo State University Christian Campus Fellowship (ECCF)</strong>. Thank you for making yourself available for service in God&apos;s house. Your worker profile has been successfully created.
-          </p>
-
-          <!-- Profile Snapshot Card -->
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
-            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em;">
-              Your Registered Details
-            </h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <tbody>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 7px 0; color: #64748b; font-weight: 600; width: 36%;">Operational Teams</td>
-                  <td style="padding: 7px 0; color: #0077cc; font-weight: 700;">${escapeHtml(teamsList)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Campus Residence</td>
-                  <td style="padding: 7px 0; color: #0f172a;">${escapeHtml(input.hall)}, Room ${escapeHtml(input.roomNumber)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Registered Email</td>
-                  <td style="padding: 7px 0; color: #0f172a;">${escapeHtml(input.email)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Phone Number</td>
-                  <td style="padding: 7px 0; color: #0f172a;">${escapeHtml(input.phoneNumber)}</td>
-                </tr>
-                ${input.isExco ? `
-                <tr>
-                  <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Executive Application</td>
-                  <td style="padding: 7px 0; color: #b45309; font-weight: 700;">${escapeHtml(executiveSummary)} <span style="font-size: 12px; font-weight: normal; color: #92400e;">(Pending Approval)</span></td>
-                </tr>
-                ` : ''}
-              </tbody>
-            </table>
-          </div>
-
-          <!-- What is Possible Section -->
-          <div style="margin-bottom: 24px;">
-            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: #0f172a;">
-              What You Can Do on the Platform:
-            </h3>
-            <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; color: #334155;">
-              <li style="margin-bottom: 8px;">
-                <strong>Keep Your Info Current:</strong> Move to a new room or change your phone number? Update your details anytime so the fellowship stays connected with you.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Manage Operational Teams:</strong> Request to join additional ministry units or update your operational team preferences.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Official Birthday Celebrations:</strong> Upload or refresh your official birthday photograph so the fellowship family can celebrate you on your special day.
-              </li>
-              <li>
-                <strong>Membership Verification:</strong> Your team leader(s) will verify your active membership on the leadership portal.
-              </li>
-            </ul>
-          </div>
-
-          <!-- How to Update Information Section -->
-          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-            <h3 style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #166534;">
-              How to Update Your Information Anytime:
-            </h3>
-            <p style="margin: 0 0 12px 0; font-size: 13px; color: #166534; line-height: 1.5;">
-              You do not need to register from scratch when your details change. Follow these quick steps:
-            </p>
-            <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; color: #166534;">
-              <li style="margin-bottom: 6px;">
-                Go to the registration portal at <a href="https://eccf-frontend.vercel.app/register" style="color: #15803d; font-weight: 700; text-decoration: underline;">https://eccf-frontend.vercel.app/register</a>.
-              </li>
-              <li style="margin-bottom: 6px;">
-                Enter your registered phone number (<strong>${escapeHtml(input.phoneNumber)}</strong>) or email address in Step 1.
-              </li>
-              <li style="margin-bottom: 6px;">
-                The platform will automatically recognize your profile and send a secure 6-digit confirmation code (OTP) to this email address.
-              </li>
-              <li>
-                Enter the code to instantly unlock self-service editing — update your photo, operational teams, or room number in seconds.
-              </li>
-            </ol>
-          </div>
-
-          ${input.isExco ? `
-          <!-- Executive Application Note -->
-          <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
-            <h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 700; color: #854d0e;">
-              Notice for Executive Applicants
-            </h4>
-            <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #854d0e;">
-              Your application for <strong>${escapeHtml(executiveSummary)}</strong> has been submitted to the Fellowship President. Once approved, your executive dashboard access will be <strong>automatically activated</strong>, and you will receive an approval email with direct access guidelines.
-            </p>
-          </div>
-          ` : ''}
-
-          <!-- Call to Action Link -->
-          <div style="text-align: center; margin-bottom: 24px;">
-            <a href="https://eccf-frontend.vercel.app/register" style="display: inline-block; background-color: #0077cc; color: #ffffff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 28px; border-radius: 9999px; text-decoration: none;">
-              Visit Workforce Portal &rarr;
-            </a>
-          </div>
-        </div>
-
-        <!-- Official Footer -->
-        <div style="background: #f1f5f9; padding: 20px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.55;">
-          <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Edo State University Christian Campus Fellowship (ECCF)</p>
-          <p style="margin: 0 0 4px 0;">NLT 5, Faculty of Law, ESUI &bull; Official Workforce Portal</p>
-          <p style="margin: 0; font-size: 11px; color: #94a3b8;">Sunday Service: 08:00 AM &bull; Wednesday Bible Study: 04:50 PM</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `
+  const emailHtml = renderEmailLayout({
+    preheader: `Your worker profile is active. Here is what you can do next, ${displayName}.`,
+    eyebrow: 'Workforce · Welcome',
+    title: `Welcome to the workforce family, ${escapeHtml(displayName)}!`,
+    siteUrl,
+    content: [
+      emailParagraph(
+        'It is a joy to welcome you into the workforce family of the <strong>Edo State University Christian Campus Fellowship</strong>. Thank you for making yourself available for service in God&rsquo;s house. Your worker profile has been created successfully.'
+      ),
+      emailSectionTitle('Your registered details'),
+      emailDetails([
+        { label: 'Operational teams', value: escapeHtml(teamsList), accent: true },
+        {
+          label: 'Campus residence',
+          value: `${escapeHtml(input.hall)}, Room ${escapeHtml(input.roomNumber)}`,
+        },
+        { label: 'Registered email', value: escapeHtml(input.email) },
+        { label: 'Phone number', value: escapeHtml(input.phoneNumber) },
+        ...(input.isExco
+          ? [
+              {
+                label: 'Executive application',
+                value: `${escapeHtml(executiveSummary)} <span style="font-weight:500;color:#8a5a12;">(pending approval)</span>`,
+              },
+            ]
+          : []),
+      ]),
+      emailSectionTitle('What you can do on the platform'),
+      emailList([
+        '<strong>Keep Your Info Current:</strong> Moved to a new room or changed your phone number? Update your details anytime so the fellowship stays connected with you.',
+        '<strong>Update your assigned Team(s) for each session.</strong>',
+        '<strong>Upload and Update a decent and clear picture of yourself.</strong> This enables us to design a birthday flyer and celebrate with you on your Birthday.',
+        '<strong>Membership Verification:</strong> Your team leader(s) will verify your active membership on the leadership portal.',
+      ]),
+      emailDivider(),
+      emailSectionTitle('How to update your information anytime'),
+      emailParagraph(
+        'You do not need to register from scratch when your details change. Follow these quick steps:'
+      ),
+      emailList(
+        [
+          `Go to the registration portal at <a href="${registerUrl}" style="color:#0077cc;font-weight:600;text-decoration:underline;">${escapeHtml(registerUrl.replace(/^https?:\/\//, ''))}</a>.`,
+          `Enter your registered phone number (<strong>${escapeHtml(input.phoneNumber)}</strong>) or email address in Step 1.`,
+          'The platform will recognise your profile and send a secure 6-digit confirmation code to this email address.',
+          'Enter the code to unlock self-service editing. You can then update your photo, assigned teams, or room number in seconds.',
+        ],
+        { ordered: true }
+      ),
+      ...(input.isExco
+        ? [
+            emailNotice({
+              title: 'A note for executive applicants',
+              body: `Your application for <strong>${escapeHtml(executiveSummary)}</strong> has been submitted to the Fellowship President. Once approved, your executive dashboard access will be activated automatically and you will receive a separate approval email with access guidelines.`,
+              tone: 'warning',
+            }),
+          ]
+        : []),
+      emailButton({ href: registerUrl, label: 'Open the workforce portal', siteUrl }),
+    ].join(''),
+    signature: {
+      name: 'ECCF Workforce Office',
+      role: 'Edo State University Christian Campus Fellowship',
+    },
+    footerNote:
+      'You received this email because you completed worker registration with the fellowship.',
+  })
 
   const plainText = `Welcome to ECCF Workforce, ${displayName}!\n\n` +
     `We are overjoyed to welcome you into the workforce family of the Edo State University Christian Campus Fellowship (ECCF).\n\n` +
@@ -964,12 +806,13 @@ async function sendWorkerWelcomeEmail(
     `- Registered Phone: ${input.phoneNumber}\n` +
     (input.isExco ? `- Executive Application: ${executiveSummary} (Pending Presidential Approval)\n` : '') +
     `\nHOW TO UPDATE YOUR INFORMATION ANYTIME:\n` +
-    `1. Visit https://eccf-frontend.vercel.app/register\n` +
+    `1. Visit ${registerUrl}\n` +
     `2. Enter your phone number (${input.phoneNumber}) or email in Step 1\n` +
     `3. Receive a 6-digit confirmation code on this email address\n` +
     `4. Enter the code to unlock self-service profile and photo editing.\n\n` +
     `Edo State University Christian Campus Fellowship (ECCF)\n` +
-    `NLT 5, Faculty of Law, ESUI • Official Workforce Portal`
+    `${ECCF_EMAIL.address}\n` +
+    `${ECCF_EMAIL.venue}`
 
   await selfServiceEmailer.emails.send({
     from: resolveResendFrom('ECCF Workforce'),
