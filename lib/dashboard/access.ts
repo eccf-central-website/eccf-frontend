@@ -48,6 +48,7 @@ export interface WorkerAccess {
   isPresident: boolean
   isVP: boolean
   isCSGB: boolean
+  isPrayerCoordinator: boolean
   isFinance: boolean
   isWelfare: boolean
   isMedia: boolean
@@ -102,6 +103,7 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       isPresident: false,
       isVP: false,
       isCSGB: false,
+      isPrayerCoordinator: false,
       isFinance: false,
       isWelfare: false,
       isMedia: false,
@@ -182,8 +184,18 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('chaplain')) ||
     worker.role === 'chaplain'
 
+  const isPrayerCoordinator =
+    approvedPositions.some(
+      (p) =>
+        (p.kind === 'csgb' && (p.office?.toLowerCase().includes('prayer') || p.office?.toLowerCase().includes('coordinator'))) ||
+        (p.kind === 'team' && (p.teamKey === 'prayer' || p.teamName?.toLowerCase().includes('prayer')) && p.rank === 'lead')
+    ) ||
+    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('prayer'))
+
   const isCSGB =
     isPresident ||
+    isVP ||
+    isPrayerCoordinator ||
     approvedPositions.some((p) => p.kind === 'csgb') ||
     approvedPositions.some(
       (p) =>
@@ -191,7 +203,7 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
         (p.teamKey === 'prayer' || p.teamName?.toLowerCase().includes('prayer')) &&
         p.rank === 'lead'
     ) ||
-    (legacyIsExcoApproved && (legacyRole === 'admin' || legacyExcoPosition?.toLowerCase().includes('president') || legacyExcoPosition?.toLowerCase().includes('general secretary')))
+    (legacyIsExcoApproved && (legacyRole === 'admin' || legacyExcoPosition?.toLowerCase().includes('president') || legacyExcoPosition?.toLowerCase().includes('general secretary') || legacyExcoPosition?.toLowerCase().includes('prayer')))
 
   const isFinance =
     isCSGB ||
@@ -263,6 +275,7 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     isPresident: Boolean(isPresident),
     isVP: Boolean(isVP),
     isCSGB: Boolean(isCSGB),
+    isPrayerCoordinator: Boolean(isPrayerCoordinator),
     isFinance: Boolean(isFinance),
     isWelfare: Boolean(isWelfare),
     isMedia: Boolean(isMedia),

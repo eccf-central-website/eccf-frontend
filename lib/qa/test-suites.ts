@@ -458,7 +458,7 @@ How to test:
 1. On /register, reach the Leadership Designation step.
 2. Switch the "Are you an Executive Leader?" toggle to YES.
 3. Verify the 3 leadership options appear:
-   - CSGB Central Office (President, VP Admin, VP Evangelism, General Secretary)
+   - CSGB Central Office (President, VP Admin, VP Evangelism, General Secretary, Prayer Coordinator)
    - Hall Pastor (choose Hall 1–8 and Lead or Assistant)
    - Team Leader (choose Ministry Team and Lead or Assistant)
 4. Note the reminder: Finance access is granted only by being appointed Finance Lead or Assistant.`,
@@ -649,7 +649,7 @@ How to test:
     suiteName: '4. Roles & Permissions (Who Can See What)',
     section: 'CSGB Admin',
     title: 'CSGB Admin Full Access (All 8 Modules)',
-    description: `CSGB administrators (President, VPs, General Secretary) have full access to manage all fellowship areas.
+    description: `CSGB administrators (President, VPs, General Secretary, Prayer Coordinator) have full access to manage all fellowship areas.
 
 How to test:
 1. Sign in as a CSGB Admin.

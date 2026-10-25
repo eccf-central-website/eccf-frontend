@@ -59,6 +59,7 @@ export interface LeaderPostContext {
     isPresident?: boolean
     isVP?: boolean
     isChaplain?: boolean
+    isPrayerCoordinator?: boolean
     isFinance?: boolean
     isCSGB?: boolean
     titles?: string[]
@@ -95,6 +96,7 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
   // 3. Specific leadership flags
   if (context.access?.isPresident) return 'President'
   if (context.access?.isVP) return 'Vice President'
+  if (context.access?.isPrayerCoordinator) return 'Prayer Coordinator'
   if (context.access?.isChaplain) return 'Fellowship Chaplain'
   if (context.access?.isFinance) return 'Financial Secretary'
 
@@ -163,9 +165,11 @@ export function isCSGBMember(
     teams?: string[]
     leadingTeam?: string
     excoPosition?: string
+    access?: { isPrayerCoordinator?: boolean; isCSGB?: boolean; [key: string]: unknown }
   } | null
 ): boolean {
   if (!session) return false
+  if (session.access?.isPrayerCoordinator) return true
   if (session.role === 'admin') return true
   const position = (session.excoPosition || '').toLowerCase()
   const team = (session.team || '').toLowerCase()
@@ -294,7 +298,7 @@ export function canAccessSection(
     teams?: string[]
     excoPosition?: string
     leadingTeam?: string
-    access?: { isPresident?: boolean }
+    access?: { isPresident?: boolean; isPrayerCoordinator?: boolean; isCSGB?: boolean; [key: string]: unknown }
   } | null
 ): boolean {
   const currentSession = session ? { ...session, role: session.role || role } : { role }
