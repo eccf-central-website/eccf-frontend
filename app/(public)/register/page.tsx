@@ -1,5 +1,8 @@
 import { WorkerRegistrationForm } from '@/components/forms/WorkerRegistrationForm'
-import { getSignedInUserContext } from '@/app/actions/worker-registration'
+import {
+  getSignedInUserContext,
+  getPendingWorkerOtpChallenge,
+} from '@/app/actions/worker-registration'
 import { getTeamUnitOptions } from '@/lib/teams'
 import type { Metadata } from 'next'
 
@@ -23,9 +26,10 @@ interface RegisterPageProps {
 }
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
-  const [userContext, teamOptions] = await Promise.all([
+  const [userContext, teamOptions, pendingChallenge] = await Promise.all([
     getSignedInUserContext(),
     getTeamUnitOptions(),
+    getPendingWorkerOtpChallenge(),
   ])
 
   return (
@@ -42,6 +46,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           signedInNeedsVerification={userContext.needsVerification}
           teamOptions={teamOptions}
           selfServiceToken={searchParams?.selfServiceToken || ''}
+          initialPendingChallenge={pendingChallenge}
         />
       </div>
     </div>

@@ -323,6 +323,7 @@ interface WorkerOtpCookie {
   email: string
   purpose: 'profile' | 'password'
   phone?: string
+  firstName?: string
   otpHash: string
   expiresAt: number
   sentAt: number
@@ -1351,6 +1352,7 @@ export async function checkWorkerPhoneAndInitiateVerification(
         email,
         purpose: 'profile',
         phone: decrypt(worker.phoneNumber) || cleanPhone,
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
         otpHash: hashSelfServiceToken(otp),
         expiresAt,
         sentAt: now,
@@ -1384,6 +1386,49 @@ export async function checkWorkerPhoneAndInitiateVerification(
   } catch (err) {
     console.error('[checkWorkerPhoneAndInitiateVerification] Error:', err)
     return { ok: false, exists: false, error: 'Unable to check phone number. Please try again.' }
+  }
+}
+
+export interface PendingWorkerOtpChallenge {
+  hasChallenge: boolean
+  maskedEmail?: string
+  firstName?: string
+  phone?: string
+  expiresAt?: number
+}
+
+/**
+ * Checks if this browser session holds an active, unexpired returning-worker OTP challenge cookie.
+ * Used during server rendering to prevent UI flash or Turnstile re-prompt if the route revalidates.
+ */
+export async function getPendingWorkerOtpChallenge(): Promise<PendingWorkerOtpChallenge> {
+  try {
+    const challenge = readEncryptedCookie<WorkerOtpCookie>(WORKER_OTP_COOKIE)
+    if (challenge && challenge.expiresAt > Date.now()) {
+      return {
+        hasChallenge: true,
+        maskedEmail: maskEmail(challenge.email),
+        firstName: challenge.firstName,
+        phone: challenge.phone,
+        expiresAt: challenge.expiresAt,
+      }
+    }
+  } catch (err) {
+    console.error('[getPendingWorkerOtpChallenge] Failed to read challenge cookie:', err)
+  }
+  return { hasChallenge: false }
+}
+
+/**
+ * Explicitly clears any pending returning-worker OTP challenge cookie.
+ */
+export async function clearPendingWorkerChallenge(): Promise<{ ok: boolean }> {
+  try {
+    deleteCookie(WORKER_OTP_COOKIE)
+    return { ok: true }
+  } catch (err) {
+    console.error('[clearPendingWorkerChallenge] Failed to clear challenge cookie:', err)
+    return { ok: false }
   }
 }
 
@@ -1621,6 +1666,7 @@ export async function requestWorkerSelfServiceLink(input: {
         email,
         purpose: input.purpose,
         phone: decrypt(worker.phoneNumber) || (identifier.match(/\d{8,}/) ? cleanPhone : undefined),
+        firstName: worker.firstName || worker.fullName?.split(/\s+/)[0],
         otpHash: hashSelfServiceToken(otp),
         expiresAt,
         sentAt,

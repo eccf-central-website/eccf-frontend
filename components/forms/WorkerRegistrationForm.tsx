@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { useClerk } from '@clerk/nextjs';
 import {
   checkWorkerPhoneAndInitiateVerification,
+  clearPendingWorkerChallenge,
   confirmWorkerSelfServiceLink,
   registerWorker,
   requestRegistrationEmailOtp,
@@ -34,6 +35,7 @@ import {
   verifyRegistrationEmailOtp,
   verifyWorkerOtp,
   uploadWorkerPhotoDirectAction,
+  type PendingWorkerOtpChallenge,
   type SignedInWorkerSnapshot,
   type WorkerRegistrationResult,
 } from '@/app/actions/worker-registration';
@@ -108,6 +110,7 @@ export interface WorkerRegistrationFormProps {
   /** Published teams from Sanity. Falls back to the static list when omitted. */
   teamOptions?: TeamUnitOption[];
   selfServiceToken?: string;
+  initialPendingChallenge?: PendingWorkerOtpChallenge;
 }
 
 export function WorkerRegistrationForm({
@@ -121,6 +124,7 @@ export function WorkerRegistrationForm({
   signedInNeedsVerification = false,
   teamOptions,
   selfServiceToken: propSelfServiceToken = '',
+  initialPendingChallenge,
 }: WorkerRegistrationFormProps) {
   const [selfServiceToken] = useState(
     () =>
@@ -149,7 +153,9 @@ export function WorkerRegistrationForm({
   const [updateIdentifier, setUpdateIdentifier] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
-  const [isHumanVerified, setIsHumanVerified] = useState(isClerkSignedIn);
+  const [isHumanVerified, setIsHumanVerified] = useState(
+    () => isClerkSignedIn || Boolean(initialPendingChallenge?.hasChallenge),
+  );
   const [signingOut, setSigningOut] = useState(false);
 
   const handleTurnstileToken = useCallback((token: string) => {
@@ -160,18 +166,28 @@ export function WorkerRegistrationForm({
   // Existing Worker Detection & OTP Verification State
   const [checkingPhone, setCheckingPhone] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
-  const [verificationPending, setVerificationPending] = useState(false);
+  const [verificationPending, setVerificationPending] = useState(
+    () => Boolean(initialPendingChallenge?.hasChallenge),
+  );
   const [maskedEmail, setMaskedEmail] = useState<string | null>(
-    signedInWorker?.email ? maskEmailDisplay(signedInWorker.email) : null,
+    () =>
+      initialPendingChallenge?.maskedEmail ||
+      (signedInWorker?.email ? maskEmailDisplay(signedInWorker.email) : null),
   );
   const [profileFirstName, setProfileFirstName] = useState<string | null>(
-    signedInWorker?.firstName || null,
+    () =>
+      initialPendingChallenge?.firstName ||
+      signedInWorker?.firstName ||
+      null,
   );
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verificationNotice, setVerificationNotice] = useState<string | null>(
-    null,
+    () =>
+      initialPendingChallenge?.hasChallenge
+        ? `A 6-digit verification code was sent to ${initialPendingChallenge.maskedEmail || 'your email'}. Check your inbox and spam folder.`
+        : null,
   );
 
   // First-time registration email ownership check
@@ -209,7 +225,7 @@ export function WorkerRegistrationForm({
 
   // Form Fields
   const [phoneNumber, setPhoneNumber] = useState(
-    signedInWorker?.phoneNumber || '',
+    () => initialPendingChallenge?.phone || signedInWorker?.phoneNumber || '',
   );
   const [firstName, setFirstName] = useState(
     signedInWorker?.firstName || initialFirstName,
@@ -285,6 +301,15 @@ export function WorkerRegistrationForm({
       if (draft && typeof draft === 'object') {
         if (typeof draft.step === 'number' && draft.step >= 1 && draft.step <= 8) setStep(draft.step);
         if (typeof draft.phoneNumber === 'string') setPhoneNumber(draft.phoneNumber);
+        if (typeof draft.verificationPending === 'boolean') {
+          setVerificationPending(draft.verificationPending);
+          if (draft.verificationPending) {
+            setIsHumanVerified(true);
+          }
+        }
+        if (typeof draft.maskedEmail === 'string') setMaskedEmail(draft.maskedEmail);
+        if (typeof draft.profileFirstName === 'string') setProfileFirstName(draft.profileFirstName);
+        if (typeof draft.verificationNotice === 'string') setVerificationNotice(draft.verificationNotice);
         if (typeof draft.firstName === 'string') setFirstName(draft.firstName);
         if (typeof draft.middleName === 'string') setMiddleName(draft.middleName);
         if (typeof draft.lastName === 'string') setLastName(draft.lastName);
@@ -312,6 +337,10 @@ export function WorkerRegistrationForm({
         JSON.stringify({
           step,
           phoneNumber,
+          verificationPending,
+          maskedEmail,
+          profileFirstName,
+          verificationNotice,
           firstName,
           middleName,
           lastName,
@@ -332,6 +361,10 @@ export function WorkerRegistrationForm({
   }, [
     step,
     phoneNumber,
+    verificationPending,
+    maskedEmail,
+    profileFirstName,
+    verificationNotice,
     firstName,
     middleName,
     lastName,
@@ -435,6 +468,7 @@ export function WorkerRegistrationForm({
         // ignore
       }
     }
+    void clearPendingWorkerChallenge();
     setSuccessResult(null);
     setIsReturning(false);
     setIsReturnerFlow(false);
@@ -511,6 +545,7 @@ export function WorkerRegistrationForm({
   // Phone submit: checks if worker already exists; sends OTP/magic link if existing
   async function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (checkingPhone) return;
     setError(null);
     setVerificationNotice(null);
 
@@ -552,14 +587,36 @@ export function WorkerRegistrationForm({
       }
 
       // Existing worker detected -> OTP flow
+      const notice =
+        result.message ||
+        `A 6-digit verification code and secure unlock link have been sent to ${result.maskedEmail || 'your email'}.`;
       setVerificationPending(true);
       setMaskedEmail(result.maskedEmail || 'your registered email');
       setProfileFirstName(result.firstName || null);
-      setVerificationNotice(
-        result.message ||
-          `A 6-digit verification code and secure unlock link have been sent to ${result.maskedEmail || 'your email'}.`,
-      );
+      setVerificationNotice(notice);
       setResendCooldown(result.retryAfterSeconds ?? 60);
+
+      // Immediately write challenge to sessionStorage so any router refresh retains the OTP screen
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
+          const draft = raw ? JSON.parse(raw) : {};
+          sessionStorage.setItem(
+            'eccf_worker_reg_draft_v1',
+            JSON.stringify({
+              ...draft,
+              step: 1,
+              phoneNumber: clean,
+              verificationPending: true,
+              maskedEmail: result.maskedEmail || 'your registered email',
+              profileFirstName: result.firstName || null,
+              verificationNotice: notice,
+            }),
+          );
+        } catch {
+          // ignore
+        }
+      }
     } catch {
       setError(
         'An unexpected error occurred while checking your phone number. Please try again.',
@@ -770,6 +827,22 @@ export function WorkerRegistrationForm({
       setOtpCode('');
       setStep(2);
       setError(null);
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
+          if (raw) {
+            const draft = JSON.parse(raw);
+            delete draft.verificationPending;
+            delete draft.maskedEmail;
+            delete draft.profileFirstName;
+            delete draft.verificationNotice;
+            draft.step = 2;
+            sessionStorage.setItem('eccf_worker_reg_draft_v1', JSON.stringify(draft));
+          }
+        } catch {
+          // ignore
+        }
+      }
     } catch {
       setError('An error occurred during verification. Please try again.');
     } finally {
@@ -816,6 +889,27 @@ export function WorkerRegistrationForm({
     setVerificationNotice(null);
     setResendCooldown(0);
     setProfileFirstName(null);
+    setPhoneNumber('');
+    setTurnstileToken('');
+    setIsHumanVerified(isClerkSignedIn);
+    setTurnstileResetSignal((v) => v + 1);
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
+        if (raw) {
+          const draft = JSON.parse(raw);
+          delete draft.verificationPending;
+          delete draft.maskedEmail;
+          delete draft.profileFirstName;
+          delete draft.verificationNotice;
+          draft.phoneNumber = '';
+          sessionStorage.setItem('eccf_worker_reg_draft_v1', JSON.stringify(draft));
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void clearPendingWorkerChallenge();
   }
 
   async function handleRequestUpdateLink() {
@@ -837,6 +931,26 @@ export function WorkerRegistrationForm({
         }
         setVerificationPending(true);
         setResendCooldown(60);
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = sessionStorage.getItem('eccf_worker_reg_draft_v1');
+            const draft = raw ? JSON.parse(raw) : {};
+            sessionStorage.setItem(
+              'eccf_worker_reg_draft_v1',
+              JSON.stringify({
+                ...draft,
+                step: 1,
+                phoneNumber: result.phoneNumber || phoneNumber,
+                verificationPending: true,
+                maskedEmail: result.maskedEmail,
+                profileFirstName: result.firstName || null,
+                verificationNotice: result.message || null,
+              }),
+            );
+          } catch {
+            // ignore
+          }
+        }
       }
     } catch {
       setUpdateLinkMessage(
@@ -1726,11 +1840,7 @@ export function WorkerRegistrationForm({
                 </div>
 
                 <form
-                  action="#"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void handlePhoneSubmit(e);
-                  }}
+                  onSubmit={handlePhoneSubmit}
                   className="space-y-6"
                 >
                   <div>
@@ -1740,12 +1850,6 @@ export function WorkerRegistrationForm({
                       autoFocus
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          void handlePhoneSubmit(e);
-                        }
-                      }}
                       placeholder="0801 234 5678"
                       className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-6 text-xl sm:text-2xl font-semibold tracking-wide text-slate-900 placeholder:text-slate-400 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                     />
