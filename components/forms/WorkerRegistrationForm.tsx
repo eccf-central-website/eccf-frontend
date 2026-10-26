@@ -2192,7 +2192,7 @@ export function WorkerRegistrationForm({
                     className="hidden"
                   />
                   <p className="text-xs text-slate-500 pt-1">
-                    Note: You can change or update your picture anytime from your dashboard.
+                    Note: You can change or update your picture anytime from this portal or on this site.
                   </p>
                 </div>
               </div>
@@ -2927,7 +2927,7 @@ export function WorkerRegistrationForm({
                   />
                 </div>
                 <p className="text-xs text-slate-500">
-                  Note: You can change or update your picture anytime from your dashboard.
+                  Note: You can change or update your picture anytime from this portal or on this site.
                 </p>
               </div>
 
