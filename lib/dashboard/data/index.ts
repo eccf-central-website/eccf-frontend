@@ -35,6 +35,7 @@ import type {
   WorkerRow,
 } from '@/types'
 import {
+  canAccessSection,
   canViewWelfareContact,
   hasPermission,
   isHallScoped,
