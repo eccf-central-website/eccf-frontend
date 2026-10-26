@@ -1,29 +1,23 @@
 /**
- * StatCard — one overview figure: label, icon, big number, caption and an
- * optional link to the section it summarises.
+ * StatCard — aligned KPI card component.
  *
- * Server Component (icons are rendered here, never passed to the client).
- * Accessibility:
- *   - The label is the card's heading and the figure follows it directly,
- *     so screen readers read "Pending welfare, 3" together.
- *   - `tone` colours only the icon chip (solid token pairs that meet AA);
- *     callers put the meaning in words too ("Needs follow-up", "Deficit"),
- *     so colour is never the only signal. Gold is never used as text.
- *   - The link is a short "View …" link stretched over the whole card, so
- *     the card is one 40 px+ target without a verbose accessible name.
+ * Implements fixed-row anatomy:
+ * - Row 1: Label + icon chip
+ * - Row 2: Large tabular figure
+ * - Row 3: Cohesive caption phrases that stack cleanly on mobile
+ * - Distinct light-mode contrast against mist canvas and borderless tonal dark elevation.
  */
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type StatTone = 'primary' | 'success' | 'warning' | 'destructive' | 'muted'
 
-/** Soft tint-of-token chips — the reference style: colour as a wash, never a solid block. */
+/** Soft tint-of-token chips — colour as a subtle wash. */
 const TONE_CHIP: Record<StatTone, string> = {
-  primary: 'bg-primary/10 text-primary',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/20 text-warning-foreground',
+  primary: 'bg-primary/10 text-primary dark:text-[#70a3ff]',
+  success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  warning: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
   destructive: 'bg-destructive/10 text-destructive',
   muted: 'bg-muted text-muted-foreground',
 }
@@ -57,23 +51,24 @@ export default function StatCard({
   caption,
   tone = 'primary',
   href,
-  linkLabel,
   headingLevel: Heading = 'h3',
   className,
 }: StatCardProps) {
   const labelId = `${id}-label`
 
-  return (
+  const cardContent = (
     <article
       aria-labelledby={labelId}
       className={cn(
-        'relative flex flex-col rounded-2xl bg-card p-4 text-card-foreground shadow-sm sm:p-5 lg:p-6 transition-shadow hover:shadow-md',
-        href && 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
+        'group relative flex flex-col justify-between rounded-2xl bg-card p-4 text-card-foreground shadow-sm sm:p-5 transition-all duration-150',
+        'border border-border/60 dark:border-white/[0.06] hover:shadow-md min-h-[136px] sm:min-h-[148px]',
+        href && 'cursor-pointer hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3 sm:gap-4">
-        <Heading id={labelId} className="text-sm font-medium text-muted-foreground">
+      {/* Row 1: Label + Icon */}
+      <div className="flex items-start justify-between gap-2">
+        <Heading id={labelId} className="text-xs sm:text-sm font-semibold tracking-wide uppercase text-muted-foreground">
           {label}
         </Heading>
         <div
@@ -87,20 +82,30 @@ export default function StatCard({
         </div>
       </div>
 
-      <p className="mt-2 break-words font-mono font-semibold tabular-nums tracking-tight text-2xl leading-none text-foreground sm:text-3xl">
-        {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
-      </p>
-      {caption && <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">{caption}</p>}
+      {/* Row 2: Figure */}
+      <div className="my-1">
+        <p className="break-words font-mono font-bold tabular-nums tracking-tight text-2xl leading-none text-foreground sm:text-3xl">
+          {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
+        </p>
+      </div>
 
-      {href && linkLabel && (
+      {/* Row 3: Caption — phrases stack on mobile as whole units */}
+      {caption && (
+        <div className="text-xs sm:text-sm text-muted-foreground font-normal flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+          {caption}
+        </div>
+      )}
+
+      {href && (
         <Link
           href={href}
-          className="mt-3 inline-flex min-h-10 items-center gap-1 self-start rounded-md text-sm font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-2xl after:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {linkLabel}
-          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </Link>
+          tabIndex={-1}
+          aria-hidden="true"
+          className="absolute inset-0 rounded-2xl focus:outline-none"
+        />
       )}
     </article>
   )
+
+  return cardContent
 }

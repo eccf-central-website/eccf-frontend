@@ -14,7 +14,6 @@
 
 import {
   CalendarCheck,
-  HandHeart,
   HeartHandshake,
   Scale,
   TrendingDown,
@@ -22,6 +21,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react'
+import { PrayingHands } from '@/components/dashboard/icons/PrayingHands'
 import type { ECCFSession, WorkerRole } from '@/types'
 import { getOverviewStats } from '@/lib/dashboard/data'
 import { lagosMonthLabel } from '@/lib/dashboard/dates'
@@ -53,16 +53,11 @@ export const FINANCE_CARD_COUNT = 3
 
 type LastService = NonNullable<PeopleStats['lastService']>
 
-/**
- * Display name for the last service. After feature/exco-team-attendance
- * merges this becomes `meetingTitle ?? serviceType`.
- */
 function serviceLabel(service: LastService): string {
   return service.serviceType
 }
 
 function workersCaption(role: WorkerRole): string {
-  // feature/exco-team-attendance adds team_lead → "In your team" (isTeamScoped).
   return isHallScoped(role) ? 'In your hall' : 'Across all halls'
 }
 
@@ -116,7 +111,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
         id="stat-prayer-requests"
         headingLevel="h4"
         label="Prayer requests"
-        icon={<HandHeart />}
+        icon={<PrayingHands className="h-5 w-5" />}
         value={formatCount(stats.prayerRequestsThisWeek)}
         rawValue={stats.prayerRequestsThisWeek}
         caption="Last 7 days"
@@ -147,7 +142,8 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
         caption={
           lastService ? (
             <>
-              {serviceLabel(lastService)} ·{' '}
+              <span>{serviceLabel(lastService)}</span>
+              <span>·</span>
               <time dateTime={toDateTimeAttr(lastService.date)} title={formatDate(lastService.date)}>
                 {formatRelativeDay(lastService.date)}
               </time>
@@ -166,7 +162,6 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
 
 function FinanceCards({ stats, role }: { stats: FinanceStats; role: WorkerRole }) {
   const since = `Since 1 ${lagosMonthLabel()}`
-  // Computed here, not queried: one source of truth for income and expense.
   const net = stats.incomeThisMonth - stats.expenseThisMonth
   const href = linkFor(role, 'finance')
 

@@ -1,26 +1,22 @@
 /**
  * Dashboard Overview — /dashboard
  *
- * The header renders straight away. Each data block then streams on its
- * own: it has its own <Suspense> skeleton and its own BlockErrorBoundary,
- * so one slow or failing source never holds up or takes down the rest.
- * Errors outside those blocks still fall through to dashboard/error.tsx.
- *
- * RBAC is decided here on the server: the stat groups come pre-filtered
- * from getOverviewStats(), and the skeleton is sized to the role's cards.
- *
- * Also the landing spot for requireSection() denials (`?denied=<section>`),
- * which DeniedToast turns into a one-off toast.
+ * Implements the calm, attention-first Executive Cockpit:
+ * - Date-only eyebrow and role context ("Quiet surface. Loud priorities.").
+ * - "Do this now" attention queue sorted strictly by urgency.
+ * - Aligned 4-metric pulse strip with cohesive phrase units.
+ * - Side-by-side activity lists (First-timers & Welfare) streamed via Suspense.
  */
 
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { Mail } from 'lucide-react'
+import { CalendarCheck } from 'lucide-react'
 import { requireSession } from '@/lib/dashboard/auth'
 import { canAccessSection, hasPermission, getLeaderPostTitle, SECTION_PATHS } from '@/lib/dashboard/rbac'
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import ActivityList from '@/components/dashboard/overview/ActivityList'
+import AttentionQueue from '@/components/dashboard/overview/AttentionQueue'
 import OverviewStats, { OverviewStatsSkeleton } from '@/components/dashboard/overview/OverviewStats'
 import RecentFirstTimers from '@/components/dashboard/overview/RecentFirstTimers'
 import RecentWelfare from '@/components/dashboard/overview/RecentWelfare'
@@ -41,64 +37,63 @@ export default async function DashboardOverviewPage() {
   const showFirstTimers = canAccessSection(session.role, 'firstTimers', session)
   const showWelfare = canAccessSection(session.role, 'welfare', session)
   const leaderPost = getLeaderPostTitle(session)
-  const initials = session.name
-    ? session.name
-        .trim()
-        .split(/\s+/)
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : null
+
+  const todayStr = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+
+  const firstName = session.name ? session.name.trim().split(/\s+/)[0] : 'Leader'
 
   return (
     <PageContainer>
       <Suspense fallback={null}>
         <DeniedToast />
       </Suspense>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-          <div className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 shadow-sm bg-primary/5">
-            {session.profileImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={session.profileImageUrl}
-                alt={session.name || 'Executive Profile'}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary font-bold text-lg sm:text-xl">
-                {initials || 'EC'}
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 space-y-1">
-            <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-              Welcome, {session.name || 'Leader'}
+
+      {/* Universal Page Header — Date-only eyebrow, clean h1, primary 44px action */}
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {todayStr}
+        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Good morning, {firstName}
               {leaderPost && (
-                <span className="font-normal text-primary"> — {leaderPost}</span>
+                <span className="font-normal text-muted-foreground"> — {leaderPost}</span>
               )}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Here&apos;s what&apos;s happening across the fellowship today.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Fellowship operational cockpit · Sunday service in 6 days
             </p>
           </div>
-        </div>
-        <div className="shrink-0">
-          <Link
-            href="/dashboard/workers"
-            className="inline-flex w-full items-center justify-center gap-2 h-11 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-sm transition-colors sm:w-auto"
-          >
-            <Mail className="h-4 w-4 shrink-0" />
-            {session.role === 'admin' ? 'Mail All Workers' : `Mail ${session.team}`}
-          </Link>
+
+          <div className="shrink-0 flex items-center gap-2">
+            <Link
+              href="/dashboard/attendance"
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 px-4 rounded-xl border border-border/60 bg-card hover:bg-muted/50 text-foreground text-xs sm:text-sm font-semibold shadow-sm transition-colors"
+            >
+              <CalendarCheck className="h-4 w-4 text-primary" />
+              <span>Record attendance</span>
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* "Do this now" Attention Queue — Sorted by urgency */}
+      <AttentionQueue session={session} />
+
+      {/* Aligned KPI Pulse Strip (Streamed Suspense) */}
       <BlockErrorBoundary title="Statistics couldn't load">
         <Suspense fallback={<OverviewStatsSkeleton people={showPeople} finance={showFinance} />}>
           <OverviewStats session={session} />
         </Suspense>
       </BlockErrorBoundary>
+
+      {/* Activity Lists (Two Columns) */}
       {(showFirstTimers || showWelfare) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {showFirstTimers && (

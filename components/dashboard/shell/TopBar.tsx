@@ -34,7 +34,19 @@ interface TopBarProps {
   devTools?: React.ReactNode
 }
 
-export default function TopBar({ sections, name, email, role, team, teams, excoPosition, leadingTeam, profileImageUrl, actions, devTools }: TopBarProps) {
+export default function TopBar({
+  sections,
+  name,
+  email,
+  role,
+  team,
+  teams,
+  excoPosition,
+  leadingTeam,
+  profileImageUrl,
+  actions,
+  devTools,
+}: TopBarProps) {
   const pathname = usePathname()
   const section = sectionForPath(pathname || '') ?? 'overview'
   const title = navItemForSection(section).label
@@ -63,10 +75,13 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
                 <ChevronRight className="h-4 w-4 shrink-0" />
               </li>
               <li className="min-w-0">
-                <h1 aria-current="page" className="truncate font-sans font-semibold text-base text-foreground sm:text-lg lg:text-xl">
+                <span
+                  aria-current="page"
+                  className="truncate font-sans font-semibold text-base text-foreground sm:text-lg inline-flex items-center"
+                >
                   <SectionIcon className="h-4 w-4 shrink-0 mr-2" aria-hidden="true" />
                   {title}
-                </h1>
+                </span>
               </li>
             </ol>
           </nav>
@@ -77,7 +92,16 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
         {isMediaLeaderUser && actions && <div className="hidden sm:block">{actions}</div>}
         <ThemeToggle />
         <InstallPwaButton />
-        <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} profileImageUrl={profileImageUrl} devTools={devTools} />
+        <UserMenu
+          name={name}
+          email={email}
+          role={role}
+          team={team}
+          teams={teams}
+          excoPosition={excoPosition}
+          profileImageUrl={profileImageUrl}
+          devTools={devTools}
+        />
       </div>
     </header>
   )

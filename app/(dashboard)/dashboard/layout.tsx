@@ -81,7 +81,12 @@ export default async function DashboardShellLayout({
         >
           {children}
         </main>
-        <BottomNav sections={sections} actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined} />
+        <BottomNav
+          sections={sections}
+          role={session.role}
+          isPresident={Boolean(session.access?.isPresident)}
+          actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
+        />
       </div>
     </div>
   )

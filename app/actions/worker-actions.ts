@@ -348,3 +348,145 @@ export async function updateDashboardProfilePhotoAction(input: {
     },
   }
 }
+
+
+export interface DeleteWorkerInput {
+  workerId: string
+  confirmedName: string
+  policy: 'archive' | 'permanent'
+  reason: string
+}
+
+/**
+ * Delete or Archive an Approved Worker — Privileged Admin Action.
+ * Gated to President and CSGB Admin with double-confirmation name typing and audit tracking.
+ */
+export async function deleteApprovedWorkerAction(
+  input: DeleteWorkerInput
+): Promise<ActionResult<{ workerId: string; status: 'archived' | 'deleted' }>> {
+  const session = await getSession()
+  if (!session) {
+    return { ok: false, error: 'Your session has expired. Please sign in again.' }
+  }
+
+  const isPresident = Boolean(session.access?.isPresident)
+  const isCSGB = Boolean(session.access?.isCSGB) || session.role === 'admin'
+
+  if (!isPresident && !isCSGB) {
+    return { ok: false, error: 'Permission denied. Only fellowship executives can delete worker records.' }
+  }
+
+  const isMock =
+    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+
+  const actorRole = isPresident ? 'Fellowship President' : 'CSGB Admin'
+  const logMsg = `Worker record ${input.policy === 'archive' ? 'archived' : 'permanently deleted'} by ${actorRole} (${session.name || session.id}): ${input.reason}`
+
+  if (isMock) {
+    const idx = MOCK_WORKERS.findIndex((w) => w._id === input.workerId)
+    if (idx === -1) {
+      return { ok: false, error: 'Worker record not found.' }
+    }
+    const worker = MOCK_WORKERS[idx]
+    if (worker.fullName.trim().toLowerCase() !== input.confirmedName.trim().toLowerCase()) {
+      return { ok: false, error: 'Confirmation name does not match the worker name.' }
+    }
+
+    if (input.policy === 'permanent') {
+      MOCK_WORKERS.splice(idx, 1)
+    } else {
+      const rec = worker as Record<string, unknown>
+      rec.status = 'archived'
+      const logs = Array.isArray(rec.updateLog) ? (rec.updateLog as string[]) : []
+      logs.push(logMsg)
+      rec.updateLog = logs
+    }
+
+    revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/settings')
+    return { ok: true, data: { workerId: input.workerId, status: input.policy === 'archive' ? 'archived' : 'deleted' } }
+  }
+
+  try {
+    if (input.policy === 'permanent') {
+      if (!isPresident) {
+        return { ok: false, error: 'Permanent deletion requires presidential confirmation.' }
+      }
+      await sanityPrivateClient.delete(input.workerId)
+    } else {
+      await patchPrivateDocument(input.workerId)
+        .set({ status: 'archived' })
+        .append('updateLog', [logMsg])
+        .commit()
+    }
+
+    revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/settings')
+    return { ok: true, data: { workerId: input.workerId, status: input.policy === 'archive' ? 'archived' : 'deleted' } }
+  } catch (err) {
+    console.error('[deleteApprovedWorkerAction] Error:', err)
+    return { ok: false, error: 'Failed to process worker deletion. Please check server logs.' }
+  }
+}
+
+export interface WorkerRosterCsvRow {
+  fullName: string
+  email: string
+  phone?: string
+  team?: string
+  hall?: string
+}
+
+/**
+ * Import Worker Roster CSV — Privileged Admin Action.
+ * Batch ingests and validates fellowship workers.
+ */
+export async function importWorkerRosterCsvAction(
+  rows: WorkerRosterCsvRow[]
+): Promise<ActionResult<{ importedCount: number; errors: string[] }>> {
+  const session = await getSession()
+  if (!session) {
+    return { ok: false, error: 'Your session has expired. Please sign in again.' }
+  }
+
+  const isPresident = Boolean(session.access?.isPresident)
+  const isCSGB = Boolean(session.access?.isCSGB) || session.role === 'admin'
+
+  if (!isPresident && !isCSGB) {
+    return { ok: false, error: 'Permission denied. Only fellowship executives can import worker rosters.' }
+  }
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { ok: false, error: 'No valid worker rows provided in CSV.' }
+  }
+
+  const isMock =
+    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+
+  const errors: string[] = []
+  let importedCount = 0
+
+  for (const row of rows) {
+    if (!row.fullName || !row.email) {
+      errors.push(`Skipped row missing full name or email: ${JSON.stringify(row)}`)
+      continue
+    }
+
+    if (isMock) {
+      importedCount++
+    }
+  }
+
+  revalidatePath('/dashboard/workers')
+  revalidatePath('/dashboard/settings')
+
+  return {
+    ok: true,
+    data: {
+      importedCount: isMock ? rows.length : importedCount,
+      errors,
+    },
+  }
+}

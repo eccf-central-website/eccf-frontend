@@ -26,20 +26,20 @@
 :root {
   color-scheme: light;
 
-  --background: 60 9% 98%; /* #fafaf9 — matches the public site canvas */
+  --background: 214 24% 95%; /* #edf1f6 — cool mist executive cockpit canvas */
   --foreground: 222 42% 6%; /* navy #090d16 */
 
-  --card: 0 0% 100%;
+  --card: 0 0% 100%; /* pure white #ffffff for crisp card elevation */
   --card-foreground: 222 42% 6%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 42% 6%;
 
   --primary: 205 100% 40%; /* #0077cc */
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%; /* slate-100 */
+  --secondary: 210 30% 93%;
   --secondary-foreground: 222 42% 6%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 42%; /* ≥4.5:1 on white */
+  --muted: 214 22% 92%;
+  --muted-foreground: 215 19% 35%; /* #475569 — crisp, high-contrast metadata */
   --accent: 205 100% 96%; /* sky-50 tint for hovers */
   --accent-foreground: 205 100% 30%;
 
@@ -50,8 +50,8 @@
   --warning: 38 92% 50%; /* gold #f59e0b */
   --warning-foreground: 222 42% 6%;
 
-  --border: 214 32% 91%; /* slate-200 */
-  --input: 214 32% 91%;
+  --border: 214 20% 88%;
+  --input: 214 20% 88%;
   --ring: 205 100% 50%; /* sky #0095ff */
 
   --sidebar: 222 42% 6%; /* navy */

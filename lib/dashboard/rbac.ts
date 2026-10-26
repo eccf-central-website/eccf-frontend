@@ -26,6 +26,7 @@ export type DashboardSection =
   | 'prayerRequests'
   | 'announcements'
   | 'sermons'
+  | 'settings'
 
 export type DashboardPermission =
   | 'attendance:create'
@@ -34,6 +35,11 @@ export type DashboardPermission =
   | 'sermons:sync'
   | 'sermons:manage'
   | 'announcements:manage'
+  | 'workers:import'
+  | 'workers:delete'
+  | 'executives:view'
+  | 'executives:approve'
+  | 'settings:view'
   /** Overview cards that show money totals */
   | 'stats:finance'
   /** Overview cards about people (first-timers, welfare, workers) */
@@ -131,6 +137,7 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
   prayerRequests: '/dashboard/prayer-requests',
   announcements: '/dashboard/announcements',
   sermons: '/dashboard/sermons',
+  settings: '/dashboard/settings',
 }
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
@@ -144,6 +151,7 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   prayerRequests: ['admin', 'team_lead', 'hall_rep'],
   announcements: ['admin', 'team_lead'],
   sermons: ['admin', 'team_lead'],
+  settings: ['admin'],
 }
 
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
@@ -154,6 +162,11 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'sermons:sync': ['admin', 'team_lead'],
   'sermons:manage': ['admin', 'team_lead'],
   'announcements:manage': ['admin', 'team_lead'],
+  'workers:import': ['admin'],
+  'workers:delete': ['admin'],
+  'executives:view': ['admin'],
+  'executives:approve': ['admin'],
+  'settings:view': ['admin'],
   'stats:finance': ['admin', 'finance'],
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
 }
@@ -304,11 +317,17 @@ export function canAccessSection(
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
   if (section === 'executives') {
-    if (currentSession?.access && typeof currentSession.access.isPresident === 'boolean') {
-      return currentSession.access.isPresident
+    if (currentSession?.access && typeof currentSession.access.isPresident === 'boolean' && currentSession.access.isPresident) {
+      return true
+    }
+    if (role === 'admin' || Boolean(currentSession?.access?.isCSGB)) {
+      return true
     }
     const pos = (currentSession.excoPosition || '').toLowerCase()
-    return Boolean(pos.includes('president'))
+    return Boolean(pos.includes('president') || pos.includes('vice president') || pos.includes('general secretary'))
+  }
+  if (section === 'settings') {
+    return role === 'admin' || Boolean(currentSession?.access?.isPresident) || Boolean(currentSession?.access?.isCSGB)
   }
   if (section === 'announcements') {
     return isCSGBMember(currentSession)

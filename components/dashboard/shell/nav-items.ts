@@ -10,7 +10,6 @@
 
 import {
   CalendarCheck,
-  HandHeart,
   HeartHandshake,
   LayoutDashboard,
   Megaphone,
@@ -21,29 +20,30 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react'
+import { PrayingHands } from '@/components/dashboard/icons/PrayingHands'
 import { SECTION_PATHS, type DashboardSection } from '@/lib/dashboard/rbac'
 
 export interface NavItem {
   section: DashboardSection
   label: string
   href: string
-  icon: LucideIcon
+  icon: LucideIcon | React.ComponentType<{ className?: string; size?: number | string }>
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { section: 'overview', label: 'Overview', href: SECTION_PATHS.overview, icon: LayoutDashboard },
   { section: 'executives', label: 'Executives', href: SECTION_PATHS.executives, icon: Shield },
   { section: 'workers', label: 'Workers', href: SECTION_PATHS.workers, icon: Users },
-  { section: 'attendance', label: 'Attendance', href: SECTION_PATHS.attendance, icon: CalendarCheck },
-  { section: 'finance', label: 'Finance', href: SECTION_PATHS.finance, icon: Wallet },
   { section: 'firstTimers', label: 'First-Timers', href: SECTION_PATHS.firstTimers, icon: UserPlus },
+  { section: 'attendance', label: 'Attendance', href: SECTION_PATHS.attendance, icon: CalendarCheck },
   { section: 'welfare', label: 'Welfare', href: SECTION_PATHS.welfare, icon: HeartHandshake },
   {
     section: 'prayerRequests',
     label: 'Prayer Requests',
     href: SECTION_PATHS.prayerRequests,
-    icon: HandHeart,
+    icon: PrayingHands as unknown as LucideIcon,
   },
+  { section: 'finance', label: 'Finance', href: SECTION_PATHS.finance, icon: Wallet },
   {
     section: 'announcements',
     label: 'Announcements',

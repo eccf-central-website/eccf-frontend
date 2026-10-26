@@ -1,12 +1,10 @@
 /**
  * NavLinks — the dashboard link list, shared by the lg+ sidebar and the
- * mobile Sheet so both always show the same role-filtered items.
+ * mobile All-sections sheet so both always show the same role-filtered items.
  *
  * Active section comes from sectionForPath() (longest prefix wins, so
- * Overview isn't lit on sub-pages). Follows the public Navbar's
- * pending-link pattern: the clicked link shows a spinner until the
- * pathname changes. In `collapsed` mode labels become sr-only and each
- * link gets a right-side tooltip.
+ * Overview isn't lit on sub-pages). In `collapsed` mode labels become sr-only
+ * and each link gets a right-side tooltip. All items meet the 44px touch target.
  */
 
 'use client'
@@ -39,7 +37,7 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
   const items = NAV_ITEMS.filter((item) => sections.includes(item.section))
 
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-1.5">
       {items.map((item) => {
         const active = item.section === activeSection
         const isPending = pendingHref === item.href && !active
@@ -54,17 +52,20 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
               onNavigate?.()
             }}
             className={cn(
-              'relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
+              'relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
               active
-                ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
+                ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground font-semibold'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
               collapsed && 'justify-center px-0'
             )}
           >
             <Icon
-              aria-hidden="true"
-              className={cn('h-[18px] w-[18px] shrink-0', isPending && 'animate-spin text-sidebar-ring')}
+              className={cn(
+                'h-5 w-5 shrink-0 transition-colors',
+                active ? 'text-[#70a3ff] dark:text-[#70a3ff]' : 'text-sidebar-foreground/75',
+                isPending && 'animate-spin text-sidebar-ring'
+              )}
             />
             <span className={cn('truncate', collapsed && 'sr-only')}>{item.label}</span>
           </Link>
