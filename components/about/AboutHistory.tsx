@@ -126,7 +126,7 @@ export default function AboutHistory({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-7 space-y-5 text-slate-700 text-base sm:text-xl leading-relaxed"
+            className="lg:col-span-7 space-y-5 text-slate-700 text-[19px] sm:text-[23px] leading-relaxed"
           >
             {paragraphs && paragraphs.length > 0 ? (
               paragraphs.map((p, idx) => <p key={idx}>{p}</p>)

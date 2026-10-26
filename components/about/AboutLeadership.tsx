@@ -771,7 +771,7 @@ export default function AboutLeadership({
                       {String(members.length).padStart(2, '0')} leaders
                     </span>
                   </div>
-                  <p className="mt-2 max-w-2xl text-[12.5px] leading-relaxed text-slate-400 sm:text-sm">
+                  <p className="mt-2 max-w-2xl text-[15.5px] leading-relaxed text-slate-400 sm:text-[17px]">
                     {meta.subtitle}
                   </p>
                   <div className="mt-4 h-px w-full bg-gradient-to-r from-sky-400/45 via-white/10 to-transparent" />

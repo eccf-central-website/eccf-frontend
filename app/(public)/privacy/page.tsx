@@ -77,7 +77,7 @@ export default async function PrivacyPage() {
           </header>
 
           {/* Document Body */}
-          <div className="space-y-12 text-slate-700 text-base sm:text-[17px] leading-relaxed font-sans">
+          <div className="space-y-12 text-slate-700 text-[19px] sm:text-[20px] leading-relaxed font-sans">
             {/* ---------------------------------------------------------------- */}
             {/* SECTION 1: PREAMBLE                                              */}
             {/* ---------------------------------------------------------------- */}
@@ -323,7 +323,7 @@ export default async function PrivacyPage() {
                 <div className="font-semibold text-slate-900">
                   Edo State University Christian Campus Fellowship (ECCF)
                 </div>
-                <div className="text-sm text-slate-600 space-y-1">
+                <div className="text-[17px] text-slate-600 space-y-1">
                   <p>Christian Student Governing Board (CSGB) &bull; Secretariat</p>
                   <p>Meeting Venue: Lecture Theatre 5 (NLT 5), Faculty of Law</p>
                   <p>Edo State University Iyamho (ESUI), Edo State, Nigeria</p>

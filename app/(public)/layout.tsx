@@ -54,7 +54,7 @@ export default async function PublicLayout({
     return (
       <>
         <PwaPromptSuppressor />
-        <main className="flex min-h-screen w-full max-w-full flex-col">
+        <main className="public-site flex min-h-screen w-full max-w-full flex-col">
           <PageMaintenance
             headline={settings?.maintenanceHeadline}
             message={settings?.maintenanceMessage}
@@ -75,7 +75,7 @@ export default async function PublicLayout({
         <NavigationProgressBar />
       </Suspense>
       <Navbar />
-      <main className="flex-1 w-full max-w-full overflow-x-clip">{children}</main>
+      <main className="public-site flex-1 w-full max-w-full overflow-x-clip">{children}</main>
       <Footer settings={settings} />
       <TheLauncher />
       <ScrollToTop />
