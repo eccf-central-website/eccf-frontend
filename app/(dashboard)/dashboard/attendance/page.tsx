@@ -20,6 +20,10 @@ interface AttendancePageProps {
   }>
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+
 export default async function AttendancePage({ searchParams }: AttendancePageProps) {
   const session = await requireSection('attendance')
   const resolvedSearchParams = searchParams ? await searchParams : undefined

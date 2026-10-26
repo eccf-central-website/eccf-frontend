@@ -40,6 +40,8 @@ import {
 } from '@/lib/email/layout'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
+import { claimPendingExecutiveAppointmentsForWorker } from '@/app/actions/executive-suggestion-actions'
+import { extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
 import type { WorkerRole } from '@/types'
 
 export type ExecutiveApplicationKind = 'csgb' | 'hall' | 'team'
@@ -2119,16 +2121,67 @@ export async function registerWorker(
           )
         : undefined
     const clerkTrustedWorker = clerkLinkedWorker || clerkEmailMatch
-    const existing = verifiedWorker || clerkTrustedWorker
+
+    // Check for an uncompleted placeholder worker profile created via spreadsheet import
+    let placeholderMatch: typeof identityMatches[0] | undefined = undefined
+    if (!verifiedWorker && !clerkTrustedWorker && identityMatches.length === 0) {
+      try {
+        const candidates = await sanityPrivateClient.fetch<Array<typeof identityMatches[0]>>(
+          `*[_type == "worker" && !defined(phoneNumber) && !defined(clerkUserId) && !(_id in path("drafts.**"))]{
+            _id,
+            _rev,
+            fullName,
+            phoneNumber,
+            "team": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)])[0],
+            "teams": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)]),
+            memberships,
+            positions,
+            hall,
+            roomNumber,
+            email,
+            birthDate,
+            role,
+            requestedRole,
+            clerkUserId,
+            isExcoApproved,
+            passwordHash,
+            updateLog
+          }`
+        )
+        const inputTokens = extractNameTokens(cleanFullName)
+        const inputKey = normalizeTokensKey(inputTokens)
+        for (const cand of candidates) {
+          if (!cand.fullName) continue
+          const candTokens = extractNameTokens(cand.fullName)
+          const candKey = normalizeTokensKey(candTokens)
+          if (
+            candKey === inputKey ||
+            (candTokens.length >= 2 &&
+              inputTokens.length >= 2 &&
+              (inputTokens.every((t) => candTokens.includes(t)) || candTokens.every((t) => inputTokens.includes(t))))
+          ) {
+            placeholderMatch = cand
+            break
+          }
+        }
+      } catch (err) {
+        console.error('[registerWorker] Error checking placeholder candidates:', err)
+      }
+    }
+
+    const existing = verifiedWorker || clerkTrustedWorker || placeholderMatch
     const isClerkTrusted = Boolean(clerkTrustedWorker && existing?._id === clerkTrustedWorker._id)
+    const isPlaceholderClaim = Boolean(placeholderMatch && existing?._id === placeholderMatch._id)
 
     if (existing) {
-      const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === existing._id)
+      const belongsToVerifiedWorker = identityMatches.some((worker) => worker._id === existing._id) || isPlaceholderClaim
       const conflictsWithAnotherWorker = identityMatches.some((worker) => worker._id !== existing._id)
       const storedPhone = decrypt(existing.phoneNumber)
-      const contactFieldsUnchanged = existing.email?.trim().toLowerCase() === cleanEmail
+      const contactFieldsUnchanged = isPlaceholderClaim || !existing.email || existing.email?.trim().toLowerCase() === cleanEmail
       const phoneUnchanged =
         isClerkTrusted ||
+        isPlaceholderClaim ||
+        !storedPhone ||
         !cleanPhone ||
         (Boolean(storedPhone) && normalizePhone(storedPhone) === normalizePhone(cleanPhone))
       if (
@@ -2240,6 +2293,22 @@ export async function registerWorker(
       positionsToSave = existing.positions.filter((p: Record<string, unknown>) => p.status === 'approved')
     }
 
+    // Claim any pre-approved executive appointments from the leadership register
+    const appointmentClaim = await claimPendingExecutiveAppointmentsForWorker(
+      existing?._id || 'temp',
+      cleanFullName,
+      cleanEmail
+    )
+    if (appointmentClaim.positions.length > 0) {
+      const current = positionsToSave || []
+      positionsToSave = [...current, ...appointmentClaim.positions]
+    }
+
+    const hasApprovedPositions = Boolean(
+      (positionsToSave && positionsToSave.some((p) => p.status === 'approved')) ||
+      (existing?.positions && (existing.positions as Array<Record<string, unknown>>).some((p) => p.status === 'approved'))
+    )
+
     const profileImageUrl = input.profileImageUrl?.trim() || undefined
     if (profileImageUrl) {
       try {
@@ -2297,6 +2366,9 @@ export async function registerWorker(
       if (input.isExco) {
         deltaLogs.push(`Submitted executive application on ${today} (pending Presidential approval)`)
       }
+      if (appointmentClaim.claimed > 0) {
+        deltaLogs.push(`Activated appointed executive role from leadership register on ${today}`)
+      }
       if (deltaLogs.length === 0) {
         deltaLogs.push(`Profile updated on ${today}`)
       }
@@ -2308,6 +2380,7 @@ export async function registerWorker(
         ...(cleanLastName ? { lastName: cleanLastName } : {}),
         memberships,
         ...(positionsToSave ? { positions: positionsToSave } : {}),
+        ...(hasApprovedPositions ? { isExcoApproved: true } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
@@ -2322,19 +2395,23 @@ export async function registerWorker(
         patchData.profileImageUrl = profileImageUrl
       }
 
+      const unsets = [
+        'passwordHash',
+        'birthMonth',
+        'birthDay',
+        'team',
+        'teams',
+        'role',
+        'excoPosition',
+        'verificationStatus',
+      ]
+      if (!hasApprovedPositions && !existing.isExcoApproved) {
+        unsets.push('isExcoApproved')
+      }
+
       await patchPrivateDocument(existing._id)
         .set(patchData)
-        .unset([
-          'passwordHash',
-          'birthMonth',
-          'birthDay',
-          'team',
-          'teams',
-          'role',
-          'excoPosition',
-          'isExcoApproved',
-          'verificationStatus',
-        ])
+        .unset(unsets)
         .append('updateLog', deltaLogs)
         .commit()
 
@@ -2383,6 +2460,9 @@ export async function registerWorker(
       if (input.isExco) {
         initialLogs.push(`Submitted executive application on ${today} (pending Presidential approval)`)
       }
+      if (appointmentClaim.claimed > 0) {
+        initialLogs.push(`Activated appointed executive role from leadership register on ${today}`)
+      }
 
       const newDoc: { _type: 'worker'; [key: string]: unknown } = {
         _type: 'worker',
@@ -2395,6 +2475,7 @@ export async function registerWorker(
         phoneBlindIndex,
         memberships,
         ...(positionsToSave ? { positions: positionsToSave } : {}),
+        ...(hasApprovedPositions ? { isExcoApproved: true } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
         roomNumber: encrypt(input.roomNumber.trim()),
@@ -2412,6 +2493,23 @@ export async function registerWorker(
       }
 
       const createdWorker = await createPrivateDocument(newDoc)
+      deleteCookie(REGISTRATION_PROOF_COOKIE)
+
+      if (createdWorker?._id && appointmentClaim.claimed > 0) {
+        try {
+          const claimedAppointments = await sanityPrivateClient.fetch<Array<{ _id: string }>>(
+            `*[_type == "executiveAppointment" && status == "claimed" && (claimedBy._ref == "temp" || !defined(claimedBy)) && lower(fullName) == lower($name)]`,
+            { name: cleanFullName }
+          )
+          for (const ca of claimedAppointments) {
+            await patchPrivateDocument(ca._id)
+              .set({ claimedBy: { _type: 'reference', _ref: createdWorker._id } })
+              .commit()
+          }
+        } catch (linkErr) {
+          console.error('[registerWorker] Link claimed appointments error:', linkErr)
+        }
+      }
       deleteCookie(REGISTRATION_PROOF_COOKIE)
 
       // Send Fellowship Admin Notification Email (to edsuchristiancampusfellowship@gmail.com)

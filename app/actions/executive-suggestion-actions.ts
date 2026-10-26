@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { sanityPrivateClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
+import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
 
 export interface CsvImportResult {
   ok: boolean
@@ -111,26 +112,7 @@ interface HallLookupItem {
   name: string
 }
 
-function cleanHonorifics(s: string): string {
-  return s
-    .replace(/\b(bro|brother|sis|sister|pastor|pst|evang|evangelist|mr|mrs|miss|dr|engr)\b\.?/gi, ' ')
-    .replace(/[,;:/\\()\[\]{}'"]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
-function extractNameTokens(nameStr: string): string[] {
-  const cleaned = cleanHonorifics(nameStr)
-  return cleaned
-    .toLowerCase()
-    .split(/\s+/)
-    .map((t) => t.replace(/[^a-z0-9]/g, ''))
-    .filter((t) => t.length >= 2)
-}
-
-function normalizeTokensKey(tokens: string[]): string {
-  return tokens.slice().sort().join(' ')
-}
 
 function getRowField(row: Record<string, unknown>, aliases: string[]): string {
   const keys = Object.keys(row)
@@ -759,29 +741,51 @@ export async function commitExecutiveImport(payload: {
 
     const targetEmail = (item.email || (targetWorkerId ? workerEmailsMap.get(targetWorkerId) : undefined) || '').trim().toLowerCase()
 
+    // -------------------------------------------------------------------------
+    // 1. Always persist an executiveAppointment document in Sanity
+    // -------------------------------------------------------------------------
+    const nameTokens = extractNameTokens(cleanDisplayName)
+    const normalizedKey = normalizeTokensKey(nameTokens)
+    const deterministicAppId = `appointment_${item.kind}_${Buffer.from(cleanDisplayName.toLowerCase().trim()).toString('hex').slice(0, 32)}`
+
+    const appointmentDoc: Record<string, unknown> = {
+      _type: 'executiveAppointment',
+      fullName: cleanDisplayName,
+      normalizedName: normalizedKey,
+      kind: item.kind,
+      rank: item.rank || 'lead',
+      importedAt: new Date().toISOString(),
+      rawPosition: item.office || item.teamName || item.hall || 'Executive Position',
+    }
+    if (targetEmail) appointmentDoc.email = targetEmail
+    if (item.kind === 'csgb') {
+      appointmentDoc.office = item.office || 'CSGB Executive'
+      if (item.csgbRoleRef) appointmentDoc.csgbRole = { _type: 'reference', _ref: item.csgbRoleRef }
+    } else if (item.kind === 'hall') {
+      appointmentDoc.hall = item.hall || 'Hall 1'
+      if (item.hallRef) appointmentDoc.hallRef = { _type: 'reference', _ref: item.hallRef }
+    } else if (item.kind === 'team') {
+      appointmentDoc.teamName = item.teamName || 'Ministry Team'
+      if (item.teamRef) appointmentDoc.teamRef = { _type: 'reference', _ref: item.teamRef }
+    }
+
     if (targetWorkerId) {
       try {
         const currentPositions = workerPositionsMap.get(targetWorkerId) || []
 
         // Smart merge: replace existing position of the same role/category instead of duplicating
         const filteredPositions = currentPositions.filter((p) => {
-          // If incoming is CSGB, replace any prior CSGB position
           if (item.kind === 'csgb' && p.kind === 'csgb') return false
-
-          // If incoming is for a specific team, replace any prior position for that same team
           if (item.kind === 'team' && p.kind === 'team') {
             const pTeamRef = (p.team as { _ref?: string })?._ref
             if (pTeamRef && item.teamRef && pTeamRef === item.teamRef) return false
             if (p.teamName && item.teamName && String(p.teamName).toLowerCase() === String(item.teamName).toLowerCase()) return false
           }
-
-          // If incoming is for a specific hall, replace prior position for that hall
           if (item.kind === 'hall' && p.kind === 'hall') {
             const pHallRef = (p.hallRef as { _ref?: string })?._ref
             if (pHallRef && item.hallRef && pHallRef === item.hallRef) return false
             if (p.hall && item.hall && String(p.hall).toLowerCase() === String(item.hall).toLowerCase()) return false
           }
-
           return true
         })
 
@@ -797,6 +801,13 @@ export async function commitExecutiveImport(payload: {
         workerPositionsMap.set(targetWorkerId, updatedPositions)
         imported++
         matchedCount++
+
+        // Save appointment as claimed
+        appointmentDoc.status = 'claimed'
+        appointmentDoc.claimedBy = { _type: 'reference', _ref: targetWorkerId }
+        appointmentDoc.claimedAt = new Date().toISOString()
+        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
+        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
 
         // Dispatch leadership appointment guidance email
         if (targetEmail && targetEmail.includes('@')) {
@@ -852,6 +863,13 @@ export async function commitExecutiveImport(payload: {
         imported++
         createdCount++
 
+        // Save appointment as claimed
+        appointmentDoc.status = 'claimed'
+        appointmentDoc.claimedBy = { _type: 'reference', _ref: newId }
+        appointmentDoc.claimedAt = new Date().toISOString()
+        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
+        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
+
         // Dispatch leadership appointment guidance email
         if (targetEmail && targetEmail.includes('@')) {
           try {
@@ -876,7 +894,15 @@ export async function commitExecutiveImport(payload: {
         skipped.push(`${cleanDisplayName}: Failed to create new worker profile.`)
       }
     } else {
-      skipped.push(`${cleanDisplayName}: No matching worker found in database.`)
+      // Save appointment reservation in Sanity as pending_claim
+      try {
+        appointmentDoc.status = 'pending_claim'
+        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
+        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
+        imported++
+      } catch (resErr) {
+        console.error('[commitExecutiveImport] Failed to save pending appointment:', resErr)
+      }
     }
   }
 
@@ -892,5 +918,262 @@ export async function commitExecutiveImport(payload: {
     createdCount,
     emailsSent,
     skipped,
+  }
+}
+
+/**
+ * Automatically claims pre-approved executive appointments for a registering or existing worker.
+ * Matches by email or case-insensitive token-invariant full name.
+ * Called automatically during worker registration (/register) and profile update.
+ */
+export async function claimPendingExecutiveAppointmentsForWorker(
+  workerId: string,
+  fullName: string,
+  email?: string
+): Promise<{
+  claimed: number
+  positions: Array<Record<string, unknown>>
+}> {
+  const cleanEmail = email?.trim().toLowerCase()
+  const nameTokens = extractNameTokens(fullName)
+  const normalizedKey = normalizeTokensKey(nameTokens)
+
+  try {
+    // 1. Fetch pending executive appointments
+    const pendingAppointments = await sanityPrivateClient.fetch<Array<{
+      _id: string
+      fullName: string
+      normalizedName?: string
+      email?: string
+      kind: 'csgb' | 'hall' | 'team'
+      rank?: 'lead' | 'assistant'
+      office?: string
+      csgbRole?: { _ref: string }
+      hall?: string
+      hallRef?: { _ref: string }
+      teamName?: string
+      teamRef?: { _ref: string }
+    }>>(`*[_type == "executiveAppointment" && status == "pending_claim"]`)
+
+    const matchedAppointments: typeof pendingAppointments = []
+
+    for (const app of pendingAppointments) {
+      let isMatch = false
+
+      // Match by exact email if available
+      if (cleanEmail && app.email && app.email.trim().toLowerCase() === cleanEmail) {
+        isMatch = true
+      }
+
+      // Match by normalized invariant key
+      if (!isMatch && app.normalizedName && app.normalizedName === normalizedKey) {
+        isMatch = true
+      }
+
+      // Match by token invariant
+      if (!isMatch && app.fullName) {
+        const appTokens = extractNameTokens(app.fullName)
+        if (appTokens.length >= 2 && nameTokens.length >= 2) {
+          if (normalizeTokensKey(appTokens) === normalizedKey) {
+            isMatch = true
+          } else {
+            const allTokensMatch =
+              nameTokens.every((t) => appTokens.includes(t)) ||
+              appTokens.every((t) => nameTokens.includes(t))
+            if (allTokensMatch) isMatch = true
+          }
+        }
+      }
+
+      if (isMatch) {
+        matchedAppointments.push(app)
+      }
+    }
+
+    // 2. Check if there are placeholder worker documents created by spreadsheet import
+    // that have approved positions but no phone/email, matching this name
+    const placeholderMatches = await sanityPrivateClient.fetch<Array<{
+      _id: string
+      fullName: string
+      positions?: Array<Record<string, unknown>>
+    }>>(
+      `*[_type == "worker" && _id != $workerId && !defined(phoneNumber) && defined(positions) && count(positions) > 0 && !(_id in path("drafts.**"))]{
+        _id,
+        fullName,
+        positions
+      }`,
+      { workerId: workerId || 'none' }
+    )
+
+    const placeholderPositions: Array<Record<string, unknown>> = []
+    const placeholdersToDelete: string[] = []
+
+    for (const ph of placeholderMatches) {
+      if (!ph.fullName) continue
+      const phTokens = extractNameTokens(ph.fullName)
+      const phKey = normalizeTokensKey(phTokens)
+      const matchesName =
+        phKey === normalizedKey ||
+        (phTokens.length >= 2 &&
+          nameTokens.length >= 2 &&
+          (nameTokens.every((t) => phTokens.includes(t)) || phTokens.every((t) => nameTokens.includes(t))))
+
+      if (matchesName && Array.isArray(ph.positions)) {
+        const approvedOnly = ph.positions.filter((p) => p.status === 'approved')
+        placeholderPositions.push(...approvedOnly)
+        placeholdersToDelete.push(ph._id)
+      }
+    }
+
+    const claimedPositions: Array<Record<string, unknown>> = [...placeholderPositions]
+
+    for (const app of matchedAppointments) {
+      const pos: Record<string, unknown> = {
+        _key: `pos_claimed_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        _type: 'executivePosition',
+        kind: app.kind,
+        rank: app.rank || 'lead',
+        status: 'approved',
+        submittedAt: new Date().toISOString(),
+        decidedAt: new Date().toISOString(),
+      }
+
+      if (app.kind === 'csgb') {
+        pos.office = app.office || 'CSGB Executive'
+        if (app.csgbRole?._ref) {
+          pos.csgbRole = { _type: 'reference', _ref: app.csgbRole._ref }
+        }
+      } else if (app.kind === 'hall') {
+        pos.hall = app.hall || 'Hall 1'
+        if (app.hallRef?._ref) {
+          pos.hallRef = { _type: 'reference', _ref: app.hallRef._ref }
+        }
+      } else if (app.kind === 'team') {
+        pos.teamName = app.teamName || 'Ministry Team'
+        if (app.teamRef?._ref) {
+          pos.team = { _type: 'reference', _ref: app.teamRef._ref }
+        }
+      }
+
+      claimedPositions.push(pos)
+
+      // Update appointment status to claimed
+      if (workerId && workerId !== 'temp') {
+        await patchPrivateDocument(app._id)
+          .set({
+            status: 'claimed',
+            claimedBy: { _type: 'reference', _ref: workerId },
+            claimedAt: new Date().toISOString(),
+          })
+          .commit()
+      }
+
+      // Dispatch appointment guidance email
+      const targetEmail = cleanEmail || app.email
+      if (targetEmail && targetEmail.includes('@')) {
+        const positionTitle =
+          app.kind === 'csgb'
+            ? app.office || 'CSGB Executive'
+            : app.kind === 'hall'
+            ? `${app.hall || 'Hall'} Pastor`
+            : `${app.teamName || 'Ministry'} Lead`
+
+        sendExecutiveAppointmentEmail({
+          recipientName: fullName,
+          recipientEmail: targetEmail,
+          positionTitle,
+          category: app.kind,
+          rank: app.rank || 'lead',
+          teamName: app.teamName,
+          hallName: app.hall,
+        }).catch((err) =>
+          console.error('[claimPendingExecutiveAppointments] Email dispatch error:', err)
+        )
+      }
+    }
+
+    // Clean up duplicate placeholder documents if merged
+    for (const phId of placeholdersToDelete) {
+      try {
+        await sanityPrivateClient.delete(phId)
+      } catch (delErr) {
+        console.error(`[claimPendingExecutiveAppointments] Failed to clean placeholder ${phId}:`, delErr)
+      }
+    }
+
+    return {
+      claimed: matchedAppointments.length + placeholderPositions.length,
+      positions: claimedPositions,
+    }
+  } catch (err) {
+    console.error('[claimPendingExecutiveAppointmentsForWorker] error:', err)
+    return { claimed: 0, positions: [] }
+  }
+}
+
+/**
+ * Scans all registered workers and automatically links & activates any pending
+ * leadership appointments that match their names or email addresses.
+ */
+export async function reconcileRegisteredExecutives(): Promise<{
+  ok: boolean
+  reconciledCount: number
+  details: string[]
+  error?: string
+}> {
+  const auth = await verifyAuth()
+  if (!auth.ok) {
+    return { ok: false, reconciledCount: 0, details: [], error: auth.error }
+  }
+
+  try {
+    const workers = (await sanityPrivateClient.fetch(`
+      *[_type == "worker" && !(_id in path("drafts.**"))]{
+        _id,
+        fullName,
+        email,
+        positions,
+        isExcoApproved
+      }
+    `)) as Array<{
+      _id: string
+      fullName?: string
+      email?: string
+      positions?: Array<Record<string, unknown>>
+      isExcoApproved?: boolean
+    }>
+
+    let reconciledCount = 0
+    const details: string[] = []
+
+    for (const w of workers) {
+      if (!w.fullName) continue
+      const res = await claimPendingExecutiveAppointmentsForWorker(w._id, w.fullName, w.email)
+      if (res.claimed > 0 && res.positions.length > 0) {
+        const existingPositions = Array.isArray(w.positions) ? w.positions : []
+        const mergedPositions = [...existingPositions, ...res.positions]
+
+        await patchPrivateDocument(w._id)
+          .set({
+            positions: mergedPositions,
+            isExcoApproved: true,
+          })
+          .append('updateLog', [`Automatically linked & activated executive appointment on ${new Date().toISOString().slice(0, 10)}`])
+          .commit()
+
+        reconciledCount++
+        details.push(`${w.fullName}: Activated ${res.claimed} appointed role(s).`)
+      }
+    }
+
+    try {
+      revalidatePath('/dashboard/executives')
+      revalidatePath('/dashboard/workers')
+    } catch {}
+
+    return { ok: true, reconciledCount, details }
+  } catch (err) {
+    console.error('[reconcileRegisteredExecutives] error:', err)
+    return { ok: false, reconciledCount: 0, details: [], error: 'Failed to reconcile registered executives.' }
   }
 }
