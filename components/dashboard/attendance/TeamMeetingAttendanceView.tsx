@@ -106,12 +106,13 @@ export default function TeamMeetingAttendanceView({
     return rows.filter((r) => {
       if (r.serviceType !== 'Team Meeting') return false
       if (session.role === 'team_lead') {
-        const leadTeam = (session.leadingTeam || session.team).toLowerCase()
+        const leadTeam = (session.leadingTeam || session.team || '').toLowerCase()
+        if (!leadTeam) return true
         const rowTeam = (r.teamName || '').toLowerCase()
         return rowTeam.includes(leadTeam) || leadTeam.includes(rowTeam)
       }
       if (selectedTeamFilter !== 'all') {
-        const target = selectedTeamFilter.toLowerCase()
+        const target = (selectedTeamFilter || '').toLowerCase()
         const rowTeam = (r.teamName || '').toLowerCase()
         return rowTeam.includes(target) || target.includes(rowTeam)
       }
@@ -121,32 +122,32 @@ export default function TeamMeetingAttendanceView({
 
   // History search filter
   const filteredMeetingRows = useMemo(() => {
-    const q = historySearch.trim().toLowerCase()
+    const q = (historySearch || '').trim().toLowerCase()
     if (!q) return teamRows
     return teamRows.filter(
       (r) =>
-        r.meetingTitle?.toLowerCase().includes(q) ||
-        r.teamName?.toLowerCase().includes(q) ||
-        r.loggedBy?.fullName?.toLowerCase().includes(q)
+        (r.meetingTitle || '').toLowerCase().includes(q) ||
+        (r.teamName || '').toLowerCase().includes(q) ||
+        (r.loggedBy?.fullName || '').toLowerCase().includes(q)
     )
   }, [teamRows, historySearch])
 
   // Workers belonging to the current target team
   const filteredTeamWorkers = useMemo(() => {
     return availableWorkers.filter((w) => {
-      const currentTeam = (session.role === 'team_lead' ? effectiveTeamName : targetTeam).toLowerCase()
+      const currentTeam = ((session.role === 'team_lead' ? effectiveTeamName : targetTeam) || '').toLowerCase()
       if (!currentTeam || currentTeam === 'all') return true
-      const workerTeams = (w.teams && w.teams.length > 0 ? w.teams : [w.team]).map((t) => t.toLowerCase())
+      const workerTeams = (w.teams && w.teams.length > 0 ? w.teams : [w.team]).filter(Boolean).map((t) => String(t).toLowerCase())
       return workerTeams.some((wt) => wt.includes(currentTeam) || currentTeam.includes(wt))
     })
   }, [availableWorkers, session, effectiveTeamName, targetTeam])
 
   // Visible workers in the checklist during search
   const visibleWorkers = useMemo(() => {
-    const q = workerSearch.trim().toLowerCase()
+    const q = (workerSearch || '').trim().toLowerCase()
     if (!q) return filteredTeamWorkers
     return filteredTeamWorkers.filter(
-      (w) => w.fullName.toLowerCase().includes(q) || w.hall.toLowerCase().includes(q)
+      (w) => (w.fullName || '').toLowerCase().includes(q) || (w.hall || '').toLowerCase().includes(q)
     )
   }, [filteredTeamWorkers, workerSearch])
 
@@ -781,7 +782,7 @@ export default function TeamMeetingAttendanceView({
         open={Boolean(activeRosterRecord)}
         onOpenChange={(open) => !open && setActiveRosterRecord(null)}
       >
-        <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-y-auto">
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary">
               <Users className="h-5 w-5 shrink-0" />

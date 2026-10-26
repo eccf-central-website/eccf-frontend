@@ -16,7 +16,7 @@ import { canAccessSection, hasPermission, getLeaderPostTitle, SECTION_PATHS } fr
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import ActivityList from '@/components/dashboard/overview/ActivityList'
-import AttentionQueue from '@/components/dashboard/overview/AttentionQueue'
+import AttentionQueue, { AttentionQueueSkeleton } from '@/components/dashboard/overview/AttentionQueue'
 import OverviewStats, { OverviewStatsSkeleton } from '@/components/dashboard/overview/OverviewStats'
 import RecentFirstTimers from '@/components/dashboard/overview/RecentFirstTimers'
 import RecentWelfare from '@/components/dashboard/overview/RecentWelfare'
@@ -66,9 +66,6 @@ export default async function DashboardOverviewPage() {
                 <span className="font-normal text-muted-foreground"> — {leaderPost}</span>
               )}
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Fellowship operational cockpit · Sunday service in 6 days
-            </p>
           </div>
 
           <div className="shrink-0 flex items-center gap-2">
@@ -83,8 +80,10 @@ export default async function DashboardOverviewPage() {
         </div>
       </div>
 
-      {/* "Do this now" Attention Queue — Sorted by urgency */}
-      <AttentionQueue session={session} />
+      {/* "Do this now" Attention Queue — Live data, sorted by urgency */}
+      <Suspense fallback={<AttentionQueueSkeleton />}>
+        <AttentionQueue session={session} />
+      </Suspense>
 
       {/* Aligned KPI Pulse Strip (Streamed Suspense) */}
       <BlockErrorBoundary title="Statistics couldn't load">

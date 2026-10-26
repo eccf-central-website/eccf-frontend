@@ -364,7 +364,7 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
   return rows.map((row) => ({
     ...row,
     phoneNumber: row.phoneNumber ? decrypt(row.phoneNumber) : undefined,
-    roomNumber: undefined, // Fix S9: stripped per SDD
+    roomNumber: row.roomNumber ? (decrypt(row.roomNumber) || row.roomNumber) : undefined,
   }))
 }
 

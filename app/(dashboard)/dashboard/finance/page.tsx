@@ -1,15 +1,17 @@
 /**
  * Finance Ledger — /dashboard/finance
  *
- * Exco Finance ledger: tracks tithes, offerings, project levies, online giving,
- * and fellowship expenses. Records are securely stored as private drafts.
+ * Implements the calm finance cockpit:
+ * - One clear h1: Finance
+ * - Subtitle: Income, expenses, and the monthly position.
+ * - Single neutral KPI panel (Inflow, Outflow, Net) without saturated card fills.
+ * - Tabular Work Sans numbers and 44px action targets.
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import FinanceClient from '@/components/dashboard/finance/FinanceClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listFinance } from '@/lib/dashboard/data'
-import { Wallet } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,17 +19,24 @@ export default async function FinancePage() {
   await requireSection('finance')
   const rows = await listFinance()
 
+  const todayStr = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+
   return (
     <PageContainer>
-      <div className="flex flex-col gap-2 border-b pb-5">
-        <div className="flex items-center gap-2.5 text-primary">
-          <Wallet className="h-6 w-6 shrink-0" />
-          <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-            Finance Ledger
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Track fellowship income and expenditures. Records are kept in private draft storage per SDD financial compliance guidelines.
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {todayStr}
+        </p>
+        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          Finance
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Income, expenses, and the monthly position.
         </p>
       </div>
 

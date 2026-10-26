@@ -65,7 +65,7 @@ export default function FinanceClient({ initialEntries }: FinanceClientProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filter by category, note, or ref..."
-              className="pl-9 bg-background"
+              className="pl-9 h-11 rounded-xl bg-background text-sm"
             />
           </div>
 
@@ -73,7 +73,7 @@ export default function FinanceClient({ initialEntries }: FinanceClientProps) {
             value={typeFilter}
             onValueChange={(val) => setTypeFilter(val as 'all' | 'Income' | 'Expense')}
           >
-            <SelectTrigger className="w-[130px] bg-background">
+            <SelectTrigger className="w-[130px] h-11 rounded-xl bg-background text-sm">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -86,7 +86,7 @@ export default function FinanceClient({ initialEntries }: FinanceClientProps) {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <FinanceExportButton entries={filteredEntries} />
-          <Button onClick={() => setShowModal(true)} size="sm" className="shadow-xs">
+          <Button onClick={() => setShowModal(true)} className="min-h-[44px] px-4 rounded-xl shadow-xs font-semibold text-xs sm:text-sm">
             <PlusCircle className="mr-1.5 h-4 w-4 shrink-0" />
             Record Transaction
           </Button>

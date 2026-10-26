@@ -1,10 +1,6 @@
 /**
- * PageHeaderSkeleton — placeholder for a section's page heading: title,
- * optional one-line description and an optional primary action (e.g. the
- * ledgers' "Add entry" button), stacked on mobile and in a row from `sm`.
- *
- * Usually paired with a body skeleton in a route's loading.tsx, so pass
- * `announce={false}` there and let the body announce.
+ * PageHeaderSkeleton — placeholder for a section's page heading:
+ * date-only eyebrow, title, optional subtitle, and optional 44px primary action button.
  */
 
 import { Skeleton } from '@/components/dashboard/ui/skeleton'
@@ -20,19 +16,23 @@ interface PageHeaderSkeletonProps {
 
 export default function PageHeaderSkeleton({
   description = true,
-  action = false,
+  action = true,
   label = 'Loading page…',
   announce = true,
   className,
 }: PageHeaderSkeletonProps) {
   return (
     <LoadingRegion label={label} announce={announce} className={className}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-48 shrink-0" />
-          {description && <Skeleton className="h-4 w-72 shrink-0 max-w-full" />}
+          {/* Date eyebrow */}
+          <Skeleton className="h-3.5 w-40 rounded-md" />
+          {/* Main title */}
+          <Skeleton className="h-9 w-64 rounded-xl sm:h-10 sm:w-80" />
+          {/* Description */}
+          {description && <Skeleton className="h-4 w-80 max-w-full rounded-md" />}
         </div>
-        {action && <Skeleton className="h-10 w-full sm:w-32" />}
+        {action && <Skeleton className="h-11 w-full sm:w-44 shrink-0 rounded-xl" />}
       </div>
     </LoadingRegion>
   )

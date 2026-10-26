@@ -351,58 +351,44 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
               </span>
             )}
           </div>
-          <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight mt-1">
-            {isPresident
-              ? 'Fellowship Workforce & Presidential CRM'
-              : isAdmin
-              ? 'Workforce & Leadership Roster'
-              : isMedia
-              ? 'Fellowship Workers & Birthday Directory'
-              : isHallRep
-              ? `${session.hall || 'Hall'} Resident Workers`
-              : `${session.leadingTeam || session.team || leadsTeamKeys[0] || 'Team'} Members & Applicants`}
+          <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground mt-1">
+            Workers
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-            {isPresident
-              ? 'Fellowship-wide presidential authority to review, confirm, and verify workers across all operational teams and halls.'
-              : isAdmin
-              ? 'Govern all fellowship workers across all operational teams and halls. Approve departmental rosters and grant Exco dashboard credentials.'
-              : isMedia
-              ? 'Full directory of all fellowship workers across all teams and halls for designing birthday flyers, celebratory graphics, and media coverage.'
-              : isHallRep
-              ? `View and care for all fellowship workers living in ${session.hall || 'your hall'} across all operational units.`
-              : `Review and approve workers requesting to join ${session.leadingTeam || session.team || 'your team'}. Once accepted, they become verified members on your team roster.`}
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+            Directory, approvals, and team communications.
           </p>
         </div>
 
-        {/* Quick Actions & Counter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Quick Actions & Unified KPI Strip */}
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             type="button"
             onClick={() => {
               setEmailPreselectedWorker(null)
               setIsEmailDialogOpen(true)
             }}
-            className="h-10 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs"
+            className="min-h-[44px] px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs sm:text-sm shadow-xs"
           >
-            <Mail className="h-4 w-4 shrink-0 mr-1.5" />
-            {isAdmin ? 'Broadcast Mail' : 'Email Workers'}
+            <Mail className="h-4 w-4 shrink-0 mr-2" />
+            Email Workers
           </Button>
 
-          <div className="px-3.5 py-2 rounded-xl bg-card shadow-sm text-center">
-            <span className="block text-xs font-mono uppercase text-muted-foreground font-bold">Total</span>
-            <span className="font-serif font-black text-lg text-foreground">{scopedWorkers.length}</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-emerald-500/10 shadow-sm text-center">
-            <span className="block text-xs font-mono uppercase text-emerald-600 dark:text-emerald-400 font-bold">Verified</span>
-            <span className="font-serif font-black text-lg text-emerald-700 dark:text-emerald-300">{verifiedWorkers.length}</span>
-          </div>
-          {pendingWorkers.length > 0 && (
-            <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 shadow-sm text-center">
-              <span className="block text-xs font-mono uppercase text-amber-600 dark:text-amber-400 font-bold">Pending</span>
-              <span className="font-serif font-black text-lg text-amber-700 dark:text-amber-300">{pendingWorkers.length}</span>
+          <div className="inline-flex items-center divide-x divide-border/40 rounded-xl bg-card shadow-sm border border-border/40 px-3 py-1.5">
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-muted-foreground">Total</span>
+              <span className="font-sans font-bold text-base text-foreground">{scopedWorkers.length}</span>
             </div>
-          )}
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-emerald-600 dark:text-emerald-400">Verified</span>
+              <span className="font-sans font-bold text-base text-foreground">{verifiedWorkers.length}</span>
+            </div>
+            {pendingWorkers.length > 0 && (
+              <div className="px-3 text-center">
+                <span className="block text-[11px] font-medium uppercase text-amber-600 dark:text-amber-400">Pending</span>
+                <span className="font-sans font-bold text-base text-amber-600 dark:text-amber-400">{pendingWorkers.length}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

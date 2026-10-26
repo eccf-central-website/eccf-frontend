@@ -289,7 +289,7 @@ export default function ExecutiveApprovalsClient({
             variant="outline"
             disabled={isBusy}
             onClick={() => handleReject(app)}
-            className="h-9 px-3 rounded-xl text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 text-xs font-bold"
+            className="min-h-[44px] px-3 rounded-xl text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 text-xs font-bold"
           >
             <XCircle className="h-4 w-4 shrink-0 mr-1 sm:mr-0" />
             <span className="sm:hidden">Decline</span>
@@ -318,32 +318,34 @@ export default function ExecutiveApprovalsClient({
               </span>
             )}
           </div>
-          <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight mt-1">
-            Executive Appointments Console
+          <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground mt-1">
+            Executives
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-            Sole presidential authority to confirm Executive Council appointments. Approving a Ministry Team Lead automatically grants verified membership on that team.
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+            Appointments and leadership roster.
           </p>
         </div>
 
-        {/* Category Stat Counters */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Category Stat Counters & Unified KPI Strip */}
+        <div className="flex flex-wrap items-center gap-3">
           {canImport && <ExecutiveCsvImportDialog className="w-full sm:w-auto" />}
-          <div className="px-3.5 py-2 rounded-xl bg-card border border-border shadow-xs text-center min-w-[75px]">
-            <span className="block text-[10px] font-mono uppercase text-muted-foreground font-bold">Total</span>
-            <span className="font-serif font-black text-lg text-foreground">{applications.length}</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-purple-500/10 border border-purple-500/25 shadow-xs text-center min-w-[75px]">
-            <span className="block text-[10px] font-mono uppercase text-purple-600 dark:text-purple-400 font-bold">CSGB</span>
-            <span className="font-serif font-black text-lg text-purple-700 dark:text-purple-300">{csgbApps.length}</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-sky-500/10 border border-sky-500/25 shadow-xs text-center min-w-[75px]">
-            <span className="block text-[10px] font-mono uppercase text-sky-600 dark:text-sky-400 font-bold">Halls</span>
-            <span className="font-serif font-black text-lg text-sky-700 dark:text-sky-300">{hallApps.length}</span>
-          </div>
-          <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 shadow-xs text-center min-w-[75px]">
-            <span className="block text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400 font-bold">Teams</span>
-            <span className="font-serif font-black text-lg text-amber-700 dark:text-amber-300">{teamApps.length}</span>
+          <div className="inline-flex items-center divide-x divide-border/40 rounded-xl bg-card shadow-sm border border-border/40 px-3 py-1.5">
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-muted-foreground">Total</span>
+              <span className="font-sans font-bold text-base text-foreground">{applications.length}</span>
+            </div>
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-muted-foreground">CSGB</span>
+              <span className="font-sans font-bold text-base text-foreground">{csgbApps.length}</span>
+            </div>
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-muted-foreground">Halls</span>
+              <span className="font-sans font-bold text-base text-foreground">{hallApps.length}</span>
+            </div>
+            <div className="px-3 text-center">
+              <span className="block text-[11px] font-medium uppercase text-muted-foreground">Teams</span>
+              <span className="font-sans font-bold text-base text-foreground">{teamApps.length}</span>
+            </div>
           </div>
         </div>
       </div>

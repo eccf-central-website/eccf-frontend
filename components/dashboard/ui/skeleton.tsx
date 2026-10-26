@@ -7,7 +7,7 @@ function Skeleton({
   return (
     <div
       className={cn(
-        "motion-safe:animate-pulse rounded-md bg-muted/60 dark:bg-white/[0.05] border-0",
+        "rounded-lg border-0 bg-[linear-gradient(100deg,var(--sk-base)_0%,var(--sk-shine)_46%,var(--sk-base)_92%)] animate-shimmer",
         className
       )}
       {...props}

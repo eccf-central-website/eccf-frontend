@@ -1,8 +1,11 @@
 /**
  * Welfare — /dashboard/welfare
  *
- * Welfare desk feed of student assistance requests submitted via Connect page.
- * Authenticated Exco coordinators can review and mark requests resolved.
+ * Implements the welfare care queue:
+ * - One semantic h1: Welfare
+ * - Subtitle: Review requests, respond with care, and close the loop.
+ * - Date-only eyebrow.
+ * - Confidential student assistance requests reviewed with pastoral care.
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
@@ -10,7 +13,6 @@ import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
 import WelfareClient from '@/components/dashboard/welfare/WelfareClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listWelfare } from '@/lib/dashboard/data'
-import { HeartHandshake } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,18 +30,24 @@ export default async function WelfarePage() {
     )
   }
 
+  const todayStr = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+
   return (
     <PageContainer>
-      <div className="flex flex-col gap-2 border-b pb-5">
-        <div className="flex items-center gap-2.5 text-primary">
-          <HeartHandshake className="h-6 w-6 shrink-0" />
-          <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-            Welfare Desk
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Review confidential welfare and student care requests. Requester phone numbers are shown only
-          to CSGB and Welfare &amp; Medical coordinators.
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {todayStr}
+        </p>
+        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          Welfare
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Review requests, respond with care, and close the loop.
         </p>
       </div>
 

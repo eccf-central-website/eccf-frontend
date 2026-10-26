@@ -216,20 +216,17 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       {/* Media Management Desk Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-primary">
-            <Radio className="h-6 w-6 shrink-0" />
-            <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-              Sermon Vault &amp; Media Desk
-            </h2>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Curate fellowship messages, test audio streaming feeds, and monitor automated Spotify &amp; YouTube RSS ingestion.
+          <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Sermons
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Publish and manage service recordings.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <SyncSermonsButton variant="button" />
-          <Button onClick={handleOpenCreate} className="gap-1.5 shadow-sm">
+          <Button onClick={handleOpenCreate} className="min-h-[44px] px-4 rounded-xl gap-2 font-semibold text-xs sm:text-sm shadow-xs">
             <Plus className="h-4 w-4 shrink-0" />
             <span>New Sermon</span>
           </Button>

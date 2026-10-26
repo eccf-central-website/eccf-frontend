@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { Card, CardContent } from '@/components/dashboard/ui/card'
 import { ArrowDownRight, ArrowUpRight, Scale } from 'lucide-react'
 
 interface FinanceStatsCardsProps {
@@ -13,64 +12,68 @@ export default function FinanceStatsCards({ totalIncome, totalExpense }: Finance
   const netBalance = totalIncome - totalExpense
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <Card className="shadow-xs border-emerald-500/25 bg-emerald-500/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Total Inflow (Income)
-            </span>
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-500">
-              <ArrowDownRight className="h-5 w-5 shrink-0" />
-            </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      {/* Income */}
+      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Income
+          </span>
+          <div className="h-8 w-8 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <ArrowDownRight className="h-4 w-4 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              ₦{totalIncome.toLocaleString()}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
+            ₦{totalIncome.toLocaleString()}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground mt-1">Total recorded inflows</span>
+      </div>
 
-      <Card className="shadow-xs border-rose-500/25 bg-rose-500/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-              Total Outflow (Expense)
-            </span>
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-rose-500/15 flex items-center justify-center text-rose-500">
-              <ArrowUpRight className="h-5 w-5 shrink-0" />
-            </div>
+      {/* Expense */}
+      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Expenses
+          </span>
+          <div className="h-8 w-8 shrink-0 rounded-xl bg-muted/60 flex items-center justify-center text-muted-foreground">
+            <ArrowUpRight className="h-4 w-4 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-rose-600 dark:text-rose-400">
-              ₦{totalExpense.toLocaleString()}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
+            ₦{totalExpense.toLocaleString()}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground mt-1">Total recorded disbursements</span>
+      </div>
 
-      <Card className="shadow-xs border-sky-500/25 bg-sky-500/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">
-              Net Balance
-            </span>
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-sky-500/15 flex items-center justify-center text-sky-500">
-              <Scale className="h-5 w-5 shrink-0" />
-            </div>
+      {/* Net Position */}
+      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Net Position
+          </span>
+          <div className="h-8 w-8 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Scale className="h-4 w-4 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span
-              className={`text-2xl sm:text-3xl font-bold tracking-tight ${
-                netBalance >= 0 ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'
-              }`}
-            >
-              ₦{netBalance.toLocaleString()}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-3 flex items-baseline gap-2">
+          <span
+            className={`font-sans text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${
+              netBalance >= 0
+                ? 'text-foreground'
+                : 'text-destructive'
+            }`}
+          >
+            {netBalance < 0 ? '-' : ''}₦{Math.abs(netBalance).toLocaleString()}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground mt-1">
+          {netBalance >= 0 ? 'Surplus this period' : 'Deficit this period'}
+        </span>
+      </div>
     </div>
   )
 }

@@ -42,7 +42,7 @@ export default function FeedSkeleton({
 
       <ul className="space-y-3">
         {Array.from({ length: items }, (_, i) => (
-          <li key={i} className="rounded-xl border bg-card p-4 sm:p-5">
+          <li key={i} className="rounded-xl bg-card shadow-sm p-4 sm:p-5 border-0">
             <div className="flex items-start justify-between gap-4">
               <Skeleton className={cn('h-5 max-w-[60%]', TITLE_WIDTHS[i % TITLE_WIDTHS.length])} />
               <Skeleton className="h-3 w-16 shrink-0" />

@@ -59,25 +59,17 @@ export default function AttendanceHub({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-              {!canUsher && isTeamLead
-                ? `${effectiveTeam} Worker Attendance`
-                : isUshering && !session.role.includes('admin')
-                ? 'Ushering Attendance Console'
-                : 'Attendance & Headcount Hub'}
-            </h2>
+            <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Attendance
+            </h1>
             {isUshering && (
               <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                Ushering Unit
+                Ushering
               </Badge>
             )}
           </div>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            {!canUsher && isTeamLead
-              ? `Track and mark attendance for registered ${effectiveTeam} workers at unit meetings, rehearsals, and prayer vigils.`
-              : isUshering && !session.role.includes('admin')
-              ? 'Log general church service headcounts from ushers tally sheets. No names or ticking required.'
-              : 'Dual Attendance System: General service headcount console (Ushering) and team meeting worker rosters.'}
+            Record service headcounts and manage team rosters.
           </p>
         </div>
 
@@ -87,7 +79,7 @@ export default function AttendanceHub({
             <button
               type="button"
               onClick={() => setActiveTab('general')}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3.5 py-2 transition-all sm:flex-none ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg min-h-[44px] px-4 py-2 transition-all sm:flex-none ${
                 activeTab === 'general'
                   ? 'bg-background text-foreground shadow-sm font-bold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -103,7 +95,7 @@ export default function AttendanceHub({
             <button
               type="button"
               onClick={() => setActiveTab('team')}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3.5 py-2 transition-all sm:flex-none ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg min-h-[44px] px-4 py-2 transition-all sm:flex-none ${
                 activeTab === 'team'
                   ? 'bg-background text-foreground shadow-sm font-bold'
                   : 'text-muted-foreground hover:text-foreground'

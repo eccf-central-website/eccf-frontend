@@ -1,8 +1,11 @@
 /**
- * Prayer Requests — /dashboard/prayer-requests
+ * Prayer requests — /dashboard/prayer-requests
  *
- * Feed of intercessory prayer requests submitted through the Connect page.
- * Displays submitter names (or Anonymous badges), timestamps, and quick intercession copy actions.
+ * Implements the calm prayer feed:
+ * - One semantic h1: Prayer requests
+ * - Subtitle: A quiet feed for intercession and follow-up.
+ * - Date-only eyebrow.
+ * - Tonal card surfaces for intercessory requests without nested borders.
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
@@ -10,7 +13,8 @@ import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
 import PrayerRequestsFeed from '@/components/dashboard/prayer/PrayerRequestsFeed'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listPrayerRequests } from '@/lib/dashboard/data'
-import { HeartHandshake } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PrayerRequestsPage() {
   await requireSection('prayerRequests')
@@ -26,18 +30,24 @@ export default async function PrayerRequestsPage() {
     )
   }
 
+  const todayStr = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+
   return (
     <PageContainer>
-      {/* Page Header */}
-      <div className="flex flex-col gap-2 border-b pb-5">
-        <div className="flex items-center gap-2.5 text-primary">
-          <HeartHandshake className="h-6 w-6 shrink-0" />
-          <h2 className="font-serif text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-            Prayer Requests Feed
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Real-time feed of intercessory requests submitted through the Connect page with timestamps and submission details.
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {todayStr}
+        </p>
+        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          Prayer requests
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          A quiet feed for intercession and follow-up.
         </p>
       </div>
 
