@@ -26,6 +26,7 @@ import {
 import type { WorkerRow, ECCFSession } from '@/types'
 import type { WorkerAccess } from '@/lib/dashboard/access'
 import SendWorkerEmailDialog from './SendWorkerEmailDialog'
+import ExecutiveCsvImportDialog from './ExecutiveCsvImportDialog'
 import SendWorkerEmailCard from './SendWorkerEmailCard'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
@@ -415,6 +416,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
 
         {/* Quick Actions & Unified KPI Strip */}
         <div className="flex flex-wrap items-center gap-3">
+          {(isPresident || isAdmin) && <ExecutiveCsvImportDialog />}
           <Button
             type="button"
             onClick={() => {

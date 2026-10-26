@@ -29,11 +29,11 @@ function getRolePrimarySections(
   isPresident: boolean | undefined
 ): DashboardSection[] {
   if (isPresident) {
-    return ['overview', 'executives', 'workers', 'attendance']
+    return ['overview', 'workers', 'attendance', 'finance']
   }
   switch (role) {
     case 'admin':
-      return ['overview', 'workers', 'attendance', 'executives']
+      return ['overview', 'workers', 'attendance', 'finance']
     case 'team_lead':
       return ['overview', 'workers', 'attendance', 'firstTimers']
     case 'finance':

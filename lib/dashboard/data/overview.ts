@@ -15,7 +15,6 @@ import {
   listFirstTimers,
   listWelfare,
   listWorkers,
-  listPendingExecutiveApplications,
 } from './index'
 
 export const RECENT_LIMIT = 5
@@ -81,34 +80,7 @@ export async function getLiveAttentionItems(
   const items: AttentionQueueItem[] = []
   const isPresident = Boolean(session.access?.isPresident)
 
-  // 1. Executive Appointments (President or CSGB Admin)
-  if (canAccessSection(session.role, 'executives', session)) {
-    try {
-      const apps = await listPendingExecutiveApplications()
-      if (apps.length > 0) {
-        const names = apps.map((a) => a.fullName).filter(Boolean)
-        const summary =
-          names.length > 2
-            ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} others`
-            : names.join(' and ')
-
-        items.push({
-          id: 'executive-appointments',
-          title: `Onboard ${apps.length} executive appointee${apps.length > 1 ? 's' : ''}`,
-          detail: `${summary || 'Candidates'} awaiting appointment review and confirmation.`,
-          age: 'Pending',
-          urgency: 'high',
-          href: '/dashboard/executives',
-          actionLabel: isPresident ? 'Review appointments' : 'View candidates',
-          iconName: 'Shield',
-        })
-      }
-    } catch {
-      // Gracefully continue
-    }
-  }
-
-  // 2. Worker approvals (scoped to role's authority)
+  // 1. Worker approvals (scoped to role's authority)
   if (canAccessSection(session.role, 'workers', session)) {
     try {
       const workers = await listWorkers(session)

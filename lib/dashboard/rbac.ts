@@ -17,7 +17,6 @@ import type { WorkerRole } from '@/types'
 
 export type DashboardSection =
   | 'overview'
-  | 'executives'
   | 'workers'
   | 'attendance'
   | 'finance'
@@ -38,8 +37,6 @@ export type DashboardPermission =
   | 'announcements:manage'
   | 'workers:import'
   | 'workers:delete'
-  | 'executives:view'
-  | 'executives:approve'
   | 'settings:view'
   /** Overview cards that show money totals */
   | 'stats:finance'
@@ -137,7 +134,6 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
 /** URL path for each section. Intake paths match revalidatePath() calls in app/actions/intake-actions.ts. */
 export const SECTION_PATHS: Record<DashboardSection, string> = {
   overview: '/dashboard',
-  executives: '/dashboard/executives',
   workers: '/dashboard/workers',
   attendance: '/dashboard/attendance',
   finance: '/dashboard/finance',
@@ -151,7 +147,6 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   overview: ['admin', 'team_lead', 'finance', 'hall_rep'],
-  executives: ['admin'],
   workers: ['admin', 'team_lead', 'hall_rep'],
   attendance: ['admin', 'team_lead', 'hall_rep'],
   finance: ['admin', 'finance'],
@@ -174,8 +169,6 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'announcements:manage': ['admin', 'team_lead'],
   'workers:import': ['admin'],
   'workers:delete': ['admin'],
-  'executives:view': ['admin'],
-  'executives:approve': ['admin'],
   'settings:view': ['admin'],
   'stats:finance': ['admin', 'finance'],
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
@@ -430,16 +423,6 @@ export function canAccessSection(
 ): boolean {
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
-  if (section === 'executives') {
-    if (currentSession?.access && typeof currentSession.access.isPresident === 'boolean' && currentSession.access.isPresident) {
-      return true
-    }
-    if (role === 'admin' || Boolean(currentSession?.access?.isCSGB)) {
-      return true
-    }
-    const pos = (currentSession.excoPosition || '').toLowerCase()
-    return Boolean(pos.includes('president') || pos.includes('vice president') || pos.includes('general secretary'))
-  }
   if (section === 'settings') {
     return (
       role === 'admin' ||
