@@ -302,7 +302,7 @@ export default function SendWorkerEmailCard({
                 />
               </div>
 
-              <div className="max-h-36 overflow-y-auto rounded-lg bg-card divide-y divide-border/50">
+              <div className="max-h-36 overflow-y-auto rounded-lg bg-card divide-y-0 space-y-1">
                 {searchedWorkers.map((w) => {
                   const isSelected = selectedWorkerId === w._id
                   return (

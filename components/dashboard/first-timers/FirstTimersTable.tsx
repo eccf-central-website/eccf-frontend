@@ -230,7 +230,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       </div>
 
       {/* First-Timers Table (Desktop) */}
-      <div className="hidden rounded-2xl bg-card shadow-sm overflow-hidden sm:block">
+      <div className="hidden rounded-2xl bg-card shadow-sm overflow-hidden sm:block border-0">
 <Table aria-label="First-timers records">
           <TableHeader>
             <TableRow className="bg-muted/40">
@@ -345,7 +345,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
 
                           <a
                             href={`tel:${row.phoneNumber}`}
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                             title={`Call ${row.fullName}`}
                             aria-label={`Call ${row.fullName}`}
                           >
@@ -407,7 +407,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground border-y border-border/15 py-2.5">
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 my-1">
                   <div>
                     <span className="block text-[10px] uppercase font-semibold text-muted-foreground/80">Room</span>
                     <span className="text-foreground font-medium">{row.roomNumber || '—'}</span>
@@ -434,7 +434,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
 
                       <a
                         href={`tel:${row.phoneNumber}`}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background hover:bg-muted text-muted-foreground"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted/60 hover:bg-muted text-muted-foreground"
                         aria-label={`Call ${row.fullName}`}
                       >
                         <Phone className="h-4 w-4 shrink-0" />

@@ -17,7 +17,7 @@ function TransactionTypeBadge({ isIncome }: { isIncome: boolean }) {
       variant="outline"
       className={cn(
         'inline-flex items-center gap-1 font-semibold',
-        isIncome ? 'bg-success/10 text-success border-success/25' : 'bg-destructive/10 text-destructive border-destructive/25'
+        isIncome ? 'bg-success/10 text-success border-0' : 'bg-destructive/10 text-destructive border-0'
       )}
     >
       {isIncome ? (
@@ -106,7 +106,7 @@ export default function FinanceTable({ entries }: FinanceTableProps) {
                 <th scope="col" className="px-4 py-3 text-right">Amount (NGN)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="">
               {entries.map((entry) => {
                 const isIncome = entry.type === 'Income'
                 return (

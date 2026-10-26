@@ -42,7 +42,7 @@ export function AttentionQueueSkeleton() {
         <Skeleton className="h-3 w-28 rounded-md" />
       </div>
 
-      <div className="rounded-2xl bg-card shadow-sm border-0 divide-y divide-border/20 overflow-hidden">
+      <div className="rounded-2xl bg-card shadow-sm border-0 divide-y divide-border/10 overflow-hidden">
         {[0, 1].map((i) => (
           <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3">
             <div className="flex items-start gap-3.5">
@@ -114,7 +114,7 @@ export default async function AttentionQueue({
         </span>
       </div>
 
-      <div className="rounded-2xl bg-card shadow-sm border-0 divide-y divide-border/20 overflow-hidden">
+      <div className="rounded-2xl bg-card shadow-sm border-0 divide-y divide-border/10 overflow-hidden">
         {items.map((item) => {
           const Icon = ICON_MAP[item.iconName] || Users
 

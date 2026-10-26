@@ -387,7 +387,7 @@ export default function SendWorkerEmailDialog({
               </div>
 
               {/* Worker Dropdown / List */}
-              <div className="max-h-40 overflow-y-auto rounded-lg bg-card divide-y divide-border/50">
+              <div className="max-h-40 overflow-y-auto rounded-lg bg-card divide-y-0 space-y-1">
                 {searchedWorkers.length === 0 ? (
                   <div className="p-3 text-center text-xs text-muted-foreground">
                     No matching workers found.

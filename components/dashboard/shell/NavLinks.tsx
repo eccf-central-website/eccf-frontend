@@ -53,7 +53,7 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
             }}
             className={cn(
               'relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring/40',
               active
                 ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground font-semibold'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',

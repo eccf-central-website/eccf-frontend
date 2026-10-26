@@ -99,7 +99,7 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
                 aria-current={isSettingsActive ? 'page' : undefined}
                 className={cn(
                   'flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring/40',
                   isSettingsActive
                     ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
@@ -132,7 +132,7 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
               aria-expanded={!collapsed}
               className={cn(
                 'flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring/40',
                 collapsed && 'justify-center px-0'
               )}
             >

@@ -105,7 +105,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="shadow-xs border-border/80">
+        <Card className="shadow-sm border-0">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -223,7 +223,7 @@ export default function WelfareClient({ initialRequests }: WelfareClientProps) {
                       </span>
                     </div>
 
-                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3.5 rounded-xl border border-border/60">
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/40 p-3.5 rounded-xl border-0">
                       {req.requestDetails}
                     </p>
 

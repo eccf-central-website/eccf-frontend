@@ -477,7 +477,7 @@ export default function UsheringHeadcountView({
               </div>
 
               {showBreakdown && (
-                <div className="mt-4 space-y-3 pt-3 border-t">
+                <div className="mt-4 space-y-3 pt-3 border-t-0-0">
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="space-y-1">
                       <Label htmlFor="bc-men" className="text-xs text-muted-foreground">
@@ -841,7 +841,7 @@ export default function UsheringHeadcountView({
                   {row.notes && (
                     <p className="text-xs text-muted-foreground line-clamp-2">{row.notes}</p>
                   )}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground border-t pt-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2">
                     <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span className="truncate">{row.loggedBy?.fullName || 'Ushering Exco'}</span>
                   </div>

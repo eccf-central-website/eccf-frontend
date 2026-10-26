@@ -61,7 +61,7 @@ export default function StatCard({
       aria-labelledby={labelId}
       className={cn(
         'group relative flex flex-col justify-between rounded-2xl bg-card p-4 text-card-foreground shadow-sm sm:p-5 transition-all duration-150',
-        'border border-border/60 dark:border-white/[0.06] hover:shadow-md min-h-[136px] sm:min-h-[148px]',
+        'border-0 hover:shadow-md min-h-[136px] sm:min-h-[148px]',
         href && 'cursor-pointer hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         className
       )}

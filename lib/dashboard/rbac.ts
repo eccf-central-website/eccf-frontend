@@ -89,7 +89,18 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
     return rawPosition
   }
 
-  // 2. First title from approved positions in access
+  // 2. If the user's role is admin, prioritize CSGB titles so greeting matches elevated role
+  if (context.role === 'admin') {
+    if (context.access?.isPresident) return 'President'
+    if (context.access?.isVP) return 'Vice President'
+    const csgbTitle = context.access?.titles?.find(
+      (t) => !t.startsWith('Hall Pastor') && !t.startsWith('Lead (')
+    )
+    if (csgbTitle) return csgbTitle
+    return 'CSGB Executive'
+  }
+
+  // 3. First title from approved positions in access
   if (context.access?.titles && context.access.titles.length > 0) {
     const raw = context.access.titles[0].trim()
     const leadMatch = raw.match(/^Lead\s*\((.+)\)$/i)

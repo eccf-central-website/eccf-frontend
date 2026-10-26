@@ -820,7 +820,7 @@ export default function TeamMeetingAttendanceView({
                 </h4>
 
                 {activeRosterRecord.attendees && activeRosterRecord.attendees.length > 0 ? (
-                  <div className="divide-y divide-border/50 rounded-xl bg-card max-h-60 overflow-y-auto">
+                  <div className="rounded-xl bg-card max-h-60 overflow-y-auto">
                     {activeRosterRecord.attendees.map((worker, i) => (
                       <div key={worker._id || i} className="flex items-center justify-between p-2.5 text-xs">
                         <span className="font-medium text-foreground">{worker.fullName}</span>

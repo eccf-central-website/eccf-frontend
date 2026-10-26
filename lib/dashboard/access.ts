@@ -137,15 +137,17 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     const teamKey = teamObj?.key || undefined
     const teamName = teamObj?.name || undefined
 
-    const csgbObj = typeof pos.csgbRole === 'object' && pos.csgbRole !== null ? pos.csgbRole : undefined
-    const csgbRoleId = pos.csgbRoleId || csgbObj?._id || csgbObj?._ref || (typeof pos.csgbRole === 'string' ? pos.csgbRole : undefined)
-    const csgbRoleKey = pos.csgbRoleKey || csgbObj?.key || undefined
-    const office = pos.office || csgbObj?.title || undefined
-    const canApproveExecutives = Boolean(pos.canApproveExecutives || csgbObj?.canApproveExecutives)
+    const isCsgb = pos.kind === 'csgb'
+    const csgbObj = isCsgb && typeof pos.csgbRole === 'object' && pos.csgbRole !== null ? pos.csgbRole : undefined
+    const csgbRoleId = isCsgb ? (pos.csgbRoleId || csgbObj?._id || csgbObj?._ref || (typeof pos.csgbRole === 'string' ? pos.csgbRole : undefined)) : undefined
+    const csgbRoleKey = isCsgb ? (pos.csgbRoleKey || csgbObj?.key || undefined) : undefined
+    const office = isCsgb ? (pos.office || csgbObj?.title || undefined) : undefined
+    const canApproveExecutives = isCsgb && Boolean(pos.canApproveExecutives || csgbObj?.canApproveExecutives)
 
-    const hallObj = typeof pos.hallRef === 'object' && pos.hallRef !== null ? pos.hallRef : undefined
-    const hallId = pos.hallId || hallObj?._id || hallObj?._ref || (typeof pos.hallRef === 'string' ? pos.hallRef : undefined)
-    const hall = pos.hall || hallObj?.name || undefined
+    const isHall = pos.kind === 'hall'
+    const hallObj = isHall && typeof pos.hallRef === 'object' && pos.hallRef !== null ? pos.hallRef : undefined
+    const hallId = isHall ? (pos.hallId || hallObj?._id || hallObj?._ref || (typeof pos.hallRef === 'string' ? pos.hallRef : undefined)) : undefined
+    const hall = isHall ? (pos.hall || hallObj?.name || undefined) : undefined
 
     return {
       _key: pos._key,
@@ -199,13 +201,13 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
   const legacyExcoPosition = worker.excoPosition as string | undefined
 
   const isPresident =
-    Boolean(worker.canApproveExecutives) ||
     approvedPositions.some(
       (p) =>
-        p.canApproveExecutives ||
-        (p.kind === 'csgb' && (p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president'))
+        p.kind === 'csgb' &&
+        (p.canApproveExecutives || p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president')
     ) ||
-    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president'))
+    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president')) ||
+    (Boolean(worker.canApproveExecutives) && approvedPositions.length === 0)
 
   const isVP =
     approvedPositions.some((p) => p.kind === 'csgb' && (p.office?.toLowerCase().includes('vp') || p.office?.toLowerCase().includes('vice president'))) ||
@@ -241,10 +243,10 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     (legacyIsExcoApproved && (legacyRole === 'admin' || legacyExcoPosition?.toLowerCase().includes('president') || legacyExcoPosition?.toLowerCase().includes('general secretary') || legacyExcoPosition?.toLowerCase().includes('prayer')))
 
   const isFinance =
-    isCSGB ||
     approvedPositions.some(
       (p) => p.kind === 'team' && (p.teamKey === 'finance' || p.teamName?.toLowerCase().includes('finance'))
     ) ||
+    (isCSGB && (isPresident || isVP)) ||
     (legacyIsExcoApproved && (legacyRole === 'finance' || legacyExcoPosition?.toLowerCase().includes('financial')))
 
   const isWelfare =

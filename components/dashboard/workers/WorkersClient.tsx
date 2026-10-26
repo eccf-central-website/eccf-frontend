@@ -373,7 +373,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
             Email Workers
           </Button>
 
-          <div className="inline-flex items-center divide-x divide-border/40 rounded-xl bg-card shadow-sm border border-border/40 px-3 py-1.5">
+          <div className="inline-flex items-center divide-x divide-border/20 rounded-xl bg-card shadow-sm border-0 px-3 py-1.5">
             <div className="px-3 text-center">
               <span className="block text-[11px] font-medium uppercase text-muted-foreground">Total</span>
               <span className="font-sans font-bold text-base text-foreground">{scopedWorkers.length}</span>
@@ -612,7 +612,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
       {/* WORKERS TABLE                                                        */}
       {/* ==================================================================== */}
       {/* Mobile: Compact worker rows */}
-      <div className="md:hidden rounded-2xl bg-card shadow-sm divide-y divide-border/30 overflow-hidden">
+      <div className="md:hidden rounded-2xl bg-card shadow-sm divide-y-0 space-y-2 overflow-hidden">
         {filteredRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
             <Users className="h-8 w-8 text-muted-foreground/50 stroke-1 shrink-0" />

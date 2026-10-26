@@ -207,11 +207,11 @@ export default function ExecutiveApprovalsClient({
     return (
       <div
         key={itemKey}
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-xs hover:border-primary/40 transition-all duration-200"
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-card border-0 shadow-sm hover:shadow-md transition-all duration-200"
       >
         {/* Applicant Profile & Position Info */}
         <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden border border-border">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden border-0">
             {app.profileImageUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -270,7 +270,7 @@ export default function ExecutiveApprovalsClient({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto justify-end pt-2 sm:pt-0 border-0">
           <Button
             size="sm"
             disabled={isBusy}
@@ -304,7 +304,7 @@ export default function ExecutiveApprovalsClient({
       {/* ==================================================================== */}
       {/* PRESIDENTIAL CONSOLE HEADER                                          */}
       {/* ==================================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-0">
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-primary">
@@ -329,7 +329,7 @@ export default function ExecutiveApprovalsClient({
         {/* Category Stat Counters & Unified KPI Strip */}
         <div className="flex flex-wrap items-center gap-3">
           {canImport && <ExecutiveCsvImportDialog className="w-full sm:w-auto" />}
-          <div className="inline-flex items-center divide-x divide-border/40 rounded-xl bg-card shadow-sm border border-border/40 px-3 py-1.5">
+          <div className="inline-flex items-center divide-x divide-border/40 rounded-xl bg-card shadow-sm border-0 px-3 py-1.5">
             <div className="px-3 text-center">
               <span className="block text-[11px] font-medium uppercase text-muted-foreground">Total</span>
               <span className="font-sans font-bold text-base text-foreground">{applications.length}</span>
@@ -353,7 +353,7 @@ export default function ExecutiveApprovalsClient({
       {/* ==================================================================== */}
       {/* FILTER & SEARCH BAR                                                  */}
       {/* ==================================================================== */}
-      <div className="p-4 rounded-2xl bg-card border border-border shadow-xs space-y-3">
+      <div className="p-4 rounded-2xl bg-card border-0 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -382,7 +382,7 @@ export default function ExecutiveApprovalsClient({
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-0">
           <span className="text-xs font-mono font-bold text-muted-foreground uppercase mr-1">Category:</span>
           {[
             { id: 'all', label: `All Applications (${applications.length})`, icon: Shield },
@@ -415,7 +415,7 @@ export default function ExecutiveApprovalsClient({
       {/* APPLICATIONS LIST / GROUPED SECTIONS                                 */}
       {/* ==================================================================== */}
       {filteredApps.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
+        <div className="rounded-2xl border-0 bg-card p-12 text-center shadow-sm">
           <div className="mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-3">
             <CheckCircle2 className="h-7 w-7 shrink-0" />
           </div>

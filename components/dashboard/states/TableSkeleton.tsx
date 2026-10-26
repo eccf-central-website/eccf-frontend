@@ -56,7 +56,7 @@ export default function TableSkeleton({
           ))}
         </div>
         {rowKeys.map((r) => (
-          <div key={r} className="flex h-14 items-center gap-4 border-b border-border/20 px-4 last:border-0">
+          <div key={r} className="flex h-14 items-center gap-4 border-0 px-4">
             {colKeys.map((c) => (
               <div key={c} className="flex-1">
                 <Skeleton className={cn('h-4', CELL_WIDTHS[(r + c) % CELL_WIDTHS.length])} />

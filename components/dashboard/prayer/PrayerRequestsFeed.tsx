@@ -171,7 +171,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
     <div className="space-y-6">
       {/* Metric Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border bg-card shadow-sm">
+        <Card className="border-0 bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <MessageSquareText className="h-5 w-5 shrink-0" />
@@ -185,7 +185,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
           </CardContent>
         </Card>
 
-        <Card className="border bg-card shadow-sm">
+        <Card className="border-0 bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
               <Calendar className="h-5 w-5 shrink-0" />
@@ -199,7 +199,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
           </CardContent>
         </Card>
 
-        <Card className="border bg-card shadow-sm">
+        <Card className="border-0 bg-card shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Users className="h-5 w-5 shrink-0" />
@@ -221,7 +221,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border-0 bg-card p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -235,7 +235,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Filter Pills */}
-          <div className="flex items-center rounded-lg border bg-muted/40 p-1 text-xs">
+          <div className="flex items-center rounded-lg border-0 bg-muted/40 p-1 text-xs">
             <button
               type="button"
               onClick={() => setActiveTab('all')}
@@ -311,7 +311,7 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
 
       {/* Requests Feed Cards */}
       {filteredRequests.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card p-12 text-center shadow-sm">
+        <div className="rounded-xl border-0 bg-card p-12 text-center shadow-sm">
           <HeartHandshake className="mx-auto h-10 w-10 shrink-0 text-muted-foreground/50 mb-3" />
           <h4 className="font-semibold text-foreground text-sm">No prayer requests found</h4>
           <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
@@ -344,11 +344,11 @@ export default function PrayerRequestsFeed({ requests }: PrayerRequestsFeedProps
             return (
               <Card
                 key={item._id}
-                className="overflow-hidden border bg-card shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+                className="overflow-hidden border-0 bg-card shadow-sm transition-all hover:shadow-md"
               >
                 <div className="p-5 sm:p-6 space-y-4">
                   {/* Card Header: Submitter + Timestamp */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
                     <div className="flex items-center gap-3">
                       {isAnon ? (
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
