@@ -11,7 +11,6 @@ import {
   XCircle,
   ShieldCheck,
   Eye,
-  Sparkles,
   Users,
   Building,
   Loader2,
@@ -23,7 +22,6 @@ import type { WorkerRow, ECCFSession } from '@/types'
 import type { WorkerAccess } from '@/lib/dashboard/access'
 import SendWorkerEmailDialog from './SendWorkerEmailDialog'
 import SendWorkerEmailCard from './SendWorkerEmailCard'
-import { Badge } from '@/components/dashboard/ui/badge'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import {
@@ -611,8 +609,8 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
       {/* ==================================================================== */}
       {/* WORKERS TABLE                                                        */}
       {/* ==================================================================== */}
-      {/* Mobile: flat divided rows */}
-      <div className="md:hidden rounded-2xl bg-card shadow-sm divide-y divide-border/50">
+      {/* Mobile: Compact worker rows */}
+      <div className="md:hidden rounded-2xl bg-card shadow-sm divide-y divide-border/30 overflow-hidden">
         {filteredRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
             <Users className="h-8 w-8 text-muted-foreground/50 stroke-1 shrink-0" />
@@ -622,12 +620,15 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
         ) : (
           filteredRows.map((worker) => {
             const status = isWorkerPending(worker) ? 'pending' : worker.verificationStatus || 'verified'
-            const isBusy = processingId === worker._id
-            const allTeams = worker.teams && worker.teams.length > 0 ? worker.teams : [worker.team]
             return (
-              <div key={worker._id} className="flex flex-col gap-2.5 p-3.5">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-serif font-bold text-sm overflow-hidden">
+              <button
+                key={worker._id}
+                type="button"
+                onClick={() => setActiveWorkerDetail(worker)}
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors focus:outline-none focus:bg-muted/40 min-h-[52px]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-semibold text-xs overflow-hidden">
                     {worker.profileImageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={worker.profileImageUrl} alt={worker.fullName} className="h-full w-full object-cover" />
@@ -635,101 +636,38 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                       worker.fullName.slice(0, 2).toUpperCase()
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-sm text-foreground">{worker.fullName}</span>
-                      {worker.role && worker.role !== 'team_lead' && (
-                        <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-transparent">
-                          {worker.role}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                      {worker.excoPosition && <span className="text-xs font-semibold text-primary">{worker.excoPosition}</span>}
-                      {worker.birthDate && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                          <Calendar className="h-3 w-3 text-primary shrink-0" />
-                          {formatBirthday(worker.birthDate, worker.birthMonth, worker.birthDay)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      {allTeams.map((t, idx) => (
-                        <span
-                          key={t + idx}
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
-                            t === worker.leadingTeam
-                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 mr-1 text-amber-500 shrink-0" />}
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-foreground">
-                      <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span>{worker.hall || 'Not set'}</span>
-                    </div>
-                  </div>
-                  <div className="shrink-0">
-                    {status === 'verified' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" /> Verified
-                      </span>
-                    )}
-                    {status === 'pending' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        <Clock className="h-3 w-3 text-amber-500 shrink-0" /> Pending
-                      </span>
-                    )}
-                    {status === 'rejected' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                        <XCircle className="h-3 w-3 text-rose-500 shrink-0" /> Declined
-                      </span>
-                    )}
-                  </div>
+                  <span className="font-semibold text-sm text-foreground truncate">{worker.fullName}</span>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <Button size="sm" variant="ghost" onClick={() => setActiveWorkerDetail(worker)} className="h-8 px-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground text-xs font-semibold">
-                    <Eye className="h-3.5 w-3.5 mr-1 shrink-0" /> View
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setEmailPreselectedWorker(worker); setIsEmailDialogOpen(true) }} title={`Send email to ${worker.fullName}`} className="h-8 px-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 text-xs font-semibold">
-                    <Mail className="h-3.5 w-3.5 mr-1 shrink-0" /> Email
-                  </Button>
-                  {(status === 'pending' || isWorkerPending(worker)) && (isPresident || isAdmin || (isLeadOrAssistant && !isMedia)) && (
-                    <>
-                      <Button size="sm" disabled={isBusy} onClick={() => handleVerification(worker, 'approve')} className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs">
-                        {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /> : <UserCheck className="h-3.5 w-3.5 mr-1 shrink-0" />}
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" disabled={isBusy} onClick={() => handleVerification(worker, 'reject')} className="h-8 px-2.5 rounded-lg text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 text-xs font-bold">
-                        Decline
-                      </Button>
-                    </>
+                <div className="flex items-center gap-2 shrink-0">
+                  {status === 'verified' && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Verified
+                    </span>
                   )}
-                  {isAdmin && worker.requestedRole && !worker.isExcoApproved && (
-                    <Button size="sm" disabled={isBusy} onClick={() => handleExcoToggle(worker, true)} className="h-8 px-2.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs">
-                      <ShieldCheck className="h-3.5 w-3.5 mr-1 shrink-0" /> Grant Exco
-                    </Button>
+                  {status === 'pending' && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      Pending
+                    </span>
                   )}
+                  {status === 'rejected' && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                      Declined
+                    </span>
+                  )}
+                  <Eye className="h-4 w-4 text-muted-foreground/60 shrink-0" />
                 </div>
-              </div>
+              </button>
             )
           })
         )}
       </div>
 
-
-      <div className="hidden md:block rounded-2xl bg-card shadow-sm overflow-x-auto">
-      <Table aria-label="Workers records">
-        <TableHeader>
+      {/* Desktop: Compact Table */}
+      <div className="hidden md:block rounded-2xl bg-card shadow-sm overflow-hidden">
+        <Table aria-label="Workers records">
+          <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
-              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Member</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Team(s)</TableHead>
-              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Residence</TableHead>
+              <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Worker</TableHead>
               <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground">Status</TableHead>
               <TableHead className="font-mono text-xs font-bold uppercase text-muted-foreground text-right">Actions</TableHead>
             </TableRow>
@@ -737,7 +675,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-44 text-center">
+                <TableCell colSpan={3} className="h-44 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Users className="h-8 w-8 shrink-0 text-muted-foreground/50 stroke-1" />
                     <p className="font-semibold text-sm">No workers found matching your filter criteria.</p>
@@ -749,14 +687,17 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
               filteredRows.map((worker) => {
                 const status = isWorkerPending(worker) ? 'pending' : worker.verificationStatus || 'verified'
                 const isBusy = processingId === worker._id
-                const allTeams = worker.teams && worker.teams.length > 0 ? worker.teams : [worker.team]
 
                 return (
-                  <TableRow key={worker._id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow
+                    key={worker._id}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setActiveWorkerDetail(worker)}
+                  >
                     {/* Member Name + Photo */}
-                    <TableCell>
+                    <TableCell className="py-2.5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-serif font-bold text-sm overflow-hidden">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground font-semibold text-xs overflow-hidden">
                           {worker.profileImageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -768,93 +709,44 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                             worker.fullName.slice(0, 2).toUpperCase()
                           )}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm text-foreground">{worker.fullName}</span>
-                            {worker.role && worker.role !== 'team_lead' && (
-                              <Badge variant="outline" className="text-[10px] uppercase font-mono bg-primary/10 text-primary border-transparent">
-                                {worker.role}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {worker.excoPosition && (
-                              <span className="text-xs font-semibold text-primary">{worker.excoPosition}</span>
-                            )}
-                            {worker.birthDate && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                                <Calendar className="h-3 w-3 shrink-0 text-primary" />
-                                {formatBirthday(worker.birthDate, worker.birthMonth, worker.birthDay)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        <span className="font-semibold text-sm text-foreground">{worker.fullName}</span>
                       </div>
                     </TableCell>
 
-                    {/* Operational Teams */}
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-[240px]">
-                        {allTeams.map((t, idx) => (
-                          <span
-                            key={t + idx}
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
-                              t === worker.leadingTeam
-                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {t === worker.leadingTeam && <Sparkles className="h-2.5 w-2.5 shrink-0 mr-1 text-amber-500" />}
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </TableCell>
-
-                    {/* Hall */}
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                        <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span>{worker.hall || 'Not set'}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Verification Status */}
-                    <TableCell>
+                    {/* Status */}
+                    <TableCell className="py-2.5">
                       {status === 'verified' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
                           Verified
                         </span>
                       )}
                       {status === 'pending' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
-                          <Clock className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          <Clock className="h-3 w-3 text-amber-500 shrink-0" />
                           Pending Review
                         </span>
                       )}
                       {status === 'rejected' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                          <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                          <XCircle className="h-3 w-3 text-rose-500 shrink-0" />
                           Declined
                         </span>
                       )}
                     </TableCell>
 
                     {/* Actions */}
-                    <TableCell className="text-right">
+                    <TableCell className="text-right py-2.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Always allow viewing full profile & birthday details / downloading picture */}
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => setActiveWorkerDetail(worker)}
                           className="h-8 px-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground text-xs font-semibold"
                         >
-                          <Eye className="h-3.5 w-3.5 shrink-0 mr-1" /> View Profile
+                          <Eye className="h-3.5 w-3.5 shrink-0 mr-1" /> View Details
                         </Button>
 
-                        {/* Send direct email to worker */}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -868,7 +760,6 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                           <Mail className="h-3.5 w-3.5 shrink-0 mr-1" /> Email
                         </Button>
 
-                        {/* If Pending & Authorized: Show 1-Tap Approve/Decline */}
                         {(status === 'pending' || isWorkerPending(worker)) && (isPresident || isAdmin || (isLeadOrAssistant && !isMedia)) && (
                           <>
                             <Button
@@ -892,7 +783,6 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                           </>
                         )}
 
-                        {/* Admin Exco Approval Switch */}
                         {isAdmin && worker.requestedRole && !worker.isExcoApproved && (
                           <Button
                             size="sm"
