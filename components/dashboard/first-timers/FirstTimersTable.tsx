@@ -16,7 +16,6 @@ import {
   MessageCircle,
   Phone,
   Search,
-  Sparkles,
   UserCheck,
   UserPlus,
   Users,

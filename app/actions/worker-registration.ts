@@ -1112,6 +1112,8 @@ export interface WorkerSelfServiceDoc {
   phoneNumber?: string
   team?: string
   teams?: string[]
+  membershipTeamNames?: string[]
+  dereferencedTeamNames?: string[]
   memberships?: Array<Record<string, unknown>>
   positions?: Array<{
     kind?: 'csgb' | 'hall' | 'team'
@@ -1426,6 +1428,8 @@ export async function verifyWorkerOtp(
       phoneNumber?: string
       team?: string
       teams?: string[]
+      membershipTeamNames?: string[]
+      dereferencedTeamNames?: string[]
       memberships?: Array<Record<string, unknown>>
       positions?: Array<Record<string, unknown>>
       hall?: string
@@ -1510,7 +1514,7 @@ export async function verifyWorkerOtp(
         team: (() => {
           const list = (worker.dereferencedTeamNames || worker.membershipTeamNames || worker.teams || [])
             .concat(worker.team ? [worker.team] : [])
-            .filter((t) => Boolean(t && typeof t === 'string'));
+            .filter((t: unknown): t is string => Boolean(t && typeof t === 'string'));
           return list[0] || 'General';
         })(),
         teams: (() => {
@@ -1521,7 +1525,7 @@ export async function verifyWorkerOtp(
           if (list.length === 0 && worker.team) list.push(worker.team);
           if (list.length === 0 && Array.isArray(worker.memberships)) {
             for (const m of worker.memberships) {
-              const tName = m?.teamName || m?.team?.name;
+              const tName = (m as { teamName?: string; team?: { name?: string } })?.teamName || (m as { teamName?: string; team?: { name?: string } })?.team?.name;
               if (tName) list.push(tName);
             }
           }
@@ -1740,7 +1744,7 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
           if (list.length === 0 && worker.team) list.push(worker.team);
           if (list.length === 0 && Array.isArray(worker.memberships)) {
             for (const m of worker.memberships) {
-              const tName = m?.teamName || m?.team?.name;
+              const tName = (m as { teamName?: string; team?: { name?: string } })?.teamName || (m as { teamName?: string; team?: { name?: string } })?.team?.name;
               if (tName) list.push(tName);
             }
           }
@@ -2052,6 +2056,8 @@ export async function registerWorker(
       phoneNumber?: string
       team?: string
       teams?: string[]
+      membershipTeamNames?: string[]
+      dereferencedTeamNames?: string[]
       memberships?: Array<Record<string, unknown>>
       positions?: Array<Record<string, unknown>>
       hall?: string

@@ -7,7 +7,6 @@ import { ROLE_LABELS } from '@/lib/dashboard/rbac'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import { resolveResendFrom } from '@/lib/email/from'
 import {
-  emailButton,
   emailDetails,
   emailPlainBody,
   escapeHtml,
@@ -446,18 +445,13 @@ export async function sendWorkerEmailAction(
         },
       ]),
       emailPlainBody(message),
-      emailButton({
-        href: `${siteUrl}/dashboard`,
-        label: 'Open the Exco portal',
-        siteUrl,
-      }),
     ].join(''),
     signature: {
       name: senderPosition,
       role: senderTeam,
     },
     footerNote:
-      'This is an official communication dispatched from the ECCF Exco Dashboard to active fellowship workers.',
+      'This is an official communication dispatched from ECCF Leadership to active fellowship workers.',
   })
 
   // 5. Dispatch via Resend
@@ -467,7 +461,7 @@ export async function sendWorkerEmailAction(
   if (resend) {
     for (let i = 0; i < finalRecipients.length; i += BATCH_SIZE) {
       const chunk = finalRecipients.slice(i, i + BATCH_SIZE)
-      const fromAddress = resolveResendFrom('ECCF Exco Portal')
+      const fromAddress = resolveResendFrom('ECCF Leadership')
 
       const batchPayload = chunk.map((r) => ({
         from: fromAddress,
