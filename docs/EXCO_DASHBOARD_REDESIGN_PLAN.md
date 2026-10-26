@@ -7,6 +7,18 @@
 
 > This document is a design and implementation plan, not the implementation. It assumes the existing data layer, auth, permissions, routes, and server actions stay intact. The job is to make the same system easier to read, prioritise, and act on.
 
+### Contents
+
+| Direction | Delivery |
+|---|---|
+| 1. [Executive summary](#1-executive-summary) | 8. [Mobile and responsive behaviour](#8-mobile-and-responsive-behaviour) |
+| 2. [Objectives and success measures](#2-objectives-non-goals-and-success-measures) | 9. [Accessibility](#9-accessibility-and-inclusive-design) |
+| 3. [Current-state audit](#3-current-state-audit) | 10. [Loading and trust](#10-loading-empty-error-and-trust) |
+| 4. [Design direction](#4-design-direction) | 11. [Content and tone](#11-content-and-tone) |
+| 5. [Design system](#5-design-system) | 12. [Implementation roadmap](#12-implementation-roadmap) |
+| 6. [Navigation and IA](#6-information-architecture-and-navigation) | 13. [Measurement plan](#13-measurement-plan) |
+| 7. [Page blueprints](#7-page-blueprints) | 14. [Open decisions](#14-open-decisions) |
+
 ---
 
 ## 1. Executive summary
@@ -276,7 +288,21 @@ A cockpit is not a wall of gauges. It is a small number of calibrated signals, a
 | Repeated “View …” links | One stretched card link + section-level “View all” |
 | Colour as decoration | Colour as meaning; status always in words |
 
-### 4.4 Density strategy
+### 4.4 Visual concept
+
+A static overview concept is included to make the direction concrete. It is a design artifact, not production code.
+
+- [`docs/design/exco-cockpit-concept.html`](design/exco-cockpit-concept.html)
+- [`docs/design/exco-cockpit-concept-desktop.png`](design/exco-cockpit-concept-desktop.png)
+- [`docs/design/exco-cockpit-concept-mobile.png`](design/exco-cockpit-concept-mobile.png)
+
+![Desktop overview concept](design/exco-cockpit-concept-desktop.png)
+
+![Mobile overview concept](design/exco-cockpit-concept-mobile.png)
+
+The concept demonstrates the attention queue, the four-metric pulse, the grouped navigation, the single page title, and the restrained status treatment. It is intentionally a single page; the page blueprints in §7 carry the same language into the other nine sections.
+
+### 4.5 Density strategy
 
 Do not force one density on everyone.
 
@@ -358,7 +384,7 @@ The current fonts are a strength. The problem is role drift: Belleza appears at 
 
 **Rules**
 
-- **Minimum 13px.** Remove every `text-[10px]` and `text-[11px]`. `text-xs` is allowed only for true metadata, never for body, labels, or units.
+- **13px floor for content.** Remove every `text-[10px]` and `text-[11px]`. Reserve 12px for uppercase group labels and mobile tab labels; never use it for body, metadata, units, badges, or controls.
 - **One display face, one job.** Belleza is for page titles and a single welcome moment. It is never used for section headings, table headers, or card titles.
 - **Belleza at 400 only.** The family has no true bold; synthetic bold makes it smeared at small sizes.
 - **Currency uses Work Sans**, not Geist Mono. The naira glyph is cramped in the mono face. Use `font-variant-numeric: tabular-nums`.
@@ -662,7 +688,7 @@ Each blueprint states the current problem, the redesign, and the acceptance bar.
 - Primary: **Record attendance** opens a right drawer (desktop) or full-screen sheet (mobile).
   - Fields: service date, service type, headcount, optional roster/notes.
   - Sticky footer: Cancel / Save. 44px controls. Date picker with Today / Last Sunday / Last Wednesday as 44px chips.
-  - Save returns to the history with a success toast and an optimistic row highlight.
+  - Save returns to the history with a success toast and a brief success highlight after the server confirms.
 - KPI strip: Services counted 10 · Sunday average 334 · Last service 320. Remove “Highest peak” unless it drives a decision; put the trend in the history header.
 - Tabs: **General headcount** · **Team rosters**.
 - History: table with Date (24 Oct 2026), Service, Headcount, Recorded by, Actions. Optional 8-week CSS bar strip above the table, no chart library.
@@ -780,7 +806,7 @@ Each blueprint states the current problem, the redesign, and the acceptance bar.
 
 - Title: **Announcements**. Subtitle: “Plan, schedule, and broadcast notices.”
 - Primary: **New announcement**.
-- Tabs/segmented control: **All** · **Live** · **Drafts** · **Pinned** (44px).
+- Status filters: **All** · **Live** · **Drafts**; pinned items sort first, with a **Pinned** filter chip when needed (44px).
 - Content: a list/table, not a three-card grid.
   - Desktop rows: Status (Live/Draft/Pinned), Title, Category, Date/time, Venue, Broadcast state, Actions.
   - Pinned rows first with a pin icon.
@@ -830,7 +856,7 @@ Each blueprint states the current problem, the redesign, and the acceptance bar.
 - Title: **Executives**. Subtitle: “Appointments and leadership roster.”
 - Header actions: **Import from spreadsheet** (secondary), **Add appointment** (primary).
 - KPI strip: Total 6 · CSGB 2 · Halls 2 · Teams 2. One neutral strip.
-- Tabs: **Pending (6)** · **CSGB offices** · **Hall pastors** · **Team leads** · **All**. Counts in labels.
+- Tabs: **Pending (6)** · **Appointed** · **All**. Category filters: CSGB offices · Hall pastors · Team leads. Counts in labels.
 - Pending list rows: initials avatar, name, requested role, scope (hall/team), submitted date, status. Primary **Review**; overflow for reject.
 - Review drawer: full request, role scope, permission effect (“Approving grants verified membership on Team X”), note, Approve/Reject. Confirmation required.
 - Current roster: same row anatomy, status “Appointed”, actions in overflow.
@@ -1098,7 +1124,7 @@ Ship behind a simple route-level flag if needed (`NEXT_PUBLIC_DASHBOARD_V2`), bu
 2. `grep` returns zero dashboard hex colours, zero `text-[10px]`/`text-[11px]`, zero hardcoded `emerald`/`amber`/`rose`/`sky` utilities.
 3. One `h1` per page; heading outline is logical.
 4. No horizontal overflow at 320px.
-5. All primary/nav controls ≥44px; all text ≥13px.
+5. All primary/nav controls ≥44px; all readable content ≥13px; 12px only for uppercase group labels and mobile tab labels.
 6. axe-core: zero critical/serious in dark and light.
 7. Keyboard-only completion of the five jobs.
 8. VoiceOver/NVDA spot check on overview, workers, attendance, finance.
@@ -1262,4 +1288,4 @@ No horizontal overflow was detected on the six pages tested. Preserve this. The 
 
 ---
 
-*Prepared from a live source and visual audit of the dashboard on 26 October 2026. The next step is design sign-off on the direction and the five open decisions in §14, followed by Release 1.*
+*Prepared from a live source and visual audit of the dashboard on 26 October 2026. The next step is design sign-off on the direction and the ten open decisions in §14, followed by Release 1.*

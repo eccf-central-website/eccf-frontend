@@ -50,7 +50,7 @@ export const DASHBOARD_WORKERS_QUERY = `
     email,
     "team": coalesce(memberships[0].team->name, team->name, team),
     "teams": coalesce(memberships[].team->name, teams[]->name, teams, [coalesce(team->name, team)]),
-    hall,
+    "hall": coalesce(hallRef->name, hall),
     "role": coalesce(
       select(
         count(positions[kind == "csgb" && status == "approved"]) > 0 => "admin",
@@ -64,7 +64,7 @@ export const DASHBOARD_WORKERS_QUERY = `
       positions[status == "approved"][0].csgbRole->title,
       positions[status == "approved"][0].office,
       select(
-        positions[status == "approved"][0].kind == "hall" => positions[status == "approved"][0].hall + " Pastor",
+        positions[status == "approved"][0].kind == "hall" => coalesce(positions[status == "approved"][0].hallRef->name, positions[status == "approved"][0].hall) + " Pastor",
         positions[status == "approved"][0].kind == "team" => positions[status == "approved"][0].team->name + " Lead",
         excoPosition
       )
@@ -93,7 +93,7 @@ export const DASHBOARD_WORKERS_QUERY = `
       "csgbRoleId": coalesce(csgbRole._ref, csgbRole->_id),
       "csgbRoleKey": coalesce(csgbRole->slug.current, csgbRole->key),
       "canApproveExecutives": coalesce(csgbRole->canApproveExecutives, false),
-      hall,
+      "hall": coalesce(hallRef->name, hall),
       rank,
       status,
       "teamId": coalesce(team._ref, team->_id),
@@ -122,7 +122,7 @@ export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
     _id,
     fullName,
     email,
-    hall,
+    "hall": coalesce(hallRef->name, hall),
     profileImageUrl,
     createdAt,
     _createdAt,
@@ -133,7 +133,7 @@ export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
       "csgbRoleId": coalesce(csgbRole._ref, csgbRole->_id),
       "csgbRoleKey": coalesce(csgbRole->slug.current, csgbRole->key),
       "canApproveExecutives": coalesce(csgbRole->canApproveExecutives, false),
-      hall,
+      "hall": coalesce(hallRef->name, hall),
       rank,
       status,
       "teamId": coalesce(team._ref, team->_id),

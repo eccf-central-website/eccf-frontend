@@ -4,6 +4,7 @@ import {
   getPendingWorkerOtpChallenge,
 } from '@/app/actions/worker-registration'
 import { getTeamUnitOptions } from '@/lib/teams'
+import { getHallNames } from '@/lib/halls'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -26,10 +27,11 @@ interface RegisterPageProps {
 }
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
-  const [userContext, teamOptions, pendingChallenge] = await Promise.all([
+  const [userContext, teamOptions, pendingChallenge, hallOptions] = await Promise.all([
     getSignedInUserContext(),
     getTeamUnitOptions(),
     getPendingWorkerOtpChallenge(),
+    getHallNames(),
   ])
 
   return (
@@ -45,6 +47,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           signedInWorker={userContext.worker}
           signedInNeedsVerification={userContext.needsVerification}
           teamOptions={teamOptions}
+          hallOptions={hallOptions}
           selfServiceToken={searchParams?.selfServiceToken || ''}
           initialPendingChallenge={pendingChallenge}
         />

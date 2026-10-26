@@ -39,7 +39,11 @@ const TABS: {
   },
 ]
 
-export default function ConnectHub() {
+interface ConnectHubProps {
+  hallOptions?: string[]
+}
+
+export default function ConnectHub({ hallOptions }: ConnectHubProps = {}) {
   const searchParams = useSearchParams()
   const initialParam = searchParams?.get('tab') as TabType | null
   const defaultTab: TabType =
@@ -108,7 +112,7 @@ export default function ConnectHub() {
 
           {/* Form */}
           <div className="w-full">
-            {activeTab === 'first-timer' && <FirstTimerForm />}
+            {activeTab === 'first-timer' && <FirstTimerForm hallOptions={hallOptions} />}
             {activeTab === 'welfare' && <WelfareForm />}
             {activeTab === 'prayer' && <PrayerRequestForm />}
           </div>

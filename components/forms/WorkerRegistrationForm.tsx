@@ -109,6 +109,7 @@ export interface WorkerRegistrationFormProps {
   signedInNeedsVerification?: boolean;
   /** Published teams from Sanity. Falls back to the static list when omitted. */
   teamOptions?: TeamUnitOption[];
+  hallOptions?: string[];
   selfServiceToken?: string;
   initialPendingChallenge?: PendingWorkerOtpChallenge;
 }
@@ -123,6 +124,7 @@ export function WorkerRegistrationForm({
   signedInWorker,
   signedInNeedsVerification = false,
   teamOptions,
+  hallOptions,
   selfServiceToken: propSelfServiceToken = '',
   initialPendingChallenge,
 }: WorkerRegistrationFormProps) {
@@ -134,6 +136,11 @@ export function WorkerRegistrationForm({
         : '')
   );
   const { signOut } = useClerk();
+
+  const resolvedHallOptions =
+    hallOptions && hallOptions.length > 0
+      ? hallOptions
+      : HALLS_OF_RESIDENCE;
 
   const resolvedTeamOptions =
     teamOptions && teamOptions.length > 0
@@ -2008,7 +2015,7 @@ export function WorkerRegistrationForm({
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   >
                     <option value="">Select Hall of Residence</option>
-                    {HALLS_OF_RESIDENCE.map((h) => (
+                    {resolvedHallOptions.map((h) => (
                       <option key={h} value={h}>
                         {h}
                       </option>
@@ -2706,7 +2713,7 @@ export function WorkerRegistrationForm({
                     className="flex h-16 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-semibold text-slate-900 shadow-sm hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0077cc]/20 focus:border-[#0077cc] transition-all"
                   >
                     <option value="">Select Hall</option>
-                    {HALLS_OF_RESIDENCE.map((h) => (
+                    {resolvedHallOptions.map((h) => (
                       <option key={h} value={h}>
                         {h}
                       </option>

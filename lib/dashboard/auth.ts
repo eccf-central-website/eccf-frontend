@@ -169,14 +169,14 @@ export async function getSession(): Promise<DashboardSession | null> {
         isExcoApproved,
         canApproveExecutives,
         "team": coalesce(team->name, team),
-        hall,
+        "hall": coalesce(hallRef->name, hall),
         "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         positions[] {
           kind,
           "team": team->{ _id, name, "key": coalesce(key, slug.current) },
           "csgbRole": csgbRole->{ _id, title, "key": coalesce(slug.current, key), canApproveExecutives },
-          hall,
+          "hall": coalesce(hallRef->name, hall),
           "office": coalesce(csgbRole->title, office),
           rank,
           status

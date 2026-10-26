@@ -125,11 +125,15 @@ interface WorkersClientProps {
   rows: WorkerRow[]
   session: ECCFSession & { access?: WorkerAccess }
   teamOptions: TeamUnitOption[]
+  hallOptions?: string[]
 }
 
 type StatusFilter = 'all' | 'pending' | 'verified' | 'rejected'
 
-export default function WorkersClient({ rows: initialRows, session, teamOptions }: WorkersClientProps) {
+const DEFAULT_HALLS = ['Hall 1', 'Hall 2', 'Hall 3', 'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8']
+
+export default function WorkersClient({ rows: initialRows, session, teamOptions, hallOptions }: WorkersClientProps) {
+  const halls = hallOptions && hallOptions.length > 0 ? hallOptions : DEFAULT_HALLS
   const teamNames = teamOptions.map((option) => option.name)
   const [rows, setRows] = useState<WorkerRow[]>(initialRows)
   const [searchQuery, setSearchQuery] = useState('')
@@ -550,7 +554,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Halls</SelectItem>
-                  {['Hall 1', 'Hall 2', 'Hall 3', 'Hall 4', 'Hall 5', 'Hall 6', 'Hall 7', 'Hall 8'].map((h) => (
+                  {halls.map((h) => (
                     <SelectItem key={h} value={h}>
                       {h}
                     </SelectItem>

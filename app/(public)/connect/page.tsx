@@ -1,11 +1,16 @@
 import { Suspense } from 'react'
 import ConnectHub from '@/components/connect/ConnectHub'
+import { getHallNames } from '@/lib/halls'
 
-export default function ConnectPage() {
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+export default async function ConnectPage() {
+  const hallOptions = await getHallNames()
+
   return (
     <div className="min-h-screen bg-[#fafaf9] text-slate-950 pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
       <div className="max-w-4xl mx-auto px-6 sm:px-10 lg:px-12">
-        
         {/* Page Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em] text-[#0077cc] font-mono block mb-2.5">
@@ -21,7 +26,7 @@ export default function ConnectPage() {
 
         {/* Interactive Segmented Tabs Hub */}
         <Suspense fallback={<div className="h-96 w-full animate-pulse bg-white rounded-3xl" />}>
-          <ConnectHub />
+          <ConnectHub hallOptions={hallOptions} />
         </Suspense>
       </div>
     </div>

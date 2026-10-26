@@ -24,6 +24,8 @@ export interface WorkerPosition {
   csgbRoleId?: string
   csgbRoleKey?: string
   canApproveExecutives?: boolean
+  hallRef?: { _ref?: string; _id?: string; name?: string } | string
+  hallId?: string
   hall?: string
   office?: string
   rank?: 'lead' | 'assistant'
@@ -74,6 +76,8 @@ export interface RawWorkerPosition {
   csgbRoleId?: string
   csgbRoleKey?: string
   canApproveExecutives?: boolean
+  hallRef?: { _ref?: string; _id?: string; name?: string } | string
+  hallId?: string
   hall?: string
   office?: string
   rank?: 'lead' | 'assistant'
@@ -139,6 +143,10 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     const office = pos.office || csgbObj?.title || undefined
     const canApproveExecutives = Boolean(pos.canApproveExecutives || csgbObj?.canApproveExecutives)
 
+    const hallObj = typeof pos.hallRef === 'object' && pos.hallRef !== null ? pos.hallRef : undefined
+    const hallId = pos.hallId || hallObj?._id || hallObj?._ref || (typeof pos.hallRef === 'string' ? pos.hallRef : undefined)
+    const hall = pos.hall || hallObj?.name || undefined
+
     return {
       _key: pos._key,
       kind: pos.kind,
@@ -150,7 +158,9 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       csgbRoleId,
       csgbRoleKey,
       canApproveExecutives,
-      hall: pos.hall,
+      hallRef: pos.hallRef,
+      hallId,
+      hall,
       office,
       rank: pos.rank || 'lead',
       status: pos.status || 'pending',

@@ -4,7 +4,23 @@ import { useState } from 'react'
 import { submitFirstTimer } from '@/app/actions/intake-actions'
 import TurnstileWidget from '@/components/forms/TurnstileWidget'
 
-export function FirstTimerForm() {
+const DEFAULT_HALLS = [
+  'Hall 1',
+  'Hall 2',
+  'Hall 3',
+  'Hall 4',
+  'Hall 5',
+  'Hall 6',
+  'Hall 7',
+  'Hall 8',
+]
+
+interface FirstTimerFormProps {
+  hallOptions?: string[]
+}
+
+export function FirstTimerForm({ hallOptions }: FirstTimerFormProps = {}) {
+  const halls = hallOptions && hallOptions.length > 0 ? hallOptions : DEFAULT_HALLS
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<{ success?: boolean; error?: string } | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -59,10 +75,10 @@ export function FirstTimerForm() {
       )}
 
       <form id="first-timer-form" action={handleSubmit} onInput={handleFormInput} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-2 gap-3.5">
           <div>
             <label htmlFor="firstName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
-              First Name *
+              First Name
             </label>
             <input
               id="firstName"
@@ -70,12 +86,12 @@ export function FirstTimerForm() {
               type="text"
               required
               className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-              placeholder="Michael"
+              placeholder="e.g. John"
             />
           </div>
           <div>
             <label htmlFor="lastName" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
-              Last Name *
+              Last Name
             </label>
             <input
               id="lastName"
@@ -83,14 +99,27 @@ export function FirstTimerForm() {
               type="text"
               required
               className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-              placeholder="Akan"
+              placeholder="e.g. Doe"
             />
           </div>
         </div>
 
         <div>
+          <label htmlFor="email" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
+            Email Address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
+            placeholder="john.doe@example.com"
+          />
+        </div>
+
+        <div>
           <label htmlFor="phoneNumber" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
-            Phone Number
+            Phone Number <span className="text-red-500">*</span>
           </label>
           <input
             id="phoneNumber"
@@ -107,13 +136,19 @@ export function FirstTimerForm() {
             <label htmlFor="hall" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
               Hostel / Hall
             </label>
-            <input
+            <select
               id="hall"
               name="hall"
-              type="text"
-              className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-              placeholder="Hall 1"
-            />
+              defaultValue=""
+              className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
+            >
+              <option value="">Select Hall / Hostel</option>
+              {halls.map((h) => (
+                <option key={h} value={h}>
+                  {h}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label htmlFor="roomNumber" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
@@ -138,33 +173,38 @@ export function FirstTimerForm() {
             name="department"
             type="text"
             className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-            placeholder="Computer Science"
+            placeholder="e.g. Computer Science"
           />
         </div>
 
         <div>
-          <label htmlFor="level" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
-            Level
+          <label htmlFor="invitedBy" className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-700">
+            Who Invited You?
           </label>
           <input
-            id="level"
-            name="level"
+            id="invitedBy"
+            name="invitedBy"
             type="text"
             className="flex h-11 sm:h-12 w-full rounded-xl border border-stone-200 bg-[#fafaf9] px-3.5 py-2 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] transition-all disabled:opacity-50"
-            placeholder="100L"
+            placeholder="Friend or fellowship member name"
           />
         </div>
 
         {turnstileArmed && (
-          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileResetSignal} />
+          <div className="pt-2 flex justify-center">
+            <TurnstileWidget
+              onToken={(token) => setTurnstileToken(token)}
+              resetSignal={turnstileResetSignal}
+            />
+          </div>
         )}
 
         <button
           type="submit"
-          disabled={loading}
-          className="flex h-12 w-full items-center justify-center rounded-full bg-[#0095ff] px-6 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-sky-500 shadow-md shadow-sky-500/20 disabled:pointer-events-none disabled:opacity-50 mt-6 active:scale-[0.99]"
+          disabled={loading || (turnstileArmed && !turnstileToken)}
+          className="w-full mt-2 flex items-center justify-center h-12 sm:h-14 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-bold text-sm sm:text-base shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Submitting...' : 'Connect With Us'}
+          {loading ? 'Submitting Details...' : 'Connect With Us'}
         </button>
       </form>
     </div>
