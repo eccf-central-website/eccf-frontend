@@ -2138,7 +2138,7 @@ export function WorkerRegistrationForm({
                 </h2>
                 <p className="text-sm text-slate-600">
                   Keep your existing photo on file or upload a fresh celebratory
-                  picture.
+                  picture. You can change it anytime.
                 </p>
               </div>
 
@@ -2186,6 +2186,9 @@ export function WorkerRegistrationForm({
                     onChange={handleImageChange}
                     className="hidden"
                   />
+                  <p className="text-xs text-slate-500 pt-1">
+                    Note: You can change or update your picture anytime from your dashboard.
+                  </p>
                 </div>
               </div>
 
@@ -2875,7 +2878,7 @@ export function WorkerRegistrationForm({
                 </h2>
                 <p className="text-sm text-slate-600">
                   A clear celebratory photo we can celebrate you with on your
-                  birthday.
+                  birthday. You can change it anytime.
                 </p>
               </div>
 
@@ -2909,6 +2912,9 @@ export function WorkerRegistrationForm({
                     className="hidden"
                   />
                 </div>
+                <p className="text-xs text-slate-500">
+                  Note: You can change or update your picture anytime from your dashboard.
+                </p>
               </div>
 
               <div className="flex gap-3 pt-2">
