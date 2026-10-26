@@ -371,6 +371,9 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
 export async function listWelfare(
   session?: ECCFSession & { access?: { isWelfare?: boolean; isCSGB?: boolean } }
 ): Promise<WelfareRequestRow[]> {
+  if (session && !canAccessSection(session.role, 'welfare', session)) {
+    return []
+  }
   const rows: WelfareRequestRow[] =
     dataSource() === 'mock'
       ? await fromMock<WelfareRequestRow[]>(MOCK_WELFARE, [])
@@ -391,7 +394,10 @@ export async function listWelfare(
   })
 }
 
-export async function listPrayerRequests(): Promise<PrayerRequest[]> {
+export async function listPrayerRequests(session?: ECCFSession): Promise<PrayerRequest[]> {
+  if (session && !canAccessSection(session.role, 'prayerRequests', session)) {
+    return []
+  }
   const rows =
     dataSource() === 'mock'
       ? await fromMock(MOCK_PRAYER_REQUESTS, [])

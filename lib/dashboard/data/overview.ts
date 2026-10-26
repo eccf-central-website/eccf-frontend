@@ -59,7 +59,7 @@ export async function getRecentFirstTimers(session: ECCFSession): Promise<Recent
 
 /** Latest welfare requests, newest first; null when the role can't open the feed. */
 export async function getRecentWelfare(session: ECCFSession): Promise<RecentWelfareRequest[] | null> {
-  if (!canAccessSection(session.role, 'welfare')) return null
+  if (!canAccessSection(session.role, 'welfare', session)) return null
   const rows = await listWelfare(session)
   return rows
     .slice(0, RECENT_LIMIT)

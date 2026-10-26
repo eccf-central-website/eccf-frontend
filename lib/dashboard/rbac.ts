@@ -158,8 +158,8 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   attendance: ['admin', 'team_lead', 'hall_rep'],
   finance: ['admin', 'finance'],
   firstTimers: ['admin', 'hall_rep'],
-  welfare: ['admin', 'team_lead', 'hall_rep'],
-  prayerRequests: ['admin', 'team_lead', 'hall_rep'],
+  welfare: ['admin'],
+  prayerRequests: ['admin'],
   announcements: ['admin', 'team_lead'],
   sermons: ['admin', 'team_lead'],
   settings: ['admin'],
@@ -168,7 +168,7 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'attendance:create': ['admin', 'team_lead', 'hall_rep'],
   'finance:create': ['admin', 'finance'],
-  'welfare:resolve': ['admin', 'team_lead', 'hall_rep'],
+  'welfare:resolve': ['admin', 'team_lead'],
   // ADR-002: manual sync & management is strictly for media team leaders
   'sermons:sync': ['admin', 'team_lead'],
   'sermons:manage': ['admin', 'team_lead'],
@@ -180,6 +180,77 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'settings:view': ['admin'],
   'stats:finance': ['admin', 'finance'],
   'stats:people': ['admin', 'team_lead', 'hall_rep'],
+}
+
+export function isPrayerTeamAdmin(
+  session?: {
+    role?: WorkerRole
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+    access?: {
+      isCSGB?: boolean
+      isPresident?: boolean
+      isVP?: boolean
+      isPrayerCoordinator?: boolean
+      isChaplain?: boolean
+      leadsTeamKeys?: string[]
+      [key: string]: unknown
+    }
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.access?.isCSGB || session.access?.isPresident || session.access?.isVP) return true
+  if (session.role === 'admin') return true
+  if (session.access?.isChaplain) return true
+  const pos = (session.excoPosition || '').toLowerCase()
+  if (pos.includes('chaplain')) return true
+
+  if (session.access?.isPrayerCoordinator) return true
+  if (session.access?.leadsTeamKeys?.some((k) => k.toLowerCase().includes('prayer'))) return true
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  if (leadingTeam.includes('prayer')) return true
+  if (pos.includes('prayer') && (pos.includes('lead') || pos.includes('coordinator') || pos.includes('head') || pos.includes('admin'))) return true
+
+  return isCSGBMember(session)
+}
+
+export function isWelfareTeamMember(
+  session?: {
+    role?: WorkerRole
+    team?: string
+    teams?: string[]
+    leadingTeam?: string
+    excoPosition?: string
+    access?: {
+      isWelfare?: boolean
+      isCSGB?: boolean
+      isPresident?: boolean
+      isVP?: boolean
+      leadsTeamKeys?: string[]
+      [key: string]: unknown
+    }
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.access?.isWelfare) return true
+  if (session.access?.isCSGB || session.access?.isPresident || session.access?.isVP) return true
+  if (session.role === 'admin') return true
+
+  if (session.access?.leadsTeamKeys?.some((k) => k.toLowerCase().includes('welfare'))) return true
+
+  const team = (session.team || '').toLowerCase()
+  const leadingTeam = (session.leadingTeam || '').toLowerCase()
+  const pos = (session.excoPosition || '').toLowerCase()
+  const hasWelfareInTeams = session.teams?.some((t) => t.toLowerCase().includes('welfare')) ?? false
+
+  return (
+    team.includes('welfare') ||
+    leadingTeam.includes('welfare') ||
+    pos.includes('welfare') ||
+    hasWelfareInTeams
+  )
 }
 
 export function isCSGBMember(
@@ -219,19 +290,16 @@ export function isCSGBMember(
  */
 export function canViewWelfareContact(
   session?: {
-    role?: string
+    role?: WorkerRole
     team?: string
     teams?: string[]
     leadingTeam?: string
     excoPosition?: string
-    access?: { isWelfare?: boolean; isCSGB?: boolean }
+    access?: { isWelfare?: boolean; isCSGB?: boolean; [key: string]: unknown }
   } | null
 ): boolean {
   if (!session) return false
-  if (session.access) {
-    return Boolean(session.access.isWelfare || session.access.isCSGB)
-  }
-  return isCSGBMember(session)
+  return isWelfareTeamMember(session)
 }
 
 export function isMediaLeader(
@@ -355,6 +423,12 @@ export function canAccessSection(
       return isOutreachLeader(currentSession)
     }
     return false
+  }
+  if (section === 'prayerRequests') {
+    return isPrayerTeamAdmin(currentSession)
+  }
+  if (section === 'welfare') {
+    return isWelfareTeamMember(currentSession)
   }
   return SECTION_ACCESS[section].includes(role)
 }

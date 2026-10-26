@@ -702,7 +702,104 @@ async function sendFellowshipNewWorkerNotificationEmail(
   })
 }
 
-interface WorkerWelcomeEmailInput {
+export interface WorkerRegistrationReceivedEmailInput {
+  fullName: string
+  firstName?: string
+  email: string
+  phoneNumber: string
+  hall: string
+  roomNumber: string
+  teams: string[]
+  isExco: boolean
+  executiveApplication?: ExecutiveApplicationInput
+}
+
+export async function sendWorkerRegistrationReceivedEmail(
+  input: WorkerRegistrationReceivedEmailInput
+): Promise<void> {
+  if (!selfServiceEmailer) {
+    console.warn('[sendWorkerRegistrationReceivedEmail] Missing selfServiceEmailer (RESEND_API_KEY).')
+    return
+  }
+
+  const displayName = input.firstName?.trim() || input.fullName.split(' ')[0] || input.fullName
+  const teamsList = input.teams.length > 0 ? input.teams.join(', ') : 'Assigned Unit'
+  const executiveSummary = formatExecutiveAppSummary(input.executiveApplication, input.isExco)
+  const siteUrl = resolveSiteUrl()
+
+  const subject = `Workforce Registration Received — ${displayName}`
+  const emailHtml = renderEmailLayout({
+    preheader: `We received your workforce registration, ${displayName}. Your Team Leader(s) will review your request.`,
+    eyebrow: 'Workforce · Application Received',
+    title: `Registration Received, ${escapeHtml(displayName)}!`,
+    siteUrl,
+    content: [
+      emailParagraph(
+        'Thank you for submitting your workforce registration with the <strong>Edo State University Christian Campus Fellowship</strong>. Your registration details have been received and forwarded to your Team Leader(s) for review.'
+      ),
+      emailSectionTitle('Your registration summary'),
+      emailDetails([
+        { label: 'Operational teams', value: escapeHtml(teamsList), accent: true },
+        {
+          label: 'Campus residence',
+          value: `${escapeHtml(input.hall)}, Room ${escapeHtml(input.roomNumber)}`,
+        },
+        { label: 'Registered email', value: escapeHtml(input.email) },
+        { label: 'Phone number', value: escapeHtml(input.phoneNumber) },
+        ...(input.isExco
+          ? [
+              {
+                label: 'Executive application',
+                value: `${escapeHtml(executiveSummary)} <span style="font-weight:500;color:#8a5a12;">(pending approval)</span>`,
+              },
+            ]
+          : []),
+      ]),
+      emailSectionTitle('What happens next?'),
+      emailList([
+        '<strong>Team Lead Review:</strong> Your Team Leader(s) have received your request and will review your membership on their leadership portal.',
+        '<strong>No Sign-in Required:</strong> You do not need to sign in or take any extra action right now.',
+        '<strong>Official Welcome:</strong> Once verified by your Team Lead(s), you will receive an official welcome email confirming your active workforce membership.',
+      ]),
+      emailDivider(),
+      emailParagraph(
+        'If you need to update your contact details or campus residence in the future, you can do so anytime using the self-service update on the registration portal.'
+      ),
+    ].join(''),
+    signature: {
+      name: 'ECCF Workforce Office',
+      role: 'Edo State University Christian Campus Fellowship',
+    },
+    footerNote:
+      'You received this email because you submitted a worker registration with the fellowship.',
+  })
+
+  const plainText = `Workforce Registration Received — ${displayName}\n\n` +
+    `Thank you for submitting your workforce registration with the Edo State University Christian Campus Fellowship (ECCF).\n\n` +
+    `Your request has been received and forwarded to your Team Leader(s) for review.\n\n` +
+    `YOUR REGISTRATION DETAILS:\n` +
+    `- Operational Teams: ${teamsList}\n` +
+    `- Campus Residence: ${input.hall}, Room ${input.roomNumber}\n` +
+    `- Registered Email: ${input.email}\n` +
+    `- Registered Phone: ${input.phoneNumber}\n\n` +
+    `WHAT HAPPENS NEXT:\n` +
+    `1. Your Team Leader(s) will review your membership on their leadership portal.\n` +
+    `2. You do not need to sign in or take any extra action right now.\n` +
+    `3. Once verified, you will receive an official welcome email confirming your active workforce membership.\n\n` +
+    `Edo State University Christian Campus Fellowship (ECCF)\n` +
+    `${ECCF_EMAIL.address}\n` +
+    `${ECCF_EMAIL.venue}`
+
+  await selfServiceEmailer.emails.send({
+    from: resolveResendFrom('ECCF Workforce Intake'),
+    to: input.email,
+    subject,
+    text: plainText,
+    html: emailHtml,
+  })
+}
+
+export interface WorkerWelcomeEmailInput {
   fullName: string
   firstName?: string
   email: string
@@ -715,7 +812,7 @@ interface WorkerWelcomeEmailInput {
   executiveApplication?: ExecutiveApplicationInput
 }
 
-async function sendWorkerWelcomeEmail(
+export async function sendWorkerWelcomeEmail(
   input: WorkerWelcomeEmailInput
 ): Promise<void> {
   if (!selfServiceEmailer) {
@@ -737,7 +834,7 @@ async function sendWorkerWelcomeEmail(
     siteUrl,
     content: [
       emailParagraph(
-        'It is a joy to welcome you into the workforce family of the <strong>Edo State University Christian Campus Fellowship</strong>. Thank you for making yourself available for service in God&rsquo;s house. Your worker profile has been created successfully.'
+        'It is a joy to welcome you into the workforce family of the <strong>Edo State University Christian Campus Fellowship</strong>! Your membership has been reviewed and verified by your Team Leader(s). Thank you for making yourself available for service in God&rsquo;s house.'
       ),
       emailSectionTitle('Your registered details'),
       emailDetails([
@@ -2274,8 +2371,8 @@ export async function registerWorker(
         console.error('[registerWorker] Fellowship notification email error:', notifyErr)
       })
 
-      // Send Welcome Email to newly registered worker with self-service update guidelines
-      sendWorkerWelcomeEmail({
+      // Send Registration Received Email to newly registered worker (acknowledgement & review guidelines)
+      sendWorkerRegistrationReceivedEmail({
         fullName: cleanFullName,
         firstName: cleanFirstName,
         email: cleanEmail,
@@ -2283,11 +2380,10 @@ export async function registerWorker(
         hall: input.hall,
         roomNumber: input.roomNumber.trim(),
         teams: selectedTeams,
-        birthDate: cleanBirthDate,
         isExco: Boolean(input.isExco),
         executiveApplication: input.executiveApplication,
-      }).catch((welcomeErr) => {
-        console.error('[registerWorker] Worker welcome email error:', welcomeErr)
+      }).catch((ackErr) => {
+        console.error('[registerWorker] Worker registration received email error:', ackErr)
       })
 
       revalidatePath('/dashboard/workers')

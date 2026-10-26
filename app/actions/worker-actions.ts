@@ -17,7 +17,7 @@ import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { matchesTeam } from '@/lib/dashboard/data'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
-import { uploadWorkerPhotoDirectAction } from './worker-registration'
+import { uploadWorkerPhotoDirectAction, sendWorkerWelcomeEmail } from './worker-registration'
 
 export interface VerifyWorkerInput {
   workerId: string
@@ -128,6 +128,9 @@ export async function verifyWorkerMembership(
     worker.verifiedBy = approverRole
     worker.updatedAt = now.toISOString()
     worker.updateLog = [...(worker.updateLog || []), logMessage]
+    if (input.decision === 'approve') {
+      worker.welcomeEmailSent = true
+    }
 
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/attendance')
@@ -144,6 +147,13 @@ export async function verifyWorkerMembership(
     const existing = await sanityPrivateClient.fetch<{
       _id: string
       fullName: string
+      firstName?: string
+      email?: string
+      phoneNumber?: string
+      hall?: string
+      roomNumber?: string
+      isExco?: boolean
+      welcomeEmailSent?: boolean
       team?: string
       teams?: string[]
       verificationStatus?: string
@@ -158,6 +168,13 @@ export async function verifyWorkerMembership(
       `*[_type == "worker" && _id == $id][0]{
         _id,
         fullName,
+        firstName,
+        email,
+        phoneNumber,
+        hall,
+        roomNumber,
+        isExco,
+        welcomeEmailSent,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
         verificationStatus,
@@ -224,6 +241,24 @@ export async function verifyWorkerMembership(
           })
         }
       })
+    }
+
+    // If the membership is approved and the worker has not received their official welcome email yet, dispatch it now!
+    if (input.decision === 'approve' && existing.email && !existing.welcomeEmailSent) {
+      sendWorkerWelcomeEmail({
+        fullName: existing.fullName,
+        firstName: existing.firstName,
+        email: existing.email,
+        phoneNumber: existing.phoneNumber || '',
+        hall: existing.hall || '',
+        roomNumber: existing.roomNumber || '',
+        teams: existing.teams || [],
+        isExco: Boolean(existing.isExco),
+      }).catch((welcomeErr) => {
+        console.error('[verifyWorkerMembership] Worker welcome email error:', welcomeErr)
+      })
+
+      patch = patch.set({ welcomeEmailSent: true })
     }
 
     await patch.append('updateLog', [logMessage]).commit()

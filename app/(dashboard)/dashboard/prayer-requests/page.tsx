@@ -17,8 +17,8 @@ import { listPrayerRequests } from '@/lib/dashboard/data'
 export const dynamic = 'force-dynamic'
 
 export default async function PrayerRequestsPage() {
-  await requireSection('prayerRequests')
-  const rows = await listPrayerRequests()
+  const session = await requireSection('prayerRequests')
+  const rows = await listPrayerRequests(session)
 
   if (rows.length === 0) {
     return (

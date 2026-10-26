@@ -143,6 +143,7 @@ export interface Worker {
   verificationStatus?: 'pending' | 'verified' | 'rejected'
   verifiedAt?: string
   verifiedBy?: string
+  welcomeEmailSent?: boolean
   /** Operational team this worker leads/heads (if Team Lead or Assistant) */
   leadingTeam?: FellowshipTeam
   positions?: WorkerPosition[]

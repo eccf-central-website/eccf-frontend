@@ -39,7 +39,7 @@ function getRolePrimarySections(
     case 'finance':
       return ['overview', 'finance', 'attendance', 'announcements']
     case 'hall_rep':
-      return ['overview', 'firstTimers', 'attendance', 'welfare']
+      return ['overview', 'firstTimers', 'workers', 'attendance']
     default:
       return ['overview', 'workers', 'attendance', 'firstTimers']
   }

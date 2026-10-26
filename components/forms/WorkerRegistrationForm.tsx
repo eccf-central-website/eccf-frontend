@@ -1199,17 +1199,17 @@ export function WorkerRegistrationForm({
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold tracking-wide font-mono uppercase">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
-              {isReturning ? 'Profile Updated' : 'Registration Confirmed'}
+              {isReturning ? 'Profile Updated' : 'Request Received'}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl text-slate-950 font-bold tracking-tight">
               {isReturning
                 ? `Welcome Back, ${firstName}!`
-                : `Welcome to the Workforce, ${firstName}!`}
+                : `Registration Submitted, ${firstName}!`}
             </h1>
             <p className="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
               {isReturning
                 ? 'Your workforce profile has been updated.'
-                : 'Your registration has been submitted to your Team Lead(s) for verification.'}
+                : 'Your Team Leader(s) have received your request and will review your membership.'}
             </p>
           </div>
         </div>
@@ -1343,33 +1343,23 @@ export function WorkerRegistrationForm({
           </div>
         </div>
 
-        {/* Live Application Status Callout */}
-        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-indigo-500/10 border-2 border-sky-200/90 text-left space-y-3.5 shadow-xs">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-[#0077cc] text-white shrink-0">
-                <ShieldCheck className="h-5 w-5 shrink-0" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-950 text-sm sm:text-base">
-                  Track Verification &amp; Badges Live
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Inspect real-time approval badges from your Team Lead and the
-                  Fellowship President.
-                </p>
-              </div>
+        {/* Verification Next Steps Notice */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-slate-50 border border-slate-200 text-left space-y-3.5 shadow-xs">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-2xl bg-sky-50 border border-sky-200 text-[#0077cc] shrink-0 mt-0.5">
+              <ShieldCheck className="h-5 w-5 shrink-0" />
             </div>
-          </div>
-
-          <div className="pt-1 flex flex-col sm:flex-row gap-2.5">
-            <Link
-              href="/register/status"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#0077cc] hover:bg-[#005fa3] text-white font-bold text-xs sm:text-sm shadow-sm transition-all"
-            >
-              <span>Open My Application Status Portal</span>
-              <ExternalLink className="h-4 w-4 shrink-0" />
-            </Link>
+            <div className="space-y-1.5 min-w-0">
+              <h3 className="font-bold text-slate-950 text-sm sm:text-base">
+                What happens next?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Your registration has been safely received. Your Team Leader(s) have been notified and will review your membership request on their leadership portal.
+              </p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                You do not need to sign in or take any extra steps—your submission is complete. Once reviewed and verified by your Team Lead(s), your active workforce membership will be confirmed.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -3064,16 +3054,10 @@ export function WorkerRegistrationForm({
         </AnimatePresence>
       </div>
 
-      {/* Footer shortcut to status page */}
+      {/* Footer shortcut */}
       <div className="pt-4 text-center">
-        <p className="text-sm text-slate-600">
-          Already registered?{' '}
-          <Link
-            href="/register/status"
-            className="font-semibold text-[#0077cc] underline underline-offset-4 hover:text-[#005fa3] transition-colors"
-          >
-            Check your Application &amp; Approval Status
-          </Link>
+        <p className="text-xs text-slate-500">
+          Already registered as a worker? You can update your details anytime using your registered phone number above.
         </p>
       </div>
     </div>

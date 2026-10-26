@@ -81,81 +81,109 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
   const firstTimersCaption = isHallScoped(role) ? `In your hall · ${since}` : since
   const { lastService } = stats
 
+  const canFirstTimers = canAccessSection(role, 'firstTimers', session)
+  const canWelfare = canAccessSection(role, 'welfare', session)
+  const canPrayer = canAccessSection(role, 'prayerRequests', session)
+  const canWorkers = canAccessSection(role, 'workers', session)
+  const canAttendance = canAccessSection(role, 'attendance', session)
+
+  const cardCount =
+    (canFirstTimers ? 1 : 0) +
+    (canWelfare ? 1 : 0) +
+    (canPrayer ? 1 : 0) +
+    (canWorkers ? 1 : 0) +
+    (canAttendance ? 1 : 0)
+
+  const gridClass =
+    cardCount === 5 ? 'xl:grid-cols-5' :
+    cardCount === 4 ? 'xl:grid-cols-4' :
+    cardCount === 3 ? 'xl:grid-cols-3' : 'xl:grid-cols-2'
+
   return (
-    <StatGroup id="overview-people" title="People" className="xl:grid-cols-5">
-      <StatCard
-        id="stat-first-timers"
-        headingLevel="h4"
-        label="First-timers this month"
-        icon={<UserPlus />}
-        value={formatCount(stats.firstTimersThisMonth)}
-        rawValue={stats.firstTimersThisMonth}
-        caption={firstTimersCaption}
-        tone="primary"
-        href={linkFor(role, 'firstTimers', session)}
-        linkLabel="View first-timers"
-      />
-      <StatCard
-        id="stat-pending-welfare"
-        headingLevel="h4"
-        label="Pending welfare requests"
-        icon={<HeartHandshake />}
-        value={formatCount(stats.pendingWelfare)}
-        rawValue={stats.pendingWelfare}
-        caption={stats.pendingWelfare > 0 ? 'Needs follow-up' : 'All caught up'}
-        tone={stats.pendingWelfare > 0 ? 'warning' : 'success'}
-        href={linkFor(role, 'welfare')}
-        linkLabel="View welfare"
-      />
-      <StatCard
-        id="stat-prayer-requests"
-        headingLevel="h4"
-        label="Prayer requests"
-        icon={<PrayingHands className="h-5 w-5" />}
-        value={formatCount(stats.prayerRequestsThisWeek)}
-        rawValue={stats.prayerRequestsThisWeek}
-        caption="Last 7 days"
-        tone="primary"
-        href={linkFor(role, 'prayerRequests')}
-        linkLabel="View prayer requests"
-      />
-      <StatCard
-        id="stat-workers"
-        headingLevel="h4"
-        label="Workers"
-        icon={<Users />}
-        value={formatCount(stats.workers)}
-        rawValue={stats.workers}
-        caption={workersCaption(role)}
-        tone="muted"
-        href={linkFor(role, 'workers')}
-        linkLabel="View workers"
-      />
-      <StatCard
-        id="stat-last-service"
-        headingLevel="h4"
-        label="Last service attendance"
-        icon={<CalendarCheck />}
-        className="col-span-2 xl:col-span-1"
-        value={lastService ? formatCount(lastService.totalCount) : '—'}
-        rawValue={lastService?.totalCount}
-        caption={
-          lastService ? (
-            <>
-              <span>{serviceLabel(lastService)}</span>
-              <span>·</span>
-              <time dateTime={toDateTimeAttr(lastService.date)} title={formatDate(lastService.date)}>
-                {formatRelativeDay(lastService.date)}
-              </time>
-            </>
-          ) : (
-            'No services recorded yet'
-          )
-        }
-        tone="muted"
-        href={linkFor(role, 'attendance')}
-        linkLabel="View attendance"
-      />
+    <StatGroup id="overview-people" title="People" className={gridClass}>
+      {canFirstTimers && (
+        <StatCard
+          id="stat-first-timers"
+          headingLevel="h4"
+          label="First-timers this month"
+          icon={<UserPlus />}
+          value={formatCount(stats.firstTimersThisMonth)}
+          rawValue={stats.firstTimersThisMonth}
+          caption={firstTimersCaption}
+          tone="primary"
+          href={linkFor(role, 'firstTimers', session)}
+          linkLabel="View first-timers"
+        />
+      )}
+      {canWelfare && (
+        <StatCard
+          id="stat-pending-welfare"
+          headingLevel="h4"
+          label="Pending welfare requests"
+          icon={<HeartHandshake />}
+          value={formatCount(stats.pendingWelfare)}
+          rawValue={stats.pendingWelfare}
+          caption={stats.pendingWelfare > 0 ? 'Needs follow-up' : 'All caught up'}
+          tone={stats.pendingWelfare > 0 ? 'warning' : 'success'}
+          href={linkFor(role, 'welfare', session)}
+          linkLabel="View welfare"
+        />
+      )}
+      {canPrayer && (
+        <StatCard
+          id="stat-prayer-requests"
+          headingLevel="h4"
+          label="Prayer requests"
+          icon={<PrayingHands className="h-5 w-5" />}
+          value={formatCount(stats.prayerRequestsThisWeek)}
+          rawValue={stats.prayerRequestsThisWeek}
+          caption="Last 7 days"
+          tone="primary"
+          href={linkFor(role, 'prayerRequests', session)}
+          linkLabel="View prayer requests"
+        />
+      )}
+      {canWorkers && (
+        <StatCard
+          id="stat-workers"
+          headingLevel="h4"
+          label="Workers"
+          icon={<Users />}
+          value={formatCount(stats.workers)}
+          rawValue={stats.workers}
+          caption={workersCaption(role)}
+          tone="muted"
+          href={linkFor(role, 'workers', session)}
+          linkLabel="View workers"
+        />
+      )}
+      {canAttendance && (
+        <StatCard
+          id="stat-last-service"
+          headingLevel="h4"
+          label="Last service attendance"
+          icon={<CalendarCheck />}
+          className={cardCount % 2 === 1 ? 'col-span-2 xl:col-span-1' : ''}
+          value={lastService ? formatCount(lastService.totalCount) : '—'}
+          rawValue={lastService?.totalCount}
+          caption={
+            lastService ? (
+              <>
+                <span>{serviceLabel(lastService)}</span>
+                <span>·</span>
+                <time dateTime={toDateTimeAttr(lastService.date)} title={formatDate(lastService.date)}>
+                  {formatRelativeDay(lastService.date)}
+                </time>
+              </>
+            ) : (
+              'No services recorded yet'
+            )
+          }
+          tone="muted"
+          href={linkFor(role, 'attendance', session)}
+          linkLabel="View attendance"
+        />
+      )}
     </StatGroup>
   )
 }
