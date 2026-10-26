@@ -28,12 +28,13 @@ interface TopBarProps {
   teams?: string[]
   excoPosition?: string
   leadingTeam?: string
+  profileImageUrl?: string
   /** Right-side page/global actions, e.g. "Sync sermons" (later feature). */
   actions?: React.ReactNode
   devTools?: React.ReactNode
 }
 
-export default function TopBar({ sections, name, email, role, team, teams, excoPosition, leadingTeam, actions, devTools }: TopBarProps) {
+export default function TopBar({ sections, name, email, role, team, teams, excoPosition, leadingTeam, profileImageUrl, actions, devTools }: TopBarProps) {
   const pathname = usePathname()
   const section = sectionForPath(pathname || '') ?? 'overview'
   const title = navItemForSection(section).label
@@ -76,7 +77,7 @@ export default function TopBar({ sections, name, email, role, team, teams, excoP
         {isMediaLeaderUser && actions && <div className="hidden sm:block">{actions}</div>}
         <ThemeToggle />
         <InstallPwaButton />
-        <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} devTools={devTools} />
+        <UserMenu name={name} email={email} role={role} team={team} teams={teams} excoPosition={excoPosition} profileImageUrl={profileImageUrl} devTools={devTools} />
       </div>
     </header>
   )

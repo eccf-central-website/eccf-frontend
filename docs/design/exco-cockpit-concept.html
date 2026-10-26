@@ -88,14 +88,9 @@
   .brand-copy strong { font-size: 15px; letter-spacing: .01em; color: #fff; font-weight: 600; }
   .brand-copy span { margin-top: 3px; font-size: 12px; color: var(--muted); font-weight: 500; }
 
-  .nav { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
-  .nav-group { margin-top: 16px; }
-  .nav-group:first-child { margin-top: 0; }
-  .nav-label {
-    padding: 0 12px 7px;
-    font-size: 12px; font-weight: 600; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--muted-2);
-  }
+  /* One flat destination list. A navigation menu should never scroll:
+     the ten sections and the Settings footer fit every supported height. */
+  .nav { display: flex; flex: 1 1 auto; flex-direction: column; gap: 1px; min-height: 0; overflow: visible; padding-bottom: 8px; }
   .nav-item {
     position: relative;
     display: flex; align-items: center; gap: 12px;
@@ -126,24 +121,18 @@
   }
   .nav-item .badge.neutral { background: rgba(33,150,255,.14); color: #8ecbff; }
 
-  .sidebar-foot { flex: 0 0 auto; margin-top: auto; padding-top: 12px; }
-  .user-mini {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px; border-radius: 12px;
-    background: rgba(255,255,255,.025);
+  .sidebar-foot {
+    display: flex; align-items: center; gap: 4px;
+    flex: 0 0 auto; margin-top: auto; padding-top: 10px;
   }
-  .user-mini .avatar { width: 32px; height: 32px; font-size: 11px; }
-  .user-mini-copy { min-width: 0; }
-  .user-mini-copy strong { display: block; font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .user-mini-copy span { display: block; margin-top: 1px; font-size: 11.5px; color: var(--muted); }
   .collapse {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; height: 40px; margin-top: 8px; padding: 0 12px;
-    background: transparent; border: 0; border-radius: 10px;
-    color: var(--muted-2); font-size: 12.5px;
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; min-width: 44px; height: 44px; padding: 0;
+    background: transparent; border: 0; border-radius: 12px;
+    color: var(--muted-2);
   }
   .collapse:hover { background: rgba(255,255,255,.03); color: var(--muted); }
-  .collapse svg { width: 17px; height: 17px; }
+  .collapse svg { width: 18px; height: 18px; }
 
   /* ---------- Main / top bar ---------- */
   .main { flex: 1; min-width: 0; }
@@ -312,17 +301,27 @@
   }
   .pulse-tile + .pulse-tile { border-left: 1px solid var(--line); }
   .pulse-tile:hover { background: var(--surface-2); }
-  .pulse-label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
-  .pulse-label svg { width: 16px; height: 16px; color: var(--muted-2); }
+  .pulse-label {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 12.5px; font-weight: 500; line-height: 1.35; color: var(--muted);
+  }
+  .pulse-label svg { width: 16px; height: 16px; flex: 0 0 16px; margin-top: 1px; color: var(--muted-2); }
   .pulse-figure {
-    margin-top: 12px;
+    display: flex; align-items: flex-end;
+    min-height: 34px; margin-top: 10px;
     font-size: 31px; line-height: 1; font-weight: 600;
     letter-spacing: -.035em; color: #f0f5fb;
     font-variant-numeric: tabular-nums;
   }
   .pulse-figure small { font-size: 15px; font-weight: 500; color: var(--muted-2); letter-spacing: 0; }
   .pulse-figure.money { font-size: 27px; letter-spacing: -.045em; }
-  .pulse-caption { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12.5px; color: var(--muted-2); }
+  .pulse-caption {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+    min-height: 18px; margin-top: 8px;
+    font-size: 12.5px; line-height: 1.4; color: var(--muted-2);
+  }
+  .pulse-caption .cap-item { white-space: nowrap; }
+  .pulse-caption .cap-item + .cap-item { padding-left: 8px; border-left: 1px solid var(--line-strong); }
   .pulse-caption .up { color: var(--success); font-weight: 600; }
   .pulse-arrow {
     position: absolute; right: 18px; top: 18px;
@@ -405,11 +404,11 @@
   @media (max-width: 1120px) {
     .sidebar { width: 76px; flex-basis: 76px; padding-left: 10px; padding-right: 10px; }
     .brand { justify-content: center; padding: 0; }
-    .brand-copy, .nav-label, .nav-item span.label, .nav-item .badge, .sidebar-foot .user-mini-copy, .collapse span { display: none; }
+    .brand-copy, .nav-item span.label, .nav-item .badge { display: none; }
     .nav-item { justify-content: center; padding: 0; }
     .nav-item .badge { position: absolute; top: 5px; right: 7px; display: inline-flex; min-width: 16px; height: 16px; padding: 0 4px; font-size: 9px; }
-    .user-mini { justify-content: center; padding: 8px 0; background: transparent; }
-    .settings-link { justify-content: center; padding: 0; }
+    .sidebar-foot { flex-direction: column; gap: 4px; }
+    .settings-link { flex: 0 0 44px; width: 44px; justify-content: center; padding: 0; }
     .settings-link span { display: none; }
     .collapse { justify-content: center; padding: 0; }
     .topbar { padding: 0 26px; }
@@ -444,10 +443,17 @@
     .q-sub { font-size: 12.5px; line-height: 1.45; }
     .q-action { grid-column: 2; justify-self: start; height: 40px; margin-top: 5px; }
     .pulse-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .pulse-tile { min-height: 126px; padding: 16px; }
+    .pulse-tile { min-height: 156px; padding: 16px; }
     .pulse-tile + .pulse-tile { border-left: 1px solid var(--line); }
     .pulse-tile:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
     .pulse-tile:nth-child(4) { border-top: 1px solid var(--line); }
+    .pulse-label { min-height: 35px; }
+    .pulse-figure { min-height: 34px; margin-top: 7px; }
+    .pulse-caption {
+      flex-direction: column; align-items: flex-start; gap: 1px;
+      min-height: 35px; margin-top: 7px; font-size: 12.5px;
+    }
+    .pulse-caption .cap-item + .cap-item { padding-left: 0; border-left: 0; }
     .pulse-figure { font-size: 28px; }
     .pulse-figure.money { font-size: 23px; }
     .activity-grid { grid-template-columns: 1fr; }
@@ -499,18 +505,18 @@
   /* ---------- Light theme ---------- */
   html.light {
     color-scheme: light;
-    --bg: #f6f6f2;
-    --glow-a: rgba(45, 155, 255, .055);
-    --glow-b: rgba(14, 44, 82, .035);
+    --bg: #edf1f6;
+    --glow-a: rgba(45, 155, 255, .06);
+    --glow-b: rgba(14, 44, 82, .04);
     --surface: #ffffff;
-    --surface-2: #f3f6fa;
-    --surface-3: #e9eff6;
+    --surface-2: #f5f8fb;
+    --surface-3: #e8eef5;
     --text: #0d1626;
     --text-2: #334155;
     --muted: #56657a;
-    --muted-2: #748196;
-    --line: #e3e8ef;
-    --line-strong: #d2dbe6;
+    --muted-2: #66758a;
+    --line: #dde5ee;
+    --line-strong: #cbd6e3;
     --interactive: #f2f5f9;
     --interactive-hover: #e9eff6;
     --accent: #006fc4;
@@ -533,8 +539,8 @@
     --sidebar-2: #08101d;
     --sidebar-line: rgba(255, 255, 255, .06);
     --sidebar-text: #c3cbd8;
-    --shadow-panel: 0 1px 2px rgba(10, 22, 40, .04), 0 18px 44px rgba(10, 22, 40, .05);
-    --topbar-bg: rgba(246, 246, 242, .86);
+    --shadow-panel: inset 0 0 0 1px rgba(16, 37, 61, .045), 0 1px 2px rgba(10, 22, 40, .04), 0 14px 34px rgba(10, 22, 40, .065);
+    --topbar-bg: rgba(237, 241, 246, .88);
     --search-bg: #ffffff;
     --theme-track: #e8eef5;
     --scroll-thumb: rgba(31, 63, 99, .18);
@@ -582,9 +588,6 @@
   html.light .nav-item.active::before { background: #8ed1ff; }
   html.light .sidebar-foot .settings-link { color: #9baabd; }
   html.light .sidebar-foot .settings-link:hover { background: rgba(255,255,255,.05); color: #f3f8fd; }
-  html.light .user-mini { background: rgba(255,255,255,.025); }
-  html.light .user-mini-copy strong { color: #eaf2fb; }
-  html.light .user-mini-copy span { color: #8d99ad; }
   html.light .collapse { color: #748399; }
   html.light .collapse:hover { background: rgba(255,255,255,.04); color: #b7c4d3; }
   html.light .avatar-sm { color: #075985; background: rgba(0, 111, 196, .08); }
@@ -646,7 +649,6 @@
   html.light .all-sheet .sheet-link:hover { background: #f4f7fa; }
   html.light .all-sheet .sheet-link.active { background: transparent; color: var(--text); }
   html.light .all-sheet .sheet-link.active svg { color: var(--nav-active-icon); }
-  html.light .all-sheet .sheet-label { color: #8592a5; }
   html.light .all-sheet .sheet-close:hover { background: #eef3f8; }
   html.light .all-sheet .appearance { border-top-color: var(--line); }
   html.light .theme-seg { background: #eef3f8; }
@@ -679,9 +681,7 @@
     height: 20px;
     flex-basis: 20px;
   }
-  .nav-label { padding: 0 12px 5px; font-size: 11.5px; }
-  .nav-group { margin-top: 8px; }
-  .brand { margin-bottom: 34px; }
+  .brand { margin-bottom: 40px; }
   .sidebar { padding: 14px 14px 12px; }
   .sidebar nav { min-height: 0; }
 
@@ -694,7 +694,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    width: 100%;
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
     min-height: 44px;
     padding: 0 12px;
     border-radius: 12px;
@@ -716,22 +718,10 @@
     text-transform: uppercase;
     color: var(--muted-2);
   }
-  .user-mini { min-height: 44px; }
-  .collapse { min-height: 44px; height: 44px; margin-top: 2px; }
+  .collapse { min-height: 44px; height: 44px; margin: 0; }
 
-  /* A fitted sidebar on 1366x768-class laptops; styled overflow below that. */
-  .nav {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(142, 209, 255, .28) transparent;
-    overscroll-behavior: contain;
-  }
-  .nav::-webkit-scrollbar { width: 6px; }
-  .nav::-webkit-scrollbar-track { background: transparent; }
-  .nav::-webkit-scrollbar-thumb {
-    background: rgba(142, 209, 255, .28);
-    border-radius: 99px;
-  }
-  .nav::-webkit-scrollbar-thumb:hover { background: rgba(142, 209, 255, .48); }
+  /* A fitted sidebar on 1366x768-class laptops: the flat list always fits,
+     so the navigation never shows a scrollbar. */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
@@ -745,12 +735,9 @@
 
   @media (max-height: 800px) {
     .sidebar { padding-top: 10px; padding-bottom: 8px; }
-    .brand { margin-bottom: 22px; height: 44px; }
-    .nav-group { margin-top: 2px; }
-    .nav-label { padding-bottom: 0; font-size: 10.5px; }
+    .brand { margin-bottom: 30px; height: 44px; }
     .nav-item { height: 44px; }
     .settings-link { min-height: 44px; }
-    .collapse { display: none; }
     .nav { padding-bottom: 2px; }
   }
 
@@ -841,7 +828,7 @@
     .q-icon { width: 40px; height: 40px; }
     .queue-row { grid-template-columns: 40px minmax(0, 1fr); padding: 15px 15px 17px; min-height: 0; }
     .q-action { margin-top: 9px; justify-self: start; }
-    .pulse-tile { min-height: 122px; }
+    .pulse-tile { min-height: 156px; }
     .bottom-nav {
       grid-template-columns: repeat(5, 1fr);
       height: calc(62px + env(safe-area-inset-bottom));
@@ -972,16 +959,6 @@
     mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
   }
-  .sheet-group + .sheet-group { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
-  .sheet-label {
-    margin: 0;
-    padding: 5px 10px 4px;
-    color: var(--muted-2);
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: .09em;
-    text-transform: uppercase;
-  }
   .sheet-link {
     display: grid;
     grid-template-columns: 24px minmax(0, 1fr) auto;
@@ -1012,7 +989,6 @@
     padding-top: 7px;
     border-top: 1px solid var(--line);
   }
-  .sheet-settings .sheet-label { padding-top: 0; }
   .sheet-settings .sheet-link { font-weight: 600; }
   .sheet-settings .sheet-link .sub {
     display: block;
@@ -1201,12 +1177,11 @@
     <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M8.5 14.5l2 2 4-4"/></symbol>
     <symbol id="i-heart-hand" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 17.5 4c-1.8 0-3 .7-4 2.1C12.5 4.7 11.3 4 9.5 4A4.5 4.5 0 0 0 5 8.5c0 2.3 1.5 4 3 5.5l5 5 6-5z"/><path d="M2 18l3 3M4.5 15.5L7 18"/></symbol>
-    <symbol id="i-hands" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 8.8 6.4v8.1L12 20l3.2-5.5V6.4L12 3.2Z"/><path d="M8.8 8.5 6 11.3v4.9L8.8 19"/><path d="M15.2 8.5 18 11.3v4.9L15.2 19"/><path d="M12 3.2v16.8"/></symbol>
+    <symbol id="i-hands" viewBox="0 0 256 256"><path fill="currentColor" stroke="none" d="m232.49 182.83l-37-37l-36.7-121.21A17.77 17.77 0 0 0 128 18.56a17.77 17.77 0 0 0-30.79 6.06L60.46 145.88l-36.95 37a12 12 0 0 0 0 17l32.69 32.61a12 12 0 0 0 17 0l48.28-48.29a36 36 0 0 0 6.55-8.94a36 36 0 0 0 6.55 8.94l48.28 48.29a12 12 0 0 0 17 0l32.69-32.69a12 12 0 0 0-.06-16.97m-165 44a4 4 0 0 1-5.66 0l-32.66-32.68a4 4 0 0 1 0-5.66L44.68 173L83 211.32Zm48.29-48.28l-27.1 27.11l-38.34-38.34l16.48-16.49a3.9 3.9 0 0 0 1-1.67l37-122.22A9.78 9.78 0 0 1 124 29.78v129a27.8 27.8 0 0 1-8.2 19.77Zm16.2-19.8v-129a9.78 9.78 0 0 1 19.14-2.84l37 122.22a3.9 3.9 0 0 0 1 1.67l17.38 17.38l-39.18 37.51l-27.12-27.14a27.8 27.8 0 0 1-8.2-19.8Zm94.83 35.4l-32.68 32.68a4 4 0 0 1-5.66 0L173 211.38l39.18-37.51l14.61 14.62a4 4 0 0 1 .04 5.66Z"/></symbol>
     <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15V7H5a2 2 0 0 0-2 2"/><path d="M16 13h2"/></symbol>
     <symbol id="i-mega" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 6.5a6 6 0 0 1 0 11"/><path d="M17 4a10 10 0 0 1 0 16"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22.5v-18z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
-    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.3 2.3 0 1 1 3.7 1.8c-.9.7-1.5 1.2-1.5 2.2"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
@@ -1235,28 +1210,16 @@
     </a>
 
     <nav class="nav" aria-label="Dashboard">
-      <div class="nav-group">
-        <div class="nav-label">Today</div>
-        <a class="nav-item active" href="#" aria-current="page"><svg><use href="#i-home"/></svg><span class="label">Overview</span></a>
-      </div>
-      <div class="nav-group">
-        <div class="nav-label">People</div>
-        <a class="nav-item" href="#"><svg><use href="#i-shield"/></svg><span class="label">Executives</span><span class="badge neutral">4</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-users"/></svg><span class="label">Workers</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-user-plus"/></svg><span class="label">First-timers</span></a>
-      </div>
-      <div class="nav-group">
-        <div class="nav-label">Care &amp; services</div>
-        <a class="nav-item" href="#"><svg><use href="#i-calendar"/></svg><span class="label">Attendance</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-heart-hand"/></svg><span class="label">Welfare</span><span class="badge">3</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-hands"/></svg><span class="label">Prayer requests</span></a>
-      </div>
-      <div class="nav-group">
-        <div class="nav-label">Stewardship</div>
-        <a class="nav-item" href="#"><svg><use href="#i-wallet"/></svg><span class="label">Finance</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-mega"/></svg><span class="label">Announcements</span></a>
-        <a class="nav-item" href="#"><svg><use href="#i-book"/></svg><span class="label">Sermons</span></a>
-      </div>
+      <a class="nav-item active" href="#" aria-current="page"><svg><use href="#i-home"/></svg><span class="label">Overview</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-shield"/></svg><span class="label">Executives</span><span class="badge neutral">4</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-users"/></svg><span class="label">Workers</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-user-plus"/></svg><span class="label">First-timers</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-calendar"/></svg><span class="label">Attendance</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-heart-hand"/></svg><span class="label">Welfare</span><span class="badge">3</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-hands"/></svg><span class="label">Prayer requests</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-wallet"/></svg><span class="label">Finance</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-mega"/></svg><span class="label">Announcements</span></a>
+      <a class="nav-item" href="#"><svg><use href="#i-book"/></svg><span class="label">Sermons</span></a>
     </nav>
 
     <div class="sidebar-foot">
@@ -1265,11 +1228,7 @@
         <span>Settings</span>
         <span class="settings-meta">Admin</span>
       </a>
-      <div class="user-mini">
-        <span class="avatar">OI</span>
-        <span class="user-mini-copy"><strong>Osaro Igbinedion</strong><span>President · CSGB</span></span>
-      </div>
-      <button class="collapse" type="button" aria-label="Collapse sidebar"><svg><use href="#i-chevron"/></svg><span>Collapse</span></button>
+      <button class="collapse" type="button" aria-label="Collapse sidebar"><svg><use href="#i-chevron"/></svg></button>
     </div>
   </aside>
 
@@ -1290,7 +1249,6 @@
           <svg class="sun-icon"><use href="#i-sun"/></svg>
           <svg class="moon-icon"><use href="#i-moon"/></svg>
         </button>
-        <button class="icon-btn" type="button" aria-label="Help"><svg><use href="#i-help"/></svg></button>
         <button class="avatar avatar-btn" type="button" aria-label="Open user menu">OI</button>
       </div>
     </header>
@@ -1500,25 +1458,25 @@
           <a class="pulse-tile" href="#">
             <span class="pulse-label"><svg><use href="#i-shield-check"/></svg>Executives onboarded</span>
             <span class="pulse-figure">7<small class="slash">/</small><small>11</small></span>
-            <span class="pulse-caption"><span class="pending">4 awaiting</span> · 2 unmatched</span>
+            <span class="pulse-caption"><span class="cap-item pending">4 awaiting</span><span class="cap-item">2 unmatched</span></span>
             <span class="pulse-arrow"><svg><use href="#i-arrow"/></svg></span>
           </a>
           <a class="pulse-tile" href="#">
             <span class="pulse-label"><svg><use href="#i-calendar"/></svg>Last attendance</span>
             <span class="pulse-figure">320</span>
-            <span class="pulse-caption">Sunday Service · 2 days ago</span>
+            <span class="pulse-caption"><span class="cap-item">Sunday Service</span><span class="cap-item">2 days ago</span></span>
             <span class="pulse-arrow"><svg><use href="#i-arrow"/></svg></span>
           </a>
           <a class="pulse-tile" href="#">
             <span class="pulse-label"><svg><use href="#i-user-plus"/></svg>First-timers</span>
             <span class="pulse-figure">6</span>
-            <span class="pulse-caption"><span class="up">+2</span> this week · since 1 Oct</span>
+            <span class="pulse-caption"><span class="cap-item up">+2 this week</span><span class="cap-item">since 1 Oct</span></span>
             <span class="pulse-arrow"><svg><use href="#i-arrow"/></svg></span>
           </a>
           <a class="pulse-tile" href="#">
             <span class="pulse-label"><svg><use href="#i-wallet"/></svg>Net this month</span>
             <span class="pulse-figure money">₦185,200</span>
-            <span class="pulse-caption"><span style="color:var(--success)">In ₦247.7k</span> · Out ₦62.5k</span>
+            <span class="pulse-caption"><span class="cap-item" style="color:var(--success)">In ₦247.7k</span><span class="cap-item">Out ₦62.5k</span></span>
             <span class="pulse-arrow"><svg><use href="#i-arrow"/></svg></span>
           </a>
         </div>
@@ -1620,74 +1578,62 @@
   </div>
 
   <div class="sheet-scroll">
-    <div class="sheet-group">
-      <p class="sheet-label">Today</p>
-      <a class="sheet-link active" href="#" aria-current="page">
-        <svg><use href="#i-home"/></svg>
-        <span>Overview</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-    </div>
-    <div class="sheet-group">
-      <p class="sheet-label">People</p>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-shield"/></svg>
-        <span>Executives</span>
-        <span class="sheet-badge">4</span>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-users"/></svg>
-        <span>Workers</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-user-plus"/></svg>
-        <span>First-timers</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-    </div>
-    <div class="sheet-group">
-      <p class="sheet-label">Care &amp; services</p>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-calendar"/></svg>
-        <span>Attendance</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-heart-hand"/></svg>
-        <span>Welfare</span>
-        <span class="sheet-badge">3</span>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-hands"/></svg>
-        <span>Prayer requests</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-    </div>
-    <div class="sheet-group">
-      <p class="sheet-label">Stewardship</p>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-wallet"/></svg>
-        <span>Finance</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-mega"/></svg>
-        <span>Announcements</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-      <a class="sheet-link" href="#">
-        <svg><use href="#i-book"/></svg>
-        <span>Sermons</span>
-        <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
-      </a>
-    </div>
+    <a class="sheet-link active" href="#" aria-current="page">
+      <svg><use href="#i-home"/></svg>
+      <span>Overview</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-shield"/></svg>
+      <span>Executives</span>
+      <span class="sheet-badge">4</span>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-users"/></svg>
+      <span>Workers</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-user-plus"/></svg>
+      <span>First-timers</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-calendar"/></svg>
+      <span>Attendance</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-heart-hand"/></svg>
+      <span>Welfare</span>
+      <span class="sheet-badge">3</span>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-hands"/></svg>
+      <span>Prayer requests</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-wallet"/></svg>
+      <span>Finance</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-mega"/></svg>
+      <span>Announcements</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
+    <a class="sheet-link" href="#">
+      <svg><use href="#i-book"/></svg>
+      <span>Sermons</span>
+      <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
+    </a>
   </div>
 
   <div class="sheet-settings">
     <a class="sheet-link" href="#settings">
       <svg><use href="#i-settings"/></svg>
-      <span>Settings<span class="sub">Worker import, deletion, and executive onboarding</span></span>
+      <span>Settings<span class="sub">Admin tools</span></span>
       <svg class="sheet-chevron"><use href="#i-chevron"/></svg>
     </a>
   </div>

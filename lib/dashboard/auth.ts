@@ -47,6 +47,7 @@ interface SanityWorkerSessionDoc {
   excoPosition?: string
   isExcoApproved?: boolean
   canApproveExecutives?: boolean
+  profileImageUrl?: string
   team?: { name?: string } | string
   hall?: string
   leadingTeam?: { name?: string } | string
@@ -113,6 +114,7 @@ export async function getSession(): Promise<DashboardSession | null> {
       _id: mock.id,
       fullName: mock.name,
       role: mock.role,
+      profileImageUrl: mock.profileImageUrl,
       team: mock.team,
       teams: mock.teams,
       leadingTeam: mock.leadingTeam,
@@ -125,6 +127,7 @@ export async function getSession(): Promise<DashboardSession | null> {
     const access = deriveAccess(mockWorker)
     return {
       ...mock,
+      profileImageUrl: mock.profileImageUrl,
       worker: mockWorker,
       access,
     }
@@ -168,6 +171,7 @@ export async function getSession(): Promise<DashboardSession | null> {
         excoPosition,
         isExcoApproved,
         canApproveExecutives,
+        "profileImageUrl": coalesce(profileImageUrl, headshot.asset->url),
         "team": coalesce(team->name, team),
         "hall": coalesce(hallRef->name, hall),
         "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
@@ -253,6 +257,10 @@ export async function getSession(): Promise<DashboardSession | null> {
     excoPosition,
     hall,
     email: primaryEmail || (typeof worker.email === 'string' ? worker.email : undefined),
+    profileImageUrl:
+      (typeof worker.profileImageUrl === 'string' && worker.profileImageUrl ? worker.profileImageUrl : undefined) ||
+      clerkUser.imageUrl ||
+      undefined,
     worker: worker as Record<string, unknown>,
     access,
   }

@@ -70,6 +70,7 @@ export default async function DashboardShellLayout({
           teams={session.teams}
           excoPosition={session.excoPosition}
           leadingTeam={session.leadingTeam}
+          profileImageUrl={session.profileImageUrl}
           actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
           devTools={devTools}
         />

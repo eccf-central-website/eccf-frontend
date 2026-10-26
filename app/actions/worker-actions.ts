@@ -17,6 +17,7 @@ import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { matchesTeam } from '@/lib/dashboard/data'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
+import { uploadWorkerPhotoDirectAction } from './worker-registration'
 
 export interface VerifyWorkerInput {
   workerId: string
@@ -299,5 +300,51 @@ export async function toggleExcoApproval(
   } catch (err) {
     console.error('[toggleExcoApproval] Error:', err)
     return { ok: false, error: 'Failed to update Exco approval status.' }
+  }
+}
+
+/**
+ * Update Dashboard Profile Photo Server Action:
+ * Authenticates the signed-in exco, verifies their worker record,
+ * uploads the image to Sanity asset storage (with Google Drive backup),
+ * updates worker.profileImageUrl and worker.headshot, and revalidates all dashboard layouts.
+ */
+export async function updateDashboardProfilePhotoAction(input: {
+  base64Image: string
+}): Promise<ActionResult<{ profileImageUrl: string }>> {
+  const session = await getSession()
+  if (!session || !session.id) {
+    return { ok: false, error: 'Your session has expired. Please sign in again.' }
+  }
+
+  const isMock =
+    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+
+  if (isMock) {
+    const dataUrl = input.base64Image.startsWith('data:')
+      ? input.base64Image
+      : `data:image/jpeg;base64,${input.base64Image}`
+    return { ok: true, data: { profileImageUrl: dataUrl } }
+  }
+
+  const uploadRes = await uploadWorkerPhotoDirectAction({
+    workerId: session.id,
+    base64Image: input.base64Image,
+  })
+
+  if (!uploadRes.ok || !uploadRes.fileUrl) {
+    return { ok: false, error: uploadRes.error || 'Failed to upload photo.' }
+  }
+
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/workers')
+
+  return {
+    ok: true,
+    data: {
+      profileImageUrl: uploadRes.fileUrl,
+    },
   }
 }

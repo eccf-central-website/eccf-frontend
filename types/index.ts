@@ -179,6 +179,7 @@ export interface ECCFSession {
   excoPosition?: string
   hall?: string
   email?: string
+  profileImageUrl?: string
 }
 
 // ---------------------------------------------------------------------------

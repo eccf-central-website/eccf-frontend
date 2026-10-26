@@ -41,23 +41,48 @@ export default async function DashboardOverviewPage() {
   const showFirstTimers = canAccessSection(session.role, 'firstTimers', session)
   const showWelfare = canAccessSection(session.role, 'welfare', session)
   const leaderPost = getLeaderPostTitle(session)
+  const initials = session.name
+    ? session.name
+        .trim()
+        .split(/\s+/)
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : null
 
   return (
     <PageContainer>
       <Suspense fallback={null}>
         <DeniedToast />
       </Suspense>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0 space-y-1.5">
-          <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            Welcome, {session.name || 'Leader'}
-            {leaderPost && (
-              <span className="font-normal text-primary"> — {leaderPost}</span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+          <div className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 shadow-sm bg-primary/5">
+            {session.profileImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={session.profileImageUrl}
+                alt={session.name || 'Executive Profile'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary font-bold text-lg sm:text-xl">
+                {initials || 'EC'}
+              </div>
             )}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Here&apos;s what&apos;s happening across the fellowship today.
-          </p>
+          </div>
+          <div className="min-w-0 space-y-1">
+            <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+              Welcome, {session.name || 'Leader'}
+              {leaderPost && (
+                <span className="font-normal text-primary"> — {leaderPost}</span>
+              )}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Here&apos;s what&apos;s happening across the fellowship today.
+            </p>
+          </div>
         </div>
         <div className="shrink-0">
           <Link
