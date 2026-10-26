@@ -5,8 +5,8 @@ export const revalidate = 86400 // Cache for 24 hours
 
 export async function GET() {
   const manifestData = {
-    name: 'ECCF Executive Management Portal',
-    short_name: 'ECCF Portal',
+    name: 'ECCF Exco Dashboard',
+    short_name: 'ECCF Exco Dashboard',
     description:
       'Official Management & Operational Portal for Edo State University Christian Campus Fellowship Exco Members.',
     start_url: '/dashboard',

@@ -30,6 +30,9 @@ interface Props {
   size?: 'normal' | 'compact' | 'flexible'
   /** Cloudflare widget theme. Use `dark` on dark panels so the badge blends in. */
   theme?: 'light' | 'dark' | 'auto'
+  /** Alignment within its parent container. Defaults to 'center'. */
+  align?: 'left' | 'center'
+  className?: string
 }
 
 /**
@@ -50,6 +53,8 @@ export default function TurnstileWidget({
   hideFallbackText,
   size = 'normal',
   theme = 'light',
+  align = 'center',
+  className,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -157,7 +162,7 @@ export default function TurnstileWidget({
   return (
     <div
       ref={wrapperRef}
-      className="w-full max-w-full"
+      className={`w-full max-w-full ${className || ''}`.trim()}
       style={{ height: Math.ceil(base.height * scale), overflow: 'hidden' }}
       aria-live="polite"
     >
@@ -165,7 +170,11 @@ export default function TurnstileWidget({
         style={
           scale < 1
             ? { width: base.width, transform: `scale(${scale})`, transformOrigin: 'top left' }
-            : { width: size === 'flexible' ? '100%' : base.width, marginInline: size === 'flexible' ? undefined : 'auto' }
+            : {
+                width: size === 'flexible' ? '100%' : base.width,
+                marginLeft: align === 'left' ? 0 : size === 'flexible' ? undefined : 'auto',
+                marginRight: size === 'flexible' ? undefined : 'auto',
+              }
         }
       >
         <div ref={containerRef} />

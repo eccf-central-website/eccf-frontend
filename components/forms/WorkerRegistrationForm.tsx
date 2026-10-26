@@ -1852,6 +1852,7 @@ export function WorkerRegistrationForm({
                       <TurnstileWidget
                         onToken={handleTurnstileToken}
                         resetSignal={turnstileResetSignal}
+                        align="left"
                       />
                     </div>
                   )}

@@ -15,7 +15,7 @@ import AnnouncementsClient from '@/components/dashboard/announcements/Announceme
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Announcements — Exco Dashboard',
+  title: 'Announcements — ECCF Exco Dashboard',
   description: 'Plan, schedule, and broadcast fellowship notices.',
 }
 

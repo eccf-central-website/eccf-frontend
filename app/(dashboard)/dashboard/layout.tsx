@@ -24,12 +24,12 @@ import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Exco Dashboard — ECCF',
+  title: 'ECCF Exco Dashboard',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'ECCF Portal',
+    title: 'ECCF Exco Dashboard',
   },
 }
 

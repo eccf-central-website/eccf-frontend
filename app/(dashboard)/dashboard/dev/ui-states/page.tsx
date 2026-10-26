@@ -27,7 +27,7 @@ import { ClearFiltersDemo, ToastDemo } from '@/components/dashboard/states/dev/T
 import { Button } from '@/components/dashboard/ui/button'
 
 export const metadata: Metadata = {
-  title: 'UI states gallery — Exco Dashboard',
+  title: 'UI states gallery — ECCF Exco Dashboard',
 }
 
 function GallerySection({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {

@@ -14,7 +14,7 @@ import { ThemeProvider, THEME_STORAGE_KEY } from '@/components/dashboard/theme/T
 import './dashboard.css'
 
 export const metadata: Metadata = {
-  title: 'Exco Dashboard — ECCF',
+  title: 'ECCF Exco Dashboard',
   robots: { index: false, follow: false },
 }
 

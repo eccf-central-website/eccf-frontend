@@ -125,7 +125,7 @@ export default function InstallPwaButton() {
               </div>
               <div>
                 <h3 className="font-serif font-bold text-base text-foreground leading-tight">
-                  Install ECCF Portal
+                  Install ECCF Exco Dashboard
                 </h3>
                 <p className="text-xs text-muted-foreground">Add to Home Screen or Desktop</p>
               </div>
@@ -181,7 +181,7 @@ export default function InstallPwaButton() {
                       2
                     </span>
                     <span>
-                      Select <strong className="text-foreground">Install</strong> to pin ECCF Portal to your taskbar or app drawer.
+                      Select <strong className="text-foreground">Install</strong> to pin ECCF Exco Dashboard to your taskbar or app drawer.
                     </span>
                   </li>
                 </ol>
