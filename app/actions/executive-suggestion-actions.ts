@@ -88,6 +88,8 @@ export interface CommitImportResult {
   /** Reserved appointments for leaders who have not registered as workers yet. */
   unregisteredCount: number
   emailsSent: number
+  /** Leaders who were already emailed in a previous import and were not emailed again. */
+  emailsSkipped: number
   skipped: string[]
   error?: string
 }
@@ -670,6 +672,7 @@ export async function commitExecutiveImport(payload: {
       createdCount: 0,
       unregisteredCount: 0,
       emailsSent: 0,
+      emailsSkipped: 0,
       skipped: [],
       error: auth.error,
     }
@@ -685,6 +688,7 @@ export async function commitExecutiveImport(payload: {
       createdCount: 0,
       unregisteredCount: 0,
       emailsSent: 0,
+      emailsSkipped: 0,
       skipped: [],
       error: 'No items selected to import.',
     }
@@ -695,36 +699,83 @@ export async function commitExecutiveImport(payload: {
   const createdCount = 0
   let unregisteredCount = 0
   let emailsSent = 0
+  let emailsSkipped = 0
   const skipped: string[] = []
 
-  // Pre-fetch fresh workers and their existing positions
-  const existingWorkers = (await sanityPrivateClient.fetch(
-    `*[_type == "worker" && !(_id in path("drafts.**"))]{
-      _id,
-      fullName,
-      email,
-      positions
-    }`
-  )) as Array<{
-    _id: string
-    fullName?: string
-    email?: string
-    positions?: Array<Record<string, unknown>>
-  }>
+  // Pre-fetch workers, existing appointments and prior guidance-email records.
+  // The guidance records make appointment emails idempotent across re-imports.
+  const [existingWorkers, existingAppointments, existingGuidanceEmails] = await Promise.all([
+    sanityPrivateClient.fetch<Array<{
+      _id: string
+      fullName?: string
+      email?: string
+      positions?: Array<Record<string, unknown>>
+    }>>(
+      `*[_type == "worker" && !(_id in path("drafts.**"))]{
+        _id,
+        fullName,
+        email,
+        positions
+      }`
+    ),
+    sanityPrivateClient.fetch<Array<{
+      _id: string
+      status?: string
+      claimedBy?: { _ref?: string }
+      fullName?: string
+      email?: string
+      normalizedName?: string
+      guidanceEmailSentAt?: string
+    }>>(
+      `*[_type == "executiveAppointment"]{
+        _id,
+        status,
+        claimedBy,
+        fullName,
+        email,
+        normalizedName,
+        guidanceEmailSentAt
+      }`
+    ),
+    sanityPrivateClient.fetch<Array<{
+      _id: string
+      fullName?: string
+      email?: string
+      normalizedName?: string
+    }>>(
+      `*[_type == "executiveGuidanceEmail"]{ _id, fullName, email, normalizedName }`
+    ),
+  ])
 
   // Existing appointments let us respect roles already claimed by a worker.
-  const existingAppointments = (await sanityPrivateClient.fetch(
-    `*[_type == "executiveAppointment"]{ _id, status, claimedBy }`
-  )) as Array<{
-    _id: string
-    status?: string
-    claimedBy?: { _ref?: string }
-  }>
   const claimedAppointmentWorkerIds = new Map<string, string>()
   for (const appointment of existingAppointments) {
     if (appointment.status === 'claimed' && appointment.claimedBy?._ref) {
       claimedAppointmentWorkerIds.set(appointment._id, appointment.claimedBy._ref)
     }
+  }
+
+  // A profile is only ever emailed once, regardless of how many CSV imports it
+  // appears in. It counts as notified when a guidance send was recorded, or when
+  // it already had a claimed appointment before this run — both the previous
+  // import flow and registration send guidance at claim time.
+  const notifiedProfileKeys = new Set<string>()
+  const addProfileKeys = (email?: string, normalizedName?: string, fullName?: string) => {
+    const cleanEmail = email?.trim().toLowerCase()
+    if (cleanEmail && cleanEmail.includes('@')) {
+      notifiedProfileKeys.add(`email:${cleanEmail}`)
+    }
+    const key = normalizedName || normalizeTokensKey(extractNameTokens(fullName || ''))
+    if (key) notifiedProfileKeys.add(`name:${key}`)
+  }
+
+  for (const appointment of existingAppointments) {
+    if (appointment.status === 'claimed' || appointment.guidanceEmailSentAt) {
+      addProfileKeys(appointment.email, appointment.normalizedName, appointment.fullName)
+    }
+  }
+  for (const record of existingGuidanceEmails) {
+    addProfileKeys(record.email, record.normalizedName, record.fullName)
   }
 
   const workerMapByName = new Map<string, string>()
@@ -762,6 +813,8 @@ export async function commitExecutiveImport(payload: {
     workerId: string
     appointmentId: string
     email: string
+    profileEmailKey?: string
+    profileNameKey: string
     positionTitle: string
     kind: 'csgb' | 'hall' | 'team'
     rank: 'lead' | 'assistant'
@@ -895,6 +948,9 @@ export async function commitExecutiveImport(payload: {
         workerId: targetWorkerId,
         appointmentId: deterministicAppId,
         email: targetEmail,
+        profileEmailKey:
+          targetEmail && targetEmail.includes('@') ? `email:${targetEmail}` : undefined,
+        profileNameKey: `name:${normalizedKey}`,
         positionTitle,
         kind: item.kind,
         rank: item.rank || 'lead',
@@ -1013,17 +1069,39 @@ export async function commitExecutiveImport(payload: {
 
   // ---------------------------------------------------------------------------
   // Dispatch appointment guidance emails only after the database writes have
-  // succeeded, in small parallel batches. A failed email never fails the import.
+  // succeeded, in small parallel batches. Each leader is notified at most once
+  // across imports: re-importing the same CSV (or adding another role for an
+  // existing leader) updates positions without sending a duplicate email.
   // ---------------------------------------------------------------------------
   const pendingEmails = new Map<string, (typeof matchedImports)[number]>()
+  const queuedProfileKeys = new Set<string>()
+
   for (const entry of matchedImports) {
     if (!writtenWorkerIds.has(entry.workerId)) continue
     if (!entry.email || !entry.email.includes('@')) continue
-    const emailKey = `${entry.email}|${entry.positionTitle}`
-    if (!pendingEmails.has(emailKey)) pendingEmails.set(emailKey, entry)
+
+    const profileKeys = [entry.profileNameKey, entry.profileEmailKey].filter(
+      (key): key is string => Boolean(key)
+    )
+
+    if (profileKeys.some((key) => queuedProfileKeys.has(key))) continue
+
+    const alreadyNotified = profileKeys.some((key) => notifiedProfileKeys.has(key))
+    if (alreadyNotified) {
+      emailsSkipped++
+      continue
+    }
+
+    for (const key of profileKeys) queuedProfileKeys.add(key)
+    pendingEmails.set(entry.profileEmailKey || entry.profileNameKey, entry)
   }
 
+  const guidanceDocs = new Map<
+    string,
+    { _id: string; _type: string } & Record<string, unknown>
+  >()
   const emailTasks = Array.from(pendingEmails.values())
+
   for (let start = 0; start < emailTasks.length; start += EMAIL_BATCH_SIZE) {
     const batch = emailTasks.slice(start, start + EMAIL_BATCH_SIZE)
     const results = await Promise.allSettled(
@@ -1041,16 +1119,49 @@ export async function commitExecutiveImport(payload: {
     )
 
     results.forEach((result, index) => {
+      const task = batch[index]
+
       if (result.status === 'fulfilled' && result.value.ok) {
         emailsSent++
+
+        const profileKey = task.profileEmailKey || task.profileNameKey
+        const guidanceId = `executiveGuidanceEmail_${createHash('sha1')
+          .update(profileKey)
+          .digest('hex')}`
+        guidanceDocs.set(guidanceId, {
+          _id: guidanceId,
+          _type: 'executiveGuidanceEmail',
+          fullName: task.name,
+          ...(task.profileEmailKey ? { email: task.email } : {}),
+          normalizedName: task.profileNameKey.replace(/^name:/, ''),
+          sentAt: new Date().toISOString(),
+          lastPositionTitle: task.positionTitle,
+        })
+
+        // Prevent a later batch in this same import from emailing this profile.
+        if (task.profileEmailKey) notifiedProfileKeys.add(task.profileEmailKey)
+        notifiedProfileKeys.add(task.profileNameKey)
       } else {
         const reason = result.status === 'fulfilled' ? result.value.error : String(result.reason)
         console.error(
-          `[commitExecutiveImport] Email dispatch error for ${batch[index].email}:`,
+          `[commitExecutiveImport] Email dispatch error for ${task.email}:`,
           reason
         )
       }
     })
+  }
+
+  // Persist the send records so future imports never email these profiles again.
+  const guidanceDocList = Array.from(guidanceDocs.values())
+  for (let start = 0; start < guidanceDocList.length; start += WRITE_BATCH_SIZE) {
+    const chunk = guidanceDocList.slice(start, start + WRITE_BATCH_SIZE)
+    try {
+      const transaction = sanityWriteClient.transaction()
+      for (const doc of chunk) transaction.createOrReplace(doc)
+      await transaction.commit()
+    } catch (err) {
+      console.error('[commitExecutiveImport] Failed to persist guidance email records:', err)
+    }
   }
 
   return {
@@ -1060,6 +1171,7 @@ export async function commitExecutiveImport(payload: {
     createdCount,
     unregisteredCount,
     emailsSent,
+    emailsSkipped,
     skipped,
   }
 }

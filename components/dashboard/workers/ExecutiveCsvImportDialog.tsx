@@ -899,6 +899,15 @@ export default function ExecutiveCsvImportDialog({
               </div>
             )}
 
+            {commitResult.emailsSkipped > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-700 dark:text-sky-300 font-medium">
+                <Mail className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                <span>
+                  No duplicate emails sent — {commitResult.emailsSkipped} leader{commitResult.emailsSkipped === 1 ? ' had' : 's had'} already received appointment guidance.
+                </span>
+              </div>
+            )}
+
             {commitResult.skipped.length > 0 && (
               <div className="rounded-xl bg-warning/10 border border-warning/25 p-3.5 space-y-2">
                 <div className="flex items-center gap-1.5">
