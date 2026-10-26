@@ -268,7 +268,21 @@ export const PEOPLE_STATS_QUERY = `{
       count(teams[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0
     ))
   )]),
-  "lastService": *[_type == "attendanceLedger" && ($team == null || team->name == $team || team == $team)] | order(date desc)[0] { date, serviceType, meetingTitle, totalCount }
+  "lastService": *[_type == "attendanceLedger" && (
+    $team == null ||
+    team->name == $team ||
+    team == $team ||
+    lower(team->name) == lower($team) ||
+    lower(team) == lower($team) ||
+    team->name match $team ||
+    team match $team ||
+    ($cleanTeam != null && (
+      team->name match $cleanTeam ||
+      team match $cleanTeam ||
+      lower(team->name) == lower($cleanTeam) ||
+      lower(team) == lower($cleanTeam)
+    ))
+  )] | order(date desc)[0] { date, serviceType, meetingTitle, totalCount }
 }`
 
 export const FINANCE_STATS_QUERY = `{

@@ -41,6 +41,7 @@ import {
   isHallScoped,
   isTeamScoped,
   isCSGBMember,
+  isRegularTeamLeader,
 } from '../rbac'
 import { isDevMockState, type DevMockState } from '../shell'
 import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
@@ -147,10 +148,12 @@ export async function getOverviewStats(session: ECCFSession): Promise<OverviewSt
       finance
         .filter((f) => f.type === type && f.transactionDate >= params.monthStart)
         .reduce((total, f) => total + f.amount, 0)
-    const scopedAttendance = attendance.filter(
-      (a) => team === null || a.teamName === team || a.serviceType === 'Sunday Service'
-    )
-    const lastService = scopedAttendance[0] ?? attendance[0]
+    const isTeamLead = isRegularTeamLeader(session)
+    const scopedAttendance = attendance.filter((a) => {
+      if (team === null) return true
+      return a.teamName === team || (isTeamLead && a.serviceType === 'Team Meeting')
+    })
+    const lastService = scopedAttendance[0] ?? (isTeamLead ? null : attendance[0])
     return {
       people: showPeople
         ? {

@@ -515,6 +515,37 @@ export function isMediaTeam(
  * team_lead sees workers scoped to their operational team, UNLESS they are
  * the Media Team (which requires fellowship-wide worker visibility to design birthday flyers).
  */
+export function isRegularTeamLeader(
+  session?: {
+    role?: WorkerRole | string
+    excoPosition?: string | null
+    leadingTeam?: string | null
+    team?: string | null
+    teams?: string[] | null
+    access?: {
+      isCSGB?: boolean
+      isPresident?: boolean
+      isVP?: boolean
+      isChaplain?: boolean
+      isPrayerCoordinator?: boolean
+      [key: string]: unknown
+    } | null
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.role !== 'team_lead') return false
+  if (
+    session.access?.isCSGB ||
+    session.access?.isPresident ||
+    session.access?.isVP ||
+    session.access?.isChaplain
+  ) {
+    return false
+  }
+  if (isCSGBMember(session)) return false
+  return true
+}
+
 export function isTeamScoped(
   role: WorkerRole,
   session?: {

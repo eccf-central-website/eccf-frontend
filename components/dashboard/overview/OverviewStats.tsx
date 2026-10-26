@@ -26,7 +26,7 @@ import type { ECCFSession, WorkerRole } from '@/types'
 import { getOverviewStats } from '@/lib/dashboard/data'
 import { lagosMonthLabel } from '@/lib/dashboard/dates'
 import { formatCount, formatDate, formatNaira, formatRelativeDay, toDateTimeAttr } from '@/lib/dashboard/format'
-import { canAccessSection, isHallScoped, SECTION_PATHS, type DashboardSection } from '@/lib/dashboard/rbac'
+import { canAccessSection, isHallScoped, isRegularTeamLeader, SECTION_PATHS, type DashboardSection } from '@/lib/dashboard/rbac'
 import type {
   FinanceStats,
   OverviewStats as OverviewStatsData,
@@ -54,11 +54,16 @@ export const FINANCE_CARD_COUNT = 3
 type LastService = NonNullable<PeopleStats['lastService']>
 
 function serviceLabel(service: LastService): string {
-  return service.serviceType
+  return service.meetingTitle || service.serviceType
 }
 
-function workersCaption(role: WorkerRole): string {
-  return isHallScoped(role) ? 'In your hall' : 'Across all halls'
+function workersCaption(role: WorkerRole, session?: ECCFSession): string {
+  if (isHallScoped(role)) return 'In your hall'
+  if (isRegularTeamLeader(session)) {
+    const teamName = session?.leadingTeam || session?.team
+    return teamName && teamName.toLowerCase() !== 'exco' ? `In ${teamName}` : 'In your team'
+  }
+  return 'Across all halls'
 }
 
 function linkFor(role: WorkerRole, section: DashboardSection, session?: ECCFSession) {
@@ -80,6 +85,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
   const since = `Since 1 ${lagosMonthLabel()}`
   const firstTimersCaption = isHallScoped(role) ? `In your hall · ${since}` : since
   const { lastService } = stats
+  const isTeamLead = isRegularTeamLeader(session)
 
   const canFirstTimers = canAccessSection(role, 'firstTimers', session)
   const canWelfare = canAccessSection(role, 'welfare', session)
@@ -151,7 +157,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
           icon={<Users />}
           value={formatCount(stats.workers)}
           rawValue={stats.workers}
-          caption={workersCaption(role)}
+          caption={workersCaption(role, session)}
           tone="muted"
           href={linkFor(role, 'workers', session)}
           linkLabel="View workers"
@@ -161,7 +167,7 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
         <StatCard
           id="stat-last-service"
           headingLevel="h4"
-          label="Last service attendance"
+          label={isTeamLead ? "Last meeting attendance" : "Last service attendance"}
           icon={<CalendarCheck />}
           className={cardCount % 2 === 1 ? 'col-span-2 xl:col-span-1' : ''}
           value={lastService ? formatCount(lastService.totalCount) : '—'}
@@ -176,12 +182,12 @@ function PeopleCards({ stats, role, session }: { stats: PeopleStats; role: Worke
                 </time>
               </>
             ) : (
-              'No services recorded yet'
+              isTeamLead ? 'No meetings recorded yet' : 'No services recorded yet'
             )
           }
           tone="muted"
           href={linkFor(role, 'attendance', session)}
-          linkLabel="View attendance"
+          linkLabel={isTeamLead ? "View meeting attendance" : "View attendance"}
         />
       )}
     </StatGroup>
