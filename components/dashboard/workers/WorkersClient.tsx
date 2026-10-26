@@ -807,7 +807,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
       {/* WORKER DETAIL MODAL                                                  */}
       {/* ==================================================================== */}
       <Dialog open={!!activeWorkerDetail} onOpenChange={(open) => !open && setActiveWorkerDetail(null)}>
-        <DialogContent className="flex max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl p-6">
+        <DialogContent className="flex sm:max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl p-6">
           <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="font-serif text-2xl font-black text-foreground">
               Worker Profile

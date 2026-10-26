@@ -782,7 +782,7 @@ export default function TeamMeetingAttendanceView({
         open={Boolean(activeRosterRecord)}
         onOpenChange={(open) => !open && setActiveRosterRecord(null)}
       >
-        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+        <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary">
               <Users className="h-5 w-5 shrink-0" />

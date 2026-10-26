@@ -158,11 +158,11 @@ export default function ExecutiveCsvImportDialog({
         {buttonLabel}
       </Button>
 
-      <DialogContent className="rounded-2xl border-border bg-card sm:max-w-lg p-5 sm:p-6">
+      <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden min-w-0 border-border bg-card sm:max-w-lg p-5 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-serif font-black tracking-tight text-foreground flex items-center gap-2">
+          <DialogTitle className="font-serif font-black tracking-tight text-foreground flex items-center gap-2 text-base sm:text-lg min-w-0">
             <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
-            Bulk-Import Executive Positions
+            <span className="truncate">Bulk-Import Executive Positions</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Upload a CSV or Excel sheet of executive positions. Each row is matched to a registered
@@ -172,7 +172,7 @@ export default function ExecutiveCsvImportDialog({
 
         {result ? (
           /* ---------- Result report ---------- */
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-0">
             <div className="flex items-center gap-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3.5">
               <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <div className="min-w-0">
@@ -197,7 +197,7 @@ export default function ExecutiveCsvImportDialog({
                 </div>
                 <ul className="max-h-40 overflow-y-auto space-y-1 pr-1">
                   {result.skipped.map((reason, i) => (
-                    <li key={i} className="text-xs text-muted-foreground leading-relaxed">
+                    <li key={i} className="text-xs text-muted-foreground leading-relaxed break-words">
                       • {reason}
                     </li>
                   ))}
@@ -207,7 +207,7 @@ export default function ExecutiveCsvImportDialog({
           </div>
         ) : (
           /* ---------- Upload form ---------- */
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-0">
             <input
               ref={inputRef}
               type="file"
@@ -236,7 +236,7 @@ export default function ExecutiveCsvImportDialog({
                 if (!pending) pickFile(e.dataTransfer.files?.[0] ?? null)
               }}
               className={cn(
-                'flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring w-full min-w-0 max-w-full overflow-hidden',
                 dragActive
                   ? 'border-primary bg-primary/10'
                   : 'border-border hover:border-primary/50 hover:bg-muted/40'
@@ -246,28 +246,28 @@ export default function ExecutiveCsvImportDialog({
                 <Upload className="h-5 w-5" />
               </div>
               {file ? (
-                <>
-                  <span className="text-sm font-bold text-foreground max-w-[280px] truncate">
+                <div className="w-full min-w-0 px-2 flex flex-col items-center">
+                  <span className="text-sm font-bold text-foreground w-full truncate text-center block">
                     {file.name}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground text-center break-words mt-0.5">
                     {(file.size / 1024).toFixed(0)} KB — click to choose a different file
                   </span>
-                </>
+                </div>
               ) : (
-                <>
-                  <span className="text-sm font-bold text-foreground">
+                <div className="w-full min-w-0 px-2 flex flex-col items-center">
+                  <span className="text-sm font-bold text-foreground text-center">
                     Drop the sheet here or click to browse
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground text-center mt-0.5">
                     CSV, XLSX or XLS — up to 4 MB
                   </span>
-                </>
+                </div>
               )}
             </div>
 
             {/* Column shape hint */}
-            <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5">
+            <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5 w-full min-w-0 overflow-hidden">
               <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
                 Expected columns
               </p>
@@ -276,7 +276,7 @@ export default function ExecutiveCsvImportDialog({
                   (col) => (
                     <span
                       key={col}
-                      className="px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-mono text-foreground"
+                      className="px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-mono text-foreground break-all sm:break-normal"
                     >
                       {col}
                     </span>
@@ -286,21 +286,21 @@ export default function ExecutiveCsvImportDialog({
             </div>
 
             {error && (
-              <p className="text-xs text-destructive font-semibold" role="alert">
+              <p className="text-xs text-destructive font-semibold break-words" role="alert">
                 {error}
               </p>
             )}
           </div>
         )}
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={downloadTemplate}
             disabled={downloading}
-            className="h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground"
+            className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
           >
             {downloading ? (
               <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
@@ -315,7 +315,7 @@ export default function ExecutiveCsvImportDialog({
               type="button"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs"
+              className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
             >
               {result.skipped.length ? 'Review Pending List' : 'Done'}
             </Button>
@@ -325,7 +325,7 @@ export default function ExecutiveCsvImportDialog({
               size="sm"
               onClick={submit}
               disabled={!file || pending}
-              className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs"
+              className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
             >
               {pending ? (
                 <>

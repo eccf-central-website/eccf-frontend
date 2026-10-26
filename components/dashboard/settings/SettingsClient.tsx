@@ -245,14 +245,14 @@ export default function SettingsClient({
 
           {parsedRows.length > 0 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-sm font-medium text-foreground">
                   Ready to import {parsedRows.length} workers
                 </span>
                 <Button
                   onClick={handleImportSubmit}
                   disabled={isPending || !canImport}
-                  className="min-h-[44px] px-6"
+                  className="min-h-[44px] px-6 w-full sm:w-auto"
                 >
                   {isPending ? 'Importing…' : `Confirm & Ingest ${parsedRows.length} Workers`}
                 </Button>
@@ -260,10 +260,10 @@ export default function SettingsClient({
 
               <div className="max-h-64 overflow-y-auto rounded-xl border border-border/40 divide-y divide-border/20 text-xs">
                 {parsedRows.slice(0, 15).map((row, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2.5 px-3">
-                    <span className="font-medium text-foreground">{row.fullName}</span>
-                    <span className="text-muted-foreground">{row.email}</span>
-                    <span className="text-muted-foreground">{row.team || 'Unassigned'}</span>
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 px-3 gap-1 min-w-0">
+                    <span className="font-medium text-foreground truncate">{row.fullName}</span>
+                    <span className="text-muted-foreground truncate">{row.email}</span>
+                    <span className="text-muted-foreground shrink-0">{row.team || 'Unassigned'}</span>
                   </div>
                 ))}
                 {parsedRows.length > 15 && (

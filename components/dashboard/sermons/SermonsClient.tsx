@@ -760,7 +760,7 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={Boolean(deletingId)} onOpenChange={(open) => !open && setDeletingId(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5 shrink-0" />

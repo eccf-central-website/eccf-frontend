@@ -466,7 +466,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
 
       {/* Visitor Detail Modal */}
       <Dialog open={Boolean(selectedVisitor)} onOpenChange={(open) => !open && setSelectedVisitor(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           {selectedVisitor && (
             <>
               <DialogHeader>

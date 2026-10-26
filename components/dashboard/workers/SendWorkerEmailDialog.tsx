@@ -204,7 +204,7 @@ export default function SendWorkerEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-0 shadow-2xl text-card-foreground">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-7 rounded-2xl bg-card border-0 shadow-2xl text-card-foreground">
         <DialogHeader className="pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-primary">
             <Mail className="h-4 w-4 shrink-0" />
