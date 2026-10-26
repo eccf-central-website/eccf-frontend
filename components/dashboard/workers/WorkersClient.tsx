@@ -113,7 +113,7 @@ function matchesWorkerTeam(
 
   if (targets.length === 0) return true
 
-  const workerTeams = [worker.team, ...(worker.teams || [])]
+  const workerTeams = [worker.team, ...(worker.teams || [])].filter((t): t is string => Boolean(t && typeof t === 'string'))
     .flatMap((t) => (t ? t.split(',') : []))
     .map(normalizeTeam)
     .filter(Boolean)
@@ -244,7 +244,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
         const matchName = row.fullName.toLowerCase().includes(q)
         const matchHall = (row.hall || '').toLowerCase().includes(q)
         const matchTeam = (row.team || '').toLowerCase().includes(q)
-        const matchSecondary = row.teams?.some((t) => t.toLowerCase().includes(q))
+        const matchSecondary = row.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes(q)))
         if (!matchName && !matchHall && !matchTeam && !matchSecondary) return false
       }
 
@@ -1029,7 +1029,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                     {(activeWorkerDetail.teams && activeWorkerDetail.teams.length > 0
                       ? activeWorkerDetail.teams
                       : [activeWorkerDetail.team]
-                    ).map((t) => (
+                    ).filter((t): t is string => Boolean(t && typeof t === 'string')).map((t) => (
                       <span
                         key={t}
                         className="inline-flex items-center px-3 py-1 rounded-xl bg-primary/10 text-primary text-xs font-semibold border border-primary/15"

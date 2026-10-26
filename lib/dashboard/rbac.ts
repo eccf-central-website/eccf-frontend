@@ -31,6 +31,7 @@ export type DashboardSection =
 export type DashboardPermission =
   | 'attendance:create'
   | 'finance:create'
+  | 'welfare:create'
   | 'welfare:resolve'
   | 'sermons:sync'
   | 'sermons:manage'
@@ -165,6 +166,7 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
 const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'attendance:create': ['admin', 'team_lead', 'hall_rep'],
   'finance:create': ['admin', 'finance'],
+  'welfare:create': ['admin', 'team_lead'],
   'welfare:resolve': ['admin', 'team_lead'],
   // ADR-002: manual sync & management is strictly for media team leaders
   'sermons:sync': ['admin', 'team_lead'],
@@ -205,7 +207,7 @@ export function isPrayerTeamAdmin(
   if (pos.includes('chaplain')) return true
 
   if (session.access?.isPrayerCoordinator) return true
-  if (session.access?.leadsTeamKeys?.some((k) => k.toLowerCase().includes('prayer'))) return true
+  if (session.access?.leadsTeamKeys?.some((k) => Boolean(k && typeof k === 'string' && k.toLowerCase().includes('prayer')))) return true
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
   if (leadingTeam.includes('prayer')) return true
   if (pos.includes('prayer') && (pos.includes('lead') || pos.includes('coordinator') || pos.includes('head') || pos.includes('admin'))) return true
@@ -225,7 +227,9 @@ export function isWelfareTeamMember(
       isCSGB?: boolean
       isPresident?: boolean
       isVP?: boolean
+      isChaplain?: boolean
       leadsTeamKeys?: string[]
+      titles?: string[]
       [key: string]: unknown
     } | null
   } | null
@@ -234,13 +238,19 @@ export function isWelfareTeamMember(
   if (session.access?.isWelfare) return true
   if (session.access?.isCSGB || session.access?.isPresident || session.access?.isVP) return true
   if (session.role === 'admin') return true
+  if (session.access?.isChaplain || (session as { role?: string }).role === 'chaplain') return true
 
-  if (session.access?.leadsTeamKeys?.some((k) => k.toLowerCase().includes('welfare'))) return true
+  const pos = (session.excoPosition || '').toLowerCase()
+  if (pos.includes('chaplain')) return true
+
+  const titles = (session.access?.titles as string[] | undefined) || []
+  if (titles.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('chaplain')))) return true
+
+  if (session.access?.leadsTeamKeys?.some((k) => Boolean(k && typeof k === 'string' && k.toLowerCase().includes('welfare')))) return true
 
   const team = (session.team || '').toLowerCase()
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
-  const pos = (session.excoPosition || '').toLowerCase()
-  const hasWelfareInTeams = session.teams?.some((t) => t.toLowerCase().includes('welfare')) ?? false
+  const hasWelfareInTeams = session.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('welfare'))) ?? false
 
   return (
     team.includes('welfare') ||
@@ -266,7 +276,7 @@ export function isCSGBMember(
   const position = (session.excoPosition || '').toLowerCase()
   const team = (session.team || '').toLowerCase()
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
-  const hasPrayerInTeams = session.teams?.some((t) => t.toLowerCase().includes('prayer')) ?? false
+  const hasPrayerInTeams = session.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('prayer'))) ?? false
 
   return (
     position.includes('president') ||
@@ -337,7 +347,7 @@ export function isUsheringTeam(
   const team = (session.team || '').toLowerCase()
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
   const position = (session.excoPosition || '').toLowerCase()
-  const hasUsherInTeams = session.teams?.some((t) => t.toLowerCase().includes('usher')) ?? false
+  const hasUsherInTeams = session.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('usher'))) ?? false
 
   return (
     team.includes('usher') ||
@@ -361,6 +371,7 @@ export function isOutreachLeader(
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
   const hasOutreachInTeams =
     session.teams?.some((t) => {
+      if (!t || typeof t !== 'string') return false
       const s = t.toLowerCase()
       return s.includes('outreach') || s.includes('evangelism') || s.includes('follow')
     }) ?? false
@@ -401,7 +412,7 @@ export function canDeleteWorkers(
   if (session.access?.isChaplain || session.role === 'chaplain') return true
   const pos = (session.excoPosition || '').toLowerCase()
   if (pos.includes('chaplain')) return true
-  if (session.access?.titles?.some((t) => t.toLowerCase().includes('chaplain'))) return true
+  if (session.access?.titles?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('chaplain')))) return true
   return isCSGBMember(session)
 }
 
@@ -470,6 +481,9 @@ export function hasPermission(
   if (permission === 'workers:delete' && session) {
     return canDeleteWorkers(session)
   }
+  if ((permission === 'welfare:create' || permission === 'welfare:resolve') && session) {
+    return isWelfareTeamMember(session as unknown as LeaderPostContext)
+  }
   return PERMISSIONS[permission].includes(role)
 }
 
@@ -500,7 +514,7 @@ export function isMediaTeam(
   const team = (session.team || '').toLowerCase()
   const position = (session.excoPosition || '').toLowerCase()
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
-  const hasMediaInTeams = session.teams?.some((t) => t.toLowerCase().includes('media')) ?? false
+  const hasMediaInTeams = session.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('media'))) ?? false
   return (
     team.includes('media') ||
     team.includes('publicity') ||

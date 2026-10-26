@@ -49,7 +49,7 @@ export const DASHBOARD_WORKERS_QUERY = `
     fullName,
     email,
     "team": coalesce(memberships[0].team->name, team->name, team),
-    "teams": coalesce(memberships[].team->name, teams[]->name, teams, [coalesce(team->name, team)]),
+    "teams": coalesce(memberships[].team->name, teams[]->name, teams, [coalesce(team->name, team)])[@ != null],
     "hall": coalesce(hallRef->name, hall),
     "role": coalesce(
       select(
@@ -167,7 +167,7 @@ export const DASHBOARD_ATTENDANCE_QUERY = `
     firstTimersCount,
     notes,
     "attendeeCount": count(coalesce(attendees, [])),
-    "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]) },
+    "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])[@ != null] },
     "loggedBy": {
       "_id": coalesce(loggedBy->_id, loggedBy._ref, ""),
       "fullName": coalesce(loggedBy->fullName, loggedByName, loggedBy.fullName, "Fellowship Admin"),
@@ -223,6 +223,27 @@ export const DASHBOARD_WELFARE_QUERY = `
     requestDetails,
     status,
     dateSubmitted
+  }
+`
+
+export const DASHBOARD_WELFARE_LEDGER_QUERY = `
+  *[_type == "welfareLedger"] | order(date asc, _createdAt asc) {
+    _id,
+    date,
+    description,
+    type,
+    amount,
+    bankCharge,
+    balance,
+    category,
+    recipient,
+    reference,
+    "loggedByName": coalesce(loggedByName, loggedBy->fullName, "Welfare Officer"),
+    "loggedBy": {
+      "_id": coalesce(loggedBy->_id, loggedBy._ref, ""),
+      "fullName": coalesce(loggedBy->fullName, loggedByName, "Welfare Officer")
+    },
+    "createdAt": coalesce(createdAt, _createdAt)
   }
 `
 

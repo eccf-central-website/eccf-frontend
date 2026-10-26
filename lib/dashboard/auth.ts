@@ -175,7 +175,7 @@ export async function getSession(): Promise<DashboardSession | null> {
         "team": coalesce(team->name, team),
         "hall": coalesce(hallRef->name, hall),
         "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
-        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)])[@ != null],
         positions[] {
           kind,
           "team": team->{ _id, name, "key": coalesce(key, slug.current) },
@@ -234,8 +234,14 @@ export async function getSession(): Promise<DashboardSession | null> {
   const team = typeof teamObj === 'string' ? teamObj : teamObj?.name || 'Exco'
   const rawTeams = worker.teams || []
   const teams = Array.isArray(rawTeams)
-    ? (rawTeams.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean) as string[])
-    : [team]
+    ? (rawTeams
+        .map((t) => (typeof t === 'string' ? t : (t as { name?: string } | null)?.name))
+        .filter((t): t is string => Boolean(t && typeof t === 'string' && t.trim().length > 0)))
+    : (team ? [team] : [])
+
+  if (Array.isArray(worker.teams)) {
+    worker.teams = teams
+  }
 
   const displayName =
     worker.fullName ||

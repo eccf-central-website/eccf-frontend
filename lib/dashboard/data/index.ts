@@ -31,6 +31,8 @@ import type {
   FirstTimerRow,
   PendingExecutiveApplication,
   PrayerRequest,
+  WelfareLedger,
+  WelfareLedgerRow,
   WelfareRequestRow,
   WorkerRow,
 } from '@/types'
@@ -52,6 +54,7 @@ import {
   DASHBOARD_FIRST_TIMERS_QUERY,
   DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY,
   DASHBOARD_PRAYER_REQUESTS_QUERY,
+  DASHBOARD_WELFARE_LEDGER_QUERY,
   DASHBOARD_WELFARE_QUERY,
   DASHBOARD_WORKERS_QUERY,
   FINANCE_STATS_QUERY,
@@ -64,6 +67,7 @@ import {
   MOCK_FINANCE,
   MOCK_FIRST_TIMERS,
   MOCK_PRAYER_REQUESTS,
+  MOCK_WELFARE_LEDGER,
   MOCK_WELFARE,
   MOCK_WORKERS,
   mockHallForWorker,
@@ -370,6 +374,36 @@ export async function listFirstTimers(session?: ECCFSession): Promise<FirstTimer
     phoneNumber: row.phoneNumber ? decrypt(row.phoneNumber) : undefined,
     roomNumber: row.roomNumber ? (decrypt(row.roomNumber) || row.roomNumber) : undefined,
   }))
+}
+
+export async function listWelfareLedger(session?: ECCFSession): Promise<WelfareLedgerRow[]> {
+  if (session && !canAccessSection(session.role, 'welfare', session)) {
+    return []
+  }
+
+  const raw =
+    dataSource() === 'mock'
+      ? await fromMock<WelfareLedgerRow[]>(MOCK_WELFARE_LEDGER, [])
+      : await sanityPrivateClient.fetch<WelfareLedger[]>(DASHBOARD_WELFARE_LEDGER_QUERY)
+
+  // Compute progressive running balance chronologically
+  let running = 0
+  const computed: WelfareLedgerRow[] = (raw || []).map((entry) => {
+    const amount = Number(entry.amount) || 0
+    const charge = Number(entry.bankCharge) || 0
+    if (entry.type === 'Credit') {
+      running += (amount - charge)
+    } else {
+      running -= (amount + charge)
+    }
+    return {
+      ...entry,
+      runningBalance: typeof entry.balance === 'number' && entry.balance !== 0 ? entry.balance : running,
+    }
+  })
+
+  // Return newest first for ledger presentation
+  return stripPII(computed.reverse())
 }
 
 export async function listWelfare(

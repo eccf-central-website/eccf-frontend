@@ -347,7 +347,7 @@ export default function SendWorkerEmailDialog({
                     <SelectValue placeholder="Choose your team..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {session.teams.map((t) => (
+                    {session.teams.filter(Boolean).map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>

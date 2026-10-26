@@ -1,34 +1,29 @@
 /**
- * Welfare — /dashboard/welfare
+ * Welfare Operations — /dashboard/welfare
  *
- * Implements the welfare care queue:
- * - One semantic h1: Welfare
- * - Subtitle: Review requests, respond with care, and close the loop.
- * - Date-only eyebrow.
- * - Confidential student assistance requests reviewed with pastoral care.
+ * Implements the unified Welfare Hub:
+ * - Welfare Purse Ledger (tracking inflows, outflows, bank charges, and running purse balance)
+ * - Care Requests queue (pastoral care, medical & student distress assistance)
+ *
+ * Access is restricted to:
+ * - Welfare & Medical Team Leaders and Members
+ * - Christian Student Governing Board (CSGB)
+ * - Fellowship Chaplain
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
-import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
-import WelfareClient from '@/components/dashboard/welfare/WelfareClient'
+import WelfareHub from '@/components/dashboard/welfare/WelfareHub'
 import { requireSection } from '@/lib/dashboard/auth'
-import { listWelfare } from '@/lib/dashboard/data'
+import { listWelfare, listWelfareLedger } from '@/lib/dashboard/data'
 
 export const dynamic = 'force-dynamic'
 
 export default async function WelfarePage() {
   const session = await requireSection('welfare')
-  const rows = await listWelfare(session)
-
-  if (rows.length === 0) {
-    return (
-      <SectionEmpty
-        section="welfare"
-        title="No welfare requests yet"
-        description="Welfare assistance requests submitted on the Connect page will appear here."
-      />
-    )
-  }
+  const [ledgerEntries, requests] = await Promise.all([
+    listWelfareLedger(session),
+    listWelfare(session),
+  ])
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
@@ -44,14 +39,14 @@ export default async function WelfarePage() {
           {todayStr}
         </p>
         <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Welfare
+          Welfare Operations
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
-          Review requests, respond with care, and close the loop.
+          Manage the Welfare Purse ledger, monitor inflows and disbursements, and respond to care requests.
         </p>
       </div>
 
-      <WelfareClient initialRequests={rows} />
+      <WelfareHub initialLedgerEntries={ledgerEntries} initialRequests={requests} />
     </PageContainer>
   )
 }

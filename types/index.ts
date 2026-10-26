@@ -248,6 +248,43 @@ export interface FinanceLedger {
 }
 
 // ---------------------------------------------------------------------------
+// Welfare Ledger (Welfare Purse Tracking)
+// ---------------------------------------------------------------------------
+
+export type WelfareLedgerType = 'Credit' | 'Debit'
+
+export type WelfareLedgerCategory =
+  | 'Central Finance Allocation'
+  | 'Purse Donation / Voluntary Gift'
+  | 'Food & Nutrition Support'
+  | 'Medical / Healthcare Aid'
+  | 'Academic / Textbook Support'
+  | 'Emergency Transport Aid'
+  | 'Hostel & Living Essentials'
+  | 'Bank Charges / Stamp Duty'
+  | 'Miscellaneous Care'
+
+export interface WelfareLedger {
+  _id: string
+  _type: 'welfareLedger'
+  date: string // ISO date YYYY-MM-DD
+  description: string
+  type: WelfareLedgerType
+  amount: number // NGN
+  bankCharge?: number // NGN
+  balance?: number // NGN
+  category?: WelfareLedgerCategory | string
+  recipient?: string
+  reference?: string
+  loggedBy?: {
+    _id?: string
+    fullName?: string
+  }
+  loggedByName?: string
+  createdAt?: string
+}
+
+// ---------------------------------------------------------------------------
 // Sermon Vault
 // ---------------------------------------------------------------------------
 
@@ -417,6 +454,11 @@ export type AttendanceRow = Omit<AttendanceLedger, '_type' | 'attendees' | 'team
 
 /** Finance ledger row as listed in the dashboard. */
 export type FinanceRow = Omit<FinanceLedger, '_type'>
+
+/** Welfare purse ledger row as listed in the dashboard cockpit. */
+export type WelfareLedgerRow = Omit<WelfareLedger, '_type'> & {
+  runningBalance: number
+}
 
 /** First-timer intake row as listed in the dashboard for follow-up coordination. */
 export interface FirstTimerRow {
