@@ -3,10 +3,10 @@
 /**
  * ExecutiveCsvImportDialog — 2-step bulk-import for executive positions from CSV/XLSX.
  *
- * Step 1: Upload spreadsheet and select options (e.g. auto-create missing worker profiles).
+ * Step 1: Upload spreadsheet and select options (e.g. reserve roles for unregistered EXCOs).
  * Step 2: Interactive Mapping & Preview table:
  *         - Review every single row before anything is saved to the database.
- *         - View matched registered workers vs. new profiles to be created.
+ *         - View matched registered workers vs. reserved appointments for unregistered leaders.
  *         - Review mapped CSGB offices, halls, and ministry teams.
  *         - Toggle rank (Lead vs Assistant) or select/unselect specific rows.
  * Step 3: Confirmation and summary report. The workforce roster refreshes only
@@ -47,6 +47,7 @@ import {
 import {
   previewExecutiveSpreadsheet,
   commitExecutiveImport,
+  reconcileRegisteredExecutives,
   type ExecutivePreviewRow,
   type PreviewSpreadsheetResult,
   type CommitImportItem,
@@ -82,11 +83,11 @@ export default function ExecutiveCsvImportDialog({
   const [step, setStep] = useState<'upload' | 'preview' | 'result'>('upload')
   const [file, setFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
-  const [createMissingWorkers, setCreateMissingWorkers] = useState(true)
-
+  const [includeUnregistered, setIncludeUnregistered] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isCommitting, setIsCommitting] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [isReconciling, setIsReconciling] = useState(false)
 
   const [, setPreviewData] = useState<PreviewSpreadsheetResult | null>(null)
   const [rows, setRows] = useState<ExecutivePreviewRow[]>([])
@@ -95,6 +96,30 @@ export default function ExecutiveCsvImportDialog({
 
   const [commitResult, setCommitResult] = useState<CommitImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleReconcile() {
+    setIsReconciling(true)
+    setError(null)
+    try {
+      const res = await reconcileRegisteredExecutives()
+      if (res.ok) {
+        if (res.reconciledCount > 0) {
+          toastSuccess(`Linked & activated ${res.reconciledCount} exco appointment(s)!`)
+          router.refresh()
+        } else {
+          toastSuccess('Registered excos are in sync with the leadership register.')
+        }
+      } else {
+        setError(res.error || 'Failed to sync leadership appointments.')
+        toastError(res.error || 'Failed to sync leadership appointments.')
+      }
+    } catch {
+      setError('Network error syncing leadership appointments.')
+      toastError('Network error syncing appointments.')
+    } finally {
+      setIsReconciling(false)
+    }
+  }
 
   function resetDialog() {
     setStep('upload')
@@ -236,15 +261,18 @@ export default function ExecutiveCsvImportDialog({
     try {
       const res = await commitExecutiveImport({
         items: commitItems,
-        createMissingWorkers,
+        includeUnregistered,
       })
 
       if (res.ok) {
         setCommitResult(res)
         setStep('result')
         if (res.imported > 0) {
+          const reserved = res.unregisteredCount > 0
+            ? ` (${res.unregisteredCount} reserved for unregistered leader${res.unregisteredCount === 1 ? '' : 's'})`
+            : ''
           toastSuccess(
-            `Successfully imported ${res.imported} position${res.imported === 1 ? '' : 's'}!`
+            `Successfully imported ${res.imported} position${res.imported === 1 ? '' : 's'}${reserved}!`
           )
         } else {
           toastError('0 positions were imported. Check the report below.')
@@ -386,20 +414,20 @@ export default function ExecutiveCsvImportDialog({
               )}
             </div>
 
-            {/* Auto-create missing workers checkbox */}
+            {/* Reserve appointments for unregistered EXCOs */}
             <label className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/30 border border-border cursor-pointer select-none hover:bg-muted/50 transition-colors">
               <Checkbox
-                checked={createMissingWorkers}
-                onCheckedChange={(c) => setCreateMissingWorkers(Boolean(c))}
+                checked={includeUnregistered}
+                onCheckedChange={(c) => setIncludeUnregistered(Boolean(c))}
                 className="mt-0.5"
                 disabled={isAnalyzing}
               />
               <div className="text-xs leading-normal">
                 <span className="font-semibold text-foreground block">
-                  Auto-create pending worker profile if name is not found
+                  Include unregistered EXCOs
                 </span>
                 <span className="text-muted-foreground">
-                  Generates placeholder worker documents in Sanity for any person on the sheet who has not yet registered on the portal.
+                  Names not yet on the worker register are imported as reserved appointments. Their dashboard activates automatically — with full executive permissions — the moment they register on /register. Turn this off to skip them.
                 </span>
               </div>
             </label>
@@ -432,22 +460,40 @@ export default function ExecutiveCsvImportDialog({
               </p>
             )}
 
-            <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={downloadTemplate}
-                disabled={downloading}
-                className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
-              >
-                {downloading ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
-                ) : (
-                  <Download className="h-4 w-4 shrink-0 mr-1.5" />
-                )}
-                Template
-              </Button>
+            <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={downloadTemplate}
+                  disabled={downloading}
+                  className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                >
+                  {downloading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
+                  ) : (
+                    <Download className="h-4 w-4 shrink-0 mr-1.5" />
+                  )}
+                  Template
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReconcile}
+                  disabled={isReconciling}
+                  className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                >
+                  {isReconciling ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4 shrink-0 mr-1.5" />
+                  )}
+                  Sync Exco Registrations
+                </Button>
+              </div>
 
               <Button
                 type="button"
@@ -500,7 +546,7 @@ export default function ExecutiveCsvImportDialog({
                   </div>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-sky-700 dark:text-sky-400 text-xs font-semibold">
                     <UserPlus className="h-3.5 w-3.5 shrink-0" />
-                    <span>{newWorkerCount} New Profiles</span>
+                    <span>{newWorkerCount} Unregistered</span>
                   </div>
                   {warningCount > 0 && (
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-semibold">
@@ -548,7 +594,7 @@ export default function ExecutiveCsvImportDialog({
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    New Profiles ({newWorkerCount})
+                    Unregistered ({newWorkerCount})
                   </button>
                   {warningCount > 0 && (
                     <button
@@ -669,7 +715,7 @@ export default function ExecutiveCsvImportDialog({
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-500/15 text-sky-700 dark:text-sky-400 font-mono text-[10px] w-fit font-bold">
                                   <UserPlus className="h-3 w-3" />
-                                  New Profile
+                                  Unregistered
                                 </span>
                               )}
                             </div>
@@ -813,7 +859,8 @@ export default function ExecutiveCsvImportDialog({
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {commitResult.matchedCount} mapped to registered workers
-                    {commitResult.createdCount > 0 && ` • ${commitResult.createdCount} new worker profiles created in Sanity`}
+                    {commitResult.unregisteredCount > 0 &&
+                      ` • ${commitResult.unregisteredCount} unregistered appointment${commitResult.unregisteredCount === 1 ? '' : 's'} reserved (activates on registration)`}
                     {commitResult.emailsSent > 0 && ` • ${commitResult.emailsSent} guidance email${commitResult.emailsSent === 1 ? '' : 's'} sent with dashboard links`}
                     .
                   </p>
@@ -822,6 +869,11 @@ export default function ExecutiveCsvImportDialog({
                       ? `${commitResult.skipped.length} row${commitResult.skipped.length === 1 ? ' was' : 's were'} skipped below.`
                       : 'All selected entries were imported cleanly.'}
                   </p>
+                  {commitResult.unregisteredCount > 0 && (
+                    <p className="text-xs text-sky-700 dark:text-sky-400 mt-1.5">
+                      Reserved leaders appear on the Executive Roster as “Unregistered · Awaiting registration” until they register.
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

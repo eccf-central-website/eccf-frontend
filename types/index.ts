@@ -119,6 +119,8 @@ export interface ExecutivePositionDetail {
   status: 'pending' | 'approved' | 'rejected'
   decidedAt?: string
   submittedAt?: string
+  /** True when the role comes from a reserved appointment, not a worker doc. */
+  fromAppointment?: boolean
 }
 
 export interface ExecutiveRow {
@@ -131,6 +133,15 @@ export interface ExecutiveRow {
   roomNumber?: string
   profileImageUrl?: string
   positions: ExecutivePositionDetail[]
+  /**
+   * `unregistered` rows are reserved appointments imported from the leadership
+   * spreadsheet. They are not workers yet and gain dashboard access the moment
+   * they register on /register.
+   */
+  registrationStatus: 'registered' | 'unregistered'
+  isRegistered: boolean
+  /** Import date for reserved appointments. */
+  importedAt?: string
 }
 
 export interface Worker {

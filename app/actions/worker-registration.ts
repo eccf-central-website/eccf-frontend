@@ -42,6 +42,8 @@ import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import { claimPendingExecutiveAppointmentsForWorker } from '@/app/actions/executive-suggestion-actions'
 import { extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
+import { mergeExecutivePositions } from '@/lib/executive-positions'
+import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 import type { WorkerRole } from '@/types'
 
 export type ExecutiveApplicationKind = 'csgb' | 'hall' | 'team'
@@ -2300,8 +2302,7 @@ export async function registerWorker(
       cleanEmail
     )
     if (appointmentClaim.positions.length > 0) {
-      const current = positionsToSave || []
-      positionsToSave = [...current, ...appointmentClaim.positions]
+      positionsToSave = mergeExecutivePositions(positionsToSave || [], appointmentClaim.positions)
     }
 
     const hasApprovedPositions = Boolean(
@@ -2495,19 +2496,53 @@ export async function registerWorker(
       const createdWorker = await createPrivateDocument(newDoc)
       deleteCookie(REGISTRATION_PROOF_COOKIE)
 
-      if (createdWorker?._id && appointmentClaim.claimed > 0) {
+      // Link the reserved appointments matched before creation to the new worker.
+      // This is what marks them registered and activates dashboard access.
+      if (createdWorker?._id && appointmentClaim.appointmentIds.length > 0) {
         try {
-          const claimedAppointments = await sanityPrivateClient.fetch<Array<{ _id: string }>>(
-            `*[_type == "executiveAppointment" && status == "claimed" && (claimedBy._ref == "temp" || !defined(claimedBy)) && lower(fullName) == lower($name)]`,
-            { name: cleanFullName }
+          await Promise.all(
+            appointmentClaim.appointmentIds.map((appointmentId) =>
+              patchPrivateDocument(appointmentId)
+                .set({
+                  status: 'claimed',
+                  registrationStatus: 'registered',
+                  claimedBy: { _type: 'reference', _ref: createdWorker._id },
+                  claimedAt: new Date().toISOString(),
+                })
+                .commit()
+            )
           )
-          for (const ca of claimedAppointments) {
-            await patchPrivateDocument(ca._id)
-              .set({ claimedBy: { _type: 'reference', _ref: createdWorker._id } })
-              .commit()
-          }
         } catch (linkErr) {
           console.error('[registerWorker] Link claimed appointments error:', linkErr)
+        }
+
+        // Send the leadership appointment guidance email after registration is
+        // complete (the claim happens before the worker document exists).
+        for (const position of appointmentClaim.positions) {
+          const kind = position.kind
+          if (kind !== 'csgb' && kind !== 'hall' && kind !== 'team') continue
+
+          const office = typeof position.office === 'string' ? position.office : undefined
+          const hall = typeof position.hall === 'string' ? position.hall : undefined
+          const teamName = typeof position.teamName === 'string' ? position.teamName : undefined
+          const positionTitle =
+            kind === 'csgb'
+              ? office || 'CSGB Executive'
+              : kind === 'hall'
+              ? `${hall || 'Hall'} Pastor`
+              : `${teamName || 'Ministry'} Lead`
+
+          sendExecutiveAppointmentEmail({
+            recipientName: cleanFullName,
+            recipientEmail: cleanEmail,
+            positionTitle,
+            category: kind,
+            rank: position.rank === 'assistant' ? 'assistant' : 'lead',
+            teamName,
+            hallName: hall,
+          }).catch((emailErr) => {
+            console.error('[registerWorker] Appointment guidance email error:', emailErr)
+          })
         }
       }
       deleteCookie(REGISTRATION_PROOF_COOKIE)

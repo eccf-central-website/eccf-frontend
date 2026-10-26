@@ -57,6 +57,7 @@ import {
   DASHBOARD_WELFARE_QUERY,
   DASHBOARD_WORKERS_QUERY,
   DASHBOARD_EXECUTIVES_QUERY,
+  DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY,
   FINANCE_STATS_QUERY,
   PEOPLE_STATS_QUERY,
   WORKER_HALL_BY_ID_QUERY,
@@ -74,8 +75,33 @@ import {
 } from '../mock/data'
 import { stripPII } from './pii'
 import { lagosDaysAgo, lagosMonthStart } from '../dates'
+import { extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
 
 export const DEV_MOCK_STATE_COOKIE = 'eccf-dev-mock-state'
+
+interface ReservedExecutiveAppointment {
+  _id: string
+  fullName: string
+  normalizedName?: string
+  email?: string
+  kind: 'csgb' | 'hall' | 'team'
+  rank?: 'lead' | 'assistant'
+  office?: string
+  hall?: string
+  teamName?: string
+  importedAt?: string
+  csgbRoleTitle?: string
+  csgbRoleRef?: string
+  hallName?: string
+  teamTitle?: string
+}
+
+function executiveNameKey(fullName?: string, normalizedName?: string): string | undefined {
+  if (normalizedName?.trim()) return normalizedName.trim()
+  if (!fullName?.trim()) return undefined
+  const tokens = extractNameTokens(fullName)
+  return tokens.length > 0 ? normalizeTokensKey(tokens) : undefined
+}
 
 type DataSource = 'mock' | 'sanity'
 type MockState = DevMockState
@@ -477,6 +503,8 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
         email: w.email,
         hall: w.hall,
         profileImageUrl: w.profileImageUrl,
+        registrationStatus: 'registered',
+        isRegistered: true,
         positions: (w.positions || []).map((p) => ({
           key: p._key || `pos_${Math.random()}`,
           kind: p.kind,
@@ -494,8 +522,87 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
   }
 
   try {
-    const rows = await sanityPrivateClient.fetch<ExecutiveRow[]>(DASHBOARD_EXECUTIVES_QUERY)
-    return stripPII(rows || [])
+    const [rows, reservedAppointments] = await Promise.all([
+      sanityPrivateClient.fetch<ExecutiveRow[]>(DASHBOARD_EXECUTIVES_QUERY),
+      sanityPrivateClient
+        .fetch<ReservedExecutiveAppointment[]>(DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY)
+        .catch((err) => {
+          console.error('[listExecutives] Unregistered appointment fetch error:', err)
+          return []
+        }),
+    ])
+
+    const registered: ExecutiveRow[] = (rows || []).map((row) => ({
+      ...row,
+      registrationStatus: 'registered',
+      isRegistered: true,
+    }))
+
+    const registeredEmails = new Set(
+      registered
+        .map((row) => row.email?.trim().toLowerCase())
+        .filter((email): email is string => Boolean(email))
+    )
+    const registeredNameKeys = new Set(
+      registered
+        .map((row) => executiveNameKey(row.fullName))
+        .filter((key): key is string => Boolean(key))
+    )
+
+    // One leader can hold several roles (CSGB + ministry team). Group their
+    // reserved appointments so the roster shows a single card per person.
+    const reservedGroups = new Map<string, ReservedExecutiveAppointment[]>()
+    for (const appointment of reservedAppointments || []) {
+      const email = appointment.email?.trim().toLowerCase()
+      const nameKey = executiveNameKey(appointment.fullName, appointment.normalizedName)
+      const groupKey = nameKey || (email ? `email:${email}` : undefined)
+      if (!groupKey) continue
+
+      const group = reservedGroups.get(groupKey) || []
+      group.push(appointment)
+      reservedGroups.set(groupKey, group)
+    }
+
+    const unregistered: ExecutiveRow[] = []
+    for (const group of Array.from(reservedGroups.values())) {
+      const first = group[0]
+      const groupKey = first.normalizedName?.trim() || executiveNameKey(first.fullName) || `email:${first.email?.trim().toLowerCase()}`
+      const hasRegisteredMatch =
+        registeredNameKeys.has(groupKey) ||
+        group.some((appointment) => {
+          const email = appointment.email?.trim().toLowerCase()
+          return Boolean(email && registeredEmails.has(email))
+        })
+      if (hasRegisteredMatch) continue
+
+      unregistered.push({
+        _id: first._id,
+        fullName: first.fullName,
+        email: first.email,
+        hall: first.hall,
+        importedAt: first.importedAt,
+        registrationStatus: 'unregistered',
+        isRegistered: false,
+        positions: group.map((appointment) => ({
+          key: appointment._id,
+          kind: appointment.kind,
+          office: appointment.office,
+          csgbRoleTitle: appointment.csgbRoleTitle || appointment.office,
+          csgbRoleRef: appointment.csgbRoleRef,
+          hall: appointment.hall,
+          hallName: appointment.hallName || appointment.hall,
+          teamName: appointment.teamName,
+          teamTitle: appointment.teamTitle || appointment.teamName,
+          rank: appointment.rank,
+          status: 'approved' as const,
+          submittedAt: appointment.importedAt,
+          decidedAt: appointment.importedAt,
+          fromAppointment: true,
+        })),
+      })
+    }
+
+    return stripPII([...registered, ...unregistered])
   } catch (err) {
     console.error('[listExecutives] Sanity fetch error:', err)
     return []

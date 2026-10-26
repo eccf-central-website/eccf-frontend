@@ -366,3 +366,27 @@ export const DASHBOARD_EXECUTIVES_QUERY = `
     }
   }
 `
+
+// ---------------------------------------------------------------------------
+// Executives Console — reserved appointments for leaders who have not
+// registered on /register yet. Claimed automatically on registration.
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY = `
+  *[_type == "executiveAppointment" && status == "pending_claim" && !(_id in path("drafts.**"))] | order(fullName asc) {
+    _id,
+    fullName,
+    normalizedName,
+    email,
+    kind,
+    rank,
+    office,
+    hall,
+    teamName,
+    importedAt,
+    "csgbRoleTitle": coalesce(csgbRole->title, office),
+    "csgbRoleRef": csgbRole._ref,
+    "hallName": coalesce(hallRef->name, hall),
+    "teamTitle": coalesce(team->name, teamName)
+  }
+`

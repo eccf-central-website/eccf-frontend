@@ -10,6 +10,7 @@ import {
   Users,
   Search,
   CheckCircle2,
+  Clock,
   ExternalLink,
   Crown,
 } from 'lucide-react'
@@ -62,12 +63,14 @@ export default function ExecutivesClient({
   }, [initialExecutives])
 
   // Count totals across all executives
-  const { totalExcos, csgbCount, hallCount, teamCount } = useMemo(() => {
+  const { totalExcos, registeredCount, unregisteredCount, csgbCount, hallCount, teamCount } = useMemo(() => {
     let csgb = 0
     let hall = 0
     let team = 0
+    let registered = 0
 
     for (const ex of executives) {
+      if (ex.isRegistered) registered++
       for (const p of ex.positions || []) {
         if (p.kind === 'csgb') csgb++
         else if (p.kind === 'hall') hall++
@@ -77,6 +80,8 @@ export default function ExecutivesClient({
 
     return {
       totalExcos: executives.length,
+      registeredCount: registered,
+      unregisteredCount: executives.length - registered,
       csgbCount: csgb,
       hallCount: hall,
       teamCount: team,
@@ -125,7 +130,7 @@ export default function ExecutivesClient({
                 Executive Council & Leadership Roster
               </h1>
               <p className="text-sm text-muted-foreground">
-                Manage appointed executive leaders, CSGB Central Board, Hall Pastors, and Ministry Team Leads.
+                Manage appointed leaders across CSGB, Hall Pastorate, and Ministry Teams. Reserved appointments activate automatically when the leader registers.
               </p>
             </div>
           </div>
@@ -151,6 +156,10 @@ export default function ExecutivesClient({
             <div>
               <p className="text-xs font-medium text-muted-foreground">Total Leaders</p>
               <p className="text-2xl font-bold text-foreground">{totalExcos}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {registeredCount} registered
+                {unregisteredCount > 0 && ` · ${unregisteredCount} awaiting`}
+              </p>
             </div>
           </div>
         </div>
@@ -191,6 +200,19 @@ export default function ExecutivesClient({
           </div>
         </div>
       </div>
+
+      {unregisteredCount > 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-3 text-xs text-amber-800 dark:text-amber-300">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="leading-relaxed">
+            <span className="font-semibold">
+              {unregisteredCount} appointed leader{unregisteredCount === 1 ? ' has' : 's have'} not registered yet.
+            </span>{' '}
+            Their role is reserved. Dashboard access activates automatically the moment they register as a worker on{' '}
+            <span className="font-mono">/register</span>.
+          </p>
+        </div>
+      )}
 
       {/* Filter Tabs & Search Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -314,19 +336,37 @@ export default function ExecutivesClient({
                         <img
                           src={worker.profileImageUrl}
                           alt={worker.fullName}
-                          className="h-11 w-11 rounded-full object-cover ring-2 ring-purple-500/20"
+                          className={cn(
+                            'h-11 w-11 rounded-full object-cover ring-2',
+                            worker.isRegistered ? 'ring-purple-500/20' : 'ring-amber-500/25'
+                          )}
                         />
                       ) : (
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+                        <div
+                          className={cn(
+                            'flex h-11 w-11 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm',
+                            worker.isRegistered
+                              ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
+                              : 'bg-gradient-to-br from-amber-500 to-orange-600'
+                          )}
+                        >
                           {getInitials(worker.fullName)}
                         </div>
                       )}
                       <div>
-                        <h4 className="text-sm font-semibold text-foreground leading-tight">
-                          {worker.fullName}
-                        </h4>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <h4 className="text-sm font-semibold text-foreground leading-tight">
+                            {worker.fullName}
+                          </h4>
+                          {!worker.isRegistered && (
+                            <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-none text-[10px] px-1.5 py-0 gap-1 font-semibold">
+                              <Clock className="h-2.5 w-2.5" />
+                              Unregistered
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground truncate max-w-[180px]">
-                          {worker.email || 'No email registered'}
+                          {worker.email || (worker.isRegistered ? 'No email registered' : 'No email on the leadership sheet')}
                         </p>
                         {worker.hall && (
                           <p className="text-[11px] text-muted-foreground/80 mt-0.5">
@@ -336,13 +376,22 @@ export default function ExecutivesClient({
                       </div>
                     </div>
 
-                    <Link
-                      href={`/dashboard/workers?search=${encodeURIComponent(worker.fullName)}`}
-                      className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-colors"
-                      title="View workforce profile"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Link>
+                    {worker.isRegistered ? (
+                      <Link
+                        href={`/dashboard/workers?search=${encodeURIComponent(worker.fullName)}`}
+                        className="rounded-lg p-1.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-colors"
+                        title="View workforce profile"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Link>
+                    ) : (
+                      <span
+                        className="rounded-lg p-1.5 text-amber-600/70 dark:text-amber-400/70"
+                        title="Workforce profile unlocks after the leader registers"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </span>
+                    )}
                   </div>
 
                   {/* Positions Held */}
@@ -389,7 +438,10 @@ export default function ExecutivesClient({
                               </div>
 
                               <span className="text-[10px] text-muted-foreground mt-0.5">
-                                {isAssistant ? 'Assistant' : 'Head / Lead'} • {formatDate(pos.decidedAt || pos.submittedAt)}
+                                {isAssistant ? 'Assistant' : 'Head / Lead'} •{' '}
+                                {worker.isRegistered
+                                  ? formatDate(pos.decidedAt || pos.submittedAt)
+                                  : `Reserved ${formatDate(worker.importedAt || pos.submittedAt)}`}
                               </span>
                             </div>
                           </div>
@@ -401,9 +453,15 @@ export default function ExecutivesClient({
 
                 {/* Footer status */}
                 <div className="mt-4 flex items-center justify-between pt-2 text-[11px] text-muted-foreground border-t border-border/30">
-                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Active Roster
-                  </span>
+                  {worker.isRegistered ? (
+                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Active Roster
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                      <Clock className="h-3.5 w-3.5" /> Unregistered · Awaiting registration
+                    </span>
+                  )}
                   <span>ID: {worker._id.slice(-6)}</span>
                 </div>
               </div>

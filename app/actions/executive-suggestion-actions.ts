@@ -6,12 +6,14 @@ import { sanityPrivateClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
+import { mergeExecutivePositions } from '@/lib/executive-positions'
 
 export interface CsvImportResult {
   ok: boolean
   imported: number
   matchedCount: number
   createdCount: number
+  unregisteredCount: number
   emailsSent: number
   skipped: string[]
   error?: string
@@ -83,6 +85,8 @@ export interface CommitImportResult {
   imported: number
   matchedCount: number
   createdCount: number
+  /** Reserved appointments for leaders who have not registered as workers yet. */
+  unregisteredCount: number
   emailsSent: number
   skipped: string[]
   error?: string
@@ -645,26 +649,51 @@ export async function previewExecutiveSpreadsheet(
 /**
  * Commit the reviewed executive positions to Sanity.
  * - Deduplicates positions: updates existing positions instead of endlessly appending.
- * - Auto-creates worker profiles for new names with canonical position references.
- * - Dispatches official leadership appointment guidance emails with direct dashboard access links.
+ * - Links roles to registered workers and dispatches appointment guidance emails.
+ * - Reserves roles for leaders who have not registered yet as `executiveAppointment`
+ *   documents (status `pending_claim`) instead of creating placeholder workers.
+ *   Registering on /register claims and activates the reserved appointment.
  */
 export async function commitExecutiveImport(payload: {
   items: CommitImportItem[]
-  createMissingWorkers: boolean
+  /** Reserve appointments for names that are not registered workers yet. */
+  includeUnregistered?: boolean
+  /** @deprecated Use `includeUnregistered`. */
+  createMissingWorkers?: boolean
 }): Promise<CommitImportResult> {
   const auth = await verifyAuth()
   if (!auth.ok) {
-    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, emailsSent: 0, skipped: [], error: auth.error }
+    return {
+      ok: false,
+      imported: 0,
+      matchedCount: 0,
+      createdCount: 0,
+      unregisteredCount: 0,
+      emailsSent: 0,
+      skipped: [],
+      error: auth.error,
+    }
   }
 
-  const { items, createMissingWorkers } = payload
+  const { items } = payload
+  const includeUnregistered = payload.includeUnregistered ?? payload.createMissingWorkers ?? false
   if (!items || !items.length) {
-    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, emailsSent: 0, skipped: [], error: 'No items selected to import.' }
+    return {
+      ok: false,
+      imported: 0,
+      matchedCount: 0,
+      createdCount: 0,
+      unregisteredCount: 0,
+      emailsSent: 0,
+      skipped: [],
+      error: 'No items selected to import.',
+    }
   }
 
   let imported = 0
   let matchedCount = 0
-  let createdCount = 0
+  const createdCount = 0
+  let unregisteredCount = 0
   let emailsSent = 0
   const skipped: string[] = []
 
@@ -683,11 +712,28 @@ export async function commitExecutiveImport(payload: {
     positions?: Array<Record<string, unknown>>
   }>
 
+  // Existing appointments let us respect roles already claimed by a worker.
+  const existingAppointments = (await sanityPrivateClient.fetch(
+    `*[_type == "executiveAppointment"]{ _id, status, claimedBy }`
+  )) as Array<{
+    _id: string
+    status?: string
+    claimedBy?: { _ref?: string }
+  }>
+  const claimedAppointmentWorkerIds = new Map<string, string>()
+  for (const appointment of existingAppointments) {
+    if (appointment.status === 'claimed' && appointment.claimedBy?._ref) {
+      claimedAppointmentWorkerIds.set(appointment._id, appointment.claimedBy._ref)
+    }
+  }
+
   const workerMapByName = new Map<string, string>()
   const workerEmailsMap = new Map<string, string>()
   const workerPositionsMap = new Map<string, Array<Record<string, unknown>>>()
+  const workerIds = new Set<string>()
 
   for (const w of existingWorkers) {
+    workerIds.add(w._id)
     if (w.fullName) workerMapByName.set(w.fullName.toLowerCase().trim(), w._id)
     if (w.email) workerEmailsMap.set(w._id, w.email.toLowerCase().trim())
     workerPositionsMap.set(w._id, w.positions || [])
@@ -748,6 +794,15 @@ export async function commitExecutiveImport(payload: {
     const normalizedKey = normalizeTokensKey(nameTokens)
     const deterministicAppId = `appointment_${item.kind}_${Buffer.from(cleanDisplayName.toLowerCase().trim()).toString('hex').slice(0, 32)}`
 
+    // A previously claimed appointment tells us which worker holds this role,
+    // even if the row's name spelling no longer matches the worker document.
+    if (!targetWorkerId) {
+      const claimedWorkerId = claimedAppointmentWorkerIds.get(deterministicAppId)
+      if (claimedWorkerId && workerIds.has(claimedWorkerId)) {
+        targetWorkerId = claimedWorkerId
+      }
+    }
+
     const appointmentDoc: Record<string, unknown> = {
       _type: 'executiveAppointment',
       fullName: cleanDisplayName,
@@ -802,8 +857,9 @@ export async function commitExecutiveImport(payload: {
         imported++
         matchedCount++
 
-        // Save appointment as claimed
+        // Save appointment as claimed by the registered worker
         appointmentDoc.status = 'claimed'
+        appointmentDoc.registrationStatus = 'registered'
         appointmentDoc.claimedBy = { _type: 'reference', _ref: targetWorkerId }
         appointmentDoc.claimedAt = new Date().toISOString()
         const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
@@ -832,77 +888,25 @@ export async function commitExecutiveImport(payload: {
         console.error('[commitExecutiveImport] patch error:', err)
         skipped.push(`${cleanDisplayName}: Failed to update worker record.`)
       }
-    } else if (createMissingWorkers) {
-      try {
-        const today = new Date().toISOString().slice(0, 10)
-        const createdWorker = await sanityPrivateClient.create({
-          _type: 'worker',
-          fullName: cleanDisplayName,
-          ...(item.email ? { email: item.email.toLowerCase() } : {}),
-          ...(item.hall ? { hall: item.hall } : {}),
-          isExcoApproved: true,
-          positions: [newPos],
-          memberships: item.kind === 'team' && item.teamRef ? [
-            {
-              _key: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-              _type: 'teamMembership',
-              team: { _type: 'reference', _ref: item.teamRef },
-              status: 'verified',
-              decidedAt: new Date().toISOString(),
-            }
-          ] : [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          updateLog: [`Created via executive leadership spreadsheet import on ${today}`],
-        })
-
-        const newId = createdWorker._id
-        workerMapByName.set(cleanDisplayName.toLowerCase().trim(), newId)
-        if (item.email) workerEmailsMap.set(newId, item.email.toLowerCase().trim())
-        workerPositionsMap.set(newId, [newPos])
-        imported++
-        createdCount++
-
-        // Save appointment as claimed
-        appointmentDoc.status = 'claimed'
-        appointmentDoc.claimedBy = { _type: 'reference', _ref: newId }
-        appointmentDoc.claimedAt = new Date().toISOString()
-        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
-        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
-
-        // Dispatch leadership appointment guidance email
-        if (targetEmail && targetEmail.includes('@')) {
-          try {
-            const emailRes = await sendExecutiveAppointmentEmail({
-              recipientName: cleanDisplayName,
-              recipientEmail: targetEmail,
-              positionTitle,
-              category: item.kind,
-              rank: item.rank,
-              teamName: item.teamName,
-              hallName: item.hall,
-            })
-            if (emailRes.ok) {
-              emailsSent++
-            }
-          } catch (emailErr) {
-            console.error(`[commitExecutiveImport] Email dispatch error for ${targetEmail}:`, emailErr)
-          }
-        }
-      } catch (err) {
-        console.error('[commitExecutiveImport] create worker error:', err)
-        skipped.push(`${cleanDisplayName}: Failed to create new worker profile.`)
-      }
-    } else {
-      // Save appointment reservation in Sanity as pending_claim
+    } else if (includeUnregistered) {
+      // Reserve the role for a leader who has not registered on /register yet.
+      // No placeholder worker document is created — the appointment activates
+      // automatically when a matching registration claims it.
       try {
         appointmentDoc.status = 'pending_claim'
+        appointmentDoc.registrationStatus = 'unregistered'
         const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
         await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
         imported++
+        unregisteredCount++
       } catch (resErr) {
-        console.error('[commitExecutiveImport] Failed to save pending appointment:', resErr)
+        console.error('[commitExecutiveImport] Failed to reserve pending appointment:', resErr)
+        skipped.push(`${cleanDisplayName}: Failed to reserve unregistered appointment.`)
       }
+    } else {
+      skipped.push(
+        `${cleanDisplayName}: Not registered on /register — skipped. Enable "Include unregistered EXCOs" to reserve the appointment.`
+      )
     }
   }
 
@@ -916,6 +920,7 @@ export async function commitExecutiveImport(payload: {
     imported,
     matchedCount,
     createdCount,
+    unregisteredCount,
     emailsSent,
     skipped,
   }
@@ -933,10 +938,13 @@ export async function claimPendingExecutiveAppointmentsForWorker(
 ): Promise<{
   claimed: number
   positions: Array<Record<string, unknown>>
+  /** Appointment document IDs that were matched by this claim. */
+  appointmentIds: string[]
 }> {
   const cleanEmail = email?.trim().toLowerCase()
   const nameTokens = extractNameTokens(fullName)
   const normalizedKey = normalizeTokensKey(nameTokens)
+  const appointmentIds: string[] = []
 
   try {
     // 1. Fetch pending executive appointments
@@ -1028,6 +1036,8 @@ export async function claimPendingExecutiveAppointmentsForWorker(
     const claimedPositions: Array<Record<string, unknown>> = [...placeholderPositions]
 
     for (const app of matchedAppointments) {
+      appointmentIds.push(app._id)
+
       const pos: Record<string, unknown> = {
         _key: `pos_claimed_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         _type: 'executivePosition',
@@ -1057,20 +1067,25 @@ export async function claimPendingExecutiveAppointmentsForWorker(
 
       claimedPositions.push(pos)
 
-      // Update appointment status to claimed
+      // Update appointment status to claimed. For brand-new registrations the
+      // worker document does not exist yet (`temp`), so the caller links these
+      // appointment IDs to the new worker right after creation.
       if (workerId && workerId !== 'temp') {
         await patchPrivateDocument(app._id)
           .set({
             status: 'claimed',
+            registrationStatus: 'registered',
             claimedBy: { _type: 'reference', _ref: workerId },
             claimedAt: new Date().toISOString(),
           })
           .commit()
       }
 
-      // Dispatch appointment guidance email
+      // Dispatch appointment guidance email for an existing worker. Brand-new
+      // registrations are only emailed after the worker document is created,
+      // once the address has been verified.
       const targetEmail = cleanEmail || app.email
-      if (targetEmail && targetEmail.includes('@')) {
+      if (workerId && workerId !== 'temp' && targetEmail && targetEmail.includes('@')) {
         const positionTitle =
           app.kind === 'csgb'
             ? app.office || 'CSGB Executive'
@@ -1103,11 +1118,12 @@ export async function claimPendingExecutiveAppointmentsForWorker(
 
     return {
       claimed: matchedAppointments.length + placeholderPositions.length,
-      positions: claimedPositions,
+      positions: mergeExecutivePositions([], claimedPositions),
+      appointmentIds,
     }
   } catch (err) {
     console.error('[claimPendingExecutiveAppointmentsForWorker] error:', err)
-    return { claimed: 0, positions: [] }
+    return { claimed: 0, positions: [], appointmentIds: [] }
   }
 }
 
@@ -1151,7 +1167,7 @@ export async function reconcileRegisteredExecutives(): Promise<{
       const res = await claimPendingExecutiveAppointmentsForWorker(w._id, w.fullName, w.email)
       if (res.claimed > 0 && res.positions.length > 0) {
         const existingPositions = Array.isArray(w.positions) ? w.positions : []
-        const mergedPositions = [...existingPositions, ...res.positions]
+        const mergedPositions = mergeExecutivePositions(existingPositions, res.positions)
 
         await patchPrivateDocument(w._id)
           .set({
