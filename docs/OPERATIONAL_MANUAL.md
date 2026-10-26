@@ -3,9 +3,9 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 26 October 2026 against frontend commit `4c2a0ef` and backend commit `b4f94ba`.
+**Last verified:** 26 October 2026 against frontend commit `d6fcf54` and backend commit `b4f94ba`.
 
-> **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the President-only executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
+> **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the CSGB executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
 ---
 
@@ -285,7 +285,7 @@ The overview opens as a calm, attention-first **Executive Cockpit**: a date-only
   2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. new profiles to create, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows.
   3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers, and unmatched leaders get created as worker profiles automatically.
 - After a managed import the affected executives are **activated immediately** — their dashboard sessions profile photo, post label, and permissions update on their next sign-in.
-- A manager can also **relieve** a worker of an appointed executive position or update the **Lead / Assistant** rank. Deep authorisations (approvers) come from the `canApproveExecutives` flag on the CSGB Role document.
+- Re-running an import **updates existing appointments instead of duplicating them** (positional smart-merge). The mapping additionally resolves raw spreadsheet text — including synonyms like "VP 1", "Gen. Sec", or protocol→Ushering — to exact Sanity `csgbRole`, `hallResidence`, and `teamUnit` documents, and rank (Lead / Assistant) is set per row in the preview. There is no in-console relieve control; removing a superseded appointment happens in Sanity Studio. Deep authorisations (approvers) come from the `canApproveExecutives` flag on the CSGB Role document.
 
 > [!NOTE]
 > CSGB offices are dynamic: they are **`csgbRole` documents in Sanity** (baseline: President & Executive Shepherd, VP Admin/Brothers' Coordinator, VP Evangelism/Sisters' Coordinator, General Secretary, Prayer Coordinator). Adding, renaming, or reordering an office in the Studio updates selection dropdowns, dashboard labels, and access decisions everywhere.
@@ -637,9 +637,10 @@ Table columns:
 3. Contact the visitor within 24 hours using the copy-phone or WhatsApp action.
 4. Coordinate a room visitation with the Hall Rep for that residence.
 5. Invite the visitor to an operational team and to foundation Bible study classes.
+6. Record the outcome on the visitor's row with the **follow-up toggle**: contact is stamped with your name, the date/time, and optional **remarks** (the console shows **Awaiting Follow-up** and **Followed Up** counters). Undoing the toggle restores the awaiting state.
 
 > [!NOTE]
-> The dashboard does not store follow-up notes, assign follow-up partners, or track "contacted" status. Those coordination steps must happen in the team's own process. The console is an intake and contact-launch tool, not a CRM pipeline.
+> The dashboard records who followed up a visitor, when, and with what remarks, and the overview's "Do this now" queue automatically surfaces visitors sitting unfollowed-up. Deeper CRM-style assignment (pairs, pipelines) remains in the team's own process.
 
 ---
 
@@ -648,6 +649,8 @@ Table columns:
 The Prayer Team provides spiritual coverage for the fellowship, students' academic success, campus revival, and individual petitions.
 
 ### 9.1 Prayer Requests Feed (`/dashboard/prayer-requests`)
+**Access (October 2026 rule):** the feed is open to the **CSGB** (President, Vice Presidents, General Secretary, Prayer Coordinator), approved **Prayer Team** leads, the **Fellowship Chaplain**, and admin-role accounts. Hall Pastors and ordinary team leads no longer open this section.
+
 1. Open `/dashboard/prayer-requests`.
 2. Review requests submitted through `/connect`.
 3. Use the filter pills:
@@ -675,10 +678,14 @@ The Prayer Team provides spiritual coverage for the fellowship, students' academ
 The Welfare & Medical team demonstrates Christ's love by supporting students experiencing practical, physical, and financial difficulties.
 
 ### 10.1 Managing Welfare Cases (`/dashboard/welfare`)
+**Access (October 2026 rule):** strictly the **Welfare & Medical team**, the **CSGB**, and the **Fellowship Chaplain**. Hall Pastors and ordinary team leads no longer open this section. Everyone who can open the section is trusted with the requester's phone number for care follow-up.
+
 1. Open `/dashboard/welfare`.
-2. Review the incoming assistance requests and the pending/resolved counters.
-3. Search by student name, phone number, or request details, and filter by **All Statuses**, **Pending**, or **Resolved**.
-4. Each case shows the student's name, request details, and submission date. The requester's phone number is shown only when your role is authorized to contact them.
+2. Work in one of the two tabs of the **Welfare Hub**:
+   - **Welfare Purse Ledger** (default tab) — record every purse movement: inflows, outflows, bank charges, plus the running purse balance; classify with a category (e.g. *Miscellaneous Care*), export the ledger as a spreadsheet for review, and delete a mis-posted entry.
+   - **Care Requests queue** — the pending/resolved student-support cases with their pending/resolved counters.
+3. Search by student name, phone number, or request details, and filter by **All Statuses**, **Pending**, or **Resolved** (requests tab).
+4. Each case shows the student's name, request details, and submission date, with the requester's phone number visible for authorised contact.
 5. **Investigation:** Contact the student discreetly, assess the need, and agree on support with the President/Welfare lead.
 6. **Resolution:** After support is delivered, select **"Mark Resolved"** on a pending case. The status changes to **Resolved** and the counters update.
 
@@ -686,12 +693,11 @@ The Welfare & Medical team demonstrates Christ's love by supporting students exp
 > The console records only `Pending` and `Resolved`. There is no assignment owner, case-severity field, or internal case-note thread. Sensitive case discussion belongs in the Welfare team's private channels.
 
 > [!IMPORTANT]
-> Welfare section access and requester-phone visibility are separate. CSGB officers and approved **Welfare & Medical** positions see the requester phone. Other welfare-capable roles, including general Team Leads and Hall Reps, can open and resolve cases but see the request without the phone number. Finance and Media roles cannot open the section.
+> Welfare section access and requester-phone visibility now match exactly: only the Welfare & Medical team, CSGB officers, and the Chaplain reach the section, and each of them sees the requester phone. Hall Reps and general Team Leads are outside the section entirely. Finance and Media roles cannot open it.
 
 ### 10.2 Coordination
 - Confirm the available budget with the Financial Secretary before committing fellowship funds.
-- Record the corresponding disbursement in `/dashboard/finance` under `Welfare Disbursement`.
-- Hall Reps can view and resolve cases for students in their care, but they do not see requester phone numbers.
+- Record the corresponding disbursement in `/dashboard/finance` under `Welfare Disbursement`, and log the purse movement (inflow or outflow) in the **Welfare Purse Ledger** so the running balance stays truthful.
 
 ---
 
@@ -718,7 +724,7 @@ The **General Headcount** console is available to admins and members of the Ushe
 
 ### 11.2 Where the Numbers Appear
 - The attendance console shows services counted, average Sunday attendance, peak attendance, and the latest service.
-- The dashboard overview's **Last service attendance** card reflects the most recent recorded service.
+- The dashboard overview's last-attendance card — labelled **Last service attendance**, or **Last meeting attendance** for regular Team Leaders — reflects the most recent recorded service or meeting.
 - There is **no attendance trends chart** in the current dashboard.
 
 ---
@@ -747,6 +753,7 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Frontend | `/dashboard` |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Frontend | `/dashboard` |
 | `NEXT_PUBLIC_APP_URL` | Frontend | Canonical public base URL used in emailed verification links. Falls back to `VERCEL_URL` and then `http://localhost:3000` |
+| `NEXT_PUBLIC_SITE_URL` | Frontend | Optional canonical public URL override used by the shared email design system to build links and hosted images (falls back to `NEXT_PUBLIC_APP_URL`, then the production site) |
 | `CRON_SECRET` | Frontend (server) | Authorises scheduled sermon sync requests |
 | `SANITY_WEBHOOK_SECRET` | Frontend (server) | Verifies the announcement webhook |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Frontend | Cloudflare Turnstile browser widget |
@@ -775,7 +782,7 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 > `NEXTAUTH_SECRET` and `NEXTAUTH_URL` are no longer required. Clerk is the only identity provider. If an older deployment used `NEXTAUTH_SECRET` or `AUTH_SECRET` as an encryption or HMAC key, add the old value to `ENCRYPTION_LEGACY_KEYS` and `HMAC_LEGACY_PEPPERS` before upgrading. Do not delete those keys until `node scripts/check-encryption-health.mjs` reports zero unreadable fields.
 
 ### 12.2 Private Operational Drafts & Data Scripts
-Operational records (`worker`, `attendanceLedger`, `financeLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`) must remain unpublished drafts. The production dataset itself is **private** — anonymous API access is denied even for published content — and public pages read only through the server with `SANITY_READ_TOKEN` at the published perspective, so an operational draft can never appear in a public response.
+Operational records (`worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`) must remain unpublished drafts. The production dataset itself is **private** — anonymous API access is denied even for published content — and public pages read only through the server with `SANITY_READ_TOKEN` at the published perspective, so an operational draft can never appear in a public response. The **Halls of Residence** (`hallResidence`) and **CSGB offices** (`csgbRole`) are published *reference tables*: intake forms, dashboard filters, and access checks read them dynamically.
 
 Useful scripts in `eccf-frontend/scripts`:
 
@@ -827,7 +834,8 @@ Non-technical testers can follow the plain-English steps on each card before eve
 - **`/api/webhooks/announcement`** — Sanity announcement webhook, verified with `SANITY_WEBHOOK_SECRET`.
 - **`/api/upload-drive`** — private Google Apps Script bridge for large media uploads. Drive backup files are named `FullName_Team1_and_Team2…` (all of a worker's assigned teams, or `Workforce` when none is known), the endpoint tolerates data-URL-prefixed images, and a failed Drive sync is logged instead of failing the worker photo upload silently.
 - **Background sermon sync** — triggered by homepage/Sermon Vault visits, throttled to one run per 15 minutes per server instance.
-- **PWA manifest** — `/manifest.webmanifest`, scope and start URL `/dashboard`, with shortcuts for Attendance, Workers, First Timers, and Finance.
+- **PWA manifest** — `/manifest.webmanifest`, app name **"ECCF Exco Dashboard"**, scope and start URL `/dashboard`, with shortcuts for Attendance, Workers, First Timers, and Finance.
+- **Unknown routes** — any unmatched public URL redirects softly to the homepage instead of a raw 404.
 
 ### 12.5 Local Development & Deployment Commands
 **Frontend (`eccf-frontend`):**
@@ -860,37 +868,41 @@ Production frontend hosting is Vercel; the Studio is hosted at `https://eccf-bac
 
 ## Appendix A: Role-Based Access Control (RBAC) Matrix
 
-Roles are `admin`, `team_lead`, `finance`, and `hall_rep`. Position flags refine what a role can see: `isPresident`, `isCSGB`, `isFinance`, `isWelfare`, `isMedia`, `isOutreachLeader`, and `isUsheringTeam`. "CSGB Admin" below means an admin who is not the President.
+Roles are `admin`, `team_lead`, `finance`, and `hall_rep`. Position flags refine what a role can see: `isPresident`, `isVP`, `isChaplain`, `isPrayerCoordinator`, `isCSGB`, `isFinance`, `isWelfare`, `isMedia`, `isOutreachLeader`, and `isUsheringTeam`. "CSGB Admin" below means an admin who is not the President.
 
 > [!NOTE]
 > The dashboard UI labels these roles as **CSGB Executive** (admin), **Team Leader** (team_lead), **Finance** (finance), and **Hall Pastor** (hall_rep), and an approved office sharpens that label in the overview greeting and profile menu (for example "President", "Media Team Lead", or "Hall Pastor (Hall 3)"). The matrix below keeps the plain role names.
 
-| Section / Capability | President (admin) | CSGB Admin (admin) | Team Lead (scoped) | Outreach Lead | Media Lead | Hall Rep | Finance |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Overview** | Full | Full | People | People | People | Hall People | Finance only |
-| **Executive Appointments** | **Full** | No | No | No | No | No | No |
-| **Workforce Directory** | All | All | Own team | Own team | All (directory) | Own hall | No |
-| **Verify Team Memberships** | All | All | Own team | Own team | No | No | No |
-| **General Service Headcount** | Yes | Yes | Ushering lead only | No | No | No | No |
-| **Team Meeting Rosters** | All teams | All teams | Own team | Own team | Own team | Team roster view | No |
-| **Finance Ledger** | Full | Full | No | No | No | No | **Full** |
-| **First-Timers Intake** | All | All | Outreach only | All | No | **Own hall** | No |
-| **Welfare Requests** | Yes | Yes | Yes | Yes | Yes | Yes | No |
-| **Welfare Requester Phone** | Yes | Yes | Welfare team only | No | No | No | No |
-| **Prayer Petitions** | Yes | Yes | Yes | Yes | Yes | Yes | No |
-| **Sunday Announcements** | **Full** | **Full** | CSGB positions only | CSGB positions only | CSGB positions only | No | No |
-| **Sermon Management** | Media position only | Media position only | No | No | **Full** | No | No |
-| **QA Portal (`/qa`)** | Public | Public | Public | Public | Public | Public | Public |
-| **Sanity Studio CMS** | Admin | Admin | No | No | **Primary editor** | No | No |
+| Section / Capability | President (admin) | CSGB Admin (admin) | Team Lead (scoped) | Outreach Lead | Media Lead | Chaplain | Hall Rep | Finance |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Overview** | Full | Full | People | People | People | People | Hall People | Finance only |
+| **Executive Council & Roster** | Full (manage) | Full (manage) | No | No | No | Full (manage) | No | No |
+| **Leadership Roster Import (CSV)** | Yes | Yes | No | No | No | Yes | No | No |
+| **Workforce Directory** | All | All | Own team | Own team | All (directory) | Team-scoped | Own hall | No |
+| **Verify Team Memberships** | All | All | Own team | Own team | No | No | No | No |
+| **Offboard / Delete Workers** | Yes | Yes | No | No | No | Yes | No | No |
+| **Settings & Admin Tools** | Full | Full | No | No | No | Delete tools | No | No |
+| **General Service Headcount** | Yes | Yes | Ushering lead only | No | No | No | No | No |
+| **Team Meeting Rosters** | All teams | All teams | Own team | Own team | Own team | No | Team roster view | No |
+| **Finance Ledger** | Full | Full | No | No | No | No | No | **Full** |
+| **First-Timers Intake** | All | All | Outreach only | All | No | No | **Own hall** | No |
+| **First-Timer Follow-up Records** | Yes | Yes | Outreach only | All | No | No | Own hall | No |
+| **Welfare Hub (Purse & Requests)** | Yes | Yes | Welfare team only | No | No | Yes | No | No |
+| **Prayer Petitions** | Yes | Yes | Prayer team only | No | No | Yes | No | No |
+| **Sunday Announcements** | **Full** | **Full** | CSGB positions only | CSGB positions only | CSGB positions only | CSGB member | No | No |
+| **Sermon Management** | Media position only | Media position only | No | No | **Full** | No | No | No |
+| **QA Portal (`/qa`)** | Public | Public | Public | Public | Public | Public | Public | Public |
+| **Sanity Studio CMS** | Admin | Admin | No | No | **Primary editor** | No | No | No |
 
 Notes:
-- **CSGB membership** is granted to the President, Vice Presidents, the General Secretary, and Prayer leadership (including a Prayer Team Lead). An `admin` role is always CSGB. A team lead in another team does not automatically get announcements access.
-- **Media access** is position-based (team key `media`/`media-technical` or a team name containing "Media", including Drama/Creative Media); the admin role alone does not grant sermon management. Media leads also see the fellowship-wide worker directory for birthday and celebration content.
-- **Outreach access** is a scoped first-timers grant for team leads whose team key/name matches Outreach, Evangelism, or Follow-up.
-- **Finance access** is granted to CSGB members and approved Finance Team positions. The standalone `finance` role cannot see pastoral sections.
-- **Hall Reps** are scoped by their approved hall position. They see hall workers and hall first-timers, but do not verify team memberships or log general service headcounts.
-- **Welfare contact visibility** is narrower than section access: only CSGB members and approved Welfare & Medical positions see the requester phone; other roles with welfare access see the case without the number.
-- A Hall Rep who also holds an approved **Ushering** position gains the Ushering capabilities, including the General Headcount console.
+- **Only executives get a dashboard session.** `getSession()` returns nothing for workers without an approved position, so a sign-in without one bounces to `/login?denied=approval_pending`.
+- **CSGB membership** includes the President, Vice Presidents, the General Secretary, the Prayer Coordinator, and Prayer Team leads; the Chaplain is treated as CSGB-level for the pastoral feeds. CSGB **offices are dynamic `csgbRole` documents** in Sanity; the President's authority comes from `canApproveExecutives` on the office, and a stored `canApproveExecutives` remains a fallback when no approved positions exist.
+- **Finance is now role-scoped**: the `admin` and `finance` roles (plus legacy financial positions) reach the ledger. Being a CSGB flag alone no longer grants finance; President/VP retain it through the admin role, and other CSGB Admins keep it as admins.
+- **Welfare is strictly team-scoped**: the Welfare & Medical team (member, lead, or position text), the CSGB, and the Chaplain. Section access and requester-phone visibility are the same set now.
+- **Prayer is strict as well**: `isPrayerTeamAdmin` (CSGB, admin role, Chaplain, Prayer Coordinator, prayer-team leads). Everyone else — including hall reps and outreach leads — is outside.
+- **Media access** remains position-based (team key `media`/`media-technical` or a team name containing "Media", including Drama/Creative Media); the admin role alone does not grant sermon management. Media leads see the fellowship-wide worker directory (read-only) for birthday and celebration content.
+- **Outreach access** remains a scoped first-timers grant for team leads whose team key/name matches Outreach, Evangelism, or Follow-up.
+- **Hall Reps** are scoped by their approved hall (`hallRef` references the Sanity Halls of Residence table). They see hall workers and hall first-timers, but do not verify team memberships, log general service headcounts, or open welfare/prayer.
 - Direct URL access is still guarded even when a navigation item is hidden. Unauthorised attempts show an access-denied response/toast.
 
 ---
@@ -899,7 +911,7 @@ Notes:
 
 ### Public Routes
 - `/` — Homepage (Hero, Who We Are, Service Schedule, Latest Sermons, Gallery, Giving, Social, Plan a Visit)
-- `/about` — About ECCF (Mission, Story, Milestones, Pillars, Leadership, Teams)
+- `/about` — About ECCF (Mission, Story, Milestones, Pillars, Leadership, Teams, with team meeting chips)
 - `/sermons` — Sermon Vault (Multi-platform player, search, topics)
 - `/announcements` — Sunday Announcements Hub (Category filters, search, email subscribe)
 - `/announcements/preview` — Internal announcement preview
@@ -911,21 +923,24 @@ Notes:
 - `/register/status` — Registration Status Tracker (Clerk sign-in required)
 - `/qa` — QA Testing Portal (public, noindex)
 
+Any other public URL redirects to the homepage instead of a raw 404.
+
 ### Authentication Routes
 - `/login` — Clerk sign-in (Google or emailed code) plus "Activate Login"
 - `/sign-up` — Clerk sign-up for first-time Exco users
 
 ### Dashboard Routes (Protected)
-- `/dashboard` — Executive Overview Dashboard
-- `/dashboard/executives` — Presidential Executive Appointments Console
-- `/dashboard/workers` — Workforce Directory, Verification & Email
+- `/dashboard` — Executive Overview Dashboard (Executive Cockpit: header, Attention Queue, pulse strip, activity lists)
+- `/dashboard/executives` — Executive Council & Leadership Roster (CSGB / Chaplain; appointments, CSV import)
+- `/dashboard/workers` — Workforce Directory, Verification, Profile Drawer & Email
 - `/dashboard/attendance` — Attendance Hub (General Headcount & Team Rosters)
 - `/dashboard/finance` — Finance Ledger & Expense Tracking
 - `/dashboard/first-timers` — First-Timers Follow-Up Console
-- `/dashboard/welfare` — Student Welfare Requests
+- `/dashboard/welfare` — Welfare Hub (Welfare Purse Ledger & Care Requests)
 - `/dashboard/prayer-requests` — Intercessory Prayer Petitions Feed
 - `/dashboard/announcements` — Sunday Announcements & Broadcast Engine
 - `/dashboard/sermons` — Sermon Management & RSS Sync
+- `/dashboard/settings` — Settings & Admin Tools (CSV roster import, verified offboarding, directory sync)
 - `/dashboard/dev/ui-states` — Development-only UI state gallery
 
 ### Backend CMS
@@ -936,7 +951,7 @@ Notes:
 ## Appendix C: Operational Troubleshooting & FAQ
 
 ### Q1: Why do I get an "Access Denied" toast when clicking a dashboard tab?
-**A:** Your approved positions do not grant that section. Examples: `/dashboard/executives` is President-only; `/dashboard/finance` is for admins and Finance positions; `/dashboard/sermons` is for Media leaders only (an approved media position; the admin role alone is not enough). Contact the President or Technical Administrator if a position needs to be recorded or corrected.
+**A:** Your approved positions do not grant that section. Examples: `/dashboard/executives` is for CSGB executives and the Chaplain; `/dashboard/welfare` is for the Welfare & Medical team, the CSGB, and the Chaplain; `/dashboard/prayer-requests` is for prayer leadership, the CSGB, and the Chaplain; `/dashboard/settings` is for the President and CSGB Admins; `/dashboard/sermons` is for Media leaders only (the admin role alone is not enough). Contact the President or Technical Administrator if a position needs to be recorded or corrected.
 
 ### Q2: How do I change the photo or headline on the website homepage?
 **A:** In Sanity Studio:
@@ -947,7 +962,7 @@ Notes:
 The site is server-rendered on each request, so the change appears on the next load.
 
 ### Q3: Why does a newly registered worker not appear in the verified list?
-**A:** New team memberships start as `Pending`. The team leader must open `/dashboard/workers`, review the worker, and approve the membership. Multi-team workers must be verified by each team separately. Executive appointments approved by the President automatically verify the related team membership.
+**A:** New team memberships start as `Pending`. The team leader must open `/dashboard/workers`, review the worker, and approve the membership. Multi-team workers must be verified by each team separately. Executive appointments recorded in `/dashboard/executives` automatically verify the related team membership, and the first verification dispatches the worker's official welcome email.
 
 ### Q4: How does a worker check their membership or executive status?
 **A:** The worker signs in at `/login` and opens `/register/status`. The page requires Clerk authentication to protect private room and contact data. It shows each team membership and each position with `Pending`, `Verified/Approved`, or `Declined` status. There is no phone-number + OTP lookup on the status page.
@@ -959,7 +974,7 @@ The site is server-rendered on each request, so the change appears on the next l
 **A:** The PWA is scoped to `/dashboard` and its install prompts are deliberately suppressed on public pages. Leaders install it from the **Install App** button in the dashboard top bar. The app still requires network access and a valid Clerk session.
 
 ### Q7: Why is there no executive application in `/register`?
-**A:** Executive appointments are not self-service applications. The President creates/approves positions in `/dashboard/executives`. The intake form collects worker profile and team membership only. `/register/status` directs workers to the President or Technical Administrator when a position is missing.
+**A:** Executive appointments are not self-service applications. CSGB leadership (President, Vice President, or Chaplain) maintains appointments in `/dashboard/executives` — including the bulk **Import Leadership Roster** spreadsheet flow — and `/register/status` directs workers to the President or Technical Administrator when a position is missing. The intake form collects worker profile and team membership only.
 
 ### Q8: Why did "Sync Feeds (RSS)" not import a new sermon?
 **A:** Check that `SPOTIFY_RSS_URL` and `YOUTUBE_RSS_URL` point to the current feeds, that the sermon exists in one of them, and that `YOUTUBE_API_KEY` is set if YouTube enrichment is expected. The sync is also throttled: public visits trigger it at most once every 15 minutes per server instance. Use the dashboard button for an immediate run.
@@ -972,6 +987,12 @@ The site is server-rendered on each request, so the change appears on the next l
 
 ### Q11: Why does a public page show a **"We will be right back"** notice?
 **A:** A technical administrator placed that route under maintenance in Sanity. Open **Site Settings → Maintenance Mode**, where **Put Pages Under Maintenance** ticks public routes (a ticked route also covers everything nested beneath it), and **Maintenance Headline / Message / Expected Back** supply the notice text, guidance, and optional timeframe badge. The notice page is marked `noindex` for search engines, the Exco Dashboard is never affected, and Sanity's live web preview bypasses it so editors can keep working. Untick the route and select **Publish** to restore the page on the next request.
+
+### Q12: I signed in fine, but the dashboard bounces me back to `/login` with an "approval pending" message. Why?
+**A:** As of the October 2026 tightening, the portal resolves a dashboard session only for workers with an approved executive, team-lead, hall, or verified team-membership position. A profile whose memberships are all still `Pending` has no dashboard role yet. Check `/register/status` for your verification state, ask your team lead to verify you, and use **Activate Login** on `/login` if your Clerk account was never linked (or sign in with the Google account whose verified email matches your profile). Once a position is approved, sign in again — access is granted immediately.
+
+### Q13: Where did the "Mail Workers" button on the dashboard overview go?
+**A:** The overview was redesigned into the attention-first Executive Cockpit and no longer hosts mail shortcuts. All workforce email lives in the **Workforce Directory** (`/dashboard/workers`) via the **Send Email to Workers** card — open your directory, choose recipients within your role's scope, and send from there.
 
 ---
 
