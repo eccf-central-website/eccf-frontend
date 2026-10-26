@@ -2,7 +2,7 @@
 
 > **Audience:** developers joining or returning to this codebase. This is the technical companion to `docs/OPERATIONAL_MANUAL.md` (operations & user flows), `docs/TESTING_PLAN.md` (manual QA), `docs/operational-data-privacy.md`, and `docs/ENCRYPTION_KEY_UNIFICATION.md`.
 >
-> **Snapshot of record:** 25 October 2026 — frontend code at `2442b8a` (plus docs-only commits `708797d`, `9568c40`), backend (`eccf-backend`) at `5bf71fc`.
+> **Snapshot of record:** 26 October 2026 — frontend code at `d6fcf54`, backend (`eccf-backend`) at `b4f94ba`.
 
 ---
 
@@ -14,7 +14,8 @@
 | `eccf-backend` | Sanity Studio v3 + schema definitions | Studio at `https://eccf-backend.sanity.studio` |
 
 - Sanity project **`ynnot4j0`**, dataset **`production`**, access mode **private**. Anonymous API access is denied **even for published content**; every read authenticates with `SANITY_READ_TOKEN` (see `lib/sanity.ts` — `useCdn: false` everywhere, no public CDN).
-- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, and the operational set `worker`, `attendanceLedger`, `financeLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`.
+- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, and the operational set `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`, plus **published reference tables** `hallResidence` (Halls of Residence) and `csgbRole` (CSGB offices) that intake forms and access checks read dynamically.
+- Schema drift in the Oct 26 wave (`b4f94ba`): `teamUnit` gained optional `meetingDay`/`meetingTime`/`meetingVenue`; `firstTimer` gained follow-up attribution (`followedUp`, `followedUpAt`, `followedBy`, `followUpNotes`); `worker` gained `welcomeEmailSent`, `profileImageUrl`, and per-position `csgbRole`/`hallRef` references with projections (`csgbTitle: csgbRole.title`, `hallName: hallRef.name`); `attendanceLedger` entries carry a denormalised `loggedByName`; `csgbRole` documents carry `canApproveExecutives`/`isExecutiveShepherd`.
 
 ---
 
@@ -52,7 +53,8 @@ eccf-frontend/
 │  └─ api/                           # auth, preview, exit-preview, sync-sermons (cron),
 │                                    # upload-drive (Drive bridge), webhooks/announcement
 ├─ components/
-│  ├─ dashboard/…                    # overview/, shell/, pwa/, states/, ui/, sections…
+│  ├─ dashboard/…                    # overview/, shell/, pwa/, states/, ui/, sections…,
+│  │                                 # executives/, workers/, welfare/, settings/ (clients)
 │  ├─ forms/                         # WorkerRegistrationForm, Welfare/FirstTimer/Prayer, TurnstileWidget
 │  ├─ about/ home/ sermons/ announcements/ connect/ layout/ common/ qa/
 │  └─ ui/                            # shadcn-style primitives
@@ -60,15 +62,18 @@ eccf-frontend/
 │  ├─ sanity.ts                      # the ONLY Sanity client configuration (4 clients, §6)
 │  ├─ queries.ts                     # central GROQ (SITE_SETTINGS_QUERY, TEAMS_QUERY, GALLERY_QUERY, …)
 │  ├─ encryption.ts                  # AES-256-GCM fields + HMAC blind indexes (§10)
-│  ├─ maintenance.ts, email/, security/, teams.ts, sermonSync.ts, image-compression.ts
-│  └─ dashboard/                     # access, auth, rbac, action-result, queries, format, toast,
-│                                    # dev-actions, shell.ts, attendance-constants + data/ and mock/ fixtures
+│  ├─ csgb-roles.ts                  # dynamic CSGB offices from Sanity csgbRole + baseline fallback
+│  ├─ halls.ts                       # dynamic Halls of Residence from Sanity hallResidence + Hall 1–8 fallback
+│  ├─ maintenance.ts, email/ (from.ts sender + layout.ts shared design system), security/, teams.ts,
+│  │  sermonSync.ts, image-compression.ts
+│  └─ dashboard/                     # access, auth, rbac (≈530-line matrix), action-result, queries, format,
+│                                    # toast, dev-actions, shell.ts, attendance-constants + data/ and mock/
 ├─ scripts/                          # ops scripts — only tracked files; unchecked _*.mjs are gitignored
 ├─ tests/mobile-smoke.spec.ts        # Playwright mobile smoke
 └─ docs/                             # OPERATIONAL_MANUAL, this guide, TESTING_PLAN, privacy & crypto notes
 ```
 
-Route-group subtlety: route groups don't affect URLs. `/login` is served by `app/(dashboard)/login/…` even though middleware **redirects `/dashboard/login` → `/login`** (and `/dashboard/sign-up` → `/register`).
+Route-group subtlety: route groups don't affect URLs. `/login` is served by `app/(dashboard)/login/…` even though middleware **redirects `/dashboard/login` → `/login`** (and `/dashboard/sign-up` → `/sign-up`), each preserving query params; `app/not-found.tsx` soft-redirects unknown URLs to `/`.
 
 ---
 
@@ -86,26 +91,36 @@ Route-group subtlety: route groups don't affect URLs. `/login` is served by `app
 ## 5. Auth & Session Model
 
 - **Clerk is the only identity provider.** Google OAuth and emailed verification codes; no passwords. `NEXTAUTH_*` env vars are obsolete.
-- The Clerk user ↔ worker-profile bridge lives in `lib/dashboard/auth.ts` (`getDashboardSession`): resolves the worker by `clerkUserId`; falls back to matching a **Clerk-verified email** and auto-patches `clerkUserId` onto the profile. Unverified-email fallbacks are not trusted.
+- The Clerk user ↔ worker-profile bridge lives in `lib/dashboard/auth.ts` (`getDashboardSession`): resolves the worker by `clerkUserId`; falls back to matching a **Clerk-verified email** and auto-patches `clerkUserId` onto the profile. Unverified-email fallbacks are not trusted. A matching Google account works the same way, so approved executives can sign in with Google directly.
+- **Only executives get a dashboard session** (Oct 26 tightening): after the bridge resolves a profile, `deriveAccess()` runs and gates on the `isExecutive` capability. A worker whose memberships are all `Pending` gets `null` from `getSession()`, and `requireSession()`/`requireSection()` redirect to `/login?denied=approval_pending` — the login page renders the "approval pending" notice. Executive feeds like the logged-in registration status still work without a dashboard session.
 - "Activate Login" (`/login`, below the Clerk card) links an existing worker email to a fresh Clerk account.
+- The session carries the derived `access` block (§6), the official working position (`excoPosition`), hall/team memberships, and `profileImageUrl` for the shell avatar.
 - **Local mock auth:** `DASHBOARD_MOCK_AUTH=1` (ignored in production) creates a mock session from the `eccf-dev-role` cookie; `DASHBOARD_DATA_SOURCE=mock|sanity` swaps data (fixtures in `lib/dashboard/mock`); `DASHBOARD_MOCK_STATE=empty|error|slow` exercises loading states — plus the `/dashboard/dev/ui-states` gallery and `DevSwitcher` in the shell.
 
 ---
 
 ## 6. RBAC (source of truth: `lib/dashboard/access.ts` + `rbac.ts`)
 
-- Permissions derive from **approved Sanity positions/memberships — never form-typed titles**: `deriveAccess()` produces `role` (`admin | team_lead | finance | hall_rep`) + flags `isPresident`, `isCSGB`, `isFinance`, `isWelfare`, `isMedia`, `isOutreachLeader`, `isUsheringTeam` + memberships.
-- `hasPermission()` / `canAccessSection()` gate server components; `SECTION_PATHS` maps sections to routes. UI adds `ROLE_LABELS` (admin→"CSGB Executive", team_lead→"Team Leader", hall_rep→"Hall Pastor") and `getLeaderPostTitle()` resolves the office shown in the dashboard greeting ("President", "Hall Pastor (Hall 3)", "CSGB Executive" fallback).
-- `/dashboard/executives` is **President-only** (guarded via `isPresident` / `canApproveExecutives`).
-- Detail: dashboard auth recently tightened — Clerk-email fallback *requires the Clerk email to be verified*.
+- Permissions derive from **approved Sanity positions/memberships — never form-typed titles**: `deriveAccess()` produces `role` (`admin | team_lead | finance | hall_rep`) + flags `isPresident`, `isVP`, `isChaplain`, `isPrayerCoordinator`, `isCSGB`, `isFinance`, `isWelfare`, `isMedia`, `isOutreachLeader`, `isUsheringTeam`, and `isExecutive` + memberships. Positions may carry **`csgbRole` references** (dynamic Sanity offices) and **`hallRef` references** (Halls table) alongside legacy `hall`/`office` text.
+- `rbac.ts` (~530 lines) is the single matrix, and `canAccessSection()` is now **session-aware**: `workers`, `firstTimers`, `welfare`, `prayerRequests`, and `settings` honour the derived session, not just the role list. Notable helpers: `isPrayerTeamAdmin`, `isWelfareTeamMember` (Welfare team ⇒ CSGB ⇒ Chaplain), `isOutreachLeader`, `isRegularTeamLeader`, `isHallScoped`, and `canDeleteWorkers`.
+- Grants to know by heart:
+  - `executives` — CSGB + the **Chaplain** (President/VP/Chaplain/admin pass; the import pipeline re-verifies President/VP/Chaplain/admin inside `executive-suggestion-actions.ts`).
+  - `welfare` / requester-phone visibility — **Welfare & Medical team, CSGB, Chaplain** (identical set).
+  - `prayerRequests` — `isPrayerTeamAdmin` only (hall reps and outreach leads are out).
+  - `finance` — `admin`/`finance` **roles** plus legacy financial positions; a CSGB flag alone no longer grants it.
+  - `settings` — `admin`, `isPresident`, `isCSGB`, or `canDeleteWorkers` (the Chaplain reaches it with delete-offboarding tools; import is gated separately by `canImport`).
+  - `sermons` — media positions only; `announcements` — CSGB members; `firstTimers` — admin/hall_rep, or outreach-leading team-lead.
+- `PERMISSIONS` adds `workers:delete` (delegates to `canDeleteWorkers`) beside `attendance:create`, `finance:create`, `welfare:create`, `welfare:resolve`. `requirePermission()` re-checks server-side on every action.
+- `SECTION_PATHS` maps sections to routes; UI adds `ROLE_LABELS` (admin→"CSGB Executive", team_lead→"Team Leader", hall_rep→"Hall Pastor") and `getLeaderPostTitle()` resolves the office from the approved position — including `csgbRole.title` ("President", "Hall Pastor (Hall 3)", "CSGB Executive" fallback); the cockpit greeting consumes it.
+- CSGB offices and Halls are **dynamic data**: `lib/csgb-roles.ts` + `lib/halls.ts` cache-read `csgbRole`/`hallResidence` documents with published fallbacks (baseline office list; Halls 1–8). Changing them in the Studio changes labels, dropdowns, filters, and capabilities without a code change.
 
 ---
 
 ## 7. Dashboard Sections (`app/(dashboard)/dashboard`)
 
-`overview`, `executives` (President), `workers`, `attendance`, `finance`, `first-timers`, `welfare`, `prayer-requests`, `announcements` (+broadcast engine), `sermons` (media leads), `dev/ui-states`.
+`overview` (Executive Cockpit: date eyebrow + greeting, `AttentionQueue` fed live by `getLiveAttentionItems()` in `lib/dashboard/data/overview.ts`, stat pulse strip, two activity columns), `executives` (Executive Council & Leadership Roster: read + bulk CSV/XLSX import with canonical position resolver), `workers` (directory + profile drawer + email card), `attendance`, `finance`, `first-timers` (follow-up toggle/notes), `welfare` (Welfare Hub: Purse Ledger + requests tabs), `prayer-requests`, `announcements` (+broadcast engine), `sermons` (media leads), `settings` (CSV roster import / verified offboarding / directory sync), `dev/ui-states`.
 
-Shell components in `components/dashboard/shell/`: `AppSidebar`, `TopBar`, `MobileNav`/`BottomNav`, `UserMenu` (**only** place with the theme toggle), `DeniedToast`, `InstallPwaButton` (`components/dashboard/pwa/`). PWA scope/start URL is `/dashboard` with section shortcuts (see `app/manifest.webmanifest`).
+Shell components in `components/dashboard/shell/`: `AppSidebar`, `TopBar`, `MobileNav`/`BottomNav`, `UserMenu` (theme toggle lives there), `DeniedToast`, `InstallPwaButton` (`components/dashboard/pwa/`). PWA scope/start URL is `/dashboard`, manifest name "ECCF Exco Dashboard", with section shortcuts. Nav data lives in `shell/nav-items.ts` (sidebar order, filtered by `canAccessSection()` server-side).
 
 ---
 
@@ -115,12 +130,15 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
 
 | File | Purpose |
 | :--- | :--- |
-| `worker-registration.ts` | 8-step intake: `checkWorkerPhoneAndInitiateVerification` (OTP + magic-link), email-ownership OTP for first-timers, profile refresh, submission |
-| `worker-actions.ts`, `worker-email-actions.ts` | Worker CRM + workforce mail |
-| `finance-actions.ts`, `attendance-actions.ts` | Ledgers & rosters (operational drafts) |
+| `worker-registration.ts` | 8-step intake: `checkWorkerPhoneAndInitiateVerification` (OTP + magic-link), email-ownership OTP for first-timers, profile refresh, submission; `sendWorkerWelcomeEmail()` helper (sent once on first membership verification, gated by `worker.welcomeEmailSent`) |
+| `worker-actions.ts`, `worker-email-actions.ts` | Worker CRM — verification approvals, `toggleExcoApproval`, profile photo update (`updateDashboardProfilePhotoAction`), verified offboarding (`deleteApprovedWorkerAction`), CSV roster import (`importWorkerRosterCsvAction`) — plus workforce mail |
+| `executive-suggestion-actions.ts` | Leadership spreadsheet import pipeline: `previewExecutiveSpreadsheet` (canonical `csgbRole`/`hallResidence`/`teamUnit` resolver + worker name matching) and `commitExecutiveImport` (smart-merge positions, auto-create missing workers, immediate activation); auth = President/VP/Chaplain/admin |
+| `executive-actions.ts` | `relieveExecutivePosition` / `updateExecutiveRank` — **orphaned since `d6fcf54`** (the console's relieve/rank controls were removed); delete or re-wire |
+| `first-timer-actions.ts` | Follow-up toggle + remarks (`toggleFirstTimerFollowUpAction`), leader attribution & timestamps |
+| `welfare-ledger-actions.ts` | Welfare Purse Ledger entries — record (`recordWelfareLedgerEntry`) / delete, with running balance |
+| `finance-actions.ts`, `attendance-actions.ts` | Ledgers & rosters (operational drafts); attendance rows carry denormalised `loggedByName` |
 | `announcement-actions.ts`, `announcement-broadcast-actions.ts` | Publishing + Resend broadcasts to subscribers |
 | `intake-actions.ts` | First-timer / welfare / prayer forms (Turnstile + NDPR consent) |
-| `executive-approval-actions.ts`, `executive-suggestion-actions.ts` | President console |
 | `sermon-management-actions.ts`, `sermon-sync-actions.ts` | Sermon Vault sync |
 | `subscriber-actions.ts`, `qa-actions.ts` | Newsletter subs; QA portal progress (PIN-hashed in `qaChecklist`) |
 
@@ -132,6 +150,8 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
 
 `lib/email/from.ts` → `resolveResendFrom()`: `RESEND_FROM_EMAIL` → `EMAIL_FROM` → development fallback `onboarding@resend.dev`. A configured bare domain (`example.org`) is auto-corrected to `team@example.org` with a logged warning; the fallback only delivers to the Resend account owner, so production requires a verified Resend domain. In production, rejected sends surface the real error to the user instead of silently simulating.
 
+All dashboard/worker mail renders through the shared design system **`lib/email/layout.ts`** (eyebrow + title + card body composition; hosted assets/links resolve `NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` → the production default). The official worker welcome email (`sendWorkerWelcomeEmail`, defined in `worker-registration.ts`) is dispatched by first membership verification in `worker-actions.ts` and is send-once via the `welcomeEmailSent` profile flag.
+
 ---
 
 ## 10. Data Layer Rules
@@ -141,7 +161,7 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
    - `sanityPreviewClient` — draft mode/Studio preview, `perspective: 'drafts'`.
    - `sanityWriteClient` — mutations, **server actions only**.
    - `sanityPrivateClient` — dashboard/operational views with drafts visibility.
-2. **Private-dataset mindset:** unauthenticated queries return nothing at all. "Publishing" still matters — public pages see only published docs, so operational records must never be published. Keep `worker`, `attendanceLedger`, `financeLedger`, `firstTimer`, `welfareRequest`, `prayerRequest` as unpublished drafts (`createPrivateDocument`, `patchPrivateDocument`).
+2. **Private-dataset mindset:** unauthenticated queries return nothing at all. "Publishing" still matters — public pages see only published docs, so operational records must never be published. Keep `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest` as unpublished drafts (`createPrivateDocument`, `patchPrivateDocument`). The only deliberate exceptions are the published **reference tables** `hallResidence` and `csgbRole`, consumed by `lib/halls.ts` / `lib/csgb-roles.ts`.
 3. **Encryption before storage** (`lib/encryption.ts`): `encrypt()`/`decrypt()` (AES-256-GCM, `enc:v1:` prefix) for phone & room; `createBlindIndex()`/`getCandidateBlindIndexes()` (`bidx:v1:`) for phone lookup/dedup; birthday blind indexes for the same. Verify health with `npm run check:encryption` after any key work. `ENCRYPTION_KEY`/`HMAC_PEPPER` must match local↔production; rotations go through `ENCRYPTION_LEGACY_KEYS`/`HMAC_LEGACY_PEPPERS` first.
 4. **GROQ lives centrally** in `lib/queries.ts`. Notables: `SITE_SETTINGS_QUERY` carries `maintenancePages/…Eta` + `socialBanner*`; `GALLERY_QUERY` returns only `featured == true` items ordered by `displayOrder`; `TEAMS_QUERY`/`EXCOS_QUERY` omit lead fields (leaders come from `publicLeader`/positions).
 5. **Photo pipeline:** client-side compression (`lib/image-compression.ts`) → Sanity upload (≤2 MB stored) → optional Drive backup via `/api/upload-drive` (HMAC-verified Apps Script bridge; files named `FullName_Teams`, `Workforce` fallback; sync failures are logged, not fatal).
@@ -190,23 +210,31 @@ Manual test suites: `/qa` (public, noindex — six suites / 61 checks, 4-digit P
 
 ---
 
-## 13. Where We Stopped — Open Threads (as of 25 Oct 2026)
+## 13. Where We Stopped — Open Threads (as of 26 Oct 2026)
 
-**Landed in the last stretch** (`d4a8110` → `2442b8a`, backend `5bf71fc`): Turnstile-once registration + official leader-post greeting; registration draft persistence (`sessionStorage` key `eccf_worker_reg_draft_v1` — signed-out new-worker sessions only, cleared on successful submit); email sender auto-correct + real production delivery errors; Drive filename convention; maintenance mode; gallery `featured`-only + `displayOrder`; About section-visibility toggles; `/terms`.
+**Landed in the Oct 26 dashboard-redesign wave** (`410d527` → `d6fcf54`, backend `5bf71fc` → `b4f94ba`):
 
-**Open UI debt** — findings from the `DASHBOARD_UI_FIX_PROMPT.md` review, **verified still present**; nobody has implemented fixes yet:
+- **Overview → Executive Cockpit:** date eyebrow, `"Good morning, {firstName} — {post}"` greeting, live `AttentionQueue` (`getLiveAttentionItems()` — pending verifications, executive onboarding, welfare follow-ups, unfollowed first-timers), aligned stat strip (regular team leads see "Last meeting attendance"), two-column activity lists. The mail CTA left the overview — the workers page owns email.
+- **Executives console rebuilt** (`d6fcf54` included): CSGB + Chaplain access, `ExecutivesClient` roster with counters/tabs, bulk CSV/XLSX **Import Leadership Roster** (`ExecutiveCsvImportDialog` 3-step flow → `previewExecutiveSpreadsheet`/`commitExecutiveImport`) with a canonical position resolver (exact `csgbRole`/`hallResidence`/`teamUnit` matches, comprehensive synonyms) and worker name-matching/dedupe (exact email → sorted-token keys), auto-created profiles, and immediate activation. CSGB offices + Halls became Sanity-driven (`lib/csgb-roles.ts`, `lib/halls.ts`).
+- **New `/dashboard/settings`:** CSV worker-roster import, verified offboarding (`deleteApprovedWorkerAction` with safety steps), directory-sync pipeline; gated admin/`isPresident`/`isCSGB`/`canDeleteWorkers`.
+- **Welfare Hub:** `/dashboard/welfare` tabs (`WelfareHub`) — new **Welfare Purse Ledger** (`welfareLedger` docs, `welfare-ledger-actions.ts`, category + xlsx export + delete) beside the care-requests queue; access tightened to Welfare team / CSGB / Chaplain (phone visibility now matches section access).
+- **First-timer follow-up tracking:** `first-timer-actions.ts` toggle stamps `followedBy`/`followedUpAt`/`followUpNotes`; counters + attention-queue integration.
+- **Auth tightening:** sessions only for `isExecutive` workers → `/login?denied=approval_pending`; Google verified-email bridge; PWA renamed "ECCF Exco Dashboard"; 404 → `/`; `/dashboard/sign-up` → `/sign-up`; mandatory registration photo (compressed, ≤2 MB stored); team `meetingDay/Time/Venue` chips on About cards.
+- **Email:** shared design system `lib/email/layout.ts` + `NEXT_PUBLIC_SITE_URL`; send-once worker welcome email (`welcomeEmailSent`).
 
-1. `components/dashboard/shell/MobileNav.tsx` — no theme toggle; the panel just says "Theme lives in the account menu at the top right." Decide: add the toggle or accept the pointer.
-2. `components/dashboard/pwa/InstallPwaButton.tsx` — mobile tap target is `h-8` (32 px, under the 44–48 px minimum) and hardcodes `#0077cc`/`#0095ff` instead of tokens.
-3. `components/dashboard/states/StatCardSkeleton.tsx` vs `overview/StatCard.tsx` — skeleton padding `p-5 sm:p-6` vs live card `p-4 sm:p-5 lg:p-6` causes a small shift when stats stream in; skeleton icon chip is fixed `h-9 w-9` while the real chip is `h-8 sm:h-9`.
-4. `app/(dashboard)/login/[[...rest]]/page.tsx` — login page still uses hardcoded brand hex rather than theme tokens.
+**Open UI debt** — verified still present at `d6fcf54`; nobody has implemented fixes yet:
+
+1. `components/dashboard/shell/MobileNav.tsx` — no theme toggle; the panel still says "Theme lives in the account menu at the top right." Decide: add the toggle or accept the pointer.
+2. `components/dashboard/pwa/InstallPwaButton.tsx` — mobile tap target is `h-8` (32 px, under the 44–48 px minimum) and still hardcodes `#0077cc`/`#0095ff` instead of tokens.
+3. `components/dashboard/states/StatCardSkeleton.tsx` — **base padding is fixed** (now `p-4 sm:p-5`, matching `overview/StatCard.tsx`). Residual: the skeleton chip stays `h-8 w-8 rounded-lg` while the real chip grows `sm:h-9 sm:w-9 rounded-xl`, and the skeleton's flat `min-h-[134px]` doesn't track the card's `136/148 px` responsive heights.
+4. `app/(dashboard)/login/[[...rest]]/page.tsx` — login page still uses ~15 hardcoded brand hex values rather than theme tokens.
 
 **Repo/process debt:**
 
-- `.gitignore` is clean again (the stray `"` line reported earlier is gone) — nothing to do.
-- `.env.example` references the missing `CLAUDE.md` (above).
-- `docs/TESTING_PLAN.md` stack line is stale (NextAuth/bcrypt → Clerk, no passwords).
-- `main` was ahead of `origin` by two docs commits (`708797d`, `9568c40`) plus this guide's commit — **push when ready**.
+- `app/actions/executive-actions.ts` is now **dead code** — the console's relieve/rank controls were removed in `d6fcf54` and nothing imports it. Choose: delete it or re-wire a replacement management control.
+- `.env.example` references the missing `CLAUDE.md` (§12) — privacy guidance lives in `docs/operational-data-privacy.md`.
+- `docs/TESTING_PLAN.md` is still stale: its stack line lists "NextAuth.js" and "Bcrypt" (plus a `passwordHash` double-layer test) — Clerk replaced both and passwords are gone.
+- After committing this guide, `main` is **2 commits ahead** of `origin` (`077d4c9` manual sync + this guide) — **push when ready**.
 
 ---
 
