@@ -129,6 +129,9 @@ export const TEAMS_QUERY = `
     name,
     key,
     description,
+    meetingDay,
+    meetingTime,
+    meetingVenue,
     order,
     image,
     "imageUrl": image.asset->url

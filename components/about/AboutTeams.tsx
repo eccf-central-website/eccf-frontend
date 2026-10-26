@@ -24,6 +24,9 @@ export interface OperationalTeam {
   role?: string
   description: string
   imageUrl?: string
+  meetingDay?: string
+  meetingTime?: string
+  meetingVenue?: string
   category: 'spiritual' | 'music_arts' | 'logistics' | 'media_academic'
 }
 
@@ -35,6 +38,9 @@ interface AboutTeamsProps {
     role?: string
     description: string
     imageUrl?: string
+    meetingDay?: string
+    meetingTime?: string
+    meetingVenue?: string
   }[] | null
   headline?: string
   lead?: string
@@ -191,6 +197,9 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
           imageUrl: match.imageUrl || canon.imageUrl,
           tag: match.tag || canon.tag,
           role: match.role || canon.role,
+          meetingDay: match.meetingDay || canon.meetingDay,
+          meetingTime: match.meetingTime || canon.meetingTime,
+          meetingVenue: match.meetingVenue || canon.meetingVenue,
         }
       }
       return canon
@@ -325,6 +334,20 @@ export default function AboutTeams({ teams, headline, lead }: AboutTeamsProps) {
                     <p className="text-sm text-slate-700 leading-relaxed font-normal">
                       {team.description}
                     </p>
+                    {(team.meetingDay || team.meetingTime || team.meetingVenue) && (
+                      <div className="mt-3 pt-3 border-t border-stone-100 flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
+                        {(team.meetingDay || team.meetingTime) && (
+                          <span className="inline-flex items-center gap-1 bg-stone-100/80 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600">
+                            🕒 {[team.meetingDay, team.meetingTime].filter(Boolean).join(' at ')}
+                          </span>
+                        )}
+                        {team.meetingVenue && (
+                          <span className="inline-flex items-center gap-1 bg-stone-100/80 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600">
+                            📍 {team.meetingVenue}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

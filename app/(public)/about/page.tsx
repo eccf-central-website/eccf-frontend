@@ -48,6 +48,9 @@ interface RawSanityTeam {
   tag?: string
   leadName?: string
   description: string
+  meetingDay?: string
+  meetingTime?: string
+  meetingVenue?: string
   order?: number
   image?: unknown
   imageUrl?: string
@@ -161,6 +164,9 @@ export default async function AboutPage({
     description: t.description,
     imageUrl: urlForImage(t.image) || t.imageUrl,
     tag: t.tag,
+    meetingDay: t.meetingDay,
+    meetingTime: t.meetingTime,
+    meetingVenue: t.meetingVenue,
   }))
 
   // Map Sanity excos
