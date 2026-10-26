@@ -8,6 +8,7 @@ import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import UsheringHeadcountView from '@/components/dashboard/attendance/UsheringHeadcountView'
 import TeamMeetingAttendanceView from '@/components/dashboard/attendance/TeamMeetingAttendanceView'
 import { Badge } from '@/components/dashboard/ui/badge'
+import { isRegularTeamLeader } from '@/lib/dashboard/rbac'
 
 interface AttendanceHubProps {
   session: ECCFSession
@@ -69,7 +70,9 @@ export default function AttendanceHub({
             )}
           </div>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Record service headcounts and manage team rosters.
+            {isRegularTeamLeader(session) || (!canUsher && isTeamLead) || activeTab === 'team'
+              ? 'Record meeting attendance and manage team rosters.'
+              : 'Record service headcounts and manage team rosters.'}
           </p>
         </div>
 
