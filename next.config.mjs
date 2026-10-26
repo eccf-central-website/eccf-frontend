@@ -37,11 +37,7 @@ const nextConfig = {
         destination: '/login',
         permanent: true,
       },
-      {
-        source: '/dashboard/executives',
-        destination: '/dashboard/workers',
-        permanent: false,
-      },
+      
     ]
   },
 };

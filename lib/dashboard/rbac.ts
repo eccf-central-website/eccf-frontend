@@ -17,6 +17,7 @@ import type { WorkerRole } from '@/types'
 
 export type DashboardSection =
   | 'overview'
+  | 'executives'
   | 'workers'
   | 'attendance'
   | 'finance'
@@ -134,6 +135,7 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
 /** URL path for each section. Intake paths match revalidatePath() calls in app/actions/intake-actions.ts. */
 export const SECTION_PATHS: Record<DashboardSection, string> = {
   overview: '/dashboard',
+  executives: '/dashboard/executives',
   workers: '/dashboard/workers',
   attendance: '/dashboard/attendance',
   finance: '/dashboard/finance',
@@ -147,6 +149,7 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
 
 const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   overview: ['admin', 'team_lead', 'finance', 'hall_rep'],
+  executives: ['admin'],
   workers: ['admin', 'team_lead', 'hall_rep'],
   attendance: ['admin', 'team_lead', 'hall_rep'],
   finance: ['admin', 'finance'],
@@ -423,6 +426,15 @@ export function canAccessSection(
 ): boolean {
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
+    if (section === 'executives') {
+    return (
+      role === 'admin' ||
+      Boolean(currentSession?.access?.isPresident) ||
+      Boolean(currentSession?.access?.isVP) ||
+      Boolean(currentSession?.access?.isCSGB) ||
+      Boolean(currentSession?.access?.isChaplain)
+    )
+  }
   if (section === 'settings') {
     return (
       role === 'admin' ||

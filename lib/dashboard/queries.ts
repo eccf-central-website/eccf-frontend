@@ -335,3 +335,34 @@ export const DASHBOARD_ANNOUNCEMENTS_QUERY = `
   }
 `
 
+
+// ---------------------------------------------------------------------------
+// Executives Console (All appointed and approved executive leaders)
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_EXECUTIVES_QUERY = `
+  *[_type == "worker" && defined(positions) && count(positions) > 0 && !(_id in path("drafts.**"))] | order(fullName asc) {
+    _id,
+    fullName,
+    firstName,
+    lastName,
+    email,
+    hall,
+    roomNumber,
+    profileImageUrl,
+    "positions": positions[] {
+      "_key": coalesce(_key, ""),
+      "key": coalesce(_key, ""),
+      kind,
+      office,
+      rank,
+      status,
+      submittedAt,
+      decidedAt,
+      "csgbRoleTitle": coalesce(csgbRole->title, office),
+      "csgbRoleRef": csgbRole._ref,
+      "hallName": coalesce(hallRef->name, hall),
+      "teamTitle": coalesce(team->name, teamName)
+    }
+  }
+`

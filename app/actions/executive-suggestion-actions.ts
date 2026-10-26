@@ -699,9 +699,10 @@ export async function commitExecutiveImport(payload: {
     const newPos: Record<string, unknown> = {
       _key: `csv_pos_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       kind: item.kind,
-      status: 'pending',
+      status: 'approved',
       rank: item.rank || 'lead',
       submittedAt: new Date().toISOString(),
+      decidedAt: new Date().toISOString(),
     }
 
     if (item.kind === 'csgb') {
@@ -731,7 +732,7 @@ export async function commitExecutiveImport(payload: {
 
     if (targetWorkerId) {
       try {
-        await patchPrivateDocument(targetWorkerId).append('positions', [newPos]).commit()
+        await patchPrivateDocument(targetWorkerId).set({ isExcoApproved: true }).append('positions', [newPos]).commit()
         imported++
         matchedCount++
       } catch (err) {
@@ -746,6 +747,7 @@ export async function commitExecutiveImport(payload: {
           fullName: cleanDisplayName,
           ...(item.email ? { email: item.email.toLowerCase() } : {}),
           ...(item.hall ? { hall: item.hall } : {}),
+          isExcoApproved: true,
           positions: [newPos],
           memberships: [],
           createdAt: new Date().toISOString(),
@@ -767,6 +769,7 @@ export async function commitExecutiveImport(payload: {
   // Revalidate background paths only, avoiding active page unmount
   try {
     revalidatePath('/dashboard/executives')
+    revalidatePath('/dashboard/workers')
   } catch {}
 
   return {

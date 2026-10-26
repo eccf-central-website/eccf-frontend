@@ -105,6 +105,34 @@ export interface PendingExecutiveApplication {
   }
 }
 
+export interface ExecutivePositionDetail {
+  key: string
+  kind: 'csgb' | 'hall' | 'team'
+  office?: string
+  csgbRoleTitle?: string
+  csgbRoleRef?: string
+  hall?: string
+  hallName?: string
+  teamName?: string
+  teamTitle?: string
+  rank?: 'lead' | 'assistant'
+  status: 'pending' | 'approved' | 'rejected'
+  decidedAt?: string
+  submittedAt?: string
+}
+
+export interface ExecutiveRow {
+  _id: string
+  fullName: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  hall?: string
+  roomNumber?: string
+  profileImageUrl?: string
+  positions: ExecutivePositionDetail[]
+}
+
 export interface Worker {
   _id: string
   _type: 'worker'

@@ -16,6 +16,7 @@ import {
   Radio,
   UserPlus,
   Users,
+  Shield,
   Wallet,
   type LucideIcon,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { section: 'overview', label: 'Overview', href: SECTION_PATHS.overview, icon: LayoutDashboard },
   { section: 'workers', label: 'Workers', href: SECTION_PATHS.workers, icon: Users },
+  { section: 'executives', label: 'Executives', href: SECTION_PATHS.executives, icon: Shield },
   { section: 'firstTimers', label: 'First-Timers', href: SECTION_PATHS.firstTimers, icon: UserPlus },
   { section: 'attendance', label: 'Attendance', href: SECTION_PATHS.attendance, icon: CalendarCheck },
   { section: 'welfare', label: 'Welfare', href: SECTION_PATHS.welfare, icon: HeartHandshake },

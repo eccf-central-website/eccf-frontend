@@ -34,6 +34,7 @@ import type {
   WelfareLedgerRow,
   WelfareRequestRow,
   WorkerRow,
+  ExecutiveRow,
 } from '@/types'
 import {
   canAccessSection,
@@ -55,6 +56,7 @@ import {
   DASHBOARD_WELFARE_LEDGER_QUERY,
   DASHBOARD_WELFARE_QUERY,
   DASHBOARD_WORKERS_QUERY,
+  DASHBOARD_EXECUTIVES_QUERY,
   FINANCE_STATS_QUERY,
   PEOPLE_STATS_QUERY,
   WORKER_HALL_BY_ID_QUERY,
@@ -458,5 +460,44 @@ export async function listAnnouncements(session: ECCFSession): Promise<Announcem
   } catch (err) {
     console.error('[listAnnouncements] Sanity fetch error, falling back to mock fixtures:', err)
     return MOCK_ANNOUNCEMENTS
+  }
+}
+
+export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRow[]> {
+  if (session && !canAccessSection(session.role, 'executives', session)) {
+    return []
+  }
+
+  if (dataSource() === 'mock') {
+    const excos: ExecutiveRow[] = (MOCK_WORKERS || [])
+      .filter((w) => w.positions && w.positions.length > 0)
+      .map((w) => ({
+        _id: w._id,
+        fullName: w.fullName,
+        email: w.email,
+        hall: w.hall,
+        profileImageUrl: w.profileImageUrl,
+        positions: (w.positions || []).map((p) => ({
+          key: p._key || `pos_${Math.random()}`,
+          kind: p.kind,
+          office: p.office,
+          csgbRoleTitle: p.office,
+          hallName: p.hall,
+          teamTitle: p.teamName || (typeof p.team === 'string' ? p.team : undefined),
+          rank: p.rank,
+          status: p.status,
+          submittedAt: (p as any).submittedAt,
+          decidedAt: p.decidedAt,
+        })),
+      }))
+    return stripPII(excos)
+  }
+
+  try {
+    const rows = await sanityPrivateClient.fetch<ExecutiveRow[]>(DASHBOARD_EXECUTIVES_QUERY)
+    return stripPII(rows || [])
+  } catch (err) {
+    console.error('[listExecutives] Sanity fetch error:', err)
+    return []
   }
 }
