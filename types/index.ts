@@ -329,6 +329,10 @@ export interface FirstTimer {
   department?: string
   level?: string
   dateVisited: string // ISO date YYYY-MM-DD
+  followedUp?: boolean
+  followedUpAt?: string
+  followedUpBy?: string
+  followUpNotes?: string
   createdAt?: string
 }
 
@@ -426,6 +430,10 @@ export interface FirstTimerRow {
   department?: string
   level?: string
   dateVisited: string
+  followedUp?: boolean
+  followedUpAt?: string
+  followedUpBy?: string
+  followUpNotes?: string
   createdAt?: string
 }
 
