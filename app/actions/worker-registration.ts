@@ -2373,6 +2373,13 @@ export async function registerWorker(
         }
       }
 
+      if (!input.profileImageUrl && !input.requestPhotoUpload) {
+        return {
+          ok: false,
+          error: 'Please upload a clear celebratory picture of yourself to complete worker registration.',
+        }
+      }
+
       // Create Brand New Worker Document
       const initialLogs = [`Initial worker registration on ${today}`]
       if (input.isExco) {

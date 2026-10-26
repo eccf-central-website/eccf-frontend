@@ -968,6 +968,11 @@ export function WorkerRegistrationForm({
 
   // Final Submission
   async function handleFinalSubmit() {
+    if (!base64Image && !existingPhotoUrl) {
+      setError('Please upload a clear celebratory picture of yourself to complete registration.');
+      setStep(isReturning ? 3 : 7);
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -2202,8 +2207,16 @@ export function WorkerRegistrationForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(4)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
+                  disabled={!imagePreview && !base64Image && !existingPhotoUrl}
+                  onClick={() => {
+                    if (!imagePreview && !base64Image && !existingPhotoUrl) {
+                      setError('Please upload a clear celebratory picture of yourself to proceed.');
+                      return;
+                    }
+                    setError(null);
+                    setStep(4);
+                  }}
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Review &amp; Confirm{' '}
                   <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
@@ -2873,12 +2886,13 @@ export function WorkerRegistrationForm({
                 <span className="text-xs font-bold uppercase tracking-widest text-[#0077cc]">
                   Step 7 of {totalSteps}
                 </span>
-                <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight">
-                  Select your birthday picture
+                <h2 className="font-serif text-2xl sm:text-3xl text-slate-950 font-bold tracking-tight flex items-center flex-wrap gap-2">
+                  <span>Select your birthday picture</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">Required</span>
                 </h2>
                 <p className="text-sm text-slate-600">
                   A clear celebratory photo we can celebrate you with on your
-                  birthday. You can change it anytime.
+                  birthday (required). You can change it anytime.
                 </p>
               </div>
 
@@ -2927,8 +2941,16 @@ export function WorkerRegistrationForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(8)}
-                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25"
+                  disabled={!imagePreview && !base64Image && !existingPhotoUrl}
+                  onClick={() => {
+                    if (!imagePreview && !base64Image && !existingPhotoUrl) {
+                      setError('Please select and upload a clear celebratory picture of yourself to proceed.');
+                      return;
+                    }
+                    setError(null);
+                    setStep(8);
+                  }}
+                  className="flex h-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0077cc] to-[#0095ff] px-8 text-base sm:text-lg font-bold text-white transition-all hover:brightness-105 shadow-lg shadow-sky-600/25 disabled:pointer-events-none disabled:opacity-50"
                 >
                   Next Step <ArrowRight className="h-5 w-5 shrink-0 ml-2" />
                 </button>
