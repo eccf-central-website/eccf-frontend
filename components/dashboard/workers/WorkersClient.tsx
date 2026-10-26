@@ -20,6 +20,8 @@ import {
   Calendar,
   Download,
   Mail,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 import type { WorkerRow, ECCFSession } from '@/types'
 import type { WorkerAccess } from '@/lib/dashboard/access'
@@ -49,8 +51,8 @@ import {
   SelectValue,
 } from '@/components/dashboard/ui/select'
 import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
-import { isMediaTeam } from '@/lib/dashboard/rbac'
-import { verifyWorkerMembership, toggleExcoApproval } from '@/app/actions/worker-actions'
+import { isMediaTeam, canDeleteWorkers } from '@/lib/dashboard/rbac'
+import { verifyWorkerMembership, toggleExcoApproval, deleteApprovedWorkerAction } from '@/app/actions/worker-actions'
 import { toastSuccess, toastError } from '@/lib/dashboard/toast'
 
 const MONTH_NAMES = [
@@ -145,6 +147,12 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
   const [emailPreselectedWorker, setEmailPreselectedWorker] = useState<WorkerRow | null>(null)
   const [, startTransition] = useTransition()
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const canDelete = useMemo(() => canDeleteWorkers(session), [session])
+  const [workerToDelete, setWorkerToDelete] = useState<WorkerRow | null>(null)
+  const [confirmDeleteName, setConfirmDeleteName] = useState('')
+  const [deletePolicy, setDeletePolicy] = useState<'archive' | 'permanent'>('archive')
+  const [deleteReason, setDeleteReason] = useState('Left the team / fellowship')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const access = session.access
   const isPresident = Boolean(access?.isPresident)
@@ -286,6 +294,52 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
         toastError('An unexpected network error occurred.')
       } finally {
         setProcessingId(null)
+      }
+    })
+  }
+
+  // Handle Worker Deletion / Offboarding (CSGB & Chaplains only)
+  function handleDeleteWorker() {
+    if (!workerToDelete) return
+    if (confirmDeleteName.trim().toLowerCase() !== workerToDelete.fullName.trim().toLowerCase()) {
+      toastError('Please type the exact worker name to confirm deletion.')
+      return
+    }
+
+    setIsDeleting(true)
+    startTransition(async () => {
+      try {
+        const res = await deleteApprovedWorkerAction({
+          workerId: workerToDelete._id,
+          confirmedName: confirmDeleteName,
+          policy: deletePolicy,
+          reason: deleteReason.trim() || 'Worker left the fellowship team',
+        })
+
+        if (res.ok) {
+          setRows((prev) =>
+            deletePolicy === 'permanent'
+              ? prev.filter((w) => w._id !== workerToDelete._id)
+              : prev.map((w) => (w._id === workerToDelete._id ? { ...w, verificationStatus: 'rejected' } : w))
+          )
+          if (activeWorkerDetail?._id === workerToDelete._id) {
+            setActiveWorkerDetail(null)
+          }
+          setWorkerToDelete(null)
+          setConfirmDeleteName('')
+          setDeleteReason('Left the team / fellowship')
+          toastSuccess(
+            deletePolicy === 'permanent'
+              ? `${workerToDelete.fullName} has been permanently deleted.`
+              : `${workerToDelete.fullName} has been archived and offboarded.`
+          )
+        } else {
+          toastError(res.error || 'Failed to delete worker profile.')
+        }
+      } catch {
+        toastError('An unexpected network error occurred while deleting worker.')
+      } finally {
+        setIsDeleting(false)
       }
     })
   }
@@ -762,6 +816,23 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                           <Mail className="h-3.5 w-3.5 shrink-0 mr-1" /> Email
                         </Button>
 
+                        {canDelete && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setWorkerToDelete(worker)
+                              setConfirmDeleteName('')
+                              setDeletePolicy('archive')
+                              setDeleteReason('Left the team / fellowship')
+                            }}
+                            title={`Delete worker profile (${worker.fullName})`}
+                            className="h-8 px-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs font-semibold"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 shrink-0 text-destructive mr-1" /> Delete
+                          </Button>
+                        )}
+
                         {(status === 'pending' || isWorkerPending(worker)) && (isPresident || isAdmin || (isLeadOrAssistant && !isMedia)) && (
                           <>
                             <Button
@@ -1025,6 +1096,24 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                   <span>Email Worker</span>
                 </Button>
 
+                  {canDelete && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setWorkerToDelete(activeWorkerDetail)
+                        setConfirmDeleteName('')
+                        setDeletePolicy('archive')
+                        setDeleteReason('Left the team / fellowship')
+                      }}
+                      className="min-h-[44px] sm:min-h-[38px] px-4 rounded-xl text-xs font-semibold gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete Profile</span>
+                    </Button>
+                  )}
+
                 <Button
                   type="button"
                   variant="ghost"
@@ -1041,6 +1130,144 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
       </Dialog>
 
       {/* Send Email to Workers Dialog */}
+      {/* ==================================================================== */}
+      {/* DELETE / OFFBOARD WORKER CONFIRMATION DIALOG                        */}
+      {/* ==================================================================== */}
+      <Dialog
+        open={!!workerToDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setWorkerToDelete(null)
+            setConfirmDeleteName('')
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl p-6 bg-card text-card-foreground">
+          {workerToDelete && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/15 text-destructive">
+                  <Trash2 className="h-6 w-6 shrink-0" />
+                </div>
+                <div>
+                  <DialogTitle className="font-serif text-lg font-bold text-foreground">
+                    Offboard &amp; Delete Worker
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    Authorized for Christian Student Governing Board and Chaplains when a worker leaves the team.
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-xs space-y-1">
+                <p className="font-semibold text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>Target Worker: {workerToDelete.fullName}</span>
+                </p>
+                <p className="text-muted-foreground">
+                  Current assignment: <strong className="text-foreground">{workerToDelete.team || 'Unassigned'}</strong> • {workerToDelete.hall || 'No Hall'}
+                </p>
+              </div>
+
+              {/* Policy Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground">Deletion Policy</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeletePolicy('archive')}
+                    className={`p-3 rounded-xl text-left border transition-all text-xs ${
+                      deletePolicy === 'archive'
+                        ? 'border-primary bg-primary/10 text-foreground font-semibold shadow-2xs'
+                        : 'border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    <div className="font-bold text-foreground">Archive Record</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">Revoke access, keep logs</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletePolicy('permanent')}
+                    className={`p-3 rounded-xl text-left border transition-all text-xs ${
+                      deletePolicy === 'permanent'
+                        ? 'border-destructive bg-destructive/10 text-destructive font-semibold shadow-2xs'
+                        : 'border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    <div className="font-bold text-destructive">Permanent Delete</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">Wipe profile &amp; credentials</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Reason for departure */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Reason for departure</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Left fellowship team, graduated, relocated"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="h-10 text-xs rounded-xl"
+                />
+              </div>
+
+              {/* Name Confirmation */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Type <span className="font-mono font-bold text-destructive select-all">{workerToDelete.fullName}</span> to confirm
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Enter worker's exact name"
+                  value={confirmDeleteName}
+                  onChange={(e) => setConfirmDeleteName(e.target.value)}
+                  className="h-10 text-xs rounded-xl border-destructive/40 focus-visible:ring-destructive"
+                />
+              </div>
+
+              {/* Dialog Actions */}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setWorkerToDelete(null)
+                    setConfirmDeleteName('')
+                  }}
+                  disabled={isDeleting}
+                  className="h-9 px-4 rounded-xl text-xs font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteWorker}
+                  disabled={
+                    isDeleting ||
+                    confirmDeleteName.trim().toLowerCase() !== workerToDelete.fullName.trim().toLowerCase()
+                  }
+                  className="h-9 px-4 rounded-xl text-xs font-bold gap-1.5 shadow-xs"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                      <span>Confirm {deletePolicy === 'permanent' ? 'Permanent Deletion' : 'Archiving'}</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <SendWorkerEmailDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}

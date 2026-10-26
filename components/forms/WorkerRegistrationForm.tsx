@@ -247,11 +247,13 @@ export function WorkerRegistrationForm({
     .filter(Boolean)
     .join(' ');
   const [email, setEmail] = useState(signedInWorker?.email || initialEmail);
-  const [teams, setTeams] = useState<string[]>(() =>
-    (signedInWorker?.teams || []).filter((team) =>
-      availableTeamNames.includes(team),
-    ),
-  );
+  const [teams, setTeams] = useState<string[]>(() => {
+    const raw = signedInWorker?.teams || [];
+    return raw.map((t) => {
+      const found = availableTeamNames.find((a) => a.toLowerCase() === t.toLowerCase());
+      return found || t;
+    });
+  });
 
   const toggleTeam = (t: string) => {
     setTeams((prev) =>
@@ -408,9 +410,11 @@ export function WorkerRegistrationForm({
           setMiddleName(worker.middleName || '');
           setLastName(worker.lastName || '');
           setEmail(worker.email || '');
-          setTeams(
-            worker.teams.filter((team) => availableTeamNames.includes(team)),
-          );
+          const matchedA = (worker.teams || []).map((t) => {
+            const found = availableTeamNames.find((a) => a.toLowerCase() === t.toLowerCase());
+            return found || t;
+          });
+          setTeams(matchedA);
           setHall(worker.hall || '');
           setRoomNumber(worker.roomNumber || '');
           setBirthMonth(
@@ -802,9 +806,11 @@ export function WorkerRegistrationForm({
       setMiddleName(worker.middleName || '');
       setLastName(worker.lastName || '');
       setEmail(worker.email || '');
-      setTeams(
-        worker.teams.filter((team) => availableTeamNames.includes(team)),
-      );
+      const matchedB = (worker.teams || []).map((t) => {
+        const found = availableTeamNames.find((a) => a.toLowerCase() === t.toLowerCase());
+        return found || t;
+      });
+      setTeams(matchedB);
       setHall(worker.hall || '');
       setRoomNumber(worker.roomNumber || '');
       setBirthMonth(

@@ -118,9 +118,6 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
   if (context.access?.isFinance) return 'Financial Secretary'
 
   // 4. Role-based fallback with contextual team/hall assignment
-  if (context.role === 'admin') {
-    return 'CSGB Executive'
-  }
   if (context.role === 'team_lead') {
     const teamName = context.leadingTeam || context.team
     return teamName && teamName.toLowerCase() !== 'exco' ? `${teamName} Lead` : 'Team Leader'
@@ -218,11 +215,11 @@ export function isPrayerTeamAdmin(
 
 export function isWelfareTeamMember(
   session?: {
-    role?: WorkerRole
-    team?: string
-    teams?: string[]
-    leadingTeam?: string
-    excoPosition?: string
+    role?: WorkerRole | string
+    team?: string | null
+    teams?: string[] | null
+    leadingTeam?: string | null
+    excoPosition?: string | null
     access?: {
       isWelfare?: boolean
       isCSGB?: boolean
@@ -230,7 +227,7 @@ export function isWelfareTeamMember(
       isVP?: boolean
       leadsTeamKeys?: string[]
       [key: string]: unknown
-    }
+    } | null
   } | null
 ): boolean {
   if (!session) return false
@@ -256,11 +253,11 @@ export function isWelfareTeamMember(
 export function isCSGBMember(
   session?: {
     role?: string
-    team?: string
-    teams?: string[]
-    leadingTeam?: string
-    excoPosition?: string
-    access?: { isPrayerCoordinator?: boolean; isCSGB?: boolean; [key: string]: unknown }
+    team?: string | null
+    teams?: string[] | null
+    leadingTeam?: string | null
+    excoPosition?: string | null
+    access?: { isPrayerCoordinator?: boolean; isCSGB?: boolean; [key: string]: unknown } | null
   } | null
 ): boolean {
   if (!session) return false
@@ -304,12 +301,12 @@ export function canViewWelfareContact(
 
 export function isMediaLeader(
   session?: {
-    access?: { isMedia?: boolean; [key: string]: unknown }
+    access?: { isMedia?: boolean; [key: string]: unknown } | null
     role?: string
-    team?: string
-    teams?: string[]
-    leadingTeam?: string
-    excoPosition?: string
+    team?: string | null
+    teams?: string[] | null
+    leadingTeam?: string | null
+    excoPosition?: string | null
   } | null
 ): boolean {
   if (!session) return false
@@ -330,10 +327,10 @@ export function isMediaLeader(
 
 export function isUsheringTeam(
   session?: {
-    team?: string
-    teams?: string[]
-    leadingTeam?: string
-    excoPosition?: string
+    team?: string | null
+    teams?: string[] | null
+    leadingTeam?: string | null
+    excoPosition?: string | null
   } | null
 ): boolean {
   if (!session) return false
@@ -352,10 +349,10 @@ export function isUsheringTeam(
 
 export function isOutreachLeader(
   session?: {
-    team?: string
-    teams?: string[]
-    excoPosition?: string
-    leadingTeam?: string
+    team?: string | null
+    teams?: string[] | null
+    excoPosition?: string | null
+    leadingTeam?: string | null
   } | null
 ): boolean {
   if (!session) return false
@@ -379,6 +376,33 @@ export function isOutreachLeader(
     leadingTeam.includes('follow') ||
     hasOutreachInTeams
   )
+}
+
+export function canDeleteWorkers(
+  session?: {
+    role?: WorkerRole | string
+    excoPosition?: string | null
+    leadingTeam?: string | null
+    team?: string | null
+    teams?: string[] | null
+    access?: {
+      isCSGB?: boolean
+      isPresident?: boolean
+      isVP?: boolean
+      isChaplain?: boolean
+      titles?: string[]
+      [key: string]: unknown
+    } | null
+  } | null
+): boolean {
+  if (!session) return false
+  if (session.access?.isCSGB || session.access?.isPresident || session.access?.isVP) return true
+  if (session.role === 'admin') return true
+  if (session.access?.isChaplain || session.role === 'chaplain') return true
+  const pos = (session.excoPosition || '').toLowerCase()
+  if (pos.includes('chaplain')) return true
+  if (session.access?.titles?.some((t) => t.toLowerCase().includes('chaplain'))) return true
+  return isCSGBMember(session)
 }
 
 export function canAccessSection(
@@ -406,7 +430,12 @@ export function canAccessSection(
     return Boolean(pos.includes('president') || pos.includes('vice president') || pos.includes('general secretary'))
   }
   if (section === 'settings') {
-    return role === 'admin' || Boolean(currentSession?.access?.isPresident) || Boolean(currentSession?.access?.isCSGB)
+    return (
+      role === 'admin' ||
+      Boolean(currentSession?.access?.isPresident) ||
+      Boolean(currentSession?.access?.isCSGB) ||
+      canDeleteWorkers(currentSession)
+    )
   }
   if (section === 'announcements') {
     return isCSGBMember(currentSession)
@@ -433,12 +462,23 @@ export function canAccessSection(
   return SECTION_ACCESS[section].includes(role)
 }
 
-export function hasPermission(role: WorkerRole, permission: DashboardPermission): boolean {
+export function hasPermission(
+  role: WorkerRole,
+  permission: DashboardPermission,
+  session?: LeaderPostContext | null
+): boolean {
+  if (permission === 'workers:delete' && session) {
+    return canDeleteWorkers(session)
+  }
   return PERMISSIONS[permission].includes(role)
 }
 
-export function requirePermission(role: string, permission: DashboardPermission): void {
-  if (!isWorkerRole(role) || !hasPermission(role, permission)) {
+export function requirePermission(
+  role: string,
+  permission: DashboardPermission,
+  session?: LeaderPostContext | null
+): void {
+  if (!isWorkerRole(role) || !hasPermission(role, permission, session)) {
     throw new Error(`Permission denied for role ${role} on ${permission}`)
   }
 }

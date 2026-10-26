@@ -762,7 +762,7 @@ export default function UsheringHeadcountView({
                       <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                         <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="truncate max-w-[130px]">
-                          {row.loggedBy?.fullName || 'Ushering Exco'}
+                          {row.loggedBy?.fullName || 'Fellowship Admin'}
                         </span>
                       </div>
                     </TableCell>
@@ -843,7 +843,7 @@ export default function UsheringHeadcountView({
                   )}
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2">
                     <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{row.loggedBy?.fullName || 'Ushering Exco'}</span>
+                    <span className="truncate">{row.loggedBy?.fullName || 'Fellowship Admin'}</span>
                   </div>
                 </CardContent>
               </Card>

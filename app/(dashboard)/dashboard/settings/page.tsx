@@ -11,7 +11,7 @@
 import { redirect } from 'next/navigation'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import { requireSession } from '@/lib/dashboard/auth'
-import { canAccessSection } from '@/lib/dashboard/rbac'
+import { canAccessSection, canDeleteWorkers } from '@/lib/dashboard/rbac'
 import { listWorkers } from '@/lib/dashboard/data'
 import SettingsClient from '@/components/dashboard/settings/SettingsClient'
 
@@ -57,7 +57,7 @@ export default async function SettingsPage() {
 
       <SettingsClient
         workers={workerOptions}
-        canDelete={Boolean(session.access?.isPresident || session.role === 'admin' || session.access?.isCSGB)}
+        canDelete={canDeleteWorkers(session)}
         canImport={Boolean(session.access?.isPresident || session.role === 'admin' || session.access?.isCSGB)}
       />
     </PageContainer>

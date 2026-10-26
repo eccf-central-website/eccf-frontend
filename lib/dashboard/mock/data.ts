@@ -138,14 +138,14 @@ export function mockHallForWorker(id: string): string | null {
 }
 
 export const MOCK_FIRST_TIMERS: FirstTimerRow[] = [
-  { _id: 'mock-ft-01', _type: 'firstTimer', fullName: 'Ese Omoregie', hall: 'Hall D', roomNumber: 'Room 114', phoneNumber: '08023456789', department: 'Computer Science', level: '100', dateVisited: isoDate(1) },
-  { _id: 'mock-ft-02', _type: 'firstTimer', fullName: 'Kingsley Uwaifo', hall: 'Hall A', roomNumber: 'Room 205', phoneNumber: '08134567890', department: 'Mechanical Engineering', level: '200', dateVisited: isoDate(1) },
-  { _id: 'mock-ft-03', _type: 'firstTimer', fullName: 'Nosa Eguavoen', hall: 'Hall B', roomNumber: 'Room 012', phoneNumber: '07045678901', department: 'Nursing', level: '100', dateVisited: isoDate(8) },
-  { _id: 'mock-ft-04', _type: 'firstTimer', fullName: 'Joy Adeyemi', hall: 'Hall C', roomNumber: 'Room 310', phoneNumber: '08056789012', department: 'Economics', level: '300', dateVisited: isoDate(8) },
-  { _id: 'mock-ft-05', _type: 'firstTimer', fullName: 'Victor Nwosu', hall: 'Hall E', roomNumber: 'Room 108', phoneNumber: '09067890123', department: 'Physics', level: '100', dateVisited: isoDate(15) },
-  { _id: 'mock-ft-06', _type: 'firstTimer', fullName: 'Lilian Okafor', hall: 'Hall C', roomNumber: 'Room 221', phoneNumber: '08178901234', department: 'Medicine & Surgery', level: '200', dateVisited: isoDate(22) },
-  { _id: 'mock-ft-07', _type: 'firstTimer', fullName: 'Ofure Idahosa', hall: 'Hall B', roomNumber: 'Room 104', phoneNumber: '08089012345', department: 'Mass Communication', level: '100', dateVisited: isoDate(36) },
-  { _id: 'mock-ft-08', _type: 'firstTimer', fullName: 'Paul Balogun', hall: 'Hall A', roomNumber: 'Room 003', phoneNumber: '07090123456', department: 'Law', level: '400', dateVisited: isoDate(43) },
+  { _id: 'mock-ft-01', _type: 'firstTimer', fullName: 'Ese Omoregie', hall: 'Hall D', roomNumber: 'Room 114', phoneNumber: '08023456789', department: 'Computer Science', level: '100', dateVisited: isoDate(1), followedUp: false },
+  { _id: 'mock-ft-02', _type: 'firstTimer', fullName: 'Kingsley Uwaifo', hall: 'Hall A', roomNumber: 'Room 205', phoneNumber: '08134567890', department: 'Mechanical Engineering', level: '200', dateVisited: isoDate(1), followedUp: false },
+  { _id: 'mock-ft-03', _type: 'firstTimer', fullName: 'Nosa Eguavoen', hall: 'Hall B', roomNumber: 'Room 012', phoneNumber: '07045678901', department: 'Nursing', level: '100', dateVisited: isoDate(8), followedUp: false },
+  { _id: 'mock-ft-04', _type: 'firstTimer', fullName: 'Joy Adeyemi', hall: 'Hall C', roomNumber: 'Room 310', phoneNumber: '08056789012', department: 'Economics', level: '300', dateVisited: isoDate(8), followedUp: true, followedUpAt: isoDate(7), followedUpBy: 'Ivie Aigbe (Hall Rep)', followUpNotes: 'Spoke with her, warmly welcomed to Hall C cell group.' },
+  { _id: 'mock-ft-05', _type: 'firstTimer', fullName: 'Victor Nwosu', hall: 'Hall E', roomNumber: 'Room 108', phoneNumber: '09067890123', department: 'Physics', level: '100', dateVisited: isoDate(15), followedUp: false },
+  { _id: 'mock-ft-06', _type: 'firstTimer', fullName: 'Lilian Okafor', hall: 'Hall C', roomNumber: 'Room 221', phoneNumber: '08178901234', department: 'Medicine & Surgery', level: '200', dateVisited: isoDate(22), followedUp: true, followedUpAt: isoDate(21), followedUpBy: 'Osaro Igbinedion (President)' },
+  { _id: 'mock-ft-07', _type: 'firstTimer', fullName: 'Ofure Idahosa', hall: 'Hall B', roomNumber: 'Room 104', phoneNumber: '08089012345', department: 'Mass Communication', level: '100', dateVisited: isoDate(36), followedUp: true, followedUpAt: isoDate(35), followedUpBy: 'Ivie Aigbe (Hall Rep)' },
+  { _id: 'mock-ft-08', _type: 'firstTimer', fullName: 'Paul Balogun', hall: 'Hall A', roomNumber: 'Room 003', phoneNumber: '07090123456', department: 'Law', level: '400', dateVisited: isoDate(43), followedUp: false },
 ]
 
 export const MOCK_WELFARE: WelfareRequestRow[] = [

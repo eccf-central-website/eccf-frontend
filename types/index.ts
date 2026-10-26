@@ -208,6 +208,7 @@ export interface AttendanceLedger {
   notes?: string
   attendees?: Pick<Worker, '_id' | 'fullName' | 'team'>[]
   loggedBy: Pick<Worker, '_id' | 'fullName'>
+  loggedByName?: string
 }
 
 export interface AttendanceWorkerItem {

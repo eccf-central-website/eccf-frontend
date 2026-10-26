@@ -167,7 +167,7 @@ export async function getLiveAttentionItems(
       const now = new Date()
       const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const recentVisitors = firstTimers.filter(
-        (f) => f.dateVisited && f.dateVisited >= fourteenDaysAgo
+        (f) => f.dateVisited && f.dateVisited >= fourteenDaysAgo && !f.followedUp
       )
       if (recentVisitors.length > 0) {
         items.push({

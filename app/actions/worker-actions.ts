@@ -15,6 +15,8 @@ import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { matchesTeam } from '@/lib/dashboard/data'
+import { canDeleteWorkers } from '@/lib/dashboard/rbac'
+import { clerkClient } from '@clerk/nextjs/server'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
 import { uploadWorkerPhotoDirectAction, sendWorkerWelcomeEmail } from './worker-registration'
@@ -393,8 +395,9 @@ export interface DeleteWorkerInput {
 }
 
 /**
- * Delete or Archive an Approved Worker — Privileged Admin Action.
- * Gated to President and CSGB Admin with double-confirmation name typing and audit tracking.
+ * Delete or Archive an Approved Worker — Privileged Action.
+ * Strictly gated to Christian Student Governing Board (CSGB) and Chaplains.
+ * Provides double-confirmation name typing and audit tracking when a worker leaves the team.
  */
 export async function deleteApprovedWorkerAction(
   input: DeleteWorkerInput
@@ -404,18 +407,23 @@ export async function deleteApprovedWorkerAction(
     return { ok: false, error: 'Your session has expired. Please sign in again.' }
   }
 
-  const isPresident = Boolean(session.access?.isPresident)
-  const isCSGB = Boolean(session.access?.isCSGB) || session.role === 'admin'
-
-  if (!isPresident && !isCSGB) {
-    return { ok: false, error: 'Permission denied. Only fellowship executives can delete worker records.' }
+  if (!canDeleteWorkers(session)) {
+    return {
+      ok: false,
+      error: 'Permission denied. Only Christian Student Governing Board (CSGB) and Chaplains can delete worker profiles.',
+    }
   }
 
   const isMock =
     process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
     (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
 
-  const actorRole = isPresident ? 'Fellowship President' : 'CSGB Admin'
+  const actorRole = session.access?.isPresident
+    ? 'Fellowship President'
+    : session.access?.isChaplain || (session.role as string) === 'chaplain' || session.excoPosition?.toLowerCase().includes('chaplain')
+    ? 'Fellowship Chaplain'
+    : session.access?.titles?.[0] || (session.role === 'admin' ? 'CSGB Admin' : 'CSGB Executive')
+
   const logMsg = `Worker record ${input.policy === 'archive' ? 'archived' : 'permanently deleted'} by ${actorRole} (${session.name || session.id}): ${input.reason}`
 
   if (isMock) {
@@ -433,6 +441,8 @@ export async function deleteApprovedWorkerAction(
     } else {
       const rec = worker as Record<string, unknown>
       rec.status = 'archived'
+      rec.verificationStatus = 'rejected'
+      rec.isExcoApproved = false
       const logs = Array.isArray(rec.updateLog) ? (rec.updateLog as string[]) : []
       logs.push(logMsg)
       rec.updateLog = logs
@@ -444,14 +454,46 @@ export async function deleteApprovedWorkerAction(
   }
 
   try {
+    const existing = await sanityPrivateClient.fetch<{
+      _id: string
+      fullName: string
+      clerkUserId?: string
+    }>(
+      `*[_type == "worker" && _id == $id][0]{
+        _id,
+        fullName,
+        clerkUserId
+      }`,
+      { id: input.workerId }
+    )
+
+    if (!existing) {
+      return { ok: false, error: 'Worker record not found in database.' }
+    }
+
+    if (existing.fullName.trim().toLowerCase() !== input.confirmedName.trim().toLowerCase()) {
+      return { ok: false, error: 'Confirmation name does not match the worker name.' }
+    }
+
     if (input.policy === 'permanent') {
-      if (!isPresident) {
-        return { ok: false, error: 'Permanent deletion requires presidential confirmation.' }
+      // If the worker had a linked Clerk user account, attempt to delete/clean it up
+      if (existing.clerkUserId) {
+        try {
+          const client = await clerkClient()
+          await client.users.deleteUser(existing.clerkUserId)
+        } catch (clerkErr) {
+          console.warn('[deleteApprovedWorkerAction] Clerk deleteUser notice:', clerkErr)
+        }
       }
+
       await sanityPrivateClient.delete(input.workerId)
     } else {
       await patchPrivateDocument(input.workerId)
-        .set({ status: 'archived' })
+        .set({
+          status: 'archived',
+          verificationStatus: 'rejected',
+          isExcoApproved: false,
+        })
         .append('updateLog', [logMsg])
         .commit()
     }

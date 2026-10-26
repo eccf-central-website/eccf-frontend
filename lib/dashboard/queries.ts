@@ -168,7 +168,12 @@ export const DASHBOARD_ATTENDANCE_QUERY = `
     notes,
     "attendeeCount": count(coalesce(attendees, [])),
     "attendees": attendees[]->{ _id, fullName, "team": coalesce(team->name, team), "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]) },
-    "loggedBy": loggedBy->{ _id, fullName, excoPosition, role }
+    "loggedBy": {
+      "_id": coalesce(loggedBy->_id, loggedBy._ref, ""),
+      "fullName": coalesce(loggedBy->fullName, loggedByName, loggedBy.fullName, "Fellowship Admin"),
+      "excoPosition": loggedBy->excoPosition,
+      "role": loggedBy->role
+    }
   }
 `
 
@@ -189,18 +194,22 @@ export const DASHBOARD_FINANCE_QUERY = `
 // ---------------------------------------------------------------------------
 
 export const DASHBOARD_FIRST_TIMERS_QUERY = `
-  *[_type == "firstTimer" && ($hall == null || hall == $hall)] | order(dateVisited desc, _createdAt desc) {
+  *[_type == "firstTimer" && ($hall == null || hall == $hall || hallRef->name == $hall)] | order(dateVisited desc, _createdAt desc) {
     _id,
     _type,
     fullName,
     firstName,
     lastName,
     phoneNumber,
-    hall,
+    "hall": coalesce(hallRef->name, hall),
     roomNumber,
     department,
     level,
     dateVisited,
+    followedUp,
+    followedUpAt,
+    followedUpBy,
+    followUpNotes,
     createdAt
   }
 `

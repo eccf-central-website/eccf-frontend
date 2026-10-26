@@ -192,8 +192,9 @@ export async function recordTeamAttendanceAction(
       })),
       loggedBy: {
         _type: 'reference',
-        _ref: auth.session.id,
+        _ref: auth.session.id.replace(/^drafts\./, ''),
       },
+      loggedByName: auth.session.name || 'Fellowship Admin',
     })
 
     revalidatePath('/dashboard/attendance')
@@ -270,7 +271,7 @@ export async function recordGeneralHeadcountAction(
       notes: notes?.trim() || undefined,
       loggedBy: {
         _id: auth.session.id,
-        fullName: auth.session.name || 'Ushering Coordinator',
+        fullName: auth.session.name || 'Fellowship Admin',
       },
     })
 
@@ -294,8 +295,9 @@ export async function recordGeneralHeadcountAction(
       notes: notes?.trim() || undefined,
       loggedBy: {
         _type: 'reference',
-        _ref: auth.session.id,
+        _ref: auth.session.id.replace(/^drafts\./, ''),
       },
+      loggedByName: auth.session.name || 'Fellowship Admin',
     })
 
     revalidatePath('/dashboard/attendance')

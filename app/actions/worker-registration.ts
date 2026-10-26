@@ -1150,6 +1150,8 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
       phoneNumber?: string
       team?: string
       teams?: string[]
+      membershipTeamNames?: string[]
+      dereferencedTeamNames?: string[]
       memberships?: Array<Record<string, unknown>>
       positions?: Array<Record<string, unknown>>
       hall?: string
@@ -1165,8 +1167,10 @@ async function getWorkerBySelfServiceToken(token: string, purpose?: 'profile' | 
     } | null>(
       `*[_type == "worker" && _id == $id][0]{
         _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
-        "team": coalesce(team->name, team),
-        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        "team": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)])[0],
+        "teams": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)]),
+        "membershipTeamNames": memberships[].teamName,
+        "dereferencedTeamNames": memberships[].team->name,
         memberships,
         positions,
         hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
@@ -1434,8 +1438,10 @@ export async function verifyWorkerOtp(
     } | null>(
       `*[_type == "worker" && _id == $id][0]{
         _id, _rev, fullName, firstName, middleName, lastName, email, phoneNumber,
-        "team": coalesce(team->name, team),
-        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        "team": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)])[0],
+        "teams": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)]),
+        "membershipTeamNames": memberships[].teamName,
+        "dereferencedTeamNames": memberships[].team->name,
         memberships,
         positions,
         hall, roomNumber, birthDate, profileImageUrl, role, requestedRole,
@@ -1501,8 +1507,26 @@ export async function verifyWorkerOtp(
         lastName: worker.lastName,
         email: worker.email,
         phoneNumber: decrypt(worker.phoneNumber) || cleanPhone,
-        team: worker.team || worker.teams?.[0] || 'General',
-        teams: sanitizeTeamNames(worker.teams),
+        team: (() => {
+          const list = (worker.dereferencedTeamNames || worker.membershipTeamNames || worker.teams || [])
+            .concat(worker.team ? [worker.team] : [])
+            .filter((t) => Boolean(t && typeof t === 'string'));
+          return list[0] || 'General';
+        })(),
+        teams: (() => {
+          const list: string[] = [];
+          if (Array.isArray(worker.dereferencedTeamNames)) list.push(...worker.dereferencedTeamNames.filter(Boolean));
+          if (list.length === 0 && Array.isArray(worker.membershipTeamNames)) list.push(...worker.membershipTeamNames.filter(Boolean));
+          if (list.length === 0 && Array.isArray(worker.teams)) list.push(...worker.teams.filter(Boolean));
+          if (list.length === 0 && worker.team) list.push(worker.team);
+          if (list.length === 0 && Array.isArray(worker.memberships)) {
+            for (const m of worker.memberships) {
+              const tName = m?.teamName || m?.team?.name;
+              if (tName) list.push(tName);
+            }
+          }
+          return sanitizeTeamNames(list);
+        })(),
         hall: worker.hall,
         roomNumber: roomNumber || '',
         birthMonth,
@@ -1702,8 +1726,26 @@ export async function confirmWorkerSelfServiceLink(token: string): Promise<{
         lastName: worker.lastName,
         email: worker.email,
         phoneNumber: decrypt(worker.phoneNumber),
-        team: worker.team || worker.teams?.[0] || 'General',
-        teams: sanitizeTeamNames(worker.teams),
+        team: (() => {
+          const list = (worker.dereferencedTeamNames || worker.membershipTeamNames || worker.teams || [])
+            .concat(worker.team ? [worker.team] : [])
+            .filter((t) => Boolean(t && typeof t === 'string'));
+          return list[0] || 'General';
+        })(),
+        teams: (() => {
+          const list: string[] = [];
+          if (Array.isArray(worker.dereferencedTeamNames)) list.push(...worker.dereferencedTeamNames.filter(Boolean));
+          if (list.length === 0 && Array.isArray(worker.membershipTeamNames)) list.push(...worker.membershipTeamNames.filter(Boolean));
+          if (list.length === 0 && Array.isArray(worker.teams)) list.push(...worker.teams.filter(Boolean));
+          if (list.length === 0 && worker.team) list.push(worker.team);
+          if (list.length === 0 && Array.isArray(worker.memberships)) {
+            for (const m of worker.memberships) {
+              const tName = m?.teamName || m?.team?.name;
+              if (tName) list.push(tName);
+            }
+          }
+          return sanitizeTeamNames(list);
+        })(),
         hall: worker.hall,
         roomNumber: roomNumber || '',
         birthMonth,
@@ -2033,8 +2075,10 @@ export async function registerWorker(
         _rev,
         fullName,
         phoneNumber,
-        "team": coalesce(team->name, team),
-        "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
+        "team": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)])[0],
+        "teams": coalesce(memberships[].team->name, memberships[].teamName, teams[]->name, teams, [coalesce(team->name, team)]),
+        "membershipTeamNames": memberships[].teamName,
+        "dereferencedTeamNames": memberships[].team->name,
         memberships,
         positions,
         hall,
@@ -2257,6 +2301,8 @@ export async function registerWorker(
         ...(cleanMiddleName !== undefined ? { middleName: cleanMiddleName } : {}),
         ...(cleanLastName ? { lastName: cleanLastName } : {}),
         memberships,
+        teams: cleanTeams,
+        team: cleanTeams[0] || 'General',
         ...(positionsToSave ? { positions: positionsToSave } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
@@ -2337,6 +2383,8 @@ export async function registerWorker(
         phoneNumber: encrypt(cleanPhone),
         phoneBlindIndex,
         memberships,
+        teams: cleanTeams,
+        team: cleanTeams[0] || 'General',
         ...(positionsToSave ? { positions: positionsToSave } : {}),
         ...(resolvedClerkUserId ? { clerkUserId: resolvedClerkUserId } : {}),
         hall: input.hall,
