@@ -8,8 +8,8 @@
  * President/VP/Chaplain (or admin). This dialog collects the spreadsheet,
  * shows the expected column shape, submits it as FormData, and surfaces the
  * per-row skip report returned by the action. Imported entries land among the
- * pending applications on the approvals console (the page refreshes after a
- * successful import; the console syncs from fresh props).
+ * pending applications on the approvals console (the page refreshes after the
+ * user completes their import and closes the dialog).
  */
 
 import * as React from 'react'
@@ -20,10 +20,12 @@ import {
   Download,
   FileSpreadsheet,
   Loader2,
+  RotateCcw,
   TriangleAlert,
   Upload,
 } from 'lucide-react'
 import { Button } from '@/components/dashboard/ui/button'
+import { Checkbox } from '@/components/dashboard/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -64,6 +66,7 @@ export default function ExecutiveCsvImportDialog({
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [createMissingWorkers, setCreateMissingWorkers] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<CsvImportResult | null>(null)
   const [pending, startTransition] = useTransition()
@@ -107,19 +110,26 @@ export default function ExecutiveCsvImportDialog({
     if (!file || pending) return
     const data = new FormData()
     data.append('file', file)
+    data.append('createMissingWorkers', String(createMissingWorkers))
     startTransition(async () => {
       try {
         const res = await suggestPositionsFromCsv(data)
         if (res.ok) {
           setResult(res)
-          toastSuccess(
-            `Imported ${res.imported} position${res.imported === 1 ? '' : 's'}${
-              res.skipped.length ? `, ${res.skipped.length} row${res.skipped.length === 1 ? '' : 's'} skipped` : ''
-            }.`
-          )
-          // Refresh the server component so the pending-approvals list
-          // includes the freshly imported entries.
-          router.refresh()
+          if (res.imported > 0) {
+            toastSuccess(
+              `Imported ${res.imported} position${res.imported === 1 ? '' : 's'}${
+                res.skipped.length ? `, ${res.skipped.length} row${res.skipped.length === 1 ? '' : 's'} skipped` : ''
+              }.`
+            )
+          } else {
+            toastError(
+              `0 of ${res.skipped.length} positions could be imported. Please review details below.`
+            )
+          }
+          // Note: we intentionally do NOT call router.refresh() immediately here
+          // so the user can inspect the import report and skipped details on screen.
+          // router.refresh() is called when the dialog is dismissed or "Review Pending List" is clicked.
         } else {
           setError(res.error || 'Import failed. Try again.')
           toastError(res.error || 'Import failed. Try again.')
@@ -132,6 +142,9 @@ export default function ExecutiveCsvImportDialog({
   }
 
   function handleOpenChange(next: boolean) {
+    if (!next && result && result.imported > 0) {
+      router.refresh()
+    }
     setOpen(next)
     if (!next) {
       // Reset a moment after exit so the closing animation doesn't flicker.
@@ -165,27 +178,44 @@ export default function ExecutiveCsvImportDialog({
             <span className="truncate">Bulk-Import Executive Positions</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-            Upload a CSV or Excel sheet of executive positions. Each row is matched to a registered
-            worker by full name and lands here as a pending application for your approval.
+            Upload a CSV or Excel sheet of executive positions. Names are matched flexibly (order-independent, honorifics stripped). Each position lands here as a pending suggestion for presidential approval.
           </DialogDescription>
         </DialogHeader>
 
         {result ? (
           /* ---------- Result report ---------- */
           <div className="space-y-3 min-w-0">
-            <div className="flex items-center gap-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3.5">
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-foreground">
-                  Imported {result.imported} position{result.imported === 1 ? '' : 's'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {result.skipped.length
-                    ? `${result.skipped.length} row${result.skipped.length === 1 ? ' was' : 's were'} skipped below.`
-                    : 'Everything on the sheet matched cleanly.'}
-                </p>
+            {result.imported > 0 ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3.5">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground">
+                    Imported {result.imported} position{result.imported === 1 ? '' : 's'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {result.matchedCount || 0} matched to registered workers
+                    {(result.createdCount || 0) > 0 && ` • ${result.createdCount} new pending profile${result.createdCount === 1 ? '' : 's'} created`}.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {result.skipped.length
+                      ? `${result.skipped.length} row${result.skipped.length === 1 ? ' was' : 's were'} skipped below.`
+                      : 'Everything on the sheet was imported cleanly.'}
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-start gap-2.5 rounded-xl bg-destructive/10 border border-destructive/25 p-3.5">
+                <TriangleAlert className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-destructive">
+                    0 positions imported
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    None of the {result.skipped.length} rows could be imported. Please review the details below.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {result.skipped.length > 0 && (
               <div className="rounded-xl bg-warning/10 border border-warning/25 p-3">
@@ -195,9 +225,9 @@ export default function ExecutiveCsvImportDialog({
                     Skipped rows ({result.skipped.length})
                   </span>
                 </div>
-                <ul className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                <ul className="max-h-52 overflow-y-auto space-y-1 pr-1 divide-y divide-border/20">
                   {result.skipped.map((reason, i) => (
-                    <li key={i} className="text-xs text-muted-foreground leading-relaxed break-words">
+                    <li key={i} className="text-xs text-muted-foreground leading-relaxed break-words pt-1 first:pt-0">
                       • {reason}
                     </li>
                   ))}
@@ -266,22 +296,43 @@ export default function ExecutiveCsvImportDialog({
               )}
             </div>
 
+            {/* Auto-create missing workers checkbox */}
+            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/30 border border-border cursor-pointer select-none">
+              <Checkbox
+                checked={createMissingWorkers}
+                onCheckedChange={(c) => setCreateMissingWorkers(Boolean(c))}
+                className="mt-0.5"
+                disabled={pending}
+              />
+              <div className="text-xs leading-normal">
+                <span className="font-semibold text-foreground block">
+                  Auto-create pending worker profile if name is not found
+                </span>
+                <span className="text-muted-foreground">
+                  Creates a placeholder worker profile in Sanity for any executive not yet registered on the portal.
+                </span>
+              </div>
+            </label>
+
             {/* Column shape hint */}
             <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5 w-full min-w-0 overflow-hidden">
               <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
-                Expected columns
+                Supported columns (auto-detected)
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {['FullName (or First + Last Name)', 'PositionType: csgb · hall · team', 'PositionValue', 'Rank: lead · assistant'].map(
-                  (col) => (
-                    <span
-                      key={col}
-                      className="px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-mono text-foreground break-all sm:break-normal"
-                    >
-                      {col}
-                    </span>
-                  )
-                )}
+                {[
+                  'Full Name (or First + Last Name)',
+                  'Position / Office / Role (auto-detects CSGB, Hall, Ministry Team)',
+                  'Rank (lead · assistant, optional)',
+                  'Hall (optional)',
+                ].map((col) => (
+                  <span
+                    key={col}
+                    className="px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-mono text-foreground break-all sm:break-normal"
+                  >
+                    {col}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -294,51 +345,74 @@ export default function ExecutiveCsvImportDialog({
         )}
 
         <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={downloadTemplate}
-            disabled={downloading}
-            className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
-          >
-            {downloading ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
-            ) : (
-              <Download className="h-4 w-4 shrink-0 mr-1.5" />
-            )}
-            Template
-          </Button>
-
           {result ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setOpen(false)}
-              className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
-            >
-              {result.skipped.length ? 'Review Pending List' : 'Done'}
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setResult(null)
+                  setFile(null)
+                  setError(null)
+                }}
+                className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+              >
+                <RotateCcw className="h-4 w-4 shrink-0 mr-1.5" />
+                Import Another File
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setOpen(false)
+                  if (result.imported > 0) {
+                    router.refresh()
+                  }
+                }}
+                className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
+              >
+                {result.imported > 0 ? 'Review Pending List' : 'Close'}
+              </Button>
+            </>
           ) : (
-            <Button
-              type="button"
-              size="sm"
-              onClick={submit}
-              disabled={!file || pending}
-              className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
-            >
-              {pending ? (
-                <>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={downloadTemplate}
+                disabled={downloading}
+                className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+              >
+                {downloading ? (
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet className="h-4 w-4 shrink-0 mr-1.5" />
-                  Import Positions
-                </>
-              )}
-            </Button>
+                ) : (
+                  <Download className="h-4 w-4 shrink-0 mr-1.5" />
+                )}
+                Template
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={submit}
+                disabled={!file || pending}
+                className="h-10 sm:h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
+              >
+                {pending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-4 w-4 shrink-0 mr-1.5" />
+                    Import Positions
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>
