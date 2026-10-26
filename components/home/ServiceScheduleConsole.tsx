@@ -323,10 +323,6 @@ export default function ServiceScheduleConsole({ services }: Props) {
                       <span className="min-w-0 truncate">{currentService.location || 'NLT 5, Faculty of Law, ESUI'}</span>
                     </div>
 
-                    <div className="hidden w-full pt-1 sm:flex items-center justify-between text-xs text-slate-400 font-medium">
-                      <span>Venue: Law Faculty NLT 5</span>
-                      <span className="text-slate-400">Ground Floor</span>
-                    </div>
                   </motion.div>
                 </div>
               </motion.div>

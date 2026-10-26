@@ -39,7 +39,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from '@/components/dashboard/ui/dialog'
 import {
@@ -856,9 +855,14 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
                       </span>
                     </div>
 
-                    <h3 className="font-serif text-xl sm:text-2xl font-black text-foreground tracking-tight break-words leading-tight">
-                      {activeWorkerDetail.fullName}
-                    </h3>
+                    <DialogTitle asChild>
+                      <h3 className="font-serif text-xl sm:text-2xl font-black text-foreground tracking-tight break-words leading-tight">
+                        {activeWorkerDetail.fullName}
+                      </h3>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                      Verified fellowship records and profile details for {activeWorkerDetail.fullName}.
+                    </DialogDescription>
 
                     {activeWorkerDetail.excoPosition && (
                       <p className="text-xs sm:text-sm font-semibold text-primary flex items-center justify-center sm:justify-start gap-1.5">
