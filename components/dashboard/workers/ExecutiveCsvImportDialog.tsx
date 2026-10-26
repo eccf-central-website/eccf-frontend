@@ -294,7 +294,7 @@ export default function ExecutiveCsvImportDialog({
     return rows.filter((r) => {
       // Tab filter
       if (filterTab === 'matched' && r.isNewWorker) return false
-      if (filterTab === 'new' && (!r.isNewWorker || r.status === 'warning')) return false
+      if (filterTab === 'new' && !r.isNewWorker) return false
       if (filterTab === 'warning' && r.status !== 'warning') return false
 
       // Search filter
@@ -314,7 +314,7 @@ export default function ExecutiveCsvImportDialog({
 
   const selectedCount = useMemo(() => rows.filter((r) => r.selected).length, [rows])
   const matchedCount = useMemo(() => rows.filter((r) => !r.isNewWorker).length, [rows])
-  const newWorkerCount = useMemo(() => rows.filter((r) => r.isNewWorker && r.status === 'valid').length, [rows])
+  const newWorkerCount = useMemo(() => rows.filter((r) => r.isNewWorker).length, [rows])
   const warningCount = useMemo(() => rows.filter((r) => r.status === 'warning').length, [rows])
 
   return (

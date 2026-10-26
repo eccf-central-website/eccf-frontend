@@ -4,6 +4,7 @@ import { listExecutives } from '@/lib/dashboard/data'
 import ExecutivesClient from '@/components/dashboard/executives/ExecutivesClient'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export default async function ExecutivesPage() {
   const session = await requireSection('executives')

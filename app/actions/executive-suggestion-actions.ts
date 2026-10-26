@@ -1,8 +1,8 @@
 'use server'
 
+import { createHash } from 'crypto'
 import * as XLSX from 'xlsx'
-import { revalidatePath } from 'next/cache'
-import { sanityPrivateClient, patchPrivateDocument } from '@/lib/sanity'
+import { sanityPrivateClient, sanityWriteClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
@@ -739,6 +739,37 @@ export async function commitExecutiveImport(payload: {
     workerPositionsMap.set(w._id, w.positions || [])
   }
 
+  // ---------------------------------------------------------------------------
+  // Build every write in memory first so the import can be committed in a few
+  // batched transactions instead of one network round-trip per row. Sequential
+  // per-row writes were exceeding the serverless function budget and leaving
+  // the tail of the spreadsheet (usually the unregistered leaders) unprocessed.
+  // ---------------------------------------------------------------------------
+  const WRITE_BATCH_SIZE = 50
+  const EMAIL_BATCH_SIZE = 2
+  const importedAt = new Date().toISOString()
+
+  const workerPatches = new Map<
+    string,
+    { workerId: string; positions: Array<Record<string, unknown>> }
+  >()
+  const appointmentDocs = new Map<
+    string,
+    { _id: string; _type: string } & Record<string, unknown>
+  >()
+  const matchedImports: Array<{
+    name: string
+    workerId: string
+    appointmentId: string
+    email: string
+    positionTitle: string
+    kind: 'csgb' | 'hall' | 'team'
+    rank: 'lead' | 'assistant'
+    teamName?: string
+    hallName?: string
+  }> = []
+  const unregisteredImports: Array<{ name: string; appointmentId: string }> = []
+
   for (const item of items) {
     const cleanDisplayName = item.workerDisplayName || capitalizeWords(cleanHonorifics(item.rawName))
 
@@ -749,8 +780,8 @@ export async function commitExecutiveImport(payload: {
       kind: item.kind,
       status: 'approved',
       rank: item.rank || 'lead',
-      submittedAt: new Date().toISOString(),
-      decidedAt: new Date().toISOString(),
+      submittedAt: importedAt,
+      decidedAt: importedAt,
     }
 
     if (item.kind === 'csgb') {
@@ -788,11 +819,13 @@ export async function commitExecutiveImport(payload: {
     const targetEmail = (item.email || (targetWorkerId ? workerEmailsMap.get(targetWorkerId) : undefined) || '').trim().toLowerCase()
 
     // -------------------------------------------------------------------------
-    // 1. Always persist an executiveAppointment document in Sanity
+    // Always persist an executiveAppointment document in Sanity
     // -------------------------------------------------------------------------
     const nameTokens = extractNameTokens(cleanDisplayName)
     const normalizedKey = normalizeTokensKey(nameTokens)
-    const deterministicAppId = `appointment_${item.kind}_${Buffer.from(cleanDisplayName.toLowerCase().trim()).toString('hex').slice(0, 32)}`
+    const deterministicAppId = `appointment_${item.kind}_${createHash('sha1')
+      .update(cleanDisplayName.toLowerCase().trim())
+      .digest('hex')}`
 
     // A previously claimed appointment tells us which worker holds this role,
     // even if the row's name spelling no longer matches the worker document.
@@ -809,7 +842,7 @@ export async function commitExecutiveImport(payload: {
       normalizedName: normalizedKey,
       kind: item.kind,
       rank: item.rank || 'lead',
-      importedAt: new Date().toISOString(),
+      importedAt,
       rawPosition: item.office || item.teamName || item.hall || 'Executive Position',
     }
     if (targetEmail) appointmentDoc.email = targetEmail
@@ -825,84 +858,60 @@ export async function commitExecutiveImport(payload: {
     }
 
     if (targetWorkerId) {
-      try {
-        const currentPositions = workerPositionsMap.get(targetWorkerId) || []
+      const currentPositions = workerPositionsMap.get(targetWorkerId) || []
 
-        // Smart merge: replace existing position of the same role/category instead of duplicating
-        const filteredPositions = currentPositions.filter((p) => {
-          if (item.kind === 'csgb' && p.kind === 'csgb') return false
-          if (item.kind === 'team' && p.kind === 'team') {
-            const pTeamRef = (p.team as { _ref?: string })?._ref
-            if (pTeamRef && item.teamRef && pTeamRef === item.teamRef) return false
-            if (p.teamName && item.teamName && String(p.teamName).toLowerCase() === String(item.teamName).toLowerCase()) return false
-          }
-          if (item.kind === 'hall' && p.kind === 'hall') {
-            const pHallRef = (p.hallRef as { _ref?: string })?._ref
-            if (pHallRef && item.hallRef && pHallRef === item.hallRef) return false
-            if (p.hall && item.hall && String(p.hall).toLowerCase() === String(item.hall).toLowerCase()) return false
-          }
-          return true
-        })
-
-        const updatedPositions = [...filteredPositions, newPos]
-
-        await patchPrivateDocument(targetWorkerId)
-          .set({
-            positions: updatedPositions,
-            isExcoApproved: true,
-          })
-          .commit()
-
-        workerPositionsMap.set(targetWorkerId, updatedPositions)
-        imported++
-        matchedCount++
-
-        // Save appointment as claimed by the registered worker
-        appointmentDoc.status = 'claimed'
-        appointmentDoc.registrationStatus = 'registered'
-        appointmentDoc.claimedBy = { _type: 'reference', _ref: targetWorkerId }
-        appointmentDoc.claimedAt = new Date().toISOString()
-        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
-        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
-
-        // Dispatch leadership appointment guidance email
-        if (targetEmail && targetEmail.includes('@')) {
-          try {
-            const emailRes = await sendExecutiveAppointmentEmail({
-              recipientName: cleanDisplayName,
-              recipientEmail: targetEmail,
-              positionTitle,
-              category: item.kind,
-              rank: item.rank,
-              teamName: item.teamName,
-              hallName: item.hall,
-            })
-            if (emailRes.ok) {
-              emailsSent++
-            }
-          } catch (emailErr) {
-            console.error(`[commitExecutiveImport] Email dispatch error for ${targetEmail}:`, emailErr)
-          }
+      // Smart merge: replace existing position of the same role/category instead of duplicating
+      const filteredPositions = currentPositions.filter((p) => {
+        if (item.kind === 'csgb' && p.kind === 'csgb') return false
+        if (item.kind === 'team' && p.kind === 'team') {
+          const pTeamRef = (p.team as { _ref?: string })?._ref
+          if (pTeamRef && item.teamRef && pTeamRef === item.teamRef) return false
+          if (p.teamName && item.teamName && String(p.teamName).toLowerCase() === String(item.teamName).toLowerCase()) return false
         }
-      } catch (err) {
-        console.error('[commitExecutiveImport] patch error:', err)
-        skipped.push(`${cleanDisplayName}: Failed to update worker record.`)
-      }
+        if (item.kind === 'hall' && p.kind === 'hall') {
+          const pHallRef = (p.hallRef as { _ref?: string })?._ref
+          if (pHallRef && item.hallRef && pHallRef === item.hallRef) return false
+          if (p.hall && item.hall && String(p.hall).toLowerCase() === String(item.hall).toLowerCase()) return false
+        }
+        return true
+      })
+
+      const updatedPositions = [...filteredPositions, newPos]
+      workerPositionsMap.set(targetWorkerId, updatedPositions)
+      workerPatches.set(targetWorkerId, { workerId: targetWorkerId, positions: updatedPositions })
+
+      // Save appointment as claimed by the registered worker
+      appointmentDoc.status = 'claimed'
+      appointmentDoc.registrationStatus = 'registered'
+      appointmentDoc.claimedBy = { _type: 'reference', _ref: targetWorkerId }
+      appointmentDoc.claimedAt = importedAt
+      appointmentDocs.set(deterministicAppId, {
+        _id: deterministicAppId,
+        ...appointmentDoc,
+      } as { _id: string; _type: string } & Record<string, unknown>)
+
+      matchedImports.push({
+        name: cleanDisplayName,
+        workerId: targetWorkerId,
+        appointmentId: deterministicAppId,
+        email: targetEmail,
+        positionTitle,
+        kind: item.kind,
+        rank: item.rank || 'lead',
+        teamName: item.teamName,
+        hallName: item.hall,
+      })
     } else if (includeUnregistered) {
       // Reserve the role for a leader who has not registered on /register yet.
       // No placeholder worker document is created — the appointment activates
       // automatically when a matching registration claims it.
-      try {
-        appointmentDoc.status = 'pending_claim'
-        appointmentDoc.registrationStatus = 'unregistered'
-        const fullAppointmentDoc = { _id: deterministicAppId, ...appointmentDoc } as any;
-        await sanityPrivateClient.createOrReplace(fullAppointmentDoc)
-        imported++
-        unregisteredCount++
-      } catch (resErr) {
-        console.error('[commitExecutiveImport] Failed to reserve pending appointment:', resErr)
-        skipped.push(`${cleanDisplayName}: Failed to reserve unregistered appointment.`)
-      }
+      appointmentDoc.status = 'pending_claim'
+      appointmentDoc.registrationStatus = 'unregistered'
+      appointmentDocs.set(deterministicAppId, {
+        _id: deterministicAppId,
+        ...appointmentDoc,
+      } as { _id: string; _type: string } & Record<string, unknown>)
+      unregisteredImports.push({ name: cleanDisplayName, appointmentId: deterministicAppId })
     } else {
       skipped.push(
         `${cleanDisplayName}: Not registered on /register — skipped. Enable "Include unregistered EXCOs" to reserve the appointment.`
@@ -910,10 +919,139 @@ export async function commitExecutiveImport(payload: {
     }
   }
 
-  try {
-    revalidatePath('/dashboard/executives')
-    revalidatePath('/dashboard/workers')
-  } catch {}
+  // ---------------------------------------------------------------------------
+  // Commit worker patches and appointment documents in batched transactions.
+  // Each batch is atomic; if a batch fails we retry its documents one by one so
+  // a single bad row cannot block the rest of the roster.
+  // ---------------------------------------------------------------------------
+  type WriteMutation =
+    | { type: 'worker'; workerId: string; positions: Array<Record<string, unknown>> }
+    | {
+        type: 'appointment'
+        documentId: string
+        doc: { _id: string; _type: string } & Record<string, unknown>
+      }
+
+  const mutations: WriteMutation[] = [
+    ...Array.from(workerPatches.values(), (patch) => ({
+      type: 'worker' as const,
+      workerId: patch.workerId,
+      positions: patch.positions,
+    })),
+    ...Array.from(appointmentDocs.entries(), ([documentId, doc]) => ({
+      type: 'appointment' as const,
+      documentId,
+      doc,
+    })),
+  ]
+
+  const writtenWorkerIds = new Set<string>()
+  const writtenAppointmentIds = new Set<string>()
+
+  for (let start = 0; start < mutations.length; start += WRITE_BATCH_SIZE) {
+    const chunk = mutations.slice(start, start + WRITE_BATCH_SIZE)
+
+    try {
+      const transaction = sanityWriteClient.transaction()
+      for (const mutation of chunk) {
+        if (mutation.type === 'worker') {
+          transaction.patch(mutation.workerId, {
+            set: { positions: mutation.positions, isExcoApproved: true },
+          })
+        } else {
+          transaction.createOrReplace(mutation.doc)
+        }
+      }
+      await transaction.commit()
+
+      for (const mutation of chunk) {
+        if (mutation.type === 'worker') writtenWorkerIds.add(mutation.workerId)
+        else writtenAppointmentIds.add(mutation.documentId)
+      }
+    } catch (batchError) {
+      console.error('[commitExecutiveImport] Batch write failed, retrying individually:', batchError)
+
+      await Promise.allSettled(
+        chunk.map(async (mutation) => {
+          if (mutation.type === 'worker') {
+            await sanityWriteClient
+              .patch(mutation.workerId)
+              .set({ positions: mutation.positions, isExcoApproved: true })
+              .commit()
+            writtenWorkerIds.add(mutation.workerId)
+          } else {
+            await sanityWriteClient.createOrReplace(mutation.doc)
+            writtenAppointmentIds.add(mutation.documentId)
+          }
+        })
+      )
+    }
+  }
+
+  for (const entry of matchedImports) {
+    if (!writtenWorkerIds.has(entry.workerId)) {
+      skipped.push(`${entry.name}: Failed to update worker record.`)
+      continue
+    }
+
+    imported++
+    matchedCount++
+
+    if (!writtenAppointmentIds.has(entry.appointmentId)) {
+      skipped.push(`${entry.name}: Position saved, but the appointment record could not be linked.`)
+    }
+  }
+
+  for (const entry of unregisteredImports) {
+    if (writtenAppointmentIds.has(entry.appointmentId)) {
+      imported++
+      unregisteredCount++
+    } else {
+      skipped.push(`${entry.name}: Failed to reserve unregistered appointment.`)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dispatch appointment guidance emails only after the database writes have
+  // succeeded, in small parallel batches. A failed email never fails the import.
+  // ---------------------------------------------------------------------------
+  const pendingEmails = new Map<string, (typeof matchedImports)[number]>()
+  for (const entry of matchedImports) {
+    if (!writtenWorkerIds.has(entry.workerId)) continue
+    if (!entry.email || !entry.email.includes('@')) continue
+    const emailKey = `${entry.email}|${entry.positionTitle}`
+    if (!pendingEmails.has(emailKey)) pendingEmails.set(emailKey, entry)
+  }
+
+  const emailTasks = Array.from(pendingEmails.values())
+  for (let start = 0; start < emailTasks.length; start += EMAIL_BATCH_SIZE) {
+    const batch = emailTasks.slice(start, start + EMAIL_BATCH_SIZE)
+    const results = await Promise.allSettled(
+      batch.map((task) =>
+        sendExecutiveAppointmentEmail({
+          recipientName: task.name,
+          recipientEmail: task.email,
+          positionTitle: task.positionTitle,
+          category: task.kind,
+          rank: task.rank,
+          teamName: task.teamName,
+          hallName: task.hallName,
+        })
+      )
+    )
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value.ok) {
+        emailsSent++
+      } else {
+        const reason = result.status === 'fulfilled' ? result.value.error : String(result.reason)
+        console.error(
+          `[commitExecutiveImport] Email dispatch error for ${batch[index].email}:`,
+          reason
+        )
+      }
+    })
+  }
 
   return {
     ok: true,
@@ -1181,11 +1319,6 @@ export async function reconcileRegisteredExecutives(): Promise<{
         details.push(`${w.fullName}: Activated ${res.claimed} appointed role(s).`)
       }
     }
-
-    try {
-      revalidatePath('/dashboard/executives')
-      revalidatePath('/dashboard/workers')
-    } catch {}
 
     return { ok: true, reconciledCount, details }
   } catch (err) {
