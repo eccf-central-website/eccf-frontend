@@ -4,12 +4,14 @@ import * as XLSX from 'xlsx'
 import { revalidatePath } from 'next/cache'
 import { sanityPrivateClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
+import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 
 export interface CsvImportResult {
   ok: boolean
   imported: number
   matchedCount: number
   createdCount: number
+  emailsSent: number
   skipped: string[]
   error?: string
 }
@@ -80,6 +82,7 @@ export interface CommitImportResult {
   imported: number
   matchedCount: number
   createdCount: number
+  emailsSent: number
   skipped: string[]
   error?: string
 }
@@ -661,6 +664,7 @@ export async function previewExecutiveSpreadsheet(
  * Commit the reviewed executive positions to Sanity.
  * - Deduplicates positions: updates existing positions instead of endlessly appending.
  * - Auto-creates worker profiles for new names with canonical position references.
+ * - Dispatches official leadership appointment guidance emails with direct dashboard access links.
  */
 export async function commitExecutiveImport(payload: {
   items: CommitImportItem[]
@@ -668,17 +672,18 @@ export async function commitExecutiveImport(payload: {
 }): Promise<CommitImportResult> {
   const auth = await verifyAuth()
   if (!auth.ok) {
-    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, skipped: [], error: auth.error }
+    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, emailsSent: 0, skipped: [], error: auth.error }
   }
 
   const { items, createMissingWorkers } = payload
   if (!items || !items.length) {
-    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, skipped: [], error: 'No items selected to import.' }
+    return { ok: false, imported: 0, matchedCount: 0, createdCount: 0, emailsSent: 0, skipped: [], error: 'No items selected to import.' }
   }
 
   let imported = 0
   let matchedCount = 0
   let createdCount = 0
+  let emailsSent = 0
   const skipped: string[] = []
 
   // Pre-fetch fresh workers and their existing positions
@@ -697,10 +702,12 @@ export async function commitExecutiveImport(payload: {
   }>
 
   const workerMapByName = new Map<string, string>()
+  const workerEmailsMap = new Map<string, string>()
   const workerPositionsMap = new Map<string, Array<Record<string, unknown>>>()
 
   for (const w of existingWorkers) {
     if (w.fullName) workerMapByName.set(w.fullName.toLowerCase().trim(), w._id)
+    if (w.email) workerEmailsMap.set(w._id, w.email.toLowerCase().trim())
     workerPositionsMap.set(w._id, w.positions || [])
   }
 
@@ -743,6 +750,15 @@ export async function commitExecutiveImport(payload: {
       targetWorkerId = workerMapByName.get(cleanDisplayName.toLowerCase().trim())
     }
 
+    const positionTitle =
+      item.kind === 'csgb'
+        ? item.office || 'CSGB Executive'
+        : item.kind === 'hall'
+        ? `Hall Pastor (${item.hall || 'Hall'})`
+        : `${item.teamName || 'Ministry'} Lead`
+
+    const targetEmail = (item.email || (targetWorkerId ? workerEmailsMap.get(targetWorkerId) : undefined) || '').trim().toLowerCase()
+
     if (targetWorkerId) {
       try {
         const currentPositions = workerPositionsMap.get(targetWorkerId) || []
@@ -781,6 +797,26 @@ export async function commitExecutiveImport(payload: {
         workerPositionsMap.set(targetWorkerId, updatedPositions)
         imported++
         matchedCount++
+
+        // Dispatch leadership appointment guidance email
+        if (targetEmail && targetEmail.includes('@')) {
+          try {
+            const emailRes = await sendExecutiveAppointmentEmail({
+              recipientName: cleanDisplayName,
+              recipientEmail: targetEmail,
+              positionTitle,
+              category: item.kind,
+              rank: item.rank,
+              teamName: item.teamName,
+              hallName: item.hall,
+            })
+            if (emailRes.ok) {
+              emailsSent++
+            }
+          } catch (emailErr) {
+            console.error(`[commitExecutiveImport] Email dispatch error for ${targetEmail}:`, emailErr)
+          }
+        }
       } catch (err) {
         console.error('[commitExecutiveImport] patch error:', err)
         skipped.push(`${cleanDisplayName}: Failed to update worker record.`)
@@ -811,9 +847,30 @@ export async function commitExecutiveImport(payload: {
 
         const newId = createdWorker._id
         workerMapByName.set(cleanDisplayName.toLowerCase().trim(), newId)
+        if (item.email) workerEmailsMap.set(newId, item.email.toLowerCase().trim())
         workerPositionsMap.set(newId, [newPos])
         imported++
         createdCount++
+
+        // Dispatch leadership appointment guidance email
+        if (targetEmail && targetEmail.includes('@')) {
+          try {
+            const emailRes = await sendExecutiveAppointmentEmail({
+              recipientName: cleanDisplayName,
+              recipientEmail: targetEmail,
+              positionTitle,
+              category: item.kind,
+              rank: item.rank,
+              teamName: item.teamName,
+              hallName: item.hall,
+            })
+            if (emailRes.ok) {
+              emailsSent++
+            }
+          } catch (emailErr) {
+            console.error(`[commitExecutiveImport] Email dispatch error for ${targetEmail}:`, emailErr)
+          }
+        }
       } catch (err) {
         console.error('[commitExecutiveImport] create worker error:', err)
         skipped.push(`${cleanDisplayName}: Failed to create new worker profile.`)
@@ -833,6 +890,7 @@ export async function commitExecutiveImport(payload: {
     imported,
     matchedCount,
     createdCount,
+    emailsSent,
     skipped,
   }
 }

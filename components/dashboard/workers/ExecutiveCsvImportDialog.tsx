@@ -25,6 +25,7 @@ import {
   FileSpreadsheet,
   Filter,
   Loader2,
+  Mail,
   RotateCcw,
   Search,
   Sparkles,
@@ -813,6 +814,7 @@ export default function ExecutiveCsvImportDialog({
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {commitResult.matchedCount} mapped to registered workers
                     {commitResult.createdCount > 0 && ` • ${commitResult.createdCount} new worker profiles created in Sanity`}
+                    {commitResult.emailsSent > 0 && ` • ${commitResult.emailsSent} guidance email${commitResult.emailsSent === 1 ? '' : 's'} sent with dashboard links`}
                     .
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -833,6 +835,15 @@ export default function ExecutiveCsvImportDialog({
                     None of the positions could be imported. Review any skipped rows below.
                   </p>
                 </div>
+              </div>
+            )}
+
+                        {commitResult.emailsSent > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium">
+                <Mail className="h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+                <span>
+                  Official appointment guidance emails with direct dashboard access links were dispatched to {commitResult.emailsSent} leader{commitResult.emailsSent === 1 ? '' : 's'}.
+                </span>
               </div>
             )}
 
