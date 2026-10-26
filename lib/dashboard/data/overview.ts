@@ -113,7 +113,7 @@ export async function getLiveAttentionItems(
     try {
       const workers = await listWorkers(session)
       const pendingWorkers = workers.filter(
-        (w) => w.verificationStatus === 'pending' || !w.verifiedAt
+        (w) => w.verificationStatus === 'pending'
       )
       if (pendingWorkers.length > 0) {
         const names = pendingWorkers.map((w) => w.fullName).filter(Boolean)

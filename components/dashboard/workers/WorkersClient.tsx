@@ -10,6 +10,9 @@ import {
   Clock,
   XCircle,
   ShieldCheck,
+  Shield,
+  Home,
+  Briefcase,
   Eye,
   Users,
   Building,
@@ -807,121 +810,228 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
       {/* WORKER DETAIL MODAL                                                  */}
       {/* ==================================================================== */}
       <Dialog open={!!activeWorkerDetail} onOpenChange={(open) => !open && setActiveWorkerDetail(null)}>
-        <DialogContent className="flex sm:max-w-md max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl p-6">
-          <DialogHeader className="shrink-0 pr-8">
-            <DialogTitle className="font-serif text-2xl font-black text-foreground">
-              Worker Profile
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Verified fellowship records &amp; audit delta history.
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="flex sm:max-w-lg max-h-[92vh] flex-col gap-0 overflow-hidden rounded-3xl border-0 shadow-2xl p-0 bg-card text-card-foreground">
           {activeWorkerDetail && (
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pt-4 pr-1 -mr-1">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-serif font-black text-base overflow-hidden">
-                  {activeWorkerDetail.profileImageUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={activeWorkerDetail.profileImageUrl}
-                      alt={activeWorkerDetail.fullName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    activeWorkerDetail.fullName.slice(0, 2).toUpperCase()
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-base text-foreground truncate">{activeWorkerDetail.fullName}</h4>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {activeWorkerDetail.hall || 'No Hall'} • {activeWorkerDetail.team}
-                  </p>
+            <>
+              {/* Luxury Ambient Header */}
+              <div className="relative overflow-hidden bg-gradient-to-b from-primary/15 via-primary/5 to-card p-6 pb-5 border-b border-border/10">
+                {/* Radial Glow */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-primary/20 blur-3xl pointer-events-none"
+                />
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                  {/* Portrait */}
+                  <div className="relative shrink-0">
+                    <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden ring-4 ring-card bg-muted shadow-xl flex items-center justify-center">
+                      {activeWorkerDetail.profileImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={activeWorkerDetail.profileImageUrl}
+                          alt={activeWorkerDetail.fullName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="font-serif font-black text-2xl text-primary">
+                          {activeWorkerDetail.fullName.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {(activeWorkerDetail.verificationStatus || 'verified') === 'verified' && (
+                      <div
+                        className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-card shadow-sm"
+                        title="Verified Worker"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Identity Information */}
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Worker Profile
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif text-xl sm:text-2xl font-black text-foreground tracking-tight break-words leading-tight">
+                      {activeWorkerDetail.fullName}
+                    </h3>
+
+                    {activeWorkerDetail.excoPosition && (
+                      <p className="text-xs sm:text-sm font-semibold text-primary flex items-center justify-center sm:justify-start gap-1.5">
+                        <Shield className="h-3.5 w-3.5 shrink-0" />
+                        <span>{activeWorkerDetail.excoPosition}</span>
+                      </p>
+                    )}
+
+                    {/* Quick Meta Badges */}
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-1">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-background/80 text-[11px] font-medium text-foreground border border-border/30 shadow-2xs">
+                        <Home className="h-3 w-3 text-muted-foreground" />
+                        <span>{activeWorkerDetail.hall || 'No Hall'}</span>
+                      </span>
+
+                      {(activeWorkerDetail.verificationStatus || 'verified') === 'verified' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Verified</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-[11px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          <Clock className="h-3 w-3" />
+                          <span>Pending Approval</span>
+                        </span>
+                      )}
+
+                      {activeWorkerDetail.profileImageUrl && (
+                        <a
+                          href={activeWorkerDetail.profileImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-[11px] font-semibold text-primary border border-primary/20 transition-colors"
+                        >
+                          <Download className="h-3 w-3" />
+                          <span>Photo</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Birthday Banner & Media Flyer Download */}
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-card space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                      <Calendar className="h-4 w-4 shrink-0" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary block">
-                        Birthday (For Media &amp; Welfare)
+              {/* Body Content */}
+              <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
+                {/* 2-Column Core Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Birthday Card */}
+                  <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <Calendar className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Birthday
                       </span>
-                      <span className="text-sm font-bold text-foreground">
-                        {formatBirthday(activeWorkerDetail.birthDate, activeWorkerDetail.birthMonth, activeWorkerDetail.birthDay)}
-                      </span>
                     </div>
+                    <p className="font-sans font-bold text-base text-foreground pl-0.5">
+                      {formatBirthday(activeWorkerDetail.birthDate, activeWorkerDetail.birthMonth, activeWorkerDetail.birthDay)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground pl-0.5">
+                      Media flyer &amp; welfare care
+                    </p>
                   </div>
-                  {activeWorkerDetail.profileImageUrl && (
-                    <a
-                      href={activeWorkerDetail.profileImageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-colors"
-                    >
-                      <Download className="h-3.5 w-3.5 shrink-0" />
-                      Download Picture
-                    </a>
-                  )}
+
+                  {/* Primary Assignment Card */}
+                  <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <Briefcase className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Primary Assignment
+                      </span>
+                    </div>
+                    <p className="font-sans font-bold text-base text-foreground pl-0.5 truncate">
+                      {activeWorkerDetail.leadingTeam
+                        ? `${activeWorkerDetail.leadingTeam} (Lead)`
+                        : activeWorkerDetail.team || 'Unassigned'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground pl-0.5">
+                      Operational roster unit
+                    </p>
+                  </div>
                 </div>
 
-                {activeWorkerDetail.profileImageUrl && (
-                  <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-background">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={activeWorkerDetail.profileImageUrl}
-                      alt={`${activeWorkerDetail.fullName} Celebratory Birthday Photo`}
-                      className="w-full h-full object-contain"
-                    />
+                {/* Assigned Operational Teams */}
+                <div className="p-4 rounded-2xl bg-muted/20 border border-border/10 space-y-2">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    All Assigned Teams &amp; Departments
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(activeWorkerDetail.teams && activeWorkerDetail.teams.length > 0
+                      ? activeWorkerDetail.teams
+                      : [activeWorkerDetail.team]
+                    ).map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center px-3 py-1 rounded-xl bg-primary/10 text-primary text-xs font-semibold border border-primary/15"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Verification Delta History */}
+                {(activeWorkerDetail.verifiedBy || activeWorkerDetail.verifiedAt) && (
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/20 border border-border/10 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span className="truncate">
+                        Verified by <strong className="text-foreground">{activeWorkerDetail.verifiedBy || 'Executive Desk'}</strong>
+                      </span>
+                    </div>
+                    {activeWorkerDetail.verifiedAt && (
+                      <span className="text-muted-foreground font-mono text-[11px] shrink-0 pl-2">
+                        {new Date(activeWorkerDetail.verifiedAt).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Audit Delta History */}
+                {activeWorkerDetail.updateLog && activeWorkerDetail.updateLog.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-muted/20 border border-border/10 space-y-2">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                      Audit Trail &amp; Delta Log
+                    </span>
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                      {activeWorkerDetail.updateLog.map((log, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground py-0.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                          <span className="leading-relaxed">{log}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-muted/40">
-                  <span className="text-muted-foreground font-bold block mb-1">Operational Teams</span>
-                  <span className="font-semibold text-foreground">
-                    {(activeWorkerDetail.teams && activeWorkerDetail.teams.length > 0
-                      ? activeWorkerDetail.teams
-                      : [activeWorkerDetail.team]
-                    ).join(', ')}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-muted/40">
-                  <span className="text-muted-foreground font-bold block mb-1">Verification Status</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
-                    {activeWorkerDetail.verificationStatus || 'Verified'}
-                  </span>
-                </div>
+              {/* Dialog Footer Actions */}
+              <div className="p-4 px-6 bg-muted/20 border-t border-border/10 flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmailPreselectedWorker(activeWorkerDetail)
+                    setActiveWorkerDetail(null)
+                    setIsEmailDialogOpen(true)
+                  }}
+                  className="min-h-[44px] sm:min-h-[38px] px-4 rounded-xl text-xs font-semibold gap-2 border-border/50 hover:bg-muted"
+                >
+                  <Mail className="h-4 w-4 text-primary" />
+                  <span>Email Worker</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveWorkerDetail(null)}
+                  className="min-h-[44px] sm:min-h-[38px] px-4 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  Close
+                </Button>
               </div>
-
-              {activeWorkerDetail.verifiedBy && (
-                <div className="text-xs text-muted-foreground flex items-center justify-between px-1">
-                  <span>Verified by: <strong className="text-foreground">{activeWorkerDetail.verifiedBy}</strong></span>
-                  {activeWorkerDetail.verifiedAt && (
-                    <span>{new Date(activeWorkerDetail.verifiedAt).toLocaleDateString()}</span>
-                  )}
-                </div>
-              )}
-
-              {/* Audit Delta History */}
-              {activeWorkerDetail.updateLog && activeWorkerDetail.updateLog.length > 0 && (
-                <div className="pt-2">
-                  <h5 className="font-mono text-xs font-bold uppercase text-muted-foreground mb-2">Audit History</h5>
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                    {activeWorkerDetail.updateLog.map((log, idx) => (
-                      <p key={idx} className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg">
-                        {log}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

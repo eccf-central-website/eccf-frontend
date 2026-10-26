@@ -230,7 +230,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       </div>
 
       {/* First-Timers Table (Desktop) */}
-      <div className="hidden rounded-lg border bg-card sm:block">
+      <div className="hidden rounded-2xl bg-card shadow-sm overflow-hidden sm:block">
 <Table aria-label="First-timers records">
           <TableHeader>
             <TableRow className="bg-muted/40">
@@ -389,7 +389,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
           </Card>
         ) : (
           filteredRows.map((row) => (
-            <Card key={row._id} className="overflow-hidden border border-border shadow-sm">
+            <Card key={row._id} className="overflow-hidden border-0 bg-card shadow-sm rounded-2xl">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -407,7 +407,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground border-y py-2.5">
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground border-y border-border/15 py-2.5">
                   <div>
                     <span className="block text-[10px] uppercase font-semibold text-muted-foreground/80">Room</span>
                     <span className="text-foreground font-medium">{row.roomNumber || '—'}</span>

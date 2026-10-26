@@ -76,8 +76,8 @@ export default async function AttentionQueue({
               <CheckCircle2 className="h-5 w-5 shrink-0" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">You’re all caught up</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h2 className="text-sm sm:text-base font-semibold text-foreground">You’re all caught up</h2>
+              <p className="text-xs sm:text-sm md:text-[15px] text-muted-foreground mt-0.5 leading-relaxed">
                 No pending approvals, appointments, or urgent operational tasks require your attention right now.
               </p>
             </div>
@@ -135,7 +135,7 @@ export default async function AttentionQueue({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-foreground truncate">
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">
                       {item.title}
                     </h3>
                     {item.urgency === 'high' && (
@@ -144,7 +144,7 @@ export default async function AttentionQueue({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                  <p className="text-xs sm:text-sm md:text-[15px] text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
                     {item.detail}
                   </p>
                 </div>

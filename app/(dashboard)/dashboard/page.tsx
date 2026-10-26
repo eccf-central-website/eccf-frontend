@@ -55,7 +55,7 @@ export default async function DashboardOverviewPage() {
 
       {/* Universal Page Header — Date-only eyebrow, clean h1, primary 44px action */}
       <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           {todayStr}
         </p>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -63,7 +63,7 @@ export default async function DashboardOverviewPage() {
             <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Good morning, {firstName}
               {leaderPost && (
-                <span className="font-normal text-muted-foreground"> — {leaderPost}</span>
+                <span className="font-normal text-muted-foreground text-base sm:text-lg"> — {leaderPost}</span>
               )}
             </h1>
           </div>
