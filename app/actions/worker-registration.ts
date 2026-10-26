@@ -255,7 +255,7 @@ function maskEmail(email?: string | null): string {
 /** Parses either MM-DD or YYYY-MM-DD into numeric month/day without a year. */
 function parseBirthdayParts(birthday?: string | null): { birthMonth?: number; birthDay?: number } {
   if (!birthday || typeof birthday !== 'string') return {}
-  const parts = birthday.split('-')
+  const parts = birthday.trim().split(/[-/.]/)
   if (parts.length === 3) {
     const birthMonth = Number(parts[1])
     const birthDay = Number(parts[2])
@@ -2527,9 +2527,15 @@ export async function activateRegisteredWorkerLogin(
 export async function uploadWorkerPhotoDirectAction({
   workerId,
   base64Image,
+  birthDate,
+  birthMonth,
+  birthDay,
 }: {
   workerId: string
   base64Image: string
+  birthDate?: string
+  birthMonth?: number
+  birthDay?: number
 }): Promise<{ ok: boolean; fileUrl?: string; error?: string }> {
   try {
     if (!workerId || !base64Image) {
@@ -2556,15 +2562,21 @@ export async function uploadWorkerPhotoDirectAction({
 
     const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
 
-    // Query worker document to build a descriptive filename representing the worker's name and all their teams
+    // Query worker document to build a descriptive filename representing the worker's name, birthday date, and teams
     const workerDoc = await sanityPrivateClient.fetch<{
       fullName?: string
+      birthDate?: string
+      birthMonth?: number
+      birthDay?: number
       team?: string
       teams?: string[]
       membershipTeams?: Array<string | null>
     } | null>(
       `*[_type == "worker" && _id == $id][0]{
         fullName,
+        birthDate,
+        birthMonth,
+        birthDay,
         "team": coalesce(team->name, team),
         "teams": coalesce(teams[]->name, teams),
         "membershipTeams": memberships[]{ "name": coalesce(team->name, teamName) }.name
@@ -2578,6 +2590,70 @@ export async function uploadWorkerPhotoDirectAction({
       .replace(/\s+/g, '_')
       .replace(/[^a-zA-Z0-9_-]+/g, '')
       .replace(/^_+|_+$/g, '') || 'Worker'
+
+    // Resolve birthday date (month and day) for easy Google Drive search and retrieval
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+
+    let resolvedMonth: number | undefined
+    let resolvedDay: number | undefined
+
+    if (workerDoc?.birthDate) {
+      try {
+        const decrypted = decrypt(workerDoc.birthDate)
+        const parts = parseBirthdayParts(decrypted)
+        if (parts.birthMonth && parts.birthDay) {
+          resolvedMonth = parts.birthMonth
+          resolvedDay = parts.birthDay
+        }
+      } catch {
+        const parts = parseBirthdayParts(workerDoc.birthDate)
+        if (parts.birthMonth && parts.birthDay) {
+          resolvedMonth = parts.birthMonth
+          resolvedDay = parts.birthDay
+        }
+      }
+    }
+
+    if ((!resolvedMonth || !resolvedDay) && birthDate) {
+      try {
+        const decrypted = decrypt(birthDate)
+        const parts = parseBirthdayParts(decrypted)
+        if (parts.birthMonth && parts.birthDay) {
+          resolvedMonth = parts.birthMonth
+          resolvedDay = parts.birthDay
+        }
+      } catch {
+        const parts = parseBirthdayParts(birthDate)
+        if (parts.birthMonth && parts.birthDay) {
+          resolvedMonth = parts.birthMonth
+          resolvedDay = parts.birthDay
+        }
+      }
+    }
+
+    if (!resolvedMonth && typeof workerDoc?.birthMonth === 'number' && workerDoc.birthMonth >= 1 && workerDoc.birthMonth <= 12) {
+      resolvedMonth = workerDoc.birthMonth
+    }
+    if (!resolvedDay && typeof workerDoc?.birthDay === 'number' && workerDoc.birthDay >= 1 && workerDoc.birthDay <= 31) {
+      resolvedDay = workerDoc.birthDay
+    }
+
+    if (!resolvedMonth && typeof birthMonth === 'number' && birthMonth >= 1 && birthMonth <= 12) {
+      resolvedMonth = birthMonth
+    }
+    if (!resolvedDay && typeof birthDay === 'number' && birthDay >= 1 && birthDay <= 31) {
+      resolvedDay = birthDay
+    }
+
+    let birthdayPart = ''
+    if (resolvedMonth && resolvedDay && resolvedMonth >= 1 && resolvedMonth <= 12 && resolvedDay >= 1 && resolvedDay <= 31) {
+      const monthName = MONTH_NAMES[resolvedMonth - 1]
+      const dayStr = String(resolvedDay).padStart(2, '0')
+      birthdayPart = `${monthName}_${dayStr}`
+    }
 
     const cleanTeam = (val: string) =>
       val
@@ -2608,8 +2684,9 @@ export async function uploadWorkerPhotoDirectAction({
     }
 
     const teamsPart = allTeams.length > 0 ? allTeams.join('_and_') : 'Workforce'
-    // Build descriptive base filename (name + teams, no 'General', no 'Headshot')
-    const cleanFileName = `${cleanName}_${teamsPart}`.slice(0, 105).replace(/^_+|_+$/g, '')
+    // Build descriptive base filename (name + birthday date + teams, e.g. Ransom_Uwaifo_October_26_Media)
+    const baseParts = [cleanName, birthdayPart, teamsPart].filter(Boolean)
+    const cleanFileName = baseParts.join('_').slice(0, 120).replace(/^_+|_+$/g, '')
     const signedFileName = `${cleanFileName}.${ext}`
 
     const sanityAsset = await sanityWriteClient.assets.upload('image', imageBytes, {

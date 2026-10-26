@@ -1081,6 +1081,9 @@ export function WorkerRegistrationForm({
             const direct = await uploadWorkerPhotoDirectAction({
               workerId: registrationResult.workerId,
               base64Image: newPortrait,
+              birthDate: effectiveBirthDate || undefined,
+              birthMonth: birthMonth ? Number(birthMonth) : undefined,
+              birthDay: birthDay ? Number(birthDay) : undefined,
             });
             if (direct.ok && direct.fileUrl) {
               finalResult = {
@@ -1152,6 +1155,9 @@ export function WorkerRegistrationForm({
         // Clean base64 (no data-URL prefix) — the action's signer and the
         // Drive webhook both expect the raw payload.
         base64Image: compressed.base64,
+        birthDate: effectiveBirthDate || undefined,
+        birthMonth: birthMonth ? Number(birthMonth) : undefined,
+        birthDay: birthDay ? Number(birthDay) : undefined,
       });
 
       if (res.ok && res.fileUrl) {

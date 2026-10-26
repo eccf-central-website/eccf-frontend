@@ -23,7 +23,7 @@ function getImageMimeType(bytes: Buffer): string | null {
   return null
 }
 
-function safeFileName(fullName: unknown, teamOrTeams: unknown): string {
+function safeFileName(fullName: unknown, teamOrTeams: unknown, birthdayInput?: unknown): string {
   const cleanName = String(fullName || 'Worker')
     .normalize('NFKD')
     .trim()
@@ -56,7 +56,62 @@ function safeFileName(fullName: unknown, teamOrTeams: unknown): string {
   }
 
   const teamsPart = allTeams.length > 0 ? allTeams.join('_and_') : 'Workforce'
-  return `${cleanName}_${teamsPart}`.slice(0, 105).replace(/^_+|_+$/g, '')
+
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+
+  let birthdayPart = ''
+  let month: number | undefined
+  let day: number | undefined
+
+  if (typeof birthdayInput === 'string' && birthdayInput.trim()) {
+    const parts = birthdayInput.trim().split(/[-/.]/)
+    if (parts.length === 3) {
+      month = Number(parts[1])
+      day = Number(parts[2])
+    } else if (parts.length === 2) {
+      month = Number(parts[0])
+      day = Number(parts[1])
+    }
+  } else if (birthdayInput && typeof birthdayInput === 'object') {
+    const bObj = birthdayInput as {
+      birthMonth?: unknown
+      birthDay?: unknown
+      birthDate?: unknown
+      birthday?: unknown
+    }
+    if (typeof bObj.birthMonth === 'number') month = bObj.birthMonth
+    if (typeof bObj.birthDay === 'number') day = bObj.birthDay
+    if ((!month || !day) && typeof bObj.birthDate === 'string') {
+      const parts = bObj.birthDate.trim().split(/[-/.]/)
+      if (parts.length === 3) {
+        month = Number(parts[1])
+        day = Number(parts[2])
+      } else if (parts.length === 2) {
+        month = Number(parts[0])
+        day = Number(parts[1])
+      }
+    }
+    if ((!month || !day) && typeof bObj.birthday === 'string') {
+      const parts = bObj.birthday.trim().split(/[-/.]/)
+      if (parts.length === 3) {
+        month = Number(parts[1])
+        day = Number(parts[2])
+      } else if (parts.length === 2) {
+        month = Number(parts[0])
+        day = Number(parts[1])
+      }
+    }
+  }
+
+  if (month && day && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+    birthdayPart = `${MONTH_NAMES[month - 1]}_${String(day).padStart(2, '0')}`
+  }
+
+  const parts = [cleanName, birthdayPart, teamsPart].filter(Boolean)
+  return parts.join('_').slice(0, 120).replace(/^_+|_+$/g, '')
 }
 
 function isSameOrigin(request: Request): boolean {
@@ -90,6 +145,10 @@ export async function POST(request: Request) {
       fullName?: unknown
       team?: unknown
       uploadGrant?: unknown
+      birthDate?: unknown
+      birthday?: unknown
+      birthMonth?: unknown
+      birthDay?: unknown
     }
     if (typeof body.base64 !== 'string' || !body.base64 || body.base64.length > MAX_IMAGE_BYTES * 1.5) {
       return NextResponse.json({ ok: false, error: 'A valid image is required.' }, { status: 400 })
@@ -124,7 +183,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'This upload request has already been used. Reopen the form to try again.' }, { status: 409 })
     }
 
-    const cleanFileName = safeFileName(body.fullName, body.team)
+    const cleanFileName = safeFileName(body.fullName, body.team, {
+      birthDate: body.birthDate,
+      birthday: body.birthday,
+      birthMonth: body.birthMonth,
+      birthDay: body.birthDay,
+    })
     const fileExtension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
 
     let uploadedUrl = ''
