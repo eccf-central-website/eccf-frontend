@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Shield,
@@ -10,26 +10,13 @@ import {
   Users,
   Search,
   CheckCircle2,
-  AlertTriangle,
   ExternalLink,
   Crown,
-  Loader2,
 } from 'lucide-react'
 import type { ExecutiveRow } from '@/types'
-import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Badge } from '@/components/dashboard/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/dashboard/ui/dialog'
 import ExecutiveCsvImportDialog from '@/components/dashboard/workers/ExecutiveCsvImportDialog'
-import { relieveExecutivePosition } from '@/app/actions/executive-actions'
-import { toastSuccess, toastError } from '@/lib/dashboard/toast'
 import { cn } from '@/lib/utils'
 
 interface ExecutivesClientProps {
@@ -68,15 +55,6 @@ export default function ExecutivesClient({
   const [executives, setExecutives] = useState<ExecutiveRow[]>(initialExecutives)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<CategoryTab>('all')
-  const [isPending, startTransition] = useTransition()
-
-  // Relieve dialog state
-  const [relieveTarget, setRelieveTarget] = useState<{
-    workerId: string
-    workerName: string
-    positionKey: string
-    positionLabel: string
-  } | null>(null)
 
   // Keep local state in sync when server props refresh
   React.useEffect(() => {
@@ -105,7 +83,7 @@ export default function ExecutivesClient({
     }
   }, [executives])
 
-  // Flattened position items for precise search and category filtering
+  // Filtered executives by search & category tab
   const filteredExecutives = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
 
@@ -132,36 +110,6 @@ export default function ExecutivesClient({
       return Boolean(nameMatch || emailMatch || hallMatch || posMatch)
     })
   }, [executives, activeTab, searchQuery])
-
-  const handleConfirmRelieve = () => {
-    if (!relieveTarget) return
-
-    startTransition(async () => {
-      try {
-        const res = await relieveExecutivePosition(relieveTarget.workerId, relieveTarget.positionKey)
-        if (res.ok) {
-          toastSuccess(`Relieved ${relieveTarget.workerName} from ${relieveTarget.positionLabel}`)
-          // Optimistically update local list
-          setExecutives((prev) =>
-            prev
-              .map((w) => {
-                if (w._id !== relieveTarget.workerId) return w
-                const updatedPositions = (w.positions || []).filter(
-                  (p) => p.key !== relieveTarget.positionKey
-                )
-                return { ...w, positions: updatedPositions }
-              })
-              .filter((w) => w.positions && w.positions.length > 0)
-          )
-          setRelieveTarget(null)
-        } else {
-          toastError(res.error || 'Failed to relieve appointment.')
-        }
-      } catch {
-        toastError('An unexpected error occurred.')
-      }
-    })
-  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -444,23 +392,6 @@ export default function ExecutivesClient({
                                 {isAssistant ? 'Assistant' : 'Head / Lead'} • {formatDate(pos.decidedAt || pos.submittedAt)}
                               </span>
                             </div>
-
-                            {canManage && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setRelieveTarget({
-                                    workerId: worker._id,
-                                    workerName: worker.fullName,
-                                    positionKey: pos.key,
-                                    positionLabel,
-                                  })
-                                }
-                                className="text-[11px] font-medium text-destructive hover:text-destructive/80 hover:underline px-2 py-1 rounded transition-colors"
-                              >
-                                Relieve
-                              </button>
-                            )}
                           </div>
                         )
                       })}
@@ -480,43 +411,6 @@ export default function ExecutivesClient({
           })}
         </div>
       )}
-
-      {/* Relieve Confirmation Dialog */}
-      <Dialog open={Boolean(relieveTarget)} onOpenChange={(open) => !open && setRelieveTarget(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive mb-2">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <DialogTitle>Relieve Executive Appointment?</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to relieve <strong>{relieveTarget?.workerName}</strong> of their appointment as{' '}
-              <strong>{relieveTarget?.positionLabel}</strong>?
-              <br />
-              This will revoke their executive dashboard privileges for this office immediately.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setRelieveTarget(null)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleConfirmRelieve}
-              disabled={isPending}
-            >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Relieve Appointment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

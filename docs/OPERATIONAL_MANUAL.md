@@ -3,7 +3,7 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 25 October 2026 against frontend commit `2442b8a` and backend commit `5bf71fc`.
+**Last verified:** 26 October 2026 against frontend commit `4c2a0ef` and backend commit `b4f94ba`.
 
 > **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the President-only executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
@@ -148,7 +148,7 @@ The Connect Hub has exactly **three** tabs:
 ### 1.7 Installing the Progressive Web App (PWA)
 The PWA is intentionally an **Exco dashboard application**, not a public-site app.
 
-- **Manifest:** Served from `/manifest.webmanifest`; `start_url` and `scope` are `/dashboard`.
+- **Manifest:** Served from `/manifest.webmanifest`; the app name is **"ECCF Exco Dashboard"**, and `start_url` and `scope` are `/dashboard`.
 - **Install Control:** Authenticated leaders use the **Install App** button in the dashboard top bar. It captures the browser's native install prompt on Chrome, Edge, and Android, and shows iOS Safari instructions (Share -> Add to Home Screen) when needed.
 - **Already Installed:** The button hides automatically when the app is running in standalone mode.
 - **Public Site:** Install prompts are suppressed on public pages. Visitors browsing the marketing site will not be prompted to install the portal.
@@ -180,16 +180,16 @@ If the email matches a worker record linked to a different sign-in method, the p
 2. **Name:** First name, middle name (optional), and last name.
 3. **Email Confirmation:** Enter a valid personal email address and select **"Send Confirmation Code."** A 6-digit code is emailed to the address (it expires in 10 minutes; the resend cooldown is 60 seconds and allows up to 5 attempts). Enter the code and select **"Confirm Email & Continue."** The next steps stay locked until the code proves the applicant can read the inbox. The confirmed address becomes the identity used for Clerk sign-in and status access. Editing the address after confirmation voids the proof and repeats this step.
 4. **Operational Teams:** Select one or more published fellowship teams. The list is read live from **Teams & Units** in Sanity. Multi-team membership is supported and expected.
-5. **Residence:** Select a hall of residence (Halls 1–8) and enter a room number. Room data is encrypted before storage.
+5. **Residence:** Pick a hall of residence from the **Halls of Residence** table in Sanity (falls back to Halls 1–8 when the Studio is unreachable) and enter a room number. Every intake form and dashboard hall filter reads the same list, so renaming a hall updates everything. Room data is encrypted before storage.
 6. **Birthday:** Select the birthday **month and day**. The year is not collected.
-7. **Birthday Photo (Optional):** Upload a celebratory photo, maximum 5 MB. The image is compressed before upload; the server rejects stored assets larger than 2 MB.
+7. **Birthday Photo (Required):** Upload a celebratory photo, maximum 5 MB. The image is compressed before upload; the server rejects stored assets larger than 2 MB, and registration cannot be completed without it. The same picture becomes your Exco profile photo in the dashboard, and you can replace it any time later from the portal.
 8. **Review & Consent:** Review name, email, phone, selected teams, hostel/room, and birthday. Check the **NDPR consent** box and select **"Complete Registration"** (no second security check is required — it was passed once at step 1).
 
 > [!NOTE]
 > The intake form does **not** collect academic department, academic level, password, or an executive application. Executive positions are appointed separately and approved by the President.
 
 > [!NOTE]
-> Draft persistence: in-progress entries for **signed-out new-worker registrations** are auto-saved to the browser tab's session storage (`eccf_worker_reg_draft_v1`) — the current step, names, phone, email and its confirmation state, selected teams, hall/room, and birthday. Reopening `/register` in the same browser tab restores the draft where it left off. It does not carry to other tabs or survive a closed tab, and it is wiped as soon as registration completes successfully. Signed-in profile refreshes and self-service-token sessions do not use the draft store.
+> Draft persistence: in-progress entries for **signed-out new-worker registrations** are auto-saved to the browser tab's session storage (`eccf_worker_reg_draft_v1`) — the current step, names, phone, email and its confirmation state, selected teams, hall/room, and birthday. Reopening `/register` in the same browser tab restores the draft where it left off. An in-flight email-OTP challenge also survives a full page reload, so the verification screen appears immediately instead of restarting at the phone step. The draft does not carry to other tabs or survive a closed tab, and it is wiped as soon as registration completes successfully. Signed-in profile refreshes and self-service-token sessions do not use the draft store.
 
 #### Returning Worker Flow (4 Steps)
 **Signed-in trusted workers** use the Profile Refresh path above and start at step 2.
@@ -204,8 +204,9 @@ If the email matches a worker record linked to a different sign-in method, the p
 #### What Happens After Submission
 - The worker profile is stored as a private operational draft.
 - For a new profile, each selected team membership starts as **Pending** and is routed to that team's leader for verification. On a refresh, existing memberships keep their current status; newly selected teams start **Pending**.
+- When a team lead verifies a membership, the worker receives the official **"Welcome to the ECCF Workforce Platform"** email. It is sent once and tracked on the worker profile, so re-verifications do not re-send it.
 - New registrations show **"Registration Confirmed"**; profile refreshes show **"Profile Updated"**. Both screens list the selected teams, hall/room, and the note *"Review by Team Leads"*.
-- Executive appointments are **not** requested here. When the President later approves a position, the corresponding operational team membership is verified automatically.
+- Executive appointments are **not** requested here. When CSGB leadership records an appointed position in `/dashboard/executives`, the related operational team membership is verified automatically, and executive sign-in access is activated immediately.
 
 ### 2.2 Tracking Your Registration Status (`/register/status`)
 The status tracker is now **privacy-protected by Clerk**. There is no phone-number + OTP lookup on this page.
@@ -227,13 +228,16 @@ The status tracker is now **privacy-protected by Clerk**. There is no phone-numb
 2. Sign in through Clerk using **Google OAuth** or an **emailed verification code**. Passwords are not used.
 3. First-time Exco members who do not yet have a Clerk account use `/sign-up`.
 4. **Previously registered but cannot sign in?** Use the **"Activate Login"** form below the Clerk card. Enter the email address on your worker profile. The system finds the worker, creates or links the Clerk user, stores `clerkUserId` on the profile, and asks you to sign in with that same email.
-5. After authentication you land on `/dashboard`.
+5. After authentication you land on `/dashboard`. Only workers with an approved executive, team-lead, hall, or team-membership position resolve a dashboard session; anyone without one is returned to `/login` with an **approval pending** notice instead of an empty dashboard.
 
 Routing notes:
 - The dashboard middleware protects `/dashboard(.*)`.
 - `/dashboard/login` permanently redirects to `/login`.
 - `/dashboard/sign-up` permanently redirects to `/sign-up`.
 - `DASHBOARD_MOCK_AUTH=1` enables a local-only mock session outside production; it never applies in production.
+
+> [!NOTE]
+> Approved executives can sign in straight with Google when the Google account's verified email matches the email on their worker profile — the session bridge links them automatically. Legacy accounts that never signed in with Clerk still use the **"Activate Login"** form below the Clerk card.
 
 ---
 
@@ -242,43 +246,52 @@ Routing notes:
 The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form.
 
 ### 3.1 Overview Dashboard (`/dashboard`)
-The overview opens with a large **"Welcome, {name}"** greeting that doubles as the page title, finished in brand blue by the leader's **official appointed post** — resolved from the exco position or approved executive/Hall Pastor position (for example "Vice President", "Media Team Lead", "Hall Pastor (Hall 1)"; admins without a specific office show "CSGB Executive"). A quiet subtitle line follows and the workforce mail button sits beside it on wide screens. Serving teams no longer appear in the heading; they remain visible in the profile menu and workforce directory.
+The overview opens as a calm, attention-first **Executive Cockpit**: a date-only eyebrow (full weekday, day, month, year), then one greeting heading — **"Good morning, {firstName}"** finished in quiet muted text by the leader's **official appointed post** (for example " — President" or " — Hall Pastor (Hall 1)"; admins without a specific office show "CSGB Executive"). The greeting is the page title; serving teams appear in the profile menu and workforce directory, not in the heading. The heading is accompanied by a single **Record attendance** header action for every role with attendance access.
 
-**Available actions and panels:**
-- **Mail All Workers** (admins) or **Mail [Team]** (team leaders): opens the workforce email workflow. This is the page's only top-level action.
-- **People statistics** (admins, team leads, hall reps), laid out as two cards per row on phones and five across on desktop:
-  - First-timers this month
-  - Pending welfare requests
-  - Prayer requests in the last 7 days
-  - Workers (scoped caption: "In your hall" for Hall Reps, otherwise "Across all halls")
-  - Last service attendance with service type and relative date (full-width row on phones and tablets)
-- **Finance statistics** (admins and finance role), three cards on desktop:
-  - Income this month
-  - Expenses this month
-  - Net this month (Surplus / Deficit / Break-even; full-width row on phones and tablets)
-- **Recent First-Timers** and **Recent Welfare Requests** lists, shown only to roles that can access those sections.
+**"Do this now" Attention Queue** (first content block, streamed live from Sanity — no mock data):
+- A **role-scoped urgency queue** of the items that need someone today:
+  - **Pending worker verifications** — the names/count of workers still awaiting verification on your roster (urgent for verifying leaders; advisory for the President).
+  - **Executive onboarding** — leadership appointments awaiting action (President/CSGB view).
+  - **Active welfare cases** — pending student-support requests awaiting pastoral follow-up.
+  - **First-timers needing contact** — visitors not yet marked as followed up.
+- Items sort strictly by urgency, each linking into its section (e.g. **Verify N pending workers → Review approvals**). When nothing is open, the queue collapses to a quiet **"You're all caught up"** state.
+
+**Aligned pulse strip** (cards appear only for sections you can open) — two cards per row on phones and tablets, up to five across on desktop:
+- First-timers this month (month-to-date caption; prefixed "In your hall" for Hall Pastors)
+- Pending welfare requests (caption "Needs follow-up" / "All caught up")
+- Prayer requests (last 7 days)
+- Workers (scoped caption: "In your hall" for Hall Pastors, "In {team}" for regular Team Leaders, otherwise "Across all halls")
+- **Last meeting attendance** for regular Team Leaders (meeting title + relative day; empty state "No meetings recorded yet") or **Last service attendance** for everyone else (service type + relative day; "No services recorded yet")
+- Finance statistics (admins and finance role), three cards on desktop: Income / Expenses / Net this month, each captioned "Since 1 {month}", with Surplus / Deficit / Break-even on the Net card (full-width row on phones and tablets)
+
+**Activity lists (two columns on large screens):** **Recent First-Timers** and **Recent Welfare Requests**, shown only to roles that can access those sections.
 
 > [!IMPORTANT]
-> The overview no longer contains an attendance trends chart or a generic quick-actions grid, and it no longer repeats a section title in the top bar (the greeting itself is the title). Its only top-level action is the workforce mail link. The "last service attendance" card is the current at-a-glance attendance indicator.
+> The overview no longer contains an attendance trends chart, a quick-actions grid, or a workforce mail shortcut. All workforce email lives in the **Workforce Directory** (`/dashboard/workers`, the *Send Email to Workers* card). The last-attendance card is the current at-a-glance attendance indicator.
 
-### 3.2 Presidential Executive Approvals Console (`/dashboard/executives`)
+### 3.2 Executive Council & Leadership Roster Console (`/dashboard/executives`)
 > [!IMPORTANT]
-> `/dashboard/executives` is exclusively accessible to the **President**. The guard checks the derived `isPresident` capability (also settable with `canApproveExecutives`); all other roles are blocked.
+> Access is no longer President-only. The console opens for **CSGB executives** — President, Vice Presidents, General Secretary, and Prayer Coordinator (the `admin` role) — plus the **Fellowship Chaplain**. All others are redirected to the overview with an access-denied toast.
 
-#### Processing Executive Appointments:
-1. Open `/dashboard/executives`.
-2. Search by name, email, hall, office, or team.
-3. Filter with the category tabs:
-   - **CSGB** central offices: President, VP Admin / Brothers' Coordinator, VP Evangelism / Sisters' Coordinator, General Secretary.
-   - **Hall** positions: Hall Pastor / Assistant Hall Pastor for Halls 1–8.
-   - **Team** positions: Team Lead / Assistant Team Lead across the published operational teams.
-4. Review each card. The card shows the applicant's **name, photo, email, hall, requested position/rank, and submission date**. It does **not** show an academic level, because worker intake no longer collects one.
-5. Choose an action:
-   - **"Approve Appointment"** — records the approved position, grants the corresponding dashboard capabilities immediately, and automatically verifies the related team membership when the appointment is a team position.
-   - **Decline** — records the rejection. The applicant sees `Declined` on `/register/status`.
+#### Reading the leadership roster
+1. Open `/dashboard/executives`. The heading reads **Executive Council & Leadership Roster**, with four counters: **Total Leaders**, **CSGB Board**, **Hall Pastors**, and **Team Leads**.
+2. Search by name, hall, office, or team.
+3. Filter with the tab rail: **All**, **CSGB**, **Hall**, **Team**.
+4. Review each card: avatar/initials, name, mapped office, hall or team, rank, and appointment date.
+
+#### Managing appointments (President, Vice President, Chaplain, or admin role)
+- **Import Leadership Roster** — a bulk appointment pipeline from CSV/XLSX:
+  1. Upload the spreadsheet and choose options, including **auto-creating missing worker profiles**.
+  2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. new profiles to create, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows.
+  3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers, and unmatched leaders get created as worker profiles automatically.
+- After a managed import the affected executives are **activated immediately** — their dashboard sessions profile photo, post label, and permissions update on their next sign-in.
+- A manager can also **relieve** a worker of an appointed executive position or update the **Lead / Assistant** rank. Deep authorisations (approvers) come from the `canApproveExecutives` flag on the CSGB Role document.
 
 > [!NOTE]
-> There is no CSV import control in the rendered executive console. Bulk spreadsheet imports are not part of the current President workflow.
+> CSGB offices are dynamic: they are **`csgbRole` documents in Sanity** (baseline: President & Executive Shepherd, VP Admin/Brothers' Coordinator, VP Evangelism/Sisters' Coordinator, General Secretary, Prayer Coordinator). Adding, renaming, or reordering an office in the Studio updates selection dropdowns, dashboard labels, and access decisions everywhere.
+
+> [!NOTE]
+> There is no intake-form executive application. Appointments are bulk-imported or handled in the console on this page; `/register/status` directs workers to the President or Technical Administrator when a position is missing.
 
 ### 3.3 Sunday Announcements Engine (`/dashboard/announcements`)
 Access is limited to **CSGB members**: admins, the President, Vice Presidents, the General Secretary, and Prayer leadership (including a Prayer Team Lead). Ordinary team leads cannot open this section unless their position also satisfies the CSGB test.
@@ -308,10 +321,11 @@ There is **no "Send Broadcast on Publish" toggle** in the current modal. Publish
 The dashboard summary counters show total announcements, published notices, drafts, pinned notices, and broadcasted notices.
 
 ### 3.4 Pastoral & Workforce Oversight
-- **Workforce Directory (`/dashboard/workers`):** Fellowship-wide roster for admins; team-scoped for team leads; hall-scoped for hall reps; fellowship-wide read-only directory for Media leads. Includes pending approvals and workforce email.
-- **Prayer Feed (`/dashboard/prayer-requests`):** Confidential petitions submitted through `/connect`.
-- **Welfare Review (`/dashboard/welfare`):** Pending and resolved student support cases.
-- **First-Timers (`/dashboard/first-timers`):** Campus-wide for admins and outreach leads; hall-scoped for hall reps.
+- **Workforce Directory (`/dashboard/workers`):** Fellowship-wide roster for admins; team-scoped for regular team leads; hall-scoped for hall reps; fellowship-wide read-only directory for Media leads. Compact rows open a **profile drawer** used for verification, executive approval, and a replacement profile photo. Includes the workforce email card and pending-approval banners.
+- **Prayer Feed (`/dashboard/prayer-requests`):** Confidential petitions submitted through `/connect`; open to the CSGB, the Chaplain, and prayer leadership only.
+- **Welfare Hub (`/dashboard/welfare`):** the **Welfare Purse Ledger** plus the care-request queue; open to the Welfare & Medical team, the CSGB, and the Chaplain only.
+- **First-Timers (`/dashboard/first-timers`):** Campus-wide for admins and outreach leads; hall-scoped for hall reps; follow-up status is now tracked with leader attribution.
+- **Settings & Admin Tools (`/dashboard/settings`):** privileged roster import, worker offboarding, and directory-sync pipeline for the President and CSGB Admins.
 
 ---
 
@@ -414,13 +428,13 @@ The dashboard summary counters show total announcements, published notices, draf
 
 ### 4.7 Managing Operational Team Profiles (`teamUnit`)
 1. Open **"Teams & Units"**.
-2. Maintain each team's **name**, **system key slug**, **team photo**, **short description**, and **display order**.
+2. Maintain each team's **name**, **system key slug**, **team photo**, **short description**, **display order**, and **Meeting Day / Meeting Time / Meeting Venue** (all optional).
 3. Select **"Publish"**.
 
 > [!NOTE]
-> `teamUnit` is the single source of truth for team names. Once a team is **published**, it automatically appears in the registration picker, attendance team filters/rosters, the worker directory filter, and worker email audiences — no code change or redeploy is needed. The static list in `lib/dashboard/attendance-constants.ts` is an offline fallback used only when Sanity cannot be reached.
+> `teamUnit` is the single source of truth for team names. Once a team is **published**, it automatically appears in the registration picker, attendance team filters/rosters, the worker directory filter, the hall dropdown on intake forms, and worker email audiences — no code change or redeploy is needed. The static list in `lib/dashboard/attendance-constants.ts` is an offline fallback used only when Sanity cannot be reached.
 >
-> Team meeting days and banners are not fields on `teamUnit`. Meeting logistics belong in the service schedule, announcements, or team communication.
+> The meeting logistics fields are optional: when filled, the About page's Operational Teams cards show the day/time/venue chip; when left blank the chip is hidden. Weekly public services still live in the **Weekly Fellowship Schedule**.
 
 ### 4.8 Dashboard Sermon Management (`/dashboard/sermons`)
 Access is restricted to **Media leaders**. The check accepts an approved position on a team whose key is `media`/`media-technical` or whose name contains "Media", or a legacy media appointment. The admin role alone does not grant this section, and a CSGB admin without a media position is blocked. Because the check is name-based, an approved position on the **Drama/Creative Media Team** also qualifies.
@@ -497,8 +511,8 @@ Past meeting records can be reopened to review the saved roster.
 
 ### 5.3 Sending Team Emails
 1. Open `/dashboard/workers`.
-2. Use **"Broadcast Mail"** (admins) or **"Email Workers"** (team leads) in the header, or the expanded **Send Email to Workers** dialog.
-3. Choose the recipient scope available to your role (your team for team leads; all workers for admins).
+2. Use the **Send Email to Workers** card, or expand it into the full dialog.
+3. Choose the recipient scope available to your role — your team (or an individual member of it) for team leads; all workers or any individual for admins.
 4. Write the subject and message, then send through the configured Resend integration.
 
 > [!NOTE]
@@ -530,10 +544,12 @@ When a fresher or new student submits the Connect card or First Timer form and i
 > [!NOTE]
 > The current console does **not** provide a free-text follow-up notes field or an assignment workflow. Record keeping beyond the initial contact happens outside the dashboard (e.g., team records or a supervised follow-up log).
 
-### 6.3 Welfare, Prayer & Attendance
-- **Welfare (`/dashboard/welfare`):** Hall Reps can review welfare requests and mark cases resolved.
-- **Prayer (`/dashboard/prayer-requests`):** Hall Reps can read and copy prayer requests.
+### 6.3 Attendance & Section Limits
 - **Attendance (`/dashboard/attendance`):** Hall Reps can open the Attendance section and use the team-roster view. The **General Headcount** console is limited to admins and Ushering team members; Hall Reps cannot record general service headcounts unless they also hold an Ushering position.
+- **Welfare is no longer open to Hall Pastors.** The Welfare Hub is restricted to the Welfare & Medical team, the CSGB, and the Chaplain.
+- **Prayer petitions are no longer open to Hall Pastors.** The prayer feed is restricted to prayer leadership, the CSGB, and the Chaplain.
+
+Hall Pastors remain the follow-up anchor for visitors in their hall — see §6.2 — and the hall-scoped first-timers console still guides that work.
 
 ---
 
