@@ -295,7 +295,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       {/* Metric Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total First-Timers */}
-        <Card className="rounded-2xl border bg-card shadow-xs">
+        <Card className="rounded-2xl bg-card shadow-xs">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <UserPlus className="h-5 w-5 shrink-0" />
@@ -312,10 +312,8 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         {/* Awaiting Follow-up */}
         <Card
           onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
-          className={`rounded-2xl border cursor-pointer transition-all hover:shadow-xs ${
-            statusFilter === 'pending'
-              ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30'
-              : 'bg-card'
+          className={`rounded-2xl cursor-pointer transition-all hover:shadow-xs ${
+            statusFilter === 'pending' ? 'bg-amber-500/5' : 'bg-card'
           }`}
         >
           <CardContent className="flex items-center gap-4 p-5">
@@ -334,10 +332,8 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         {/* Followed Up */}
         <Card
           onClick={() => setStatusFilter(statusFilter === 'followed_up' ? 'all' : 'followed_up')}
-          className={`rounded-2xl border cursor-pointer transition-all hover:shadow-xs ${
-            statusFilter === 'followed_up'
-              ? 'border-emerald-500/50 bg-emerald-500/5 ring-1 ring-emerald-500/30'
-              : 'bg-card'
+          className={`rounded-2xl cursor-pointer transition-all hover:shadow-xs ${
+            statusFilter === 'followed_up' ? 'bg-emerald-500/5' : 'bg-card'
           }`}
         >
           <CardContent className="flex items-center gap-4 p-5">
@@ -354,7 +350,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
         </Card>
 
         {/* Hostel Coverage */}
-        <Card className="rounded-2xl border bg-card shadow-xs">
+        <Card className="rounded-2xl bg-card shadow-xs">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
               <Building2 className="h-5 w-5 shrink-0" />
@@ -429,7 +425,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       </div>
 
       {/* First-Timers Table (Desktop) */}
-      <div className="hidden rounded-2xl bg-card shadow-xs overflow-hidden sm:block border">
+      <div className="hidden rounded-2xl bg-card shadow-xs overflow-hidden sm:block">
         <Table aria-label="First-timers records">
           <TableHeader>
             <TableRow className="bg-muted/40">
@@ -633,7 +629,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
       {/* First-Timers Mobile Card List */}
       <div className="space-y-3 sm:hidden">
         {filteredRows.length === 0 ? (
-          <Card className="rounded-2xl border">
+          <Card className="rounded-2xl">
             <CardContent className="p-8 text-center">
               <Users className="mx-auto h-8 w-8 shrink-0 text-muted-foreground" />
               <p className="mt-2 text-sm font-semibold text-foreground">No first-timers found</p>
@@ -648,7 +644,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
           </Card>
         ) : (
           filteredRows.map((row) => (
-            <Card key={row._id} className="overflow-hidden border bg-card shadow-xs rounded-2xl">
+            <Card key={row._id} className="overflow-hidden bg-card shadow-xs rounded-2xl">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -918,7 +914,7 @@ export default function FirstTimersTable({ rows, session }: FirstTimersTableProp
 
                 {/* Contact Actions */}
                 {selectedVisitor.phoneNumber && (
-                  <div className="flex flex-col gap-2 pt-2 border-t">
+                  <div className="flex flex-col gap-2 pt-2">
                     <a
                       href={buildWhatsAppLink(selectedVisitor)}
                       target="_blank"

@@ -106,7 +106,7 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
         {entries.map((entry) => (
           <div
             key={entry._id}
-            className="rounded-2xl border bg-card p-4 shadow-xs space-y-3 transition-colors"
+            className="rounded-2xl bg-card p-4 shadow-xs space-y-3 transition-colors"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1">
@@ -120,7 +120,7 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
               <TransactionTypeBadge type={entry.type} />
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+            <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
               <div>
                 <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
                   Amount
@@ -140,7 +140,7 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t">
+            <div className="flex items-center justify-between pt-2">
               <div>
                 <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
                   Purse Balance
@@ -188,10 +188,10 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
       </div>
 
       {/* Desktop: Calm tabular view */}
-      <div className="hidden md:block rounded-2xl border bg-card shadow-xs overflow-hidden">
+      <div className="hidden md:block rounded-2xl bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b">
+            <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th scope="col" className="px-4 py-3.5 w-[110px]">
                   Date

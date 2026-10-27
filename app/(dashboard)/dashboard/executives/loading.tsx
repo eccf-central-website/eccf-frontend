@@ -17,7 +17,7 @@ export default function ExecutivesLoading() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 space-y-2">
+            <div key={i} className="rounded-2xl bg-card p-4 space-y-2">
               <Skeleton className="h-4 w-20 rounded" />
               <Skeleton className="h-8 w-12 rounded" />
             </div>
@@ -33,7 +33,7 @@ export default function ExecutivesLoading() {
         {/* Cards Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-border/60 bg-card p-5 space-y-4">
+            <div key={i} className="rounded-2xl bg-card p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-11 w-11 rounded-full" />
                 <div className="space-y-1.5 flex-1">

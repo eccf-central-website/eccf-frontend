@@ -148,7 +148,7 @@ export default function ExecutivesClient({
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+        <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
               <Crown className="h-5 w-5" />
@@ -164,7 +164,7 @@ export default function ExecutivesClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+        <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
               <Shield className="h-5 w-5" />
@@ -176,7 +176,7 @@ export default function ExecutivesClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+        <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
               <Building className="h-5 w-5" />
@@ -188,7 +188,7 @@ export default function ExecutivesClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+        <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               <Users className="h-5 w-5" />
@@ -202,7 +202,7 @@ export default function ExecutivesClient({
       </div>
 
       {unregisteredCount > 0 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-3 text-xs text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-2.5 rounded-xl bg-amber-500/10 px-3.5 py-3 text-xs text-amber-800 dark:text-amber-300">
           <Clock className="mt-0.5 h-4 w-4 shrink-0" />
           <p className="leading-relaxed">
             <span className="font-semibold">
@@ -326,7 +326,7 @@ export default function ExecutivesClient({
             return (
               <div
                 key={worker._id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-border hover:shadow-md"
+                className="group relative flex flex-col justify-between rounded-2xl bg-card p-5 shadow-sm transition-all hover:shadow-md"
               >
                 <div>
                   {/* Top: Avatar & Info */}
@@ -413,7 +413,7 @@ export default function ExecutivesClient({
                         return (
                           <div
                             key={pos.key}
-                            className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 border border-border/30"
+                            className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2"
                           >
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1.5">
@@ -452,7 +452,7 @@ export default function ExecutivesClient({
                 </div>
 
                 {/* Footer status */}
-                <div className="mt-4 flex items-center justify-between pt-2 text-[11px] text-muted-foreground border-t border-border/30">
+                <div className="mt-4 flex items-center justify-between pt-2 text-[11px] text-muted-foreground">
                   {worker.isRegistered ? (
                     <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                       <CheckCircle2 className="h-3.5 w-3.5" /> Active Roster
