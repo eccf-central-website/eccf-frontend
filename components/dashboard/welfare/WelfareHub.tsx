@@ -24,7 +24,7 @@ export default function WelfareHub({
   return (
     <div className="space-y-6">
       {/* Tab Navigation Pill Rail */}
-      <div className="flex border-b border-border/60 gap-4 sm:gap-6">
+      <div className="flex gap-4 sm:gap-6">
         <button
           type="button"
           onClick={() => setActiveTab('ledger')}

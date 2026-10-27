@@ -99,9 +99,9 @@
   --warning: 38 95% 56%; /* brand gold, lifted */
   --warning-foreground: 222 47% 8%;
 
-  /* Refined hairline borders & inputs */
-  --border: 220 22% 16.5%;
-  --input: 220 22% 16.5%;
+  /* Refined hairline borders & inputs — mild, low-contrast dark lines */
+  --border: 220 20% 11%;
+  --input: 220 20% 11%;
   --ring: 206 100% 60%;
 
   /* Grounded navigation sidebar — deeper than canvas */
@@ -109,7 +109,7 @@
   --sidebar-foreground: 217 25% 76%;
   --sidebar-accent: 206 85% 14%;
   --sidebar-accent-foreground: 206 100% 82%;
-  --sidebar-border: 225 30% 13%;
+  --sidebar-border: 225 25% 9%;
   --sidebar-ring: 206 100% 60%;
 
   /* Neutral dark theme-aware skeleton shimmer */

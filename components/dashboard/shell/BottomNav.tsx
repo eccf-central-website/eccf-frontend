@@ -85,7 +85,7 @@ export default function BottomNav({
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 border-t border-border/40 sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1">
@@ -219,7 +219,7 @@ export default function BottomNav({
                   </nav>
                 </div>
 
-                {actions && <div className="mt-3 pt-3 border-t border-border/40 flex justify-center">{actions}</div>}
+                {actions && <div className="mt-3 pt-3 flex justify-center">{actions}</div>}
               </SheetContent>
             </Sheet>
           </li>

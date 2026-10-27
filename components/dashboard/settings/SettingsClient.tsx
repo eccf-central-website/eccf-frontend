@@ -166,7 +166,7 @@ export default function SettingsClient({
   return (
     <div className="space-y-6">
       {/* Settings Navigation Tabs */}
-      <div className="flex border-b border-border/60 gap-2 sm:gap-4 overflow-x-auto">
+      <div className="flex gap-2 sm:gap-4 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('import')}

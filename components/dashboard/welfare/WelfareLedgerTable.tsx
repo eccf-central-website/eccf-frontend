@@ -178,7 +178,7 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
             </div>
 
             {(entry.recipient || entry.reference) && (
-              <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 pt-1 border-t border-border/40">
+              <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 pt-1">
                 {entry.recipient && <span>Beneficiary: {entry.recipient}</span>}
                 {entry.reference && <span className="font-mono">Ref: {entry.reference}</span>}
               </div>

@@ -395,7 +395,7 @@ export default function ExecutivesClient({
                   </div>
 
                   {/* Positions Held */}
-                  <div className="mt-4 space-y-2 border-t border-border/40 pt-3">
+                  <div className="mt-4 space-y-2 pt-3">
                     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                       Executive Appointments
                     </p>
