@@ -2,7 +2,7 @@
 
 > **Audience:** developers joining or returning to this codebase. This is the technical companion to `docs/OPERATIONAL_MANUAL.md` (operations & user flows), `docs/TESTING_PLAN.md` (manual QA), `docs/operational-data-privacy.md`, and `docs/ENCRYPTION_KEY_UNIFICATION.md`.
 >
-> **Snapshot of record:** 26 October 2026 — frontend code at `d6fcf54`, backend (`eccf-backend`) at `b4f94ba`.
+> **Snapshot of record:** 29 October 2026 — frontend code at `ae03c64`, backend (`eccf-backend`) at `dfff7fe`.
 
 ---
 
@@ -14,8 +14,8 @@
 | `eccf-backend` | Sanity Studio v3 + schema definitions | Studio at `https://eccf-backend.sanity.studio` |
 
 - Sanity project **`ynnot4j0`**, dataset **`production`**, access mode **private**. Anonymous API access is denied **even for published content**; every read authenticates with `SANITY_READ_TOKEN` (see `lib/sanity.ts` — `useCdn: false` everywhere, no public CDN).
-- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, and the operational set `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`, plus **published reference tables** `hallResidence` (Halls of Residence) and `csgbRole` (CSGB offices) that intake forms and access checks read dynamically.
-- Schema drift in the Oct 26 wave (`b4f94ba`): `teamUnit` gained optional `meetingDay`/`meetingTime`/`meetingVenue`; `firstTimer` gained follow-up attribution (`followedUp`, `followedUpAt`, `followedBy`, `followUpNotes`); `worker` gained `welcomeEmailSent`, `profileImageUrl`, and per-position `csgbRole`/`hallRef` references with projections (`csgbTitle: csgbRole.title`, `hallName: hallRef.name`); `attendanceLedger` entries carry a denormalised `loggedByName`; `csgbRole` documents carry `canApproveExecutives`/`isExecutiveShepherd`.
+- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, the operational set `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`, the **`executiveAppointment`** reservation doc (`pending_claim` → `claimed`, `guidanceEmailSentAt` idempotency), plus **published reference tables** `hallResidence` (Halls of Residence) and `csgbRole` (CSGB offices) that intake forms and access checks read dynamically.
+- Schema drift in the Oct waves (`dfff7fe`): `teamUnit` gained optional `meetingDay`/`meetingTime`/`meetingVenue`; `firstTimer` gained follow-up attribution (`followedUp`, `followedUpAt`, `followedBy`, `followUpNotes`); `worker` gained `welcomeEmailSent`, `profileImageUrl`, and per-position `csgbRole`/`hallRef` references with projections (`csgbTitle: csgbRole.title`, `hallName: hallRef.name`); `attendanceLedger` entries carry a denormalised `loggedByName`; `csgbRole` documents carry `canApproveExecutives`/`isExecutiveShepherd`. The frontend also writes **`worker.isExcoApproved`** on every activation path — the schema field is an *uncommitted* backend edit (`git diff schemaTypes/worker.ts`), commit it to keep schema and writers aligned.
 
 ---
 
@@ -64,8 +64,10 @@ eccf-frontend/
 │  ├─ encryption.ts                  # AES-256-GCM fields + HMAC blind indexes (§10)
 │  ├─ csgb-roles.ts                  # dynamic CSGB offices from Sanity csgbRole + baseline fallback
 │  ├─ halls.ts                       # dynamic Halls of Residence from Sanity hallResidence + Hall 1–8 fallback
-│  ├─ maintenance.ts, email/ (from.ts sender + layout.ts shared design system), security/, teams.ts,
-│  │  sermonSync.ts, image-compression.ts
+│  ├─ executive-matching.ts          # honorific cleaning + tokenized name keys for appointment matching
+│  ├─ executive-positions.ts         # signature-based position merge (no duplicate roles)
+│  ├─ maintenance.ts, email/ (from.ts sender, layout.ts shared design system, executive-appointment.ts
+│  │  appointment-guidance email), security/, teams.ts, sermonSync.ts, image-compression.ts
 │  └─ dashboard/                     # access, auth, rbac (≈530-line matrix), action-result, queries, format,
 │                                    # toast, dev-actions, shell.ts, attendance-constants + data/ and mock/
 ├─ scripts/                          # ops scripts — only tracked files; unchecked _*.mjs are gitignored
@@ -93,6 +95,7 @@ Route-group subtlety: route groups don't affect URLs. `/login` is served by `app
 - **Clerk is the only identity provider.** Google OAuth and emailed verification codes; no passwords. `NEXTAUTH_*` env vars are obsolete.
 - The Clerk user ↔ worker-profile bridge lives in `lib/dashboard/auth.ts` (`getDashboardSession`): resolves the worker by `clerkUserId`; falls back to matching a **Clerk-verified email** and auto-patches `clerkUserId` onto the profile. Unverified-email fallbacks are not trusted. A matching Google account works the same way, so approved executives can sign in with Google directly.
 - **Only executives get a dashboard session** (Oct 26 tightening): after the bridge resolves a profile, `deriveAccess()` runs and gates on the `isExecutive` capability. A worker whose memberships are all `Pending` gets `null` from `getSession()`, and `requireSession()`/`requireSection()` redirect to `/login?denied=approval_pending` — the login page renders the "approval pending" notice. Executive feeds like the logged-in registration status still work without a dashboard session.
+- **Reserved appointments claim at registration:** `commitExecutiveImport` writes unmatched leaders as `executiveAppointment` docs (`pending_claim`). On registration (`worker-registration.ts`), `claimPendingExecutiveAppointmentsForWorker()` matches by email/normalised name, appends positions via `mergeExecutivePositions`, sets `worker.isExcoApproved`, and dispatches the one-time guidance email. `reconcileRegisteredExecutives()` (triggered from the import dialog) re-sweeps registered workers.
 - "Activate Login" (`/login`, below the Clerk card) links an existing worker email to a fresh Clerk account.
 - The session carries the derived `access` block (§6), the official working position (`excoPosition`), hall/team memberships, and `profileImageUrl` for the shell avatar.
 - **Local mock auth:** `DASHBOARD_MOCK_AUTH=1` (ignored in production) creates a mock session from the `eccf-dev-role` cookie; `DASHBOARD_DATA_SOURCE=mock|sanity` swaps data (fixtures in `lib/dashboard/mock`); `DASHBOARD_MOCK_STATE=empty|error|slow` exercises loading states — plus the `/dashboard/dev/ui-states` gallery and `DevSwitcher` in the shell.
@@ -132,7 +135,7 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
 | :--- | :--- |
 | `worker-registration.ts` | 8-step intake: `checkWorkerPhoneAndInitiateVerification` (OTP + magic-link), email-ownership OTP for first-timers, profile refresh, submission; `sendWorkerWelcomeEmail()` helper (sent once on first membership verification, gated by `worker.welcomeEmailSent`) |
 | `worker-actions.ts`, `worker-email-actions.ts` | Worker CRM — verification approvals, `toggleExcoApproval`, profile photo update (`updateDashboardProfilePhotoAction`), verified offboarding (`deleteApprovedWorkerAction`), CSV roster import (`importWorkerRosterCsvAction`) — plus workforce mail |
-| `executive-suggestion-actions.ts` | Leadership spreadsheet import pipeline: `previewExecutiveSpreadsheet` (canonical `csgbRole`/`hallResidence`/`teamUnit` resolver + worker name matching) and `commitExecutiveImport` (smart-merge positions, auto-create missing workers, immediate activation); auth = President/VP/Chaplain/admin |
+| `executive-suggestion-actions.ts` | Leadership spreadsheet import pipeline: `previewExecutiveSpreadsheet` (canonical `csgbRole`/`hallResidence`/`teamUnit` resolver + worker name matching) and `commitExecutiveImport` — batched writes with per-row retry, `claimed` appointments for matched workers, **reservations** (`pending_claim`) for unregistered leaders when "Include unregistered EXCOs" is on, one-time guidance email per leader (`guidanceEmailSentAt` guard); also `claimPendingExecutiveAppointmentsForWorker` / `reconcileRegisteredExecutives`; auth = President/VP/Chaplain/admin |
 | `executive-actions.ts` | `relieveExecutivePosition` / `updateExecutiveRank` — **orphaned since `d6fcf54`** (the console's relieve/rank controls were removed); delete or re-wire |
 | `first-timer-actions.ts` | Follow-up toggle + remarks (`toggleFirstTimerFollowUpAction`), leader attribution & timestamps |
 | `welfare-ledger-actions.ts` | Welfare Purse Ledger entries — record (`recordWelfareLedgerEntry`) / delete, with running balance |
@@ -150,7 +153,7 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
 
 `lib/email/from.ts` → `resolveResendFrom()`: `RESEND_FROM_EMAIL` → `EMAIL_FROM` → development fallback `onboarding@resend.dev`. A configured bare domain (`example.org`) is auto-corrected to `team@example.org` with a logged warning; the fallback only delivers to the Resend account owner, so production requires a verified Resend domain. In production, rejected sends surface the real error to the user instead of silently simulating.
 
-All dashboard/worker mail renders through the shared design system **`lib/email/layout.ts`** (eyebrow + title + card body composition; hosted assets/links resolve `NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` → the production default). The official worker welcome email (`sendWorkerWelcomeEmail`, defined in `worker-registration.ts`) is dispatched by first membership verification in `worker-actions.ts` and is send-once via the `welcomeEmailSent` profile flag.
+All dashboard/worker mail renders through the shared design system **`lib/email/layout.ts`** (eyebrow + title + card body composition; hosted assets/links resolve `NEXT_PUBLIC_SITE_URL` → `NEXT_PUBLIC_APP_URL` → the production default). The official worker welcome email (`sendWorkerWelcomeEmail`, defined in `worker-registration.ts`) is dispatched by first membership verification in `worker-actions.ts` and is send-once via the `welcomeEmailSent` profile flag. The appointment-guidance email (`lib/email/executive-appointment.ts` → `sendExecutiveAppointmentEmail`) likewise fires once per leader — guarded by `executiveAppointment.guidanceEmailSentAt` so re-imports never duplicate it.
 
 ---
 
@@ -222,7 +225,9 @@ Manual test suites: `/qa` (public, noindex — six suites / 61 checks, 4-digit P
 - **Auth tightening:** sessions only for `isExecutive` workers → `/login?denied=approval_pending`; Google verified-email bridge; PWA renamed "ECCF Exco Dashboard"; 404 → `/`; `/dashboard/sign-up` → `/sign-up`; mandatory registration photo (compressed, ≤2 MB stored); team `meetingDay/Time/Venue` chips on About cards.
 - **Email:** shared design system `lib/email/layout.ts` + `NEXT_PUBLIC_SITE_URL`; send-once worker welcome email (`welcomeEmailSent`).
 
-**Open UI debt** — verified still present at `d6fcf54`; nobody has implemented fixes yet:
+**Landed in the follow-up wave** (`3b04b47` → `ae03c64`, backend `dfff7fe`): executive appointment **reservations** — unmatched import rows become `executiveAppointment` docs (`pending_claim`) instead of placeholder workers, claimed automatically at registration with `worker.isExcoApproved` set; batched import writes with per-row retry and the result dialog stays open; one-time **appointment-guidance email** (`lib/email/executive-appointment.ts`) with a direct dashboard link, deduped across re-imports via `guidanceEmailSentAt`; a `reconcileRegisteredExecutives()` sweep button; the console shows registered/awaiting counts and a reserved-leaders notice; shared position-merge helpers (`lib/executive-positions.ts`, `lib/executive-matching.ts`); plus a public body-copy +3px pass and dashboard dark-mode/table-contrast polish.
+
+**Open UI debt** — verified still present at `ae03c64`; nobody has implemented fixes yet:
 
 1. `components/dashboard/shell/MobileNav.tsx` — no theme toggle; the panel still says "Theme lives in the account menu at the top right." Decide: add the toggle or accept the pointer.
 2. `components/dashboard/pwa/InstallPwaButton.tsx` — mobile tap target is `h-8` (32 px, under the 44–48 px minimum) and still hardcodes `#0077cc`/`#0095ff` instead of tokens.
@@ -231,10 +236,11 @@ Manual test suites: `/qa` (public, noindex — six suites / 61 checks, 4-digit P
 
 **Repo/process debt:**
 
-- `app/actions/executive-actions.ts` is now **dead code** — the console's relieve/rank controls were removed in `d6fcf54` and nothing imports it. Choose: delete it or re-wire a replacement management control.
+- `app/actions/executive-actions.ts` is still **dead code** — `relieveExecutivePosition`/`updateExecutiveRank` exist but no component imports them (the console controls were removed in `d6fcf54`). Choose: delete it or re-wire a replacement management control.
+- **Backend working tree** pends the `worker.isExcoApproved` boolean (`git diff schemaTypes/worker.ts` in `eccf-backend`) that the frontend writes on every activation path — commit it to keep the API contract explicit.
 - `.env.example` references the missing `CLAUDE.md` (§12) — privacy guidance lives in `docs/operational-data-privacy.md`.
 - `docs/TESTING_PLAN.md` is still stale: its stack line lists "NextAuth.js" and "Bcrypt" (plus a `passwordHash` double-layer test) — Clerk replaced both and passwords are gone.
-- After committing this guide, `main` is **2 commits ahead** of `origin` (`077d4c9` manual sync + this guide) — **push when ready**.
+- After committing this update, `main` is **1 commit ahead** of `origin` — **push when ready**.
 
 ---
 

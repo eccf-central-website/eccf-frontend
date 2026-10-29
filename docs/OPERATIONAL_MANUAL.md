@@ -3,7 +3,7 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 26 October 2026 against frontend commit `d6fcf54` and backend commit `b4f94ba`.
+**Last verified:** 29 October 2026 against frontend commit `ae03c64` and backend commit `dfff7fe`.
 
 > **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the CSGB executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
 
@@ -206,7 +206,7 @@ If the email matches a worker record linked to a different sign-in method, the p
 - For a new profile, each selected team membership starts as **Pending** and is routed to that team's leader for verification. On a refresh, existing memberships keep their current status; newly selected teams start **Pending**.
 - When a team lead verifies a membership, the worker receives the official **"Welcome to the ECCF Workforce Platform"** email. It is sent once and tracked on the worker profile, so re-verifications do not re-send it.
 - New registrations show **"Registration Confirmed"**; profile refreshes show **"Profile Updated"**. Both screens list the selected teams, hall/room, and the note *"Review by Team Leads"*.
-- Executive appointments are **not** requested here. When CSGB leadership records an appointed position in `/dashboard/executives`, the related operational team membership is verified automatically, and executive sign-in access is activated immediately.
+- Executive appointments are **not** requested here, but CSGB leadership may have **reserved** an appointment for you in advance (see §3.2). When that happens, registering as a worker **claims the reservation automatically**: your leadership position records itself, dashboard access activates at once, and you receive the official appointment-guidance email with a direct link to the dashboard. Once any verified CSGB leadership records an appointed position, the related operational team membership is also verified automatically.
 
 ### 2.2 Tracking Your Registration Status (`/register/status`)
 The status tracker is now **privacy-protected by Clerk**. There is no phone-number + OTP lookup on this page.
@@ -274,24 +274,30 @@ The overview opens as a calm, attention-first **Executive Cockpit**: a date-only
 > Access is no longer President-only. The console opens for **CSGB executives** — President, Vice Presidents, General Secretary, and Prayer Coordinator (the `admin` role) — plus the **Fellowship Chaplain**. All others are redirected to the overview with an access-denied toast.
 
 #### Reading the leadership roster
-1. Open `/dashboard/executives`. The heading reads **Executive Council & Leadership Roster**, with four counters: **Total Leaders**, **CSGB Board**, **Hall Pastors**, and **Team Leads**.
+1. Open `/dashboard/executives`. The heading reads **Executive Council & Leadership Roster**, with counters for **Total Leaders**, **CSGB Board**, **Hall Pastors**, and **Team Leads**, plus a "N registered · N awaiting" note under the total.
 2. Search by name, hall, office, or team.
 3. Filter with the tab rail: **All**, **CSGB**, **Hall**, **Team**.
-4. Review each card: avatar/initials, name, mapped office, hall or team, rank, and appointment date.
+4. Review each card: avatar/initials, name, mapped office, hall or team, rank, and appointment date. Cards for **reserved appointments** (leaders who have not registered yet) carry an amber ring/badge; when any exist, an amber notice explains the count and that **dashboard access activates automatically the moment they register** as a worker.
 
 #### Managing appointments (President, Vice President, Chaplain, or admin role)
 - **Import Leadership Roster** — a bulk appointment pipeline from CSV/XLSX:
-  1. Upload the spreadsheet and choose options, including **auto-creating missing worker profiles**.
-  2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. new profiles to create, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows.
-  3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers, and unmatched leaders get created as worker profiles automatically.
-- After a managed import the affected executives are **activated immediately** — their dashboard sessions profile photo, post label, and permissions update on their next sign-in.
-- Re-running an import **updates existing appointments instead of duplicating them** (positional smart-merge). The mapping additionally resolves raw spreadsheet text — including synonyms like "VP 1", "Gen. Sec", or protocol→Ushering — to exact Sanity `csgbRole`, `hallResidence`, and `teamUnit` documents, and rank (Lead / Assistant) is set per row in the preview. There is no in-console relieve control; removing a superseded appointment happens in Sanity Studio. Deep authorisations (approvers) come from the `canApproveExecutives` flag on the CSGB Role document.
+  1. Upload the spreadsheet. The option **"Include unregistered EXCOs"** (ticked by default) controls what happens to names that match no registered worker: **reserve** the appointment for them rather than skipping.
+  2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. **unregistered leaders awaiting registration**, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows.
+  3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers (exact email first, then normalised name tokens with honorifics cleaned). Matched rows write the leadership position immediately; unmatched rows are held as **reservations** — no placeholder worker profile is created.
+  4. The result dialog stays open with the summary report (imported, reserved, and guidance-email counts, including "No duplicate emails sent — N leaders had already received appointment guidance").
+- After a managed import the affected executives are **activated immediately** — their dashboard profile photo, post label, and permissions update on their next sign-in.
+- Re-running an import **updates existing appointments instead of duplicating them** (signature-based smart-merge via `lib/executive-positions.ts`). The mapping additionally resolves raw spreadsheet text — including synonyms like "VP 1", "Gen. Sec", or protocol→Ushering — to exact Sanity `csgbRole`, `hallResidence`, and `teamUnit` documents, and rank (Lead / Assistant) is set per row in the preview. There is no in-console relieve control; removing a superseded appointment happens in Sanity Studio. Deep authorisations (approvers) come from the `canApproveExecutives` flag on the CSGB Role document.
+- **Guidance email** — every appointed leader receives the official **"Your Executive Appointment"** email once (position title, hall/team, and a direct dashboard link). It is sent **once per leader across re-imports** and never repeats for an already-guided leader.
+- **Reconcile** — the import dialog also runs a reconciliation sweep that links any registered worker whose reserved appointment is still unclaimed, activating the position and clearing stragglers.
+
+> [!NOTE]
+> Reservations and claiming: a reserved appointment is a `pending_claim` record in Sanity; when its holder registers on `/register`, the appointment is **claimed automatically** — the position lands on the new worker profile, dashboard access activates at once, and the guidance email goes out after the profile is created and the email verified.
 
 > [!NOTE]
 > CSGB offices are dynamic: they are **`csgbRole` documents in Sanity** (baseline: President & Executive Shepherd, VP Admin/Brothers' Coordinator, VP Evangelism/Sisters' Coordinator, General Secretary, Prayer Coordinator). Adding, renaming, or reordering an office in the Studio updates selection dropdowns, dashboard labels, and access decisions everywhere.
 
 > [!NOTE]
-> There is no intake-form executive application. Appointments are bulk-imported or handled in the console on this page; `/register/status` directs workers to the President or Technical Administrator when a position is missing.
+> There is no intake-form executive application. Appointments reach the roster through the import pipeline (or are pre-reserved for incoming leaders) and are handled on this page; `/register/status` directs workers to the President or Technical Administrator when a position is missing.
 
 ### 3.3 Sunday Announcements Engine (`/dashboard/announcements`)
 Access is limited to **CSGB members**: admins, the President, Vice Presidents, the General Secretary, and Prayer leadership (including a Prayer Team Lead). Ordinary team leads cannot open this section unless their position also satisfies the CSGB test.
@@ -974,7 +980,7 @@ The site is server-rendered on each request, so the change appears on the next l
 **A:** The PWA is scoped to `/dashboard` and its install prompts are deliberately suppressed on public pages. Leaders install it from the **Install App** button in the dashboard top bar. The app still requires network access and a valid Clerk session.
 
 ### Q7: Why is there no executive application in `/register`?
-**A:** Executive appointments are not self-service applications. CSGB leadership (President, Vice President, or Chaplain) maintains appointments in `/dashboard/executives` — including the bulk **Import Leadership Roster** spreadsheet flow — and `/register/status` directs workers to the President or Technical Administrator when a position is missing. The intake form collects worker profile and team membership only.
+**A:** Executive appointments are not self-service applications. CSGB leadership (President, Vice President, or Chaplain) maintains appointments in `/dashboard/executives` — including the bulk **Import Leadership Roster** spreadsheet flow, which can **reserve** appointments for leaders who have not signed up yet. A reserved appointment activates automatically the moment its holder registers as a worker, with immediate dashboard access and a one-time appointment-guidance email. `/register/status` directs workers to the President or Technical Administrator when a position is missing. The intake form collects worker profile and team membership only.
 
 ### Q8: Why did "Sync Feeds (RSS)" not import a new sermon?
 **A:** Check that `SPOTIFY_RSS_URL` and `YOUTUBE_RSS_URL` point to the current feeds, that the sermon exists in one of them, and that `YOUTUBE_API_KEY` is set if YouTube enrichment is expected. The sync is also throttled: public visits trigger it at most once every 15 minutes per server instance. Use the dashboard button for an immediate run.
