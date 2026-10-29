@@ -33,7 +33,7 @@ export default async function RecentWelfare({ session }: { session: ECCFSession 
   }
 
   return (
-    <ul className="divide-y">
+    <ul>
       {rows.map((w) => (
         <ActivityItem
           key={w._id}

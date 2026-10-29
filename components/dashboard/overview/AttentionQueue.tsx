@@ -82,14 +82,6 @@ export default async function AttentionQueue({
               </p>
             </div>
           </div>
-
-          <Link
-            href="/dashboard/attendance"
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 px-4 rounded-xl border border-border/50 bg-background hover:bg-muted/60 text-foreground text-xs font-semibold shadow-xs transition-colors shrink-0"
-          >
-            <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
-            <span>Record attendance</span>
-          </Link>
         </div>
       </div>
     )

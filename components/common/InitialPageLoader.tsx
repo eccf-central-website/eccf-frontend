@@ -1,9 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import LoadingState from './LoadingState'
 
+/**
+ * Routes that ship their own shell and loading states (the dashboard and its
+ * auth pages). The branded intro must never mount over them: it only appears
+ * after hydration, so it would paint *on top of* a fully rendered page and
+ * look like the app flickering back to a splash screen.
+ */
+const APP_SHELL_PREFIXES = ['/dashboard', '/login', '/sign-up', '/register']
+
 export default function InitialPageLoader() {
+  const pathname = usePathname() ?? ''
   const [mounted, setMounted] = useState(false)
   const [active, setActive] = useState(true)
 
@@ -17,7 +27,11 @@ export default function InitialPageLoader() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (!mounted || !active) return null
+  const hasOwnShell = APP_SHELL_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
+
+  if (!mounted || !active || hasOwnShell) return null
 
   return (
     <LoadingState

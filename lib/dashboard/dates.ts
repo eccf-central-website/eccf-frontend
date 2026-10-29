@@ -23,6 +23,12 @@ const isoDateFormat = new Intl.DateTimeFormat('en-CA', {
 
 const monthNameFormat = new Intl.DateTimeFormat('en-NG', { timeZone: FELLOWSHIP_TIME_ZONE, month: 'long' })
 
+const hourFormat = new Intl.DateTimeFormat('en-GB', {
+  timeZone: FELLOWSHIP_TIME_ZONE,
+  hour: 'numeric',
+  hourCycle: 'h23',
+})
+
 /** Lagos calendar date of an instant, as YYYY-MM-DD. */
 export function lagosDate(now: Date = new Date()): string {
   return isoDateFormat.format(now)
@@ -42,6 +48,24 @@ export function lagosDaysAgo(days: number, now: Date = new Date()): string {
 /** Name of the current Lagos month, e.g. "October". */
 export function lagosMonthLabel(now: Date = new Date()): string {
   return monthNameFormat.format(now)
+}
+
+/** Hour of the day (0–23) in the fellowship's timezone. */
+export function lagosHour(now: Date = new Date()): number {
+  const hour = hourFormat.formatToParts(now).find((part) => part.type === 'hour')
+  return hour ? Number(hour.value) : 0
+}
+
+/**
+ * Time-of-day greeting in the fellowship's timezone. Never rely on the
+ * server's local clock: production runs in UTC (or another region), so a
+ * Lagos afternoon can otherwise render as "Good morning".
+ */
+export function lagosGreeting(now: Date = new Date()): string {
+  const hour = lagosHour(now)
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
 /**

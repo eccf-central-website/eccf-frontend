@@ -30,7 +30,7 @@ export default async function RecentFirstTimers({ session }: { session: ECCFSess
   }
 
   return (
-    <ul className="divide-y">
+    <ul>
       {rows.map((ft) => {
         const meta = [ft.department, ft.level && `${ft.level} level`, ft.hall].filter(Boolean).join(' · ')
         return (

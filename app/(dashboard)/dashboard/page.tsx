@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { CalendarCheck } from 'lucide-react'
 import { requireSession } from '@/lib/dashboard/auth'
 import { canAccessSection, hasPermission, getLeaderPostTitle, SECTION_PATHS } from '@/lib/dashboard/rbac'
+import { FELLOWSHIP_TIME_ZONE, lagosGreeting } from '@/lib/dashboard/dates'
 import DeniedToast from '@/components/dashboard/shell/DeniedToast'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import ActivityList from '@/components/dashboard/overview/ActivityList'
@@ -38,12 +39,17 @@ export default async function DashboardOverviewPage() {
   const showWelfare = canAccessSection(session.role, 'welfare', session)
   const leaderPost = getLeaderPostTitle(session)
 
+  const now = new Date()
+
   const todayStr = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date())
+    timeZone: FELLOWSHIP_TIME_ZONE,
+  }).format(now)
+
+  const greeting = lagosGreeting(now)
 
   const firstName = session.name ? session.name.trim().split(/\s+/)[0] : 'Leader'
 
@@ -61,7 +67,7 @@ export default async function DashboardOverviewPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Good morning, {firstName}
+              {greeting}, {firstName}
               {leaderPost && (
                 <span className="font-normal text-muted-foreground text-base sm:text-lg"> — {leaderPost}</span>
               )}

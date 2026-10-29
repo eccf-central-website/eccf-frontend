@@ -112,8 +112,8 @@ export default function RecordWelfareTransactionModal({
       aria-labelledby="record-welfare-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in"
     >
-      <div className="relative w-full max-w-lg rounded-2xl border bg-card p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b">
+      <div className="relative w-full max-w-lg rounded-2xl bg-card p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-4">
           <div className="space-y-0.5">
             <h2 id="record-welfare-title" className="text-lg font-bold tracking-tight text-foreground">
               Record Purse Transaction
@@ -317,7 +317,7 @@ export default function RecordWelfareTransactionModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-4 border-t">
+          <div className="flex items-center justify-end gap-2 pt-4">
             <Button
               type="button"
               variant="outline"

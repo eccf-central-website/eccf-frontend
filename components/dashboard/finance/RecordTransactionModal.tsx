@@ -88,8 +88,8 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-2xl border bg-background p-6 shadow-xl space-y-5 animate-in fade-in-0 zoom-in-95">
-        <div className="flex items-center justify-between border-b pb-3">
+      <div className="relative w-full max-w-md rounded-2xl bg-background p-6 shadow-xl space-y-5 animate-in fade-in-0 zoom-in-95">
+        <div className="flex items-center justify-between pb-3">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <PlusCircle className="h-5 w-5 shrink-0 text-primary" />
             Record Transaction
@@ -181,7 +181,7 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
             />
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-2 border-t">
+          <div className="flex justify-end gap-2.5 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
