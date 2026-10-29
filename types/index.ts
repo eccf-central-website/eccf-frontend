@@ -66,6 +66,7 @@ export interface WorkerPosition {
   office?: string
   rank?: 'lead' | 'assistant'
   status: 'pending' | 'approved' | 'rejected'
+  submittedAt?: string
   decidedBy?: string
   decidedAt?: string
 }
@@ -177,6 +178,11 @@ export interface Worker {
   role?: WorkerRole
   excoPosition?: ExcoPosition
   isExcoApproved?: boolean
+  /** Lifecycle status — archived records lose dashboard access and stay out of rosters. */
+  status?: 'active' | 'archived'
+  archivedAt?: string
+  archivedBy?: string
+  archiveReason?: string
   requestedRole?: WorkerRole
   /** Workforce verification by Team Leader: 'pending' | 'verified' | 'rejected' */
   verificationStatus?: 'pending' | 'verified' | 'rejected'

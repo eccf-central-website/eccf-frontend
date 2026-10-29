@@ -11,11 +11,18 @@
  */
 
 import { revalidatePath } from 'next/cache'
-import { patchPrivateDocument, sanityPrivateClient } from '@/lib/sanity'
+import { randomUUID } from 'crypto'
+import {
+  createPrivateDocument,
+  patchPrivateDocument,
+  sanityPrivateClient,
+  sanityWriteClient,
+} from '@/lib/sanity'
+import { createBlindIndex, encrypt } from '@/lib/encryption'
 import { getSession } from '@/lib/dashboard/auth'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
-import { matchesTeam } from '@/lib/dashboard/data'
-import { canDeleteWorkers } from '@/lib/dashboard/rbac'
+import { auditMemberDirectory, matchesTeam } from '@/lib/dashboard/data'
+import { hasPermission } from '@/lib/dashboard/rbac'
 import { clerkClient } from '@clerk/nextjs/server'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
@@ -308,14 +315,32 @@ export async function toggleExcoApproval(
     worker.isExcoApproved = input.approved
     if (input.role) worker.role = input.role
     if (input.excoPosition) worker.excoPosition = input.excoPosition
+    if (!input.approved && Array.isArray(worker.positions)) {
+      worker.positions = worker.positions.map((position) => ({
+        ...position,
+        status: 'rejected' as const,
+        decidedAt: now.toISOString(),
+        decidedBy: String(session.worker?._id || session.id),
+      }))
+    }
     worker.updatedAt = now.toISOString()
     worker.updateLog = [...(worker.updateLog || []), logMessage]
 
     revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/executives')
+    revalidatePath('/dashboard/settings')
+    revalidatePath('/dashboard')
     return { ok: true, data: { workerId: input.workerId, approved: input.approved } }
   }
 
   try {
+    const existing = await sanityPrivateClient.fetch<{
+      positions?: Array<Record<string, unknown> & { status?: string }>
+    } | null>(
+      `*[_type == "worker" && _id == $id][0]{ positions }`,
+      { id: input.workerId }
+    )
+
     const patchData: Record<string, unknown> = {
       isExcoApproved: input.approved,
       updatedAt: now.toISOString(),
@@ -326,6 +351,14 @@ export async function toggleExcoApproval(
     if (input.excoPosition) {
       patchData.excoPosition = input.excoPosition
     }
+    if (!input.approved && existing?.positions) {
+      patchData.positions = existing.positions.map((position) => ({
+        ...position,
+        status: 'rejected',
+        decidedAt: now.toISOString(),
+        decidedBy: String(session.worker?._id || session.id),
+      }))
+    }
 
     await patchPrivateDocument(input.workerId)
       .set(patchData)
@@ -333,6 +366,9 @@ export async function toggleExcoApproval(
       .commit()
 
     revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/executives')
+    revalidatePath('/dashboard/settings')
+    revalidatePath('/dashboard')
     return { ok: true, data: { workerId: input.workerId, approved: input.approved } }
   } catch (err) {
     console.error('[toggleExcoApproval] Error:', err)
@@ -394,39 +430,101 @@ export interface DeleteWorkerInput {
   reason: string
 }
 
+interface OffboardingTarget {
+  _id: string
+  fullName: string
+  email?: string
+  clerkUserId?: string
+  isExcoApproved?: boolean
+  status?: string
+  positions?: Array<Record<string, unknown> & { status?: string }>
+  memberships?: Array<Record<string, unknown> & { status?: string }>
+}
+
+function isMockDataSource(): boolean {
+  return (
+    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+  )
+}
+
+function actorLabel(session: NonNullable<Awaited<ReturnType<typeof getSession>>>): string {
+  if (session.access?.isPresident) return 'Fellowship President'
+  if (session.access?.isVPAdmin) return 'Vice President - Admin'
+  if (session.access?.isChaplain) return 'Fellowship Chaplain'
+  return session.access?.titles?.[0] || session.excoPosition || 'CSGB Executive'
+}
+
+function clerkErrorStatus(error: unknown): number | undefined {
+  const candidate = error as { status?: number; statusCode?: number }
+  return candidate?.status ?? candidate?.statusCode
+}
+
+function isClerkNotFound(error: unknown): boolean {
+  if (clerkErrorStatus(error) === 404) return true
+  const candidate = error as { errors?: Array<{ code?: string }> }
+  return Boolean(candidate?.errors?.some((item) => item.code === 'resource_not_found'))
+}
+
+async function revokeClerkSessions(clerkUserId: string): Promise<string | null> {
+  try {
+    const client = await clerkClient()
+    const sessions = await client.sessions.getSessionList({ userId: clerkUserId })
+    await Promise.all(
+      sessions.data.map((session) => client.sessions.revokeSession(session.id))
+    )
+    return null
+  } catch (error) {
+    console.error('[offboarding] Clerk session revocation failed:', error)
+    return 'The worker was offboarded, but their existing sign-in sessions could not be revoked.'
+  }
+}
+
+async function deleteClerkUser(clerkUserId: string): Promise<void> {
+  const client = await clerkClient()
+  try {
+    await client.users.deleteUser(clerkUserId)
+  } catch (error) {
+    if (isClerkNotFound(error)) return
+    throw error
+  }
+}
+
 /**
  * Delete or Archive an Approved Worker — Privileged Action.
- * Strictly gated to Christian Student Governing Board (CSGB) and Chaplains.
- * Provides double-confirmation name typing and audit tracking when a worker leaves the team.
+ *
+ * - Permanent deletion requires an approved target (or an already archived one).
+ * - Archiving revokes every approved position and membership, sets the worker
+ *   to archived/rejected, and revokes any live Clerk sessions.
+ * - Both paths write a durable audit document. Permanent deletion commits the
+ *   audit record and the document delete in the same Sanity transaction.
  */
 export async function deleteApprovedWorkerAction(
   input: DeleteWorkerInput
-): Promise<ActionResult<{ workerId: string; status: 'archived' | 'deleted' }>> {
+): Promise<ActionResult<{ workerId: string; status: 'archived' | 'deleted'; warning?: string }>> {
   const session = await getSession()
   if (!session) {
     return { ok: false, error: 'Your session has expired. Please sign in again.' }
   }
 
-  if (!canDeleteWorkers(session)) {
+  if (!hasPermission(session.role, 'workers:delete', session)) {
     return {
       ok: false,
-      error: 'Permission denied. Only Christian Student Governing Board (CSGB) and Chaplains can delete worker profiles.',
+      error: 'Permission denied. Only the President or VP Admin can offboard worker profiles.',
     }
   }
 
-  const isMock =
-    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
-    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+  const now = new Date()
+  const nowIso = now.toISOString()
+  const reason = input.reason.trim() || 'Administrative offboarding'
+  const actorRole = actorLabel(session)
+  const actorId = String(session.worker?._id || session.id)
+  const actorName = session.name || actorId
+  const logMsg = `Worker record ${
+    input.policy === 'archive' ? 'archived' : 'permanently deleted'
+  } by ${actorRole} (${actorName}): ${reason}`
 
-  const actorRole = session.access?.isPresident
-    ? 'Fellowship President'
-    : session.access?.isChaplain || (session.role as string) === 'chaplain' || session.excoPosition?.toLowerCase().includes('chaplain')
-    ? 'Fellowship Chaplain'
-    : session.access?.titles?.[0] || (session.role === 'admin' ? 'CSGB Admin' : 'CSGB Executive')
-
-  const logMsg = `Worker record ${input.policy === 'archive' ? 'archived' : 'permanently deleted'} by ${actorRole} (${session.name || session.id}): ${input.reason}`
-
-  if (isMock) {
+  if (isMockDataSource()) {
     const idx = MOCK_WORKERS.findIndex((w) => w._id === input.workerId)
     if (idx === -1) {
       return { ok: false, error: 'Worker record not found.' }
@@ -436,6 +534,20 @@ export async function deleteApprovedWorkerAction(
       return { ok: false, error: 'Confirmation name does not match the worker name.' }
     }
 
+    const mockPositions = Array.isArray(worker.positions) ? worker.positions : []
+    const approvedPositionCount = mockPositions.filter((p) => p.status === 'approved').length
+    if (
+      input.policy === 'permanent' &&
+      worker.status !== 'archived' &&
+      !worker.isExcoApproved &&
+      approvedPositionCount === 0
+    ) {
+      return {
+        ok: false,
+        error: 'Only an approved worker can be permanently deleted. Archive the record instead.',
+      }
+    }
+
     if (input.policy === 'permanent') {
       MOCK_WORKERS.splice(idx, 1)
     } else {
@@ -443,26 +555,50 @@ export async function deleteApprovedWorkerAction(
       rec.status = 'archived'
       rec.verificationStatus = 'rejected'
       rec.isExcoApproved = false
+      rec.archivedAt = nowIso
+      rec.archivedBy = actorName
+      rec.archiveReason = reason
+      rec.positions = mockPositions.map((position) => ({
+        ...position,
+        status: 'rejected',
+        decidedAt: nowIso,
+        decidedBy: actorId,
+      }))
+      rec.memberships = (worker.memberships || []).map((membership) => ({
+        ...membership,
+        status: 'rejected',
+        decidedAt: nowIso,
+        decidedBy: actorId,
+      }))
       const logs = Array.isArray(rec.updateLog) ? (rec.updateLog as string[]) : []
       logs.push(logMsg)
       rec.updateLog = logs
     }
 
     revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
-    return { ok: true, data: { workerId: input.workerId, status: input.policy === 'archive' ? 'archived' : 'deleted' } }
+    revalidatePath('/dashboard')
+    return {
+      ok: true,
+      data: {
+        workerId: input.workerId,
+        status: input.policy === 'archive' ? 'archived' : 'deleted',
+      },
+    }
   }
 
   try {
-    const existing = await sanityPrivateClient.fetch<{
-      _id: string
-      fullName: string
-      clerkUserId?: string
-    }>(
+    const existing = await sanityPrivateClient.fetch<OffboardingTarget | null>(
       `*[_type == "worker" && _id == $id][0]{
         _id,
         fullName,
-        clerkUserId
+        email,
+        clerkUserId,
+        isExcoApproved,
+        status,
+        positions,
+        memberships
       }`,
       { id: input.workerId }
     )
@@ -475,32 +611,138 @@ export async function deleteApprovedWorkerAction(
       return { ok: false, error: 'Confirmation name does not match the worker name.' }
     }
 
+    const positions = Array.isArray(existing.positions) ? existing.positions : []
+    const memberships = Array.isArray(existing.memberships) ? existing.memberships : []
+    const approvedPositionCount = positions.filter((p) => p.status === 'approved').length
+
+    if (
+      input.policy === 'permanent' &&
+      existing.status !== 'archived' &&
+      !existing.isExcoApproved &&
+      approvedPositionCount === 0
+    ) {
+      return {
+        ok: false,
+        error: 'Only an approved worker can be permanently deleted. Archive the record instead.',
+      }
+    }
+
     if (input.policy === 'permanent') {
-      // If the worker had a linked Clerk user account, attempt to delete/clean it up
+      // Fail closed: if the linked Clerk account cannot be removed, keep the
+      // Sanity record intact so the administrator can retry safely.
       if (existing.clerkUserId) {
         try {
-          const client = await clerkClient()
-          await client.users.deleteUser(existing.clerkUserId)
+          await deleteClerkUser(existing.clerkUserId)
         } catch (clerkErr) {
-          console.warn('[deleteApprovedWorkerAction] Clerk deleteUser notice:', clerkErr)
+          console.error('[deleteApprovedWorkerAction] Clerk deleteUser failed:', clerkErr)
+          return {
+            ok: false,
+            error:
+              'The linked Clerk sign-in account could not be deleted. No worker record was removed. Please retry or archive the worker instead.',
+          }
         }
       }
 
-      await sanityPrivateClient.delete(input.workerId)
+      const auditDoc = {
+        _type: 'workerOffboardingAudit',
+        policy: 'permanent',
+        workerId: existing._id,
+        workerName: existing.fullName,
+        workerEmail: existing.email,
+        actorId,
+        actorName,
+        actorRole,
+        reason,
+        approvedPositionCount,
+        membershipCount: memberships.length,
+        clerkUserId: existing.clerkUserId,
+        deletedAt: nowIso,
+        createdAt: nowIso,
+      }
+
+      // The audit record and the delete commit together, or not at all.
+      await sanityWriteClient.transaction().create(auditDoc).delete(existing._id).commit()
     } else {
-      await patchPrivateDocument(input.workerId)
-        .set({
-          status: 'archived',
-          verificationStatus: 'rejected',
-          isExcoApproved: false,
-        })
-        .append('updateLog', [logMsg])
+      const revokedPositions = positions.map((position) => ({
+        ...position,
+        status: 'rejected',
+        decidedAt: nowIso,
+        decidedBy: actorId,
+      }))
+      const revokedMemberships = memberships.map((membership) => ({
+        ...membership,
+        status: 'rejected',
+        decidedAt: nowIso,
+        decidedBy: actorId,
+      }))
+
+      const auditDoc = {
+        _type: 'workerOffboardingAudit',
+        policy: 'archive',
+        workerId: existing._id,
+        workerName: existing.fullName,
+        workerEmail: existing.email,
+        actorId,
+        actorName,
+        actorRole,
+        reason,
+        approvedPositionCount,
+        membershipCount: memberships.length,
+        clerkUserId: existing.clerkUserId,
+        archivedAt: nowIso,
+        createdAt: nowIso,
+      }
+
+      await sanityWriteClient
+        .transaction()
+        .patch(existing._id, (patch) =>
+          patch
+            .set({
+              status: 'archived',
+              verificationStatus: 'rejected',
+              isExcoApproved: false,
+              archivedAt: nowIso,
+              archivedBy: actorName,
+              archiveReason: reason,
+              positions: revokedPositions,
+              memberships: revokedMemberships,
+              updatedAt: nowIso,
+            })
+            .append('updateLog', [logMsg])
+        )
+        .create(auditDoc)
         .commit()
+
+      if (existing.clerkUserId) {
+        const warning = await revokeClerkSessions(existing.clerkUserId)
+        if (warning) {
+          revalidatePath('/dashboard/workers')
+          revalidatePath('/dashboard/executives')
+          revalidatePath('/dashboard/settings')
+          revalidatePath('/dashboard')
+          return {
+            ok: true,
+            data: {
+              workerId: input.workerId,
+              status: 'archived',
+              warning,
+            },
+          }
+        }
+      }
     }
 
     revalidatePath('/dashboard/workers')
+    revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
-    return { ok: true, data: { workerId: input.workerId, status: input.policy === 'archive' ? 'archived' : 'deleted' } }
+    revalidatePath('/dashboard')
+    return {
+      ok: true,
+      data: {
+        workerId: input.workerId,
+        status: input.policy === 'archive' ? 'archived' : 'deleted',
+      },
+    }
   } catch (err) {
     console.error('[deleteApprovedWorkerAction] Error:', err)
     return { ok: false, error: 'Failed to process worker deletion. Please check server logs.' }
@@ -515,55 +757,279 @@ export interface WorkerRosterCsvRow {
   hall?: string
 }
 
+export interface WorkerRosterImportResult {
+  importedCount: number
+  updatedCount: number
+  skippedCount: number
+  errors: string[]
+}
+
+interface TeamUnitLookup {
+  _id: string
+  name: string
+  key?: string
+}
+
+function normalizeTeamToken(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\bteam\b/g, '')
+    .replace(/[/&,._-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function matchTeamUnit(
+  requested: string,
+  units: TeamUnitLookup[]
+): TeamUnitLookup | undefined {
+  const exact = units.find((unit) => unit.name.toLowerCase() === requested.toLowerCase())
+  if (exact) return exact
+
+  const slug = requested
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  const keyMatch = units.find((unit) => unit.key?.toLowerCase() === slug)
+  if (keyMatch) return keyMatch
+
+  const requestedToken = normalizeTeamToken(requested)
+  return units.find((unit) => {
+    const unitToken = normalizeTeamToken(unit.name)
+    return (
+      unitToken === requestedToken ||
+      unitToken.includes(requestedToken) ||
+      requestedToken.includes(unitToken)
+    )
+  })
+}
+
 /**
  * Import Worker Roster CSV — Privileged Admin Action.
- * Batch ingests and validates fellowship workers.
+ *
+ * Persists real worker records: new emails create worker documents, existing
+ * emails are updated, and optional team names are resolved to `teamUnit`
+ * references. Every write is logged on the worker's updateLog.
  */
 export async function importWorkerRosterCsvAction(
   rows: WorkerRosterCsvRow[]
-): Promise<ActionResult<{ importedCount: number; errors: string[] }>> {
+): Promise<ActionResult<WorkerRosterImportResult>> {
   const session = await getSession()
   if (!session) {
     return { ok: false, error: 'Your session has expired. Please sign in again.' }
   }
 
-  const isPresident = Boolean(session.access?.isPresident)
-  const isCSGB = Boolean(session.access?.isCSGB) || session.role === 'admin'
-
-  if (!isPresident && !isCSGB) {
-    return { ok: false, error: 'Permission denied. Only fellowship executives can import worker rosters.' }
+  if (!hasPermission(session.role, 'workers:import', session)) {
+    return { ok: false, error: 'Permission denied. Only privileged Settings administrators can import worker rosters.' }
   }
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return { ok: false, error: 'No valid worker rows provided in CSV.' }
   }
 
-  const isMock =
-    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
-    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+  const isMock = isMockDataSource()
+  const now = new Date()
+  const today = now.toLocaleDateString('en-CA')
+  const nowIso = now.toISOString()
+  const actorName = session.name || String(session.worker?._id || session.id)
+  const actorRole = actorLabel(session)
+  const logPrefix = `Worker roster CSV imported by ${actorRole} (${actorName}) on ${today}`
 
   const errors: string[] = []
   let importedCount = 0
+  let updatedCount = 0
+  let skippedCount = 0
+  const seenEmails = new Set<string>()
+
+  let teamUnits: TeamUnitLookup[] = []
+  if (!isMock) {
+    try {
+      teamUnits = await sanityPrivateClient.fetch<TeamUnitLookup[]>(
+        `*[_type == "teamUnit"]{ _id, name, key }`
+      )
+    } catch (err) {
+      console.error('[importWorkerRosterCsvAction] Team lookup failed:', err)
+      return {
+        ok: false,
+        error: 'Could not load the team directory. No workers were imported. Please retry.',
+      }
+    }
+  }
 
   for (const row of rows) {
-    if (!row.fullName || !row.email) {
-      errors.push(`Skipped row missing full name or email: ${JSON.stringify(row)}`)
+    const fullName = String(row.fullName || '').trim()
+    const email = String(row.email || '').trim().toLowerCase()
+    const phone = String(row.phone || '').trim()
+    const teamName = String(row.team || '').trim()
+    const hall = String(row.hall || '').trim()
+
+    if (!fullName || !email) {
+      skippedCount++
+      errors.push(`Skipped a row missing a full name or email address.`)
       continue
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      skippedCount++
+      errors.push(`${fullName}: "${email}" is not a valid email address.`)
+      continue
+    }
+    if (seenEmails.has(email)) {
+      skippedCount++
+      errors.push(`${fullName}: duplicate email in this file (${email}).`)
+      continue
+    }
+    seenEmails.add(email)
+
+    const matchedTeam = teamName ? matchTeamUnit(teamName, teamUnits) : undefined
+    if (teamName && !isMock && !matchedTeam) {
+      errors.push(`${fullName}: team "${teamName}" was not found, so no team assignment was added.`)
     }
 
     if (isMock) {
-      importedCount++
+      const existing = MOCK_WORKERS.find(
+        (worker) => worker.email?.trim().toLowerCase() === email
+      )
+      if (existing) {
+        if (!existing.fullName) existing.fullName = fullName
+        if (hall && !existing.hall) existing.hall = hall
+        if (teamName) {
+          const teams = Array.isArray(existing.teams) ? existing.teams : []
+          if (!teams.some((team) => String(team).toLowerCase() === teamName.toLowerCase())) {
+            existing.teams = [...teams, teamName]
+          }
+          if (!existing.team) existing.team = teamName
+        }
+        existing.updatedAt = nowIso
+        existing.updateLog = [...(existing.updateLog || []), `${logPrefix}: updated existing record`]
+        updatedCount++
+      } else {
+        MOCK_WORKERS.push({
+          _id: `mock-worker-import-${randomUUID().replace(/-/g, '').slice(0, 10)}`,
+          fullName,
+          email,
+          team: teamName || '',
+          teams: teamName ? [teamName] : [],
+          hall,
+          verificationStatus: 'pending',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          updateLog: [`${logPrefix}: created new record`],
+        })
+        importedCount++
+      }
+      continue
+    }
+
+    try {
+      const existing = await sanityPrivateClient.fetch<{
+        _id: string
+        fullName?: string
+        hall?: string
+        memberships?: Array<Record<string, unknown>>
+      } | null>(
+        `*[_type == "worker" && lower(email) == $email][0]{
+          _id,
+          fullName,
+          hall,
+          memberships
+        }`,
+        { email }
+      )
+
+      const membership = matchedTeam
+        ? {
+            _key: randomUUID().replace(/-/g, '').slice(0, 12),
+            team: { _type: 'reference', _ref: matchedTeam._id },
+            status: 'pending',
+          }
+        : undefined
+
+      if (existing) {
+        const existingMemberships = Array.isArray(existing.memberships)
+          ? existing.memberships
+          : []
+        const alreadyOnTeam = membership
+          ? existingMemberships.some((item) => {
+              const teamRef = item.team as { _ref?: string } | undefined
+              return teamRef?._ref === matchedTeam?._id
+            })
+          : false
+
+        const patchData: Record<string, unknown> = { updatedAt: nowIso }
+        if (!existing.fullName) patchData.fullName = fullName
+        if (hall && existing.hall !== hall) patchData.hall = hall
+        if (membership && !alreadyOnTeam) {
+          patchData.memberships = [...existingMemberships, membership]
+        }
+
+        await patchPrivateDocument(existing._id)
+          .set(patchData)
+          .append('updateLog', [`${logPrefix}: updated existing record`])
+          .commit()
+        updatedCount++
+      } else {
+        await createPrivateDocument({
+          _type: 'worker',
+          fullName,
+          email,
+          ...(phone
+            ? {
+                phoneNumber: encrypt(phone),
+                phoneBlindIndex: createBlindIndex(phone),
+              }
+            : {}),
+          ...(hall ? { hall } : {}),
+          ...(membership ? { memberships: [membership] } : {}),
+          verificationStatus: 'pending',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          updateLog: [`${logPrefix}: created new record`],
+        })
+        importedCount++
+      }
+    } catch (err) {
+      console.error('[importWorkerRosterCsvAction] Row write failed:', email, err)
+      skippedCount++
+      errors.push(`${fullName}: could not be saved. Please retry this row.`)
     }
   }
 
   revalidatePath('/dashboard/workers')
   revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
 
   return {
     ok: true,
-    data: {
-      importedCount: isMock ? rows.length : importedCount,
-      errors,
-    },
+    data: { importedCount, updatedCount, skippedCount, errors },
+  }
+}
+
+export interface MemberDirectorySyncResult {
+  scanned: number
+  pendingAnomalies: number
+  details: string[]
+}
+
+/**
+ * Member Directory Sync — a live audit of worker records. Reports missing
+ * contact details, missing team assignments, and memberships still awaiting
+ * verification instead of pretending the directory is always clean.
+ */
+export async function syncMemberDirectoryAction(): Promise<ActionResult<MemberDirectorySyncResult>> {
+  const session = await getSession()
+  if (!session) {
+    return { ok: false, error: 'Your session has expired. Please sign in again.' }
+  }
+
+  if (!hasPermission(session.role, 'settings:view', session)) {
+    return { ok: false, error: 'Permission denied. Only privileged Settings administrators can sync the member directory.' }
+  }
+
+  try {
+    const result = await auditMemberDirectory(session)
+    return { ok: true, data: result }
+  } catch (err) {
+    console.error('[syncMemberDirectoryAction] Error:', err)
+    return { ok: false, error: 'Member directory sync failed. Please try again.' }
   }
 }

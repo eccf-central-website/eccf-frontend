@@ -30,6 +30,7 @@ export interface WorkerPosition {
   office?: string
   rank?: 'lead' | 'assistant'
   status: 'pending' | 'approved' | 'rejected'
+  submittedAt?: string
   decidedBy?: string
   decidedAt?: string
 }
@@ -53,12 +54,23 @@ export interface WorkerAccess {
   isExecutive: boolean
   isPresident: boolean
   isVP: boolean
+  /** Vice President — Admin / Brothers' Coordinator (the privileged Settings gate). */
+  isVPAdmin: boolean
   isCSGB: boolean
   isPrayerCoordinator: boolean
   isFinance: boolean
   isWelfare: boolean
   isMedia: boolean
   isChaplain: boolean
+  /**
+   * Explicit authority to approve executive appointments. Comes from the
+   * `canApproveExecutives` flag on an approved CSGB role (or the worker-level
+   * fallback when no positions exist), with the President as the final fallback.
+   *
+   * Kept separate from `isPresident`: holding an approver flag must never make a
+   * Vice President or General Secretary read as the President.
+   */
+  canApproveExecutives: boolean
   leadsTeamIds: string[]
   leadsTeamKeys: string[]
   repsHalls: string[]
@@ -114,12 +126,14 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       isExecutive: false,
       isPresident: false,
       isVP: false,
+      isVPAdmin: false,
       isCSGB: false,
       isPrayerCoordinator: false,
       isFinance: false,
       isWelfare: false,
       isMedia: false,
       isChaplain: false,
+      canApproveExecutives: false,
       leadsTeamIds: [],
       leadsTeamKeys: [],
       repsHalls: [],
@@ -204,14 +218,32 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     approvedPositions.some(
       (p) =>
         p.kind === 'csgb' &&
-        (p.canApproveExecutives || p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president')
+        (p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president')
     ) ||
-    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president')) ||
-    (Boolean(worker.canApproveExecutives) && approvedPositions.length === 0)
+    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president'))
 
   const isVP =
     approvedPositions.some((p) => p.kind === 'csgb' && (p.office?.toLowerCase().includes('vp') || p.office?.toLowerCase().includes('vice president'))) ||
     (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('vp'))
+
+  const isVPAdmin =
+    approvedPositions.some(
+      (p) =>
+        p.kind === 'csgb' &&
+        (p.csgbRoleKey === 'vp-admin' ||
+          (p.office?.toLowerCase().includes('vice president') &&
+            p.office?.toLowerCase().includes('admin')))
+    ) ||
+    (legacyIsExcoApproved &&
+      legacyExcoPosition?.toLowerCase().includes('vice president') &&
+      legacyExcoPosition?.toLowerCase().includes('admin'))
+
+  // Explicit approver authority is separate from the President identity.
+  // The President remains the fallback when no explicit flag is stored.
+  const canApproveExecutives =
+    isPresident ||
+    approvedPositions.some((p) => p.kind === 'csgb' && p.canApproveExecutives) ||
+    (Boolean(worker.canApproveExecutives) && approvedPositions.length === 0)
 
   const isChaplain =
     approvedPositions.some((p) => p.office?.toLowerCase().includes('chaplain')) ||
@@ -311,12 +343,14 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     isExecutive,
     isPresident: Boolean(isPresident),
     isVP: Boolean(isVP),
+    isVPAdmin: Boolean(isVPAdmin),
     isCSGB: Boolean(isCSGB),
     isPrayerCoordinator: Boolean(isPrayerCoordinator),
     isFinance: Boolean(isFinance),
     isWelfare: Boolean(isWelfare),
     isMedia: Boolean(isMedia),
     isChaplain: Boolean(isChaplain),
+    canApproveExecutives: Boolean(canApproveExecutives),
     leadsTeamIds,
     leadsTeamKeys,
     repsHalls,

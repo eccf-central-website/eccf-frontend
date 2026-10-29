@@ -31,7 +31,6 @@ export default async function PrayerRequestsPage() {
   }
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -26,7 +26,6 @@ export default async function WelfarePage() {
   ])
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',

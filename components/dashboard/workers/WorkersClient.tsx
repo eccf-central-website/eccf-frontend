@@ -299,7 +299,7 @@ export default function WorkersClient({ rows: initialRows, session, teamOptions,
     })
   }
 
-  // Handle Worker Deletion / Offboarding (CSGB & Chaplains only)
+  // Handle Worker Deletion / Offboarding (privileged Settings administrators)
   function handleDeleteWorker() {
     if (!workerToDelete) return
     if (confirmDeleteName.trim().toLowerCase() !== workerToDelete.fullName.trim().toLowerCase()) {

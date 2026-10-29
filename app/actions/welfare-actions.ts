@@ -16,7 +16,7 @@ export async function resolveWelfareRequest(requestId: string) {
   }
 
   try {
-    requirePermission(session.role, 'welfare:resolve')
+    requirePermission(session.role, 'welfare:resolve', session)
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }

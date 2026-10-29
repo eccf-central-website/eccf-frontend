@@ -6,6 +6,9 @@ test.describe('Mobile dashboard smoke', () => {
     await page.context().addCookies([
       { name: 'eccf-dev-role', value: 'admin', url: 'http://localhost:3000' },
     ])
+    // The bottom nav is `sm:hidden`; pin the viewport so this assertion is
+    // meaningful in both configured projects.
+    await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/dashboard')
     await expect(page).toHaveURL(/\/dashboard/)
     // No horizontal scroll

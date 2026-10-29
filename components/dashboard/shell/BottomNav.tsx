@@ -29,21 +29,27 @@ function getRolePrimarySections(
   isPresident: boolean | undefined
 ): DashboardSection[] {
   if (isPresident) {
-    return ['overview', 'workers', 'attendance', 'finance']
+    return ['overview', 'executives', 'workers', 'attendance']
   }
   switch (role) {
     case 'admin':
-      return ['overview', 'workers', 'attendance', 'finance']
+      return ['overview', 'executives', 'workers', 'attendance']
     case 'team_lead':
       return ['overview', 'workers', 'attendance', 'firstTimers']
     case 'finance':
       return ['overview', 'finance', 'attendance', 'announcements']
     case 'hall_rep':
-      return ['overview', 'firstTimers', 'workers', 'attendance']
+      return ['overview', 'firstTimers', 'attendance', 'workers']
     default:
       return ['overview', 'workers', 'attendance', 'firstTimers']
   }
 }
+
+function isItemActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false
+  return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+}
+
 
 export default function BottomNav({
   sections,
@@ -58,8 +64,11 @@ export default function BottomNav({
     setOpen(false)
   }, [pathname])
 
-  // Resolve permitted items
-  const permittedItems = NAV_ITEMS.filter((item) => sections.includes(item.section))
+  // Resolve permitted items. Settings stays in the pinned All-sheet entry and
+  // never competes for one of the four primary tabs.
+  const permittedItems = NAV_ITEMS.filter(
+    (item) => item.section !== 'settings' && sections.includes(item.section)
+  )
   
   // Resolve 4 role-prioritised primary tabs that the user is permitted to view
   const rolePreferred = getRolePrimarySections(role, isPresident)
@@ -81,6 +90,11 @@ export default function BottomNav({
     .map((key) => permittedItems.find((i) => i.section === key))
     .filter(Boolean) as typeof permittedItems
 
+  // The All sheet owns any permitted destination that is not one of the four
+  // primary tabs, so it reads as active on those pages and while open.
+  const isPrimaryActive = primaryItems.some((item) => isItemActive(pathname, item.href))
+  const allActive = open || !isPrimaryActive
+
   return (
     <>
       <nav
@@ -90,9 +104,7 @@ export default function BottomNav({
       >
         <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1">
           {primaryItems.map((item) => {
-            const active = item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname?.startsWith(item.href) ?? false
+            const active = isItemActive(pathname, item.href)
             const Icon = item.icon
             return (
               <li key={item.section} className="flex-1">
@@ -100,11 +112,11 @@ export default function BottomNav({
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors',
+                    'flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors [touch-action:manipulation]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                     active
-                      ? 'bg-transparent text-foreground font-semibold'
-                      : 'text-muted-foreground hover:text-foreground font-medium'
+                      ? 'bg-transparent font-semibold text-foreground'
+                      : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Icon
@@ -127,14 +139,20 @@ export default function BottomNav({
                 <button
                   type="button"
                   aria-label="All fellowship sections and admin tools"
+                  aria-expanded={open}
                   className={cn(
-                    'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-1 text-xs font-medium transition-colors',
-                    'text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                    open && 'text-foreground'
+                    'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors [touch-action:manipulation]',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                    allActive
+                      ? 'bg-transparent font-semibold text-foreground'
+                      : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <LayoutGrid
-                    className={cn('h-5 w-5 shrink-0', open ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground')}
+                    className={cn(
+                      'h-5 w-5 shrink-0',
+                      allActive ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                    )}
                     aria-hidden="true"
                   />
                   <span className="truncate leading-none">All</span>
@@ -142,11 +160,11 @@ export default function BottomNav({
               </SheetTrigger>
               <SheetContent
                 side="bottom"
-                className="max-h-[90vh] rounded-t-3xl px-4 pb-6 pt-3 flex flex-col bg-card border-t border-border/50"
+                className="flex max-h-[90vh] flex-col rounded-t-3xl border-t border-border/50 bg-card px-4 pb-6 pt-3"
               >
                 <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden="true" />
-                <div className="mb-2 px-2 flex items-center justify-between">
-                  <SheetTitle className="text-sm font-semibold tracking-tight text-foreground uppercase tracking-wider text-muted-foreground">
+                <div className="mb-2 flex items-center justify-between px-2">
+                  <SheetTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                     All Sections
                   </SheetTitle>
                   <SheetDescription className="sr-only">
@@ -154,13 +172,11 @@ export default function BottomNav({
                   </SheetDescription>
                 </div>
 
-                <div className="flex-1 overflow-y-auto overscroll-contain pr-1 divide-y divide-border/30">
-                  <nav aria-label="All dashboard destinations" className="flex flex-col py-1">
+                <div className="flex-1 overflow-y-auto overscroll-contain pr-1">
+                  <nav aria-label="All dashboard destinations" className="flex flex-col divide-y divide-border/30 py-1">
                     {permittedItems.map((item) => {
                       const Icon = item.icon
-                      const active = item.href === '/dashboard'
-                        ? pathname === '/dashboard'
-                        : pathname?.startsWith(item.href) ?? false
+                      const active = isItemActive(pathname, item.href)
                       return (
                         <Link
                           key={item.section}
@@ -171,7 +187,7 @@ export default function BottomNav({
                             'flex h-11 items-center gap-3.5 rounded-xl px-3 text-sm font-medium transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             active
-                              ? 'bg-transparent text-foreground font-semibold'
+                              ? 'bg-transparent font-semibold text-foreground'
                               : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                           )}
                         >
@@ -182,7 +198,7 @@ export default function BottomNav({
                             )}
                             aria-hidden="true"
                           />
-                          <span className="truncate flex-1">{item.label}</span>
+                          <span className="flex-1 truncate">{item.label}</span>
                           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
                         </Link>
                       )
@@ -193,25 +209,27 @@ export default function BottomNav({
                       <Link
                         href="/dashboard/settings"
                         onClick={() => setOpen(false)}
-                        aria-current={pathname?.startsWith('/dashboard/settings') ? 'page' : undefined}
+                        aria-current={isItemActive(pathname, '/dashboard/settings') ? 'page' : undefined}
                         className={cn(
-                          'mt-2 flex h-11 items-center gap-3.5 rounded-xl px-3 text-sm font-medium transition-colors border border-border/40 bg-muted/20',
+                          'mt-2 flex h-11 items-center gap-3.5 rounded-xl bg-muted/20 px-3 text-sm font-medium transition-colors',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          pathname?.startsWith('/dashboard/settings')
-                            ? 'bg-muted/60 text-foreground font-semibold'
+                          isItemActive(pathname, '/dashboard/settings')
+                            ? 'bg-muted/60 font-semibold text-foreground'
                             : 'text-foreground hover:bg-muted/50'
                         )}
                       >
                         <Settings
                           className={cn(
                             'h-5 w-5 shrink-0',
-                            pathname?.startsWith('/dashboard/settings') ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                            isItemActive(pathname, '/dashboard/settings')
+                              ? 'text-[#0095ff] dark:text-[#70a3ff]'
+                              : 'text-muted-foreground'
                           )}
                           aria-hidden="true"
                         />
-                        <div className="flex flex-col flex-1 leading-tight">
+                        <div className="flex flex-1 flex-col leading-tight">
                           <span>Settings</span>
-                          <span className="text-[11px] text-muted-foreground font-normal">Admin tools</span>
+                          <span className="text-xs font-normal text-muted-foreground">Admin tools</span>
                         </div>
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
                       </Link>
@@ -219,7 +237,7 @@ export default function BottomNav({
                   </nav>
                 </div>
 
-                {actions && <div className="mt-3 pt-3 flex justify-center">{actions}</div>}
+                {actions && <div className="mt-3 flex justify-center pt-3">{actions}</div>}
               </SheetContent>
             </Sheet>
           </li>

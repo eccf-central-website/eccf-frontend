@@ -108,7 +108,7 @@ const sessionWorkers: WorkerRow[] = [
   makeWorker(3, { _id: 'mock-worker-finance', fullName: 'Efosa Osagie', email: 'efosa.osagie@example.com', team: 'Finance', hall: 'Hall C', role: 'finance', excoPosition: 'Financial Secretary', isExcoApproved: true, verificationStatus: 'verified' }),
 ]
 
-export const MOCK_WORKERS: WorkerRow[] = [
+const initialWorkers: WorkerRow[] = [
   ...sessionWorkers,
   makeWorker(4, {
     positions: [{ _key: 'pos-csgb-01', kind: 'csgb', office: "Vice President - Admin", status: 'pending' }],
@@ -132,6 +132,21 @@ export const MOCK_WORKERS: WorkerRow[] = [
   }),
   ...Array.from({ length: 21 }, (_, i) => makeWorker(i + 10)),
 ]
+
+/**
+ * Next dev compiles server actions and route handlers into separate module
+ * instances, so a plain module-level array would let offboarding/import
+ * mutations disappear between routes. Keep the mutable dev fixtures on
+ * globalThis so every route in the dev server sees the same roster.
+ */
+const globalForMock = globalThis as typeof globalThis & {
+  __ECCF_MOCK_WORKERS?: WorkerRow[]
+}
+
+export const MOCK_WORKERS: WorkerRow[] =
+  globalForMock.__ECCF_MOCK_WORKERS ?? initialWorkers
+
+globalForMock.__ECCF_MOCK_WORKERS = MOCK_WORKERS
 
 /** Hall of a worker by id — mirrors WORKER_HALL_BY_ID_QUERY */
 export function mockHallForWorker(id: string): string | null {

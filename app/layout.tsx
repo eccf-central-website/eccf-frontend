@@ -93,6 +93,7 @@ export default function RootLayout({
     >
       <html
         lang="en"
+        suppressHydrationWarning
         className={`${belleza.variable} ${workSans.variable} ${geistSans.variable} ${geistMono.variable}`}
       >
         <body

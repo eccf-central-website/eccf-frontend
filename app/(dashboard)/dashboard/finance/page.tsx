@@ -20,7 +20,6 @@ export default async function FinancePage() {
   const rows = await listFinance()
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',

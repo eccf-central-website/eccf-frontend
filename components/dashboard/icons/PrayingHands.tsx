@@ -1,5 +1,12 @@
 import React from 'react'
 
+/**
+ * Clasped praying-hands mark used for Prayer Requests.
+ *
+ * Uses the familiar two-hands silhouette (scaled from a 640×512 source into a
+ * 24×24 frame) rather than an abstract glyph, so it stays recognisable at
+ * 18–24px in the sidebar and mobile sheet.
+ */
 export function PrayingHands({
   className,
   size = 24,
@@ -15,17 +22,17 @@ export function PrayingHands({
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      fill="currentColor"
+      stroke="none"
       strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       className={className}
       aria-hidden="true"
+      focusable="false"
       {...props}
     >
-      <path d="M12 2.5C10.2 3.8 9 6 8.4 8.3C7.8 10.5 7.8 12.8 8.5 14.9C8.8 15.8 8.3 16.8 7.3 17.8L4.8 19.6C5.9 20.1 7.1 20.1 8.2 19.7C9.1 19.3 9.7 18.5 10.1 17.5C10.6 16.3 10.8 15 10.9 13.7C11 14.8 11.2 16.4 11.8 18.1C12 18.7 12 19.2 12 19.6C12 19.2 12 18.7 12.2 18.1C12.8 16.4 13 14.8 13.1 13.7C13.2 15 13.4 16.3 13.9 17.5C14.3 18.5 14.9 19.3 15.8 19.7C16.9 20.1 18.1 20.1 19.2 19.6L16.7 17.8C15.7 16.8 15.2 15.8 15.5 14.9C16.2 12.8 16.2 10.5 15.6 8.3C15 6 13.8 3.8 12 2.5Z" />
-      <path d="M12 2.5V18" />
+      <g transform="translate(0 2.4) scale(0.0375)">
+        <path d="M351.2 4.8c3.2-2 6.6-3.3 10-4.1c4.7-1 9.6-.9 14.1 .1c7.7 1.8 14.8 6.5 19.4 13.6L514.6 194.2c8.8 13.1 13.4 28.6 13.4 44.4l0 73.5c0 6.9 4.4 13 10.9 15.2l79.2 26.4C631.2 358 640 370.2 640 384l0 96c0 9.9-4.6 19.3-12.5 25.4s-18.1 8.1-27.7 5.5L431 465.9c-56-14.9-95-65.7-95-123.7L336 224c0-17.7 14.3-32 32-32s32 14.3 32 32l0 80c0 8.8 7.2 16 16 16s16-7.2 16-16l0-84.9c0-7-1.8-13.8-5.3-19.8L340.3 48.1c-1.7-3-2.9-6.1-3.6-9.3c-1-4.7-1-9.6 .1-14.1c1.9-8 6.8-15.2 14.3-19.9zm-62.4 0c7.5 4.6 12.4 11.9 14.3 19.9c1.1 4.6 1.2 9.4 .1 14.1c-.7 3.2-1.9 6.3-3.6 9.3L213.3 199.3c-3.5 6-5.3 12.9-5.3 19.8l0 84.9c0 8.8 7.2 16 16 16s16-7.2 16-16l0-80c0-17.7 14.3-32 32-32s32 14.3 32 32l0 118.2c0 58-39 108.7-95 123.7l-168.7 45c-9.6 2.6-19.9 .5-27.7-5.5S0 490 0 480l0-96c0-13.8 8.8-26 21.9-30.4l79.2-26.4c6.5-2.2 10.9-8.3 10.9-15.2l0-73.5c0-15.8 4.7-31.2 13.4-44.4L245.2 14.5c4.6-7.1 11.7-11.8 19.4-13.6c4.6-1.1 9.4-1.2 14.1-.1c3.5 .8 6.9 2.1 10 4.1z" />
+      </g>
     </svg>
   )
 }

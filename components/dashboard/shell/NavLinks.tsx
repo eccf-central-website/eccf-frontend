@@ -34,7 +34,10 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
     setPendingHref(null)
   }, [pathname])
 
-  const items = NAV_ITEMS.filter((item) => sections.includes(item.section))
+  // Settings is pinned in the sidebar footer, not the flat destination list.
+  const items = NAV_ITEMS.filter(
+    (item) => item.section !== 'settings' && sections.includes(item.section)
+  )
 
   return (
     <ul className="flex flex-col gap-1.5">

@@ -47,6 +47,8 @@ interface SanityWorkerSessionDoc {
   excoPosition?: string
   isExcoApproved?: boolean
   canApproveExecutives?: boolean
+  status?: string
+  verificationStatus?: string
   profileImageUrl?: string
   team?: { name?: string } | string
   hall?: string
@@ -171,6 +173,8 @@ export async function getSession(): Promise<DashboardSession | null> {
         excoPosition,
         isExcoApproved,
         canApproveExecutives,
+        status,
+        verificationStatus,
         "profileImageUrl": coalesce(profileImageUrl, headshot.asset->url),
         "team": coalesce(team->name, team),
         "hall": coalesce(hallRef->name, hall),
@@ -198,6 +202,12 @@ export async function getSession(): Promise<DashboardSession | null> {
   }
 
   if (!worker) return null
+
+  // Archived or rejected workers must lose dashboard access immediately, even
+  // if a Clerk session is still active somewhere.
+  if (worker.status === 'archived' || worker.verificationStatus === 'rejected') {
+    return null
+  }
 
   // If matched by email without clerkUserId, or clerkUserId has changed, patch in Sanity (only if email is verified)
   if (worker._id && (!worker.clerkUserId || worker.clerkUserId !== clerkUserId)) {
@@ -296,7 +306,7 @@ export async function authorize(
 ): Promise<{ ok: true; session: DashboardSession } | Extract<ActionResult<never>, { ok: false }>> {
   const session = await getSession()
   if (!session) return { ok: false, error: 'Your session has expired. Please sign in again.' }
-  if (!hasPermission(session.role, permission)) {
+  if (!hasPermission(session.role, permission, session)) {
     return { ok: false, error: 'You do not have permission to do that.' }
   }
   return { ok: true, session }

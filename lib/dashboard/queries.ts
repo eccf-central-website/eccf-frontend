@@ -341,7 +341,13 @@ export const DASHBOARD_ANNOUNCEMENTS_QUERY = `
 // ---------------------------------------------------------------------------
 
 export const DASHBOARD_EXECUTIVES_QUERY = `
-  *[_type == "worker" && defined(positions) && count(positions) > 0 && !(_id in path("drafts.**"))] | order(fullName asc) {
+  *[
+    _type == "worker" &&
+    !(_id in path("drafts.**")) &&
+    coalesce(status, "active") != "archived" &&
+    verificationStatus != "rejected" &&
+    count(positions[status == "approved"]) > 0
+  ] | order(fullName asc) {
     _id,
     fullName,
     firstName,
@@ -350,7 +356,7 @@ export const DASHBOARD_EXECUTIVES_QUERY = `
     hall,
     roomNumber,
     profileImageUrl,
-    "positions": positions[] {
+    "positions": positions[status == "approved"] {
       "_key": coalesce(_key, ""),
       "key": coalesce(_key, ""),
       kind,

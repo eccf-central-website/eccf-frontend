@@ -6,6 +6,10 @@
  * - Row 2: Large tabular figure
  * - Row 3: Cohesive caption phrases that stack cleanly on mobile
  * - Distinct light-mode contrast against mist canvas and borderless tonal dark elevation.
+ *
+ * When `href` is present the entire card is a single real link (no hidden
+ * overlay anchor), so keyboard, screen-reader, and pointer users all get the
+ * same target and a visible focus ring.
  */
 
 import Link from 'next/link'
@@ -36,6 +40,7 @@ export interface StatCardProps {
   tone?: StatTone
   /** Section link; omit when the role can't access the section. */
   href?: string
+  /** Accessible name for the whole-card link. */
   linkLabel?: string
   /** h4 when the card sits under a group heading. */
   headingLevel?: 'h3' | 'h4'
@@ -51,24 +56,28 @@ export default function StatCard({
   caption,
   tone = 'primary',
   href,
+  linkLabel,
   headingLevel: Heading = 'h3',
   className,
 }: StatCardProps) {
   const labelId = `${id}-label`
 
-  const cardContent = (
-    <article
-      aria-labelledby={labelId}
-      className={cn(
-        'group relative flex flex-col justify-between rounded-2xl bg-card p-4 text-card-foreground shadow-sm sm:p-5 transition-all duration-150',
-        'border-0 hover:shadow-md min-h-[136px] sm:min-h-[148px]',
-        href && 'cursor-pointer hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
-        className
-      )}
-    >
+  const cardClassName = cn(
+    'group relative flex min-h-[136px] flex-col justify-between rounded-2xl bg-card p-4 text-card-foreground shadow-sm transition-all duration-150 sm:min-h-[148px] sm:p-5',
+    'border-0 hover:shadow-md',
+    href &&
+      'cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+    className
+  )
+
+  const body = (
+    <>
       {/* Row 1: Label + Icon */}
       <div className="flex items-start justify-between gap-2">
-        <Heading id={labelId} className="text-xs sm:text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+        <Heading
+          id={labelId}
+          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm"
+        >
           {label}
         </Heading>
         <div
@@ -84,28 +93,35 @@ export default function StatCard({
 
       {/* Row 2: Figure */}
       <div className="my-1">
-        <p className="break-words font-mono font-bold tabular-nums tracking-tight text-2xl leading-none text-foreground sm:text-3xl">
+        <p className="break-words font-mono text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground sm:text-3xl">
           {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
         </p>
       </div>
 
       {/* Row 3: Caption — phrases stack on mobile as whole units */}
       {caption && (
-        <div className="text-xs sm:text-sm text-muted-foreground font-normal flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+        <div className="flex flex-col gap-0.5 text-xs font-normal text-muted-foreground sm:flex-row sm:items-center sm:gap-2 sm:text-sm">
           {caption}
         </div>
       )}
-
-      {href && (
-        <Link
-          href={href}
-          tabIndex={-1}
-          aria-hidden="true"
-          className="absolute inset-0 rounded-2xl focus:outline-none"
-        />
-      )}
-    </article>
+    </>
   )
 
-  return cardContent
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={linkLabel ? `${linkLabel}: ${label}` : `${label}: ${value}`}
+        className={cardClassName}
+      >
+        {body}
+      </Link>
+    )
+  }
+
+  return (
+    <article aria-labelledby={labelId} className={cardClassName}>
+      {body}
+    </article>
+  )
 }

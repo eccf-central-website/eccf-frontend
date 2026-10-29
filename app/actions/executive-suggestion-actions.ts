@@ -346,14 +346,13 @@ async function verifyAuth() {
     return { ok: false, error: 'Not authenticated.' }
   }
 
-  const role = session.role as string
-  const userRoles = (session as unknown as { roles?: string[] }).roles || []
-  const isPresident = Boolean(session.access?.isPresident || role === 'president' || userRoles.includes('president'))
-  const isVp = Boolean(session.access?.isVP || role === 'vice_president' || userRoles.includes('vice_president'))
-  const isChaplain = Boolean(session.access?.isChaplain || role === 'chaplain' || userRoles.includes('chaplain'))
-  const isAdmin = role === 'admin' || userRoles.includes('admin')
+  const canManageExecutives = Boolean(
+    session.access?.canApproveExecutives ||
+      session.access?.isVP ||
+      session.access?.isChaplain
+  )
 
-  if (!isPresident && !isVp && !isChaplain && !isAdmin) {
+  if (!canManageExecutives) {
     return { ok: false, error: 'You do not have permission to import executive positions.' }
   }
 

@@ -42,7 +42,6 @@ export default async function DashboardOverviewPage() {
   const now = new Date()
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',

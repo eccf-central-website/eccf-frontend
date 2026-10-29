@@ -53,7 +53,7 @@ export default function FeedSkeleton({
             </div>
             <div className="mt-4 space-y-2">
               <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-4 shrink-0/5" />
+              <Skeleton className="h-3 w-2/5" />
             </div>
           </li>
         ))}

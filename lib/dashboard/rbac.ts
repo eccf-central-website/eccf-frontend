@@ -63,10 +63,12 @@ export interface LeaderPostContext {
   access?: {
     isPresident?: boolean
     isVP?: boolean
+    isVPAdmin?: boolean
     isChaplain?: boolean
     isPrayerCoordinator?: boolean
     isFinance?: boolean
     isCSGB?: boolean
+    canApproveExecutives?: boolean
     titles?: string[]
     repsHalls?: string[]
   } | null
@@ -385,31 +387,58 @@ export function isOutreachLeader(
   )
 }
 
-export function canDeleteWorkers(
-  session?: {
-    role?: WorkerRole | string
-    excoPosition?: string | null
-    leadingTeam?: string | null
-    team?: string | null
-    teams?: string[] | null
-    access?: {
-      isCSGB?: boolean
-      isPresident?: boolean
-      isVP?: boolean
-      isChaplain?: boolean
-      titles?: string[]
-      [key: string]: unknown
-    } | null
+interface PrivilegedAccessSession {
+  role?: WorkerRole | string
+  excoPosition?: string | null
+  leadingTeam?: string | null
+  team?: string | null
+  teams?: string[] | null
+  access?: {
+    isPresident?: boolean
+    isVP?: boolean
+    isVPAdmin?: boolean
+    isChaplain?: boolean
+    canApproveExecutives?: boolean
+    [key: string]: unknown
   } | null
+}
+
+/**
+ * Settings is deliberately narrower than general CSGB membership.
+ * Only the President, the VP Admin (Brothers' Coordinator), or a role
+ * explicitly granted `canApproveExecutives` may open the privileged tools.
+ */
+export function canManageSettings(session?: PrivilegedAccessSession | null): boolean {
+  if (!session) return false
+  return Boolean(
+    session.access?.isPresident ||
+      session.access?.isVPAdmin ||
+      session.access?.canApproveExecutives
+  )
+}
+
+/**
+ * Executive appointment management. The explicit `canApproveExecutives`
+ * capability is authoritative; VP and Chaplain retain their documented
+ * management access. President is included through the capability fallback.
+ */
+export function canApproveExecutiveAppointments(
+  session?: PrivilegedAccessSession | null
 ): boolean {
   if (!session) return false
-  if (session.access?.isCSGB || session.access?.isPresident || session.access?.isVP) return true
-  if (session.role === 'admin') return true
-  if (session.access?.isChaplain || session.role === 'chaplain') return true
-  const pos = (session.excoPosition || '').toLowerCase()
-  if (pos.includes('chaplain')) return true
-  if (session.access?.titles?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('chaplain')))) return true
-  return isCSGBMember(session)
+  return Boolean(
+    session.access?.canApproveExecutives ||
+      session.access?.isVP ||
+      session.access?.isChaplain
+  )
+}
+
+export function canDeleteWorkers(
+  session?: PrivilegedAccessSession | null
+): boolean {
+  // Offboarding is part of the privileged Settings surface, so it follows the
+  // same narrow gate instead of every CSGB office.
+  return canManageSettings(session)
 }
 
 export function canAccessSection(
@@ -421,27 +450,32 @@ export function canAccessSection(
     teams?: string[]
     excoPosition?: string
     leadingTeam?: string
-    access?: { isPresident?: boolean; isPrayerCoordinator?: boolean; isCSGB?: boolean; [key: string]: unknown }
+    access?: {
+      isPresident?: boolean
+      isVP?: boolean
+      isVPAdmin?: boolean
+      isChaplain?: boolean
+      isPrayerCoordinator?: boolean
+      isCSGB?: boolean
+      canApproveExecutives?: boolean
+      [key: string]: unknown
+    }
   } | null
 ): boolean {
   const currentSession = session ? { ...session, role: session.role || role } : { role }
 
-    if (section === 'executives') {
+  if (section === 'executives') {
     return (
       role === 'admin' ||
       Boolean(currentSession?.access?.isPresident) ||
       Boolean(currentSession?.access?.isVP) ||
       Boolean(currentSession?.access?.isCSGB) ||
-      Boolean(currentSession?.access?.isChaplain)
+      Boolean(currentSession?.access?.isChaplain) ||
+      Boolean(currentSession?.access?.canApproveExecutives)
     )
   }
   if (section === 'settings') {
-    return (
-      role === 'admin' ||
-      Boolean(currentSession?.access?.isPresident) ||
-      Boolean(currentSession?.access?.isCSGB) ||
-      canDeleteWorkers(currentSession)
-    )
+    return canManageSettings(currentSession)
   }
   if (section === 'announcements') {
     return isCSGBMember(currentSession)
@@ -473,8 +507,11 @@ export function hasPermission(
   permission: DashboardPermission,
   session?: LeaderPostContext | null
 ): boolean {
-  if (permission === 'workers:delete' && session) {
-    return canDeleteWorkers(session)
+  if (permission === 'workers:delete') {
+    return session ? canDeleteWorkers(session) : role === 'admin'
+  }
+  if (permission === 'workers:import' || permission === 'settings:view') {
+    return session ? canManageSettings(session) : role === 'admin'
   }
   if ((permission === 'welfare:create' || permission === 'welfare:resolve') && session) {
     return isWelfareTeamMember(session as unknown as LeaderPostContext)

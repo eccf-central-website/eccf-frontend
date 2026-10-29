@@ -23,7 +23,6 @@ export default async function FirstTimersPage() {
   const isHallRep = isHallScoped(session.role)
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',

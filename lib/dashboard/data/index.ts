@@ -489,6 +489,118 @@ export async function listAnnouncements(session: ECCFSession): Promise<Announcem
   }
 }
 
+export interface MemberDirectoryAudit {
+  scanned: number
+  pendingAnomalies: number
+  details: string[]
+}
+
+function workerTeamName(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object' && 'name' in value) {
+    const name = (value as { name?: unknown }).name
+    return typeof name === 'string' ? name : undefined
+  }
+  return undefined
+}
+
+/**
+ * Live member-directory audit. Reports missing contact details, missing team
+ * assignments, and memberships still awaiting verification. Used by both the
+ * Settings sync action and the overview attention queue.
+ */
+export async function auditMemberDirectory(
+  session: ECCFSession
+): Promise<MemberDirectoryAudit> {
+  if (!canAccessSection(session.role, 'settings', session)) {
+    throw new Error('Access denied: privileged Settings access required')
+  }
+
+  let rows: Array<{
+    _id: string
+    fullName?: string
+    email?: string
+    team?: string
+    teams?: string[]
+    memberships?: Array<{ status?: string }>
+  }>
+
+  if (dataSource() === 'mock') {
+    rows = (await fromMock(MOCK_WORKERS, [])).map((worker) => ({
+      _id: worker._id,
+      fullName: worker.fullName,
+      email: worker.email,
+      team: workerTeamName(worker.team),
+      teams: (worker.teams || [])
+        .map(workerTeamName)
+        .filter((team): team is string => Boolean(team)),
+      memberships: worker.memberships,
+    }))
+  } else {
+    try {
+      rows = await sanityPrivateClient.fetch(
+        `*[_type == "worker" && !(_id in path("drafts.**")) && coalesce(status, "active") != "archived"]{
+          _id,
+          fullName,
+          email,
+          "team": coalesce(team->name, team),
+          "teams": coalesce(teams[]->name, teams, [])[@ != null],
+          "memberships": memberships[]{ status }
+        }`
+      )
+    } catch (err) {
+      console.error('[auditMemberDirectory] Sanity fetch error:', err)
+      throw new Error('Could not read the member directory.')
+    }
+  }
+
+  let pendingAnomalies = 0
+  const details: string[] = []
+  const addAnomaly = (name: string, message: string) => {
+    pendingAnomalies++
+    if (details.length < 20) details.push(`${name}: ${message}`)
+  }
+
+  for (const row of rows) {
+    const name = row.fullName?.trim() || 'Unnamed worker'
+    if (!row.email?.trim()) addAnomaly(name, 'missing email address')
+
+    const teams = [row.team, ...(row.teams || [])].filter(
+      (team): team is string => Boolean(team && team.trim())
+    )
+    const memberships = row.memberships || []
+    if (teams.length === 0 && memberships.length === 0) {
+      addAnomaly(name, 'no team assignment')
+    }
+
+    const pendingMemberships = memberships.filter((membership) => membership.status === 'pending')
+    if (pendingMemberships.length > 0) {
+      addAnomaly(
+        name,
+        `${pendingMemberships.length} membership${pendingMemberships.length > 1 ? 's' : ''} awaiting verification`
+      )
+    }
+  }
+
+  return { scanned: rows.length, pendingAnomalies, details }
+}
+
+/** Count reserved executive appointments still waiting for the leader to register. */
+export async function countUnregisteredExecutiveAppointments(
+  session: ECCFSession
+): Promise<number> {
+  if (!canAccessSection(session.role, 'executives', session)) {
+    throw new Error('Access denied: executives section required')
+  }
+
+  if (dataSource() === 'mock') return 0
+
+  const count = await sanityPrivateClient.fetch<number>(
+    `count(*[_type == "executiveAppointment" && status == "pending_claim" && !(_id in path("drafts.**"))])`
+  )
+  return typeof count === 'number' ? count : 0
+}
+
 export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRow[]> {
   if (session && !canAccessSection(session.role, 'executives', session)) {
     return []
@@ -496,7 +608,12 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
 
   if (dataSource() === 'mock') {
     const excos: ExecutiveRow[] = (MOCK_WORKERS || [])
-      .filter((w) => w.positions && w.positions.length > 0)
+      .filter(
+        (w) =>
+          w.status !== 'archived' &&
+          w.verificationStatus !== 'rejected' &&
+          w.positions?.some((position) => position.status === 'approved')
+      )
       .map((w) => ({
         _id: w._id,
         fullName: w.fullName,
@@ -505,106 +622,106 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
         profileImageUrl: w.profileImageUrl,
         registrationStatus: 'registered',
         isRegistered: true,
-        positions: (w.positions || []).map((p) => ({
-          key: p._key || `pos_${Math.random()}`,
-          kind: p.kind,
-          office: p.office,
-          csgbRoleTitle: p.office,
-          hallName: p.hall,
-          teamTitle: p.teamName || (typeof p.team === 'string' ? p.team : undefined),
-          rank: p.rank,
-          status: p.status,
-          submittedAt: (p as any).submittedAt,
-          decidedAt: p.decidedAt,
-        })),
+        positions: (w.positions || [])
+          .filter((p) => p.status === 'approved')
+          .map((p) => ({
+            key: p._key || `pos_${Math.random()}`,
+            kind: p.kind,
+            office: p.office,
+            csgbRoleTitle: p.office,
+            hallName: p.hall,
+            teamTitle: p.teamName || (typeof p.team === 'string' ? p.team : undefined),
+            rank: p.rank,
+            status: p.status,
+            submittedAt: p.submittedAt,
+            decidedAt: p.decidedAt,
+          })),
       }))
     return stripPII(excos)
   }
 
-  try {
-    const [rows, reservedAppointments] = await Promise.all([
-      sanityPrivateClient.fetch<ExecutiveRow[]>(DASHBOARD_EXECUTIVES_QUERY),
-      sanityPrivateClient
-        .fetch<ReservedExecutiveAppointment[]>(DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY)
-        .catch((err) => {
-          console.error('[listExecutives] Unregistered appointment fetch error:', err)
-          return []
-        }),
-    ])
+  const [rows, reservedAppointments] = await Promise.all([
+    sanityPrivateClient.fetch<ExecutiveRow[]>(DASHBOARD_EXECUTIVES_QUERY),
+    sanityPrivateClient
+      .fetch<ReservedExecutiveAppointment[]>(DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY)
+      .catch((err) => {
+        console.error('[listExecutives] Unregistered appointment fetch error:', err)
+        return []
+      }),
+  ])
 
-    const registered: ExecutiveRow[] = (rows || []).map((row) => ({
+  const registered: ExecutiveRow[] = (rows || [])
+    .map((row) => ({
       ...row,
-      registrationStatus: 'registered',
+      positions: (row.positions || []).filter((position) => position.status === 'approved'),
+      registrationStatus: 'registered' as const,
       isRegistered: true,
     }))
+    .filter((row) => row.positions.length > 0)
 
-    const registeredEmails = new Set(
-      registered
-        .map((row) => row.email?.trim().toLowerCase())
-        .filter((email): email is string => Boolean(email))
-    )
-    const registeredNameKeys = new Set(
-      registered
-        .map((row) => executiveNameKey(row.fullName))
-        .filter((key): key is string => Boolean(key))
-    )
+  const registeredEmails = new Set(
+    registered
+      .map((row) => row.email?.trim().toLowerCase())
+      .filter((email): email is string => Boolean(email))
+  )
+  const registeredNameKeys = new Set(
+    registered
+      .map((row) => executiveNameKey(row.fullName))
+      .filter((key): key is string => Boolean(key))
+  )
 
-    // One leader can hold several roles (CSGB + ministry team). Group their
-    // reserved appointments so the roster shows a single card per person.
-    const reservedGroups = new Map<string, ReservedExecutiveAppointment[]>()
-    for (const appointment of reservedAppointments || []) {
-      const email = appointment.email?.trim().toLowerCase()
-      const nameKey = executiveNameKey(appointment.fullName, appointment.normalizedName)
-      const groupKey = nameKey || (email ? `email:${email}` : undefined)
-      if (!groupKey) continue
+  // One leader can hold several roles (CSGB + ministry team). Group their
+  // reserved appointments so the roster shows a single card per person.
+  const reservedGroups = new Map<string, ReservedExecutiveAppointment[]>()
+  for (const appointment of reservedAppointments || []) {
+    const email = appointment.email?.trim().toLowerCase()
+    const nameKey = executiveNameKey(appointment.fullName, appointment.normalizedName)
+    const groupKey = nameKey || (email ? `email:${email}` : undefined)
+    if (!groupKey) continue
 
-      const group = reservedGroups.get(groupKey) || []
-      group.push(appointment)
-      reservedGroups.set(groupKey, group)
-    }
-
-    const unregistered: ExecutiveRow[] = []
-    for (const group of Array.from(reservedGroups.values())) {
-      const first = group[0]
-      const groupKey = first.normalizedName?.trim() || executiveNameKey(first.fullName) || `email:${first.email?.trim().toLowerCase()}`
-      const hasRegisteredMatch =
-        registeredNameKeys.has(groupKey) ||
-        group.some((appointment) => {
-          const email = appointment.email?.trim().toLowerCase()
-          return Boolean(email && registeredEmails.has(email))
-        })
-      if (hasRegisteredMatch) continue
-
-      unregistered.push({
-        _id: first._id,
-        fullName: first.fullName,
-        email: first.email,
-        hall: first.hall,
-        importedAt: first.importedAt,
-        registrationStatus: 'unregistered',
-        isRegistered: false,
-        positions: group.map((appointment) => ({
-          key: appointment._id,
-          kind: appointment.kind,
-          office: appointment.office,
-          csgbRoleTitle: appointment.csgbRoleTitle || appointment.office,
-          csgbRoleRef: appointment.csgbRoleRef,
-          hall: appointment.hall,
-          hallName: appointment.hallName || appointment.hall,
-          teamName: appointment.teamName,
-          teamTitle: appointment.teamTitle || appointment.teamName,
-          rank: appointment.rank,
-          status: 'approved' as const,
-          submittedAt: appointment.importedAt,
-          decidedAt: appointment.importedAt,
-          fromAppointment: true,
-        })),
-      })
-    }
-
-    return stripPII([...registered, ...unregistered])
-  } catch (err) {
-    console.error('[listExecutives] Sanity fetch error:', err)
-    return []
+    const group = reservedGroups.get(groupKey) || []
+    group.push(appointment)
+    reservedGroups.set(groupKey, group)
   }
+
+  const unregistered: ExecutiveRow[] = []
+  for (const group of Array.from(reservedGroups.values())) {
+    const first = group[0]
+    const groupKey = first.normalizedName?.trim() || executiveNameKey(first.fullName) || `email:${first.email?.trim().toLowerCase()}`
+    const hasRegisteredMatch =
+      registeredNameKeys.has(groupKey) ||
+      group.some((appointment) => {
+        const email = appointment.email?.trim().toLowerCase()
+        return Boolean(email && registeredEmails.has(email))
+      })
+    if (hasRegisteredMatch) continue
+
+    unregistered.push({
+      _id: first._id,
+      fullName: first.fullName,
+      email: first.email,
+      hall: first.hall,
+      importedAt: first.importedAt,
+      registrationStatus: 'unregistered',
+      isRegistered: false,
+      positions: group.map((appointment) => ({
+        key: appointment._id,
+        kind: appointment.kind,
+        office: appointment.office,
+        csgbRoleTitle: appointment.csgbRoleTitle || appointment.office,
+        csgbRoleRef: appointment.csgbRoleRef,
+        hall: appointment.hall,
+        hallName: appointment.hallName || appointment.hall,
+        teamName: appointment.teamName,
+        teamTitle: appointment.teamTitle || appointment.teamName,
+        rank: appointment.rank,
+        status: 'approved' as const,
+        submittedAt: appointment.importedAt,
+        decidedAt: appointment.importedAt,
+        fromAppointment: true,
+      })),
+    })
+  }
+
+  return stripPII([...registered, ...unregistered])
 }
