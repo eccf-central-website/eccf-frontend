@@ -87,6 +87,7 @@ export async function createAnnouncement(
   try {
     const created = await sanityWriteClient.create(doc)
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
     revalidatePath('/announcements')
     revalidatePath('/')
@@ -146,6 +147,7 @@ export async function updateAnnouncement(
   try {
     await sanityWriteClient.patch(cleanId).set(patchData).commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
     revalidatePath('/announcements')
     revalidatePath('/')
@@ -190,6 +192,7 @@ export async function deleteAnnouncement(
       // Ignore if draft doesn't exist
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
     revalidatePath('/announcements')
     revalidatePath('/')
@@ -232,6 +235,7 @@ export async function togglePinAnnouncement(
       .set({ isPinned: nextPin })
       .commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
     revalidatePath('/announcements')
     revalidatePath('/')

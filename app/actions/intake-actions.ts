@@ -74,6 +74,7 @@ export async function submitFirstTimer(formData: FormData) {
       })
     }
     
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/first-timers')
     return { success: true }
   } catch (error) {
@@ -117,6 +118,7 @@ export async function submitWelfareRequest(formData: FormData) {
       })
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/welfare')
     return { success: true }
   } catch (error) {
@@ -210,6 +212,7 @@ export async function submitPrayerRequest(formData: FormData) {
       }
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/prayer-requests')
     return { success: true }
   } catch (error) {

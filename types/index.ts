@@ -67,7 +67,10 @@ export interface WorkerPosition {
   rank?: 'lead' | 'assistant'
   status: 'pending' | 'approved' | 'rejected'
   submittedAt?: string
+  /** Full name of the leader who approved/declined this position. */
   decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
 }
 
@@ -78,32 +81,11 @@ export interface WorkerMembership {
   teamKey?: string
   teamName?: string
   status: 'pending' | 'verified' | 'rejected'
+  /** Full name of the leader who verified/declined this membership. */
   decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
-}
-
-export interface PendingExecutiveApplication {
-  workerId: string
-  fullName: string
-  email: string
-  hall: string
-  profileImageUrl?: string
-  createdAt?: string
-  position: {
-    key: string
-    kind: 'csgb' | 'hall' | 'team'
-    office?: string
-    csgbRoleId?: string
-    csgbRoleKey?: string
-    canApproveExecutives?: boolean
-    hall?: string
-    rank?: 'lead' | 'assistant'
-    teamId?: string
-    teamKey?: string
-    teamName?: string
-    status: 'pending' | 'approved' | 'rejected'
-    submittedAt?: string
-  }
 }
 
 export interface ExecutivePositionDetail {
@@ -118,10 +100,25 @@ export interface ExecutivePositionDetail {
   teamTitle?: string
   rank?: 'lead' | 'assistant'
   status: 'pending' | 'approved' | 'rejected'
+  /** Full name of the leader who approved/declined the appointment. */
+  decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
   submittedAt?: string
   /** True when the role comes from a reserved appointment, not a worker doc. */
   fromAppointment?: boolean
+}
+
+/** A pending executive application awaiting a decision in the Executives console. */
+export interface PendingExecutiveApplication {
+  workerId: string
+  fullName: string
+  email: string
+  hall: string
+  profileImageUrl?: string
+  createdAt?: string
+  position: ExecutivePositionDetail
 }
 
 export interface ExecutiveRow {

@@ -40,6 +40,7 @@ export async function resolveWelfareRequest(requestId: string) {
       })
       .commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/welfare')
     revalidatePath('/dashboard')
     return { success: true }

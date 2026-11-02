@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { ChevronRight, LayoutGrid, Settings } from 'lucide-react'
 import type { WorkerRole } from '@/types'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
+import type { NavigationAttention } from '@/lib/dashboard/types'
 import { NAV_ITEMS } from './nav-items'
 import {
   Sheet,
@@ -21,6 +22,7 @@ interface BottomNavProps {
   role?: WorkerRole
   isPresident?: boolean
   actions?: React.ReactNode
+  attention?: NavigationAttention
 }
 
 /** Explicit role-priority order for the 4 primary tabs on mobile. */
@@ -56,6 +58,7 @@ export default function BottomNav({
   role,
   isPresident,
   actions,
+  attention,
 }: BottomNavProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -90,6 +93,14 @@ export default function BottomNav({
     .map((key) => permittedItems.find((i) => i.section === key))
     .filter(Boolean) as typeof permittedItems
 
+  // Work waiting in destinations that live behind the All sheet. The All tab
+  // gets a dot so it is obvious there is something to attend to elsewhere.
+  const hiddenAttention = permittedItems.reduce(
+    (total, item) =>
+      primaryKeys.includes(item.section) ? total : total + (attention?.[item.section] ?? 0),
+    0
+  )
+
   // The All sheet owns any permitted destination that is not one of the four
   // primary tabs, so it reads as active on those pages and while open.
   const isPrimaryActive = primaryItems.some((item) => isItemActive(pathname, item.href))
@@ -106,6 +117,11 @@ export default function BottomNav({
           {primaryItems.map((item) => {
             const active = isItemActive(pathname, item.href)
             const Icon = item.icon
+            const count = attention?.[item.section] ?? 0
+            const countLabel =
+              count > 0
+                ? `${count} item${count === 1 ? '' : 's'} awaiting attention`
+                : undefined
             return (
               <li key={item.section} className="flex-1">
                 <Link
@@ -119,14 +135,26 @@ export default function BottomNav({
                       : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  <Icon
-                    className={cn(
-                      'h-5 w-5 shrink-0 transition-colors',
-                      active ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                  <span className="relative inline-flex shrink-0">
+                    <Icon
+                      className={cn(
+                        'h-5 w-5 shrink-0 transition-colors',
+                        active ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                      )}
+                      aria-hidden="true"
+                    />
+                    {count > 0 && (
+                      <span
+                        aria-hidden="true"
+                        title={countLabel}
+                        className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[9px] font-bold leading-none tabular-nums text-warning-foreground"
+                      >
+                        {count > 99 ? '99+' : count}
+                      </span>
                     )}
-                    aria-hidden="true"
-                  />
+                  </span>
                   <span className="truncate leading-none">{item.label}</span>
+                  {count > 0 && <span className="sr-only">{countLabel}</span>}
                 </Link>
               </li>
             )
@@ -138,7 +166,11 @@ export default function BottomNav({
               <SheetTrigger asChild>
                 <button
                   type="button"
-                  aria-label="All fellowship sections and admin tools"
+                  aria-label={
+                    hiddenAttention > 0
+                      ? `All fellowship sections and admin tools, ${hiddenAttention} item${hiddenAttention === 1 ? '' : 's'} awaiting attention`
+                      : 'All fellowship sections and admin tools'
+                  }
                   aria-expanded={open}
                   className={cn(
                     'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors [touch-action:manipulation]',
@@ -148,13 +180,21 @@ export default function BottomNav({
                       : 'font-medium text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  <LayoutGrid
-                    className={cn(
-                      'h-5 w-5 shrink-0',
-                      allActive ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                  <span className="relative inline-flex shrink-0">
+                    <LayoutGrid
+                      className={cn(
+                        'h-5 w-5 shrink-0',
+                        allActive ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                      )}
+                      aria-hidden="true"
+                    />
+                    {hiddenAttention > 0 && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warning ring-2 ring-background"
+                      />
                     )}
-                    aria-hidden="true"
-                  />
+                  </span>
                   <span className="truncate leading-none">All</span>
                 </button>
               </SheetTrigger>
@@ -177,6 +217,11 @@ export default function BottomNav({
                     {permittedItems.map((item) => {
                       const Icon = item.icon
                       const active = isItemActive(pathname, item.href)
+                      const count = attention?.[item.section] ?? 0
+                      const countLabel =
+                        count > 0
+                          ? `${count} item${count === 1 ? '' : 's'} awaiting attention`
+                          : undefined
                       return (
                         <Link
                           key={item.section}
@@ -199,6 +244,16 @@ export default function BottomNav({
                             aria-hidden="true"
                           />
                           <span className="flex-1 truncate">{item.label}</span>
+                          {count > 0 && (
+                            <span
+                              aria-hidden="true"
+                              title={countLabel}
+                              className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warning px-1.5 text-[11px] font-semibold leading-none tabular-nums text-warning-foreground"
+                            >
+                              {count > 99 ? '99+' : count}
+                            </span>
+                          )}
+                          {count > 0 && <span className="sr-only">{countLabel}</span>}
                           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
                         </Link>
                       )

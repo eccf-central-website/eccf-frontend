@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Shield,
   Building,
@@ -12,15 +13,28 @@ import {
   Clock,
   ExternalLink,
   Crown,
+  ThumbsUp,
+  ThumbsDown,
+  Trash2,
+  ArrowUpDown,
+  Loader2,
 } from 'lucide-react'
-import type { ExecutiveRow } from '@/types'
+import type { ExecutiveRow, PendingExecutiveApplication } from '@/types'
 import { Input } from '@/components/dashboard/ui/input'
 import { Badge } from '@/components/dashboard/ui/badge'
 import ExecutiveCsvImportDialog from '@/components/dashboard/workers/ExecutiveCsvImportDialog'
+import {
+  decideExecutivePosition,
+  deleteExecutivePosition,
+  updateExecutiveRank,
+} from '@/app/actions/executive-actions'
+import { toastSuccess, toastError } from '@/lib/dashboard/toast'
 import { cn } from '@/lib/utils'
 
 interface ExecutivesClientProps {
   initialExecutives: ExecutiveRow[]
+  /** Registration/profile applications still awaiting an approval decision. */
+  initialPendingApplications?: PendingExecutiveApplication[]
   canManage?: boolean
   /** Date-only eyebrow rendered by the server, e.g. "29 October 2026". */
   today: string
@@ -56,19 +70,65 @@ function approvedPositions(row: ExecutiveRow) {
   return (row.positions || []).filter((position) => position.status === 'approved')
 }
 
+function positionLabel(position: {
+  kind: 'csgb' | 'hall' | 'team'
+  office?: string
+  csgbRoleTitle?: string
+  hallName?: string
+  hall?: string
+  teamTitle?: string
+  teamName?: string
+}): string {
+  if (position.kind === 'csgb') return position.office || position.csgbRoleTitle || 'CSGB Officer'
+  if (position.kind === 'hall') return `Hall Pastor (${position.hallName || position.hall || 'Hall'})`
+  return `${position.teamTitle || position.teamName || 'Ministry'} Lead`
+}
+
+/**
+ * Legacy records stored a worker document ID in `decidedBy`. Showing that raw
+ * ID helps nobody, so only genuine names are displayed.
+ */
+function isRecordId(value: string): boolean {
+  return !value.includes(' ') && /^[a-z0-9_-]{16,}$/i.test(value)
+}
+
+function displayApproverName(decidedBy?: string): string | undefined {
+  const name = decidedBy?.trim()
+  if (!name || isRecordId(name)) return undefined
+  return name
+}
+
+/** Decide who to credit for a decision. The person's name is the primary display. */
+function approvedByLine(decidedBy?: string, decidedAt?: string): string {
+  const when = decidedAt ? formatDate(decidedAt) : ''
+  const name = displayApproverName(decidedBy)
+  if (name) return `Approved by ${name}${when ? ` · ${when}` : ''}`
+  return when ? `Approved · ${when}` : 'Approved'
+}
+
 export default function ExecutivesClient({
   initialExecutives,
+  initialPendingApplications = [],
   canManage = false,
   today,
 }: ExecutivesClientProps) {
+  const router = useRouter()
   const [executives, setExecutives] = useState<ExecutiveRow[]>(initialExecutives)
+  const [pendingApplications, setPendingApplications] = useState<PendingExecutiveApplication[]>(
+    initialPendingApplications
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<CategoryTab>('all')
+  const [busyKey, setBusyKey] = useState<string | null>(null)
 
   // Keep local state in sync when server props refresh.
   React.useEffect(() => {
     setExecutives(initialExecutives)
   }, [initialExecutives])
+
+  React.useEffect(() => {
+    setPendingApplications(initialPendingApplications)
+  }, [initialPendingApplications])
 
   // Defensive filter: the data layer already scopes the query, but stale
   // props or a revoked appointment must never keep a leader on the roster.
@@ -121,18 +181,120 @@ export default function ExecutivesClient({
 
       if (!q) return true
 
-      // Search match across worker name, email, hall, and position titles
+      // Search match across worker name, email, hall, position titles and approver
       const nameMatch = worker.fullName?.toLowerCase().includes(q)
       const emailMatch = worker.email?.toLowerCase().includes(q)
       const hallMatch = worker.hall?.toLowerCase().includes(q)
       const posMatch = worker.positions.some((p) => {
         const title = (p.office || p.csgbRoleTitle || p.hallName || p.teamTitle || p.teamName || '').toLowerCase()
-        return title.includes(q)
+        return title.includes(q) || Boolean(p.decidedBy?.toLowerCase().includes(q))
       })
 
       return Boolean(nameMatch || emailMatch || hallMatch || posMatch)
     })
   }, [roster, activeTab, searchQuery])
+
+  async function handleDecision(
+    application: PendingExecutiveApplication,
+    decision: 'approved' | 'rejected'
+  ) {
+    const key = `${application.workerId}:${application.position.key}`
+    setBusyKey(key)
+    try {
+      const res = await decideExecutivePosition(
+        application.workerId,
+        application.position.key,
+        decision
+      )
+
+      if (!res.ok) {
+        toastError(res.error || 'Failed to record the decision.')
+        return
+      }
+
+      setPendingApplications((prev) =>
+        prev.filter(
+          (item) =>
+            !(item.workerId === application.workerId && item.position.key === application.position.key)
+        )
+      )
+      toastSuccess(
+        decision === 'approved'
+          ? `${application.fullName} approved as ${positionLabel(application.position)}.`
+          : `${application.fullName}'s ${positionLabel(application.position)} application was declined.`
+      )
+      router.refresh()
+    } catch {
+      toastError('An unexpected network error occurred.')
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
+  async function handleDeletePosition(
+    worker: ExecutiveRow,
+    positionKey: string,
+    label: string,
+    fromAppointment: boolean
+  ) {
+    const isReserved = fromAppointment || !worker.isRegistered
+    const confirmed = window.confirm(
+      isReserved
+        ? `Delete the reserved appointment for ${worker.fullName} as “${label}”? This removes the Sanity placeholder, so the role will no longer auto-activate when they register.`
+        : `Delete ${worker.fullName}'s “${label}” role? This removes it from their worker record and deletes any linked Sanity appointment placeholder so it cannot auto-link again.`
+    )
+    if (!confirmed) return
+
+    const key = `delete:${worker._id}:${positionKey}`
+    setBusyKey(key)
+    try {
+      const res = await deleteExecutivePosition(worker._id, positionKey, {
+        fromAppointment,
+        reason: isReserved ? 'Reserved appointment removed' : 'Executive role deleted',
+      })
+      if (!res.ok) {
+        toastError(res.error || 'Failed to delete this executive role.')
+        return
+      }
+
+      toastSuccess(
+        `${worker.fullName} — ${label} deleted.${
+          res.deletedPlaceholders
+            ? ` ${res.deletedPlaceholders} Sanity placeholder${
+                res.deletedPlaceholders === 1 ? '' : 's'
+              } removed.`
+            : ''
+        }`
+      )
+      router.refresh()
+    } catch {
+      toastError('An unexpected network error occurred.')
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
+  async function handleToggleRank(
+    worker: ExecutiveRow,
+    positionKey: string,
+    currentRank: 'lead' | 'assistant' | undefined
+  ) {
+    const nextRank = currentRank === 'assistant' ? 'lead' : 'assistant'
+    setBusyKey(`rank:${worker._id}:${positionKey}`)
+    try {
+      const res = await updateExecutiveRank(worker._id, positionKey, nextRank)
+      if (!res.ok) {
+        toastError(res.error || 'Failed to update rank.')
+        return
+      }
+      toastSuccess(`${worker.fullName} is now ${nextRank === 'assistant' ? 'Assistant' : 'Lead'}.`)
+      router.refresh()
+    } catch {
+      toastError('An unexpected network error occurred.')
+    } finally {
+      setBusyKey(null)
+    }
+  }
 
   const tabClass = (tab: CategoryTab) =>
     cn(
@@ -238,6 +400,77 @@ export default function ExecutivesClient({
         </div>
       )}
 
+      {/* Pending executive applications — the decision queue */}
+      {canManage && pendingApplications.length > 0 && (
+        <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold text-foreground">Awaiting Your Decision</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Applications submitted by workers. Approving grants the role immediately.
+              </p>
+            </div>
+            <Badge className="border-none bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+              {pendingApplications.length} pending
+            </Badge>
+          </div>
+
+          <ul className="mt-3 space-y-2">
+            {pendingApplications.map((application) => {
+              const key = `${application.workerId}:${application.position.key}`
+              const isBusy = busyKey === key
+              return (
+                <li
+                  key={key}
+                  className="flex flex-col gap-3 rounded-xl bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-sm font-semibold text-foreground">
+                        {application.fullName}
+                      </span>
+                      <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                        {positionLabel(application.position)}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                      {application.email || 'No email on record'}
+                      {application.hall ? ` · ${application.hall}` : ''}
+                      {' · '}Submitted {formatDate(application.position.submittedAt || application.createdAt)}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleDecision(application, 'approved')}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {isBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                      )}
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleDecision(application, 'rejected')}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-background px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" />
+                      Decline
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Filter Tabs & Search Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1 overflow-x-auto rounded-xl bg-muted/50 p-1">
@@ -268,7 +501,7 @@ export default function ExecutivesClient({
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search leader, office, hall..."
+            placeholder="Search leader, office, approver..."
             className="h-11 rounded-xl bg-background pl-9 text-sm"
           />
         </div>
@@ -383,48 +616,109 @@ export default function ExecutivesClient({
                     </p>
                     <div className="space-y-1.5">
                       {visiblePositions.map((pos) => {
-                        const positionLabel =
-                          pos.kind === 'csgb'
-                            ? pos.office || pos.csgbRoleTitle || 'CSGB Officer'
-                            : pos.kind === 'hall'
-                            ? `Hall Pastor (${pos.hallName || pos.hall || 'Hall'})`
-                            : `${pos.teamTitle || pos.teamName || 'Ministry'} Lead`
-
+                        const label = positionLabel(pos)
                         const isAssistant = pos.rank === 'assistant'
+                        const deleteKey = `delete:${worker._id}:${pos.key}`
+                        const rankKey = `rank:${worker._id}:${pos.key}`
 
                         return (
                           <div
                             key={pos.key}
-                            className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2"
+                            className="rounded-xl bg-muted/40 px-3 py-2"
                           >
-                            <div className="flex min-w-0 flex-col">
-                              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                {pos.kind === 'csgb' && (
-                                  <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                                    CSGB
-                                  </Badge>
-                                )}
-                                {pos.kind === 'hall' && (
-                                  <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                                    Hall Pastor
-                                  </Badge>
-                                )}
-                                {pos.kind === 'team' && (
-                                  <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                                    Team Lead
-                                  </Badge>
-                                )}
-                                <span className="truncate text-xs font-semibold text-foreground">
-                                  {positionLabel}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex min-w-0 flex-col">
+                                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                  {pos.kind === 'csgb' && (
+                                    <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                                      CSGB
+                                    </Badge>
+                                  )}
+                                  {pos.kind === 'hall' && (
+                                    <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                                      Hall Pastor
+                                    </Badge>
+                                  )}
+                                  {pos.kind === 'team' && (
+                                    <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                                      Team Lead
+                                    </Badge>
+                                  )}
+                                  <span className="truncate text-xs font-semibold text-foreground">
+                                    {label}
+                                  </span>
+                                </div>
+
+                                <span className="mt-0.5 text-[10px] text-muted-foreground">
+                                  {isAssistant ? 'Assistant' : 'Head / Lead'} ·{' '}
+                                  {worker.isRegistered
+                                    ? approvedByLine(pos.decidedBy, pos.decidedAt || pos.submittedAt)
+                                    : displayApproverName(pos.decidedBy)
+                                    ? `Reserved by ${displayApproverName(pos.decidedBy)} · ${formatDate(
+                                        worker.importedAt || pos.submittedAt
+                                      )}`
+                                    : `Reserved ${formatDate(worker.importedAt || pos.submittedAt)}`}
+
                                 </span>
                               </div>
 
-                              <span className="mt-0.5 text-[10px] text-muted-foreground">
-                                {isAssistant ? 'Assistant' : 'Head / Lead'} ·{' '}
-                                {worker.isRegistered
-                                  ? formatDate(pos.decidedAt || pos.submittedAt)
-                                  : `Reserved ${formatDate(worker.importedAt || pos.submittedAt)}`}
-                              </span>
+                              {canManage && (
+                                <div className="flex shrink-0 items-center gap-0.5">
+                                  {worker.isRegistered && !pos.fromAppointment && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleRank(worker, pos.key, pos.rank)}
+                                      disabled={busyKey === rankKey}
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
+                                      title={
+                                        isAssistant
+                                          ? `Promote ${worker.fullName} to Lead`
+                                          : `Make ${worker.fullName} Assistant`
+                                      }
+                                      aria-label={
+                                        isAssistant
+                                          ? `Promote ${worker.fullName} to Lead`
+                                          : `Make ${worker.fullName} Assistant`
+                                      }
+                                    >
+                                      {busyKey === rankKey ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <ArrowUpDown className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeletePosition(
+                                        worker,
+                                        pos.key,
+                                        label,
+                                        Boolean(pos.fromAppointment)
+                                      )
+                                    }
+                                    disabled={busyKey === deleteKey}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                                    title={
+                                      pos.fromAppointment || !worker.isRegistered
+                                        ? `Delete ${worker.fullName}'s reserved ${label} appointment and its Sanity placeholder`
+                                        : `Delete ${worker.fullName}'s ${label} role and linked Sanity placeholders`
+                                    }
+                                    aria-label={
+                                      pos.fromAppointment || !worker.isRegistered
+                                        ? `Delete ${worker.fullName}'s reserved ${label} appointment`
+                                        : `Delete ${worker.fullName}'s ${label} role`
+                                    }
+                                  >
+                                    {busyKey === deleteKey ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )

@@ -2,11 +2,13 @@
 
 import { createHash } from 'crypto'
 import * as XLSX from 'xlsx'
+import { revalidatePath } from 'next/cache'
 import { sanityPrivateClient, sanityWriteClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
-import { mergeExecutivePositions } from '@/lib/executive-positions'
+import { executivePositionSignature, mergeExecutivePositions } from '@/lib/executive-positions'
+import { getLeaderPostTitle } from '@/lib/dashboard/rbac'
 
 export interface CsvImportResult {
   ok: boolean
@@ -343,7 +345,7 @@ function parsePositionDetails(
 async function verifyAuth() {
   const session = await getSession()
   if (!session) {
-    return { ok: false, error: 'Not authenticated.' }
+    return { ok: false as const, error: 'Not authenticated.' }
   }
 
   const canManageExecutives = Boolean(
@@ -353,10 +355,10 @@ async function verifyAuth() {
   )
 
   if (!canManageExecutives) {
-    return { ok: false, error: 'You do not have permission to import executive positions.' }
+    return { ok: false as const, error: 'You do not have permission to import executive positions.' }
   }
 
-  return { ok: true, session }
+  return { ok: true as const, session }
 }
 
 /**
@@ -612,8 +614,9 @@ export async function previewExecutiveSpreadsheet(
 
         status,
         statusMessage,
-        // Default to selected so all rows are imported smoothly
-        selected: true,
+        // Warning rows (unmapped positions) start unselected so a generic
+        // "Ministry Team Lead" is never imported by accident.
+        selected: status === 'valid',
       })
     }
 
@@ -677,6 +680,15 @@ export async function commitExecutiveImport(payload: {
     }
   }
 
+  // The person who ran the import is the approver of record. We store their
+  // full name (not their post) so the roster can show "Approved by <name>".
+  const approverName =
+    auth.session.name?.trim() ||
+    (typeof auth.session.worker?.fullName === 'string' ? auth.session.worker.fullName : '') ||
+    'Executive Council'
+  const approverId = String(auth.session.worker?._id || auth.session.id || '')
+  const approverRole = getLeaderPostTitle(auth.session)
+
   const { items } = payload
   const includeUnregistered = payload.includeUnregistered ?? payload.createMissingWorkers ?? false
   if (!items || !items.length) {
@@ -725,6 +737,14 @@ export async function commitExecutiveImport(payload: {
       email?: string
       normalizedName?: string
       guidanceEmailSentAt?: string
+      invitationEmailSentAt?: string
+      kind?: 'csgb' | 'hall' | 'team'
+      office?: string
+      csgbRole?: { _ref?: string }
+      hall?: string
+      hallRef?: { _ref?: string }
+      teamName?: string
+      teamRef?: { _ref?: string }
     }>>(
       `*[_type == "executiveAppointment"]{
         _id,
@@ -733,7 +753,15 @@ export async function commitExecutiveImport(payload: {
         fullName,
         email,
         normalizedName,
-        guidanceEmailSentAt
+        guidanceEmailSentAt,
+        invitationEmailSentAt,
+        kind,
+        office,
+        csgbRole,
+        hall,
+        hallRef,
+        teamName,
+        teamRef
       }`
     ),
     sanityPrivateClient.fetch<Array<{
@@ -773,6 +801,21 @@ export async function commitExecutiveImport(payload: {
       addProfileKeys(appointment.email, appointment.normalizedName, appointment.fullName)
     }
   }
+
+  // Invitations to unregistered appointees are tracked separately: an invited
+  // leader still receives the full guidance email the day they register.
+  const invitedProfileKeys = new Set<string>()
+  const addInvitedKeys = (email?: string, normalizedName?: string, fullName?: string) => {
+    const cleanEmail = email?.trim().toLowerCase()
+    if (cleanEmail && cleanEmail.includes('@')) invitedProfileKeys.add(`email:${cleanEmail}`)
+    const key = normalizedName || normalizeTokensKey(extractNameTokens(fullName || ''))
+    if (key) invitedProfileKeys.add(`name:${key}`)
+  }
+  for (const appointment of existingAppointments) {
+    if (appointment.invitationEmailSentAt) {
+      addInvitedKeys(appointment.email, appointment.normalizedName, appointment.fullName)
+    }
+  }
   for (const record of existingGuidanceEmails) {
     addProfileKeys(record.email, record.normalizedName, record.fullName)
   }
@@ -787,6 +830,58 @@ export async function commitExecutiveImport(payload: {
     if (w.fullName) workerMapByName.set(w.fullName.toLowerCase().trim(), w._id)
     if (w.email) workerEmailsMap.set(w._id, w.email.toLowerCase().trim())
     workerPositionsMap.set(w._id, w.positions || [])
+  }
+
+  // ---------------------------------------------------------------------------
+  // Role occupancy. A role can only be held by one person: importing a second
+  // name for the same office is rejected instead of silently overwriting.
+  // ---------------------------------------------------------------------------
+  const occupiedRoles = new Map<string, { name: string; workerId?: string }>()
+
+  const appointmentSignature = (appointment: {
+    kind?: string
+    office?: string
+    csgbRole?: { _ref?: string }
+    hall?: string
+    hallRef?: { _ref?: string }
+    teamName?: string
+    teamRef?: { _ref?: string }
+  }): string =>
+    executivePositionSignature({
+      kind: appointment.kind,
+      office: appointment.office,
+      csgbRole: appointment.csgbRole,
+      hall: appointment.hall,
+      hallRef: appointment.hallRef,
+      teamName: appointment.teamName,
+      team: appointment.teamRef,
+    })
+
+  for (const worker of existingWorkers) {
+    for (const position of worker.positions || []) {
+      if (position.status !== 'approved') continue
+      occupiedRoles.set(executivePositionSignature(position), {
+        name: worker.fullName || worker._id,
+        workerId: worker._id,
+      })
+    }
+  }
+  for (const appointment of existingAppointments) {
+    if (appointment.status !== 'pending_claim') continue
+    occupiedRoles.set(appointmentSignature(appointment), {
+      name: appointment.fullName || appointment._id,
+    })
+  }
+
+  // Reuse an existing appointment document's ID for the same person + role, so
+  // re-importing a corrected sheet never forks a duplicate reservation.
+  const appointmentIdByRole = new Map<string, string>()
+  for (const appointment of existingAppointments) {
+    const nameKey =
+      appointment.normalizedName ||
+      normalizeTokensKey(extractNameTokens(appointment.fullName || ''))
+    if (!nameKey) continue
+    appointmentIdByRole.set(`${nameKey}|${appointmentSignature(appointment)}`, appointment._id)
   }
 
   // ---------------------------------------------------------------------------
@@ -820,7 +915,18 @@ export async function commitExecutiveImport(payload: {
     teamName?: string
     hallName?: string
   }> = []
-  const unregisteredImports: Array<{ name: string; appointmentId: string }> = []
+  const unregisteredImports: Array<{
+    name: string
+    appointmentId: string
+    email?: string
+    profileEmailKey?: string
+    profileNameKey: string
+    positionTitle: string
+    kind: 'csgb' | 'hall' | 'team'
+    rank: 'lead' | 'assistant'
+    teamName?: string
+    hallName?: string
+  }> = []
 
   for (const item of items) {
     const cleanDisplayName = item.workerDisplayName || capitalizeWords(cleanHonorifics(item.rawName))
@@ -834,6 +940,10 @@ export async function commitExecutiveImport(payload: {
       rank: item.rank || 'lead',
       submittedAt: importedAt,
       decidedAt: importedAt,
+      // Credit the person, not the office.
+      decidedBy: approverName,
+      decidedById: approverId,
+      decidedByRole: approverRole,
     }
 
     if (item.kind === 'csgb') {
@@ -871,13 +981,37 @@ export async function commitExecutiveImport(payload: {
     const targetEmail = (item.email || (targetWorkerId ? workerEmailsMap.get(targetWorkerId) : undefined) || '').trim().toLowerCase()
 
     // -------------------------------------------------------------------------
-    // Always persist an executiveAppointment document in Sanity
+    // Role occupancy + appointment identity
     // -------------------------------------------------------------------------
+    const roleSignature = executivePositionSignature(newPos)
+    const occupant = occupiedRoles.get(roleSignature)
+    const samePerson = Boolean(
+      (targetWorkerId && occupant?.workerId === targetWorkerId) ||
+        (occupant &&
+          normalizeTokensKey(extractNameTokens(occupant.name)) ===
+            normalizeTokensKey(extractNameTokens(cleanDisplayName)))
+    )
+
+    if (occupant && !samePerson) {
+      skipped.push(
+        `${cleanDisplayName}: ${positionTitle} is already held by ${occupant.name}. Relieve the current holder first, or correct the sheet.`
+      )
+      continue
+    }
+
     const nameTokens = extractNameTokens(cleanDisplayName)
     const normalizedKey = normalizeTokensKey(nameTokens)
-    const deterministicAppId = `appointment_${item.kind}_${createHash('sha1')
-      .update(cleanDisplayName.toLowerCase().trim())
-      .digest('hex')}`
+    const deterministicAppId =
+      appointmentIdByRole.get(`${normalizedKey}|${roleSignature}`) ||
+      `appointment_${item.kind}_${createHash('sha1')
+        .update(`${cleanDisplayName.toLowerCase().trim()}|${roleSignature}`)
+        .digest('hex')}`
+
+    // Reserve the role for the rest of this import so two rows cannot claim it.
+    occupiedRoles.set(roleSignature, {
+      name: cleanDisplayName,
+      workerId: targetWorkerId,
+    })
 
     // A previously claimed appointment tells us which worker holds this role,
     // even if the row's name spelling no longer matches the worker document.
@@ -895,6 +1029,13 @@ export async function commitExecutiveImport(payload: {
       kind: item.kind,
       rank: item.rank || 'lead',
       importedAt,
+      importedBy: approverName,
+      importedById: approverId,
+      importedByRole: approverRole,
+      decidedBy: approverName,
+      decidedById: approverId,
+      decidedByRole: approverRole,
+      decidedAt: importedAt,
       rawPosition: item.office || item.teamName || item.hall || 'Executive Position',
     }
     if (targetEmail) appointmentDoc.email = targetEmail
@@ -912,21 +1053,11 @@ export async function commitExecutiveImport(payload: {
     if (targetWorkerId) {
       const currentPositions = workerPositionsMap.get(targetWorkerId) || []
 
-      // Smart merge: replace existing position of the same role/category instead of duplicating
-      const filteredPositions = currentPositions.filter((p) => {
-        if (item.kind === 'csgb' && p.kind === 'csgb') return false
-        if (item.kind === 'team' && p.kind === 'team') {
-          const pTeamRef = (p.team as { _ref?: string })?._ref
-          if (pTeamRef && item.teamRef && pTeamRef === item.teamRef) return false
-          if (p.teamName && item.teamName && String(p.teamName).toLowerCase() === String(item.teamName).toLowerCase()) return false
-        }
-        if (item.kind === 'hall' && p.kind === 'hall') {
-          const pHallRef = (p.hallRef as { _ref?: string })?._ref
-          if (pHallRef && item.hallRef && pHallRef === item.hallRef) return false
-          if (p.hall && item.hall && String(p.hall).toLowerCase() === String(item.hall).toLowerCase()) return false
-        }
-        return true
-      })
+      // Smart merge: replace only the *same* role, never other positions of the
+      // same category (a leader may hold two CSGB offices).
+      const filteredPositions = currentPositions.filter(
+        (p) => executivePositionSignature(p) !== roleSignature
+      )
 
       const updatedPositions = [...filteredPositions, newPos]
       workerPositionsMap.set(targetWorkerId, updatedPositions)
@@ -966,7 +1097,19 @@ export async function commitExecutiveImport(payload: {
         _id: deterministicAppId,
         ...appointmentDoc,
       } as { _id: string; _type: string } & Record<string, unknown>)
-      unregisteredImports.push({ name: cleanDisplayName, appointmentId: deterministicAppId })
+      unregisteredImports.push({
+        name: cleanDisplayName,
+        appointmentId: deterministicAppId,
+        email: targetEmail,
+        profileEmailKey:
+          targetEmail && targetEmail.includes('@') ? `email:${targetEmail}` : undefined,
+        profileNameKey: `name:${normalizedKey}`,
+        positionTitle,
+        kind: item.kind,
+        rank: item.rank || 'lead',
+        teamName: item.teamName,
+        hallName: item.hall,
+      })
     } else {
       skipped.push(
         `${cleanDisplayName}: Not registered on /register — skipped. Enable "Include unregistered EXCOs" to reserve the appointment.`
@@ -1099,6 +1242,7 @@ export async function commitExecutiveImport(payload: {
     string,
     { _id: string; _type: string } & Record<string, unknown>
   >()
+  const emailedAppointmentIds: string[] = []
   const emailTasks = Array.from(pendingEmails.values())
 
   for (let start = 0; start < emailTasks.length; start += EMAIL_BATCH_SIZE) {
@@ -1140,6 +1284,7 @@ export async function commitExecutiveImport(payload: {
         // Prevent a later batch in this same import from emailing this profile.
         if (task.profileEmailKey) notifiedProfileKeys.add(task.profileEmailKey)
         notifiedProfileKeys.add(task.profileNameKey)
+        emailedAppointmentIds.push(task.appointmentId)
       } else {
         const reason = result.status === 'fulfilled' ? result.value.error : String(result.reason)
         console.error(
@@ -1162,6 +1307,93 @@ export async function commitExecutiveImport(payload: {
       console.error('[commitExecutiveImport] Failed to persist guidance email records:', err)
     }
   }
+
+  // Stamp the claimed appointment so `guidanceEmailSentAt` is no longer a field
+  // the code reads but never writes.
+  if (emailedAppointmentIds.length > 0) {
+    try {
+      const transaction = sanityWriteClient.transaction()
+      for (const appointmentId of Array.from(new Set(emailedAppointmentIds))) {
+        transaction.patch(appointmentId, { set: { guidanceEmailSentAt: importedAt } })
+      }
+      await transaction.commit()
+    } catch (err) {
+      console.error('[commitExecutiveImport] Failed to stamp guidance email timestamps:', err)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Invite unregistered appointees to register. Their office is already reserved,
+  // so the email explains that registering with the same address activates it.
+  // Each profile is invited at most once, even across repeated imports.
+  // ---------------------------------------------------------------------------
+  const invitationTasks = new Map<string, (typeof unregisteredImports)[number]>()
+  for (const entry of unregisteredImports) {
+    if (!writtenAppointmentIds.has(entry.appointmentId)) continue
+    if (!entry.email || !entry.email.includes('@')) continue
+
+    const profileKeys = [entry.profileNameKey, entry.profileEmailKey].filter(
+      (key): key is string => Boolean(key)
+    )
+    if (profileKeys.some((key) => invitedProfileKeys.has(key))) {
+      emailsSkipped++
+      continue
+    }
+    for (const key of profileKeys) invitedProfileKeys.add(key)
+    invitationTasks.set(entry.profileEmailKey || entry.profileNameKey, entry)
+  }
+
+  const invitedAppointmentIds: string[] = []
+  const invitationList = Array.from(invitationTasks.values())
+
+  for (let start = 0; start < invitationList.length; start += EMAIL_BATCH_SIZE) {
+    const batch = invitationList.slice(start, start + EMAIL_BATCH_SIZE)
+    const results = await Promise.allSettled(
+      batch.map((task) =>
+        sendExecutiveAppointmentEmail({
+          recipientName: task.name,
+          recipientEmail: task.email || '',
+          positionTitle: task.positionTitle,
+          category: task.kind,
+          rank: task.rank,
+          teamName: task.teamName,
+          hallName: task.hallName,
+          invitation: true,
+        })
+      )
+    )
+
+    results.forEach((result, index) => {
+      const task = batch[index]
+      if (result.status === 'fulfilled' && result.value.ok) {
+        emailsSent++
+        invitedAppointmentIds.push(task.appointmentId)
+      } else {
+        const reason = result.status === 'fulfilled' ? result.value.error : String(result.reason)
+        console.error(
+          `[commitExecutiveImport] Invitation email error for ${task.email}:`,
+          reason
+        )
+      }
+    })
+  }
+
+  if (invitedAppointmentIds.length > 0) {
+    try {
+      const transaction = sanityWriteClient.transaction()
+      for (const appointmentId of Array.from(new Set(invitedAppointmentIds))) {
+        transaction.patch(appointmentId, { set: { invitationEmailSentAt: importedAt } })
+      }
+      await transaction.commit()
+    } catch (err) {
+      console.error('[commitExecutiveImport] Failed to stamp invitation email timestamps:', err)
+    }
+  }
+
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/dashboard/executives')
+  revalidatePath('/dashboard/workers')
+  revalidatePath('/dashboard')
 
   return {
     ok: true,
@@ -1210,39 +1442,51 @@ export async function claimPendingExecutiveAppointmentsForWorker(
       hallRef?: { _ref: string }
       teamName?: string
       teamRef?: { _ref: string }
-    }>>(`*[_type == "executiveAppointment" && status == "pending_claim"]`)
+      decidedBy?: string
+      decidedById?: string
+      decidedByRole?: string
+      decidedAt?: string
+    }>>(
+      `*[_type == "executiveAppointment" && status == "pending_claim"]{
+        _id,
+        fullName,
+        normalizedName,
+        email,
+        kind,
+        rank,
+        office,
+        csgbRole,
+        hall,
+        hallRef,
+        teamName,
+        teamRef,
+        decidedBy,
+        decidedById,
+        decidedByRole,
+        decidedAt
+      }`
+    )
 
     const matchedAppointments: typeof pendingAppointments = []
 
     for (const app of pendingAppointments) {
-      let isMatch = false
-
-      // Match by exact email if available
-      if (cleanEmail && app.email && app.email.trim().toLowerCase() === cleanEmail) {
-        isMatch = true
+      // Security: an appointment that carries an email may ONLY be claimed by
+      // that exact email. Falling back to a name match here let a same-named
+      // registrant hijack another leader's reserved office.
+      if (app.email && app.email.trim()) {
+        if (!cleanEmail || app.email.trim().toLowerCase() !== cleanEmail) continue
+        matchedAppointments.push(app)
+        continue
       }
 
-      // Match by normalized invariant key
-      if (!isMatch && app.normalizedName && app.normalizedName === normalizedKey) {
-        isMatch = true
+      // Name-only reservations require an exact normalized-name match. Token
+      // subsets are deliberately not accepted.
+      if (app.normalizedName) {
+        if (app.normalizedName === normalizedKey) matchedAppointments.push(app)
+        continue
       }
 
-      // Match by token invariant
-      if (!isMatch && app.fullName) {
-        const appTokens = extractNameTokens(app.fullName)
-        if (appTokens.length >= 2 && nameTokens.length >= 2) {
-          if (normalizeTokensKey(appTokens) === normalizedKey) {
-            isMatch = true
-          } else {
-            const allTokensMatch =
-              nameTokens.every((t) => appTokens.includes(t)) ||
-              appTokens.every((t) => nameTokens.includes(t))
-            if (allTokensMatch) isMatch = true
-          }
-        }
-      }
-
-      if (isMatch) {
+      if (app.fullName && normalizeTokensKey(extractNameTokens(app.fullName)) === normalizedKey) {
         matchedAppointments.push(app)
       }
     }
@@ -1267,15 +1511,11 @@ export async function claimPendingExecutiveAppointmentsForWorker(
 
     for (const ph of placeholderMatches) {
       if (!ph.fullName) continue
-      const phTokens = extractNameTokens(ph.fullName)
-      const phKey = normalizeTokensKey(phTokens)
-      const matchesName =
-        phKey === normalizedKey ||
-        (phTokens.length >= 2 &&
-          nameTokens.length >= 2 &&
-          (nameTokens.every((t) => phTokens.includes(t)) || phTokens.every((t) => nameTokens.includes(t))))
+      const phKey = normalizeTokensKey(extractNameTokens(ph.fullName))
 
-      if (matchesName && Array.isArray(ph.positions)) {
+      // Exact normalized name only — a partial token overlap must never merge
+      // two different people's records.
+      if (phKey === normalizedKey && Array.isArray(ph.positions)) {
         const approvedOnly = ph.positions.filter((p) => p.status === 'approved')
         placeholderPositions.push(...approvedOnly)
         placeholdersToDelete.push(ph._id)
@@ -1294,7 +1534,10 @@ export async function claimPendingExecutiveAppointmentsForWorker(
         rank: app.rank || 'lead',
         status: 'approved',
         submittedAt: new Date().toISOString(),
-        decidedAt: new Date().toISOString(),
+        decidedAt: app.decidedAt || new Date().toISOString(),
+        ...(app.decidedBy ? { decidedBy: app.decidedBy } : {}),
+        ...(app.decidedById ? { decidedById: app.decidedById } : {}),
+        ...(app.decidedByRole ? { decidedByRole: app.decidedByRole } : {}),
       }
 
       if (app.kind === 'csgb') {
@@ -1429,6 +1672,13 @@ export async function reconcileRegisteredExecutives(): Promise<{
         reconciledCount++
         details.push(`${w.fullName}: Activated ${res.claimed} appointed role(s).`)
       }
+    }
+
+    if (reconciledCount > 0) {
+      revalidatePath('/dashboard', 'layout')
+      revalidatePath('/dashboard/executives')
+      revalidatePath('/dashboard/workers')
+      revalidatePath('/dashboard')
     }
 
     return { ok: true, reconciledCount, details }

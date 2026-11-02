@@ -63,6 +63,7 @@ export async function toggleFirstTimerFollowUpAction(
       row.followUpNotes = input.notes.trim() || undefined
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/first-timers')
     revalidatePath('/dashboard')
     return {
@@ -102,6 +103,7 @@ export async function toggleFirstTimerFollowUpAction(
       .set(patchData)
       .commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/first-timers')
     revalidatePath('/dashboard')
 

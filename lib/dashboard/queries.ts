@@ -16,7 +16,7 @@
 
 /** $hall: null for all halls; $team: null for all teams; $cleanTeam: normalized team prefix/keyword */
 export const DASHBOARD_WORKERS_QUERY = `
-  *[_type == "worker" && (
+  *[_type == "worker" && coalesce(status, "active") != "archived" && (
     $hall == null || hall == $hall || lower(hall) == lower($hall)
   ) && (
     $team == null ||
@@ -73,10 +73,10 @@ export const DASHBOARD_WORKERS_QUERY = `
     requestedRole,
     "verificationStatus": coalesce(
       select(
+        count(memberships) == 0 => null,
         count(memberships[status == "pending"]) > 0 => "pending",
         count(memberships[status == "verified"]) > 0 => "verified",
-        count(memberships[status == "rejected"]) > 0 => "rejected",
-        "verified"
+        count(memberships[status == "rejected"]) > 0 => "rejected"
       ),
       verificationStatus,
       "verified"
@@ -100,6 +100,8 @@ export const DASHBOARD_WORKERS_QUERY = `
       "teamKey": coalesce(team->key, team->slug.current),
       "teamName": team->name,
       decidedBy,
+      decidedById,
+      decidedByRole,
       decidedAt
     },
     "memberships": memberships[]{
@@ -109,6 +111,8 @@ export const DASHBOARD_WORKERS_QUERY = `
       "teamKey": coalesce(team->key, team->slug.current),
       "teamName": team->name,
       decidedBy,
+      decidedById,
+      decidedByRole,
       decidedAt
     },
     createdAt,
@@ -118,7 +122,7 @@ export const DASHBOARD_WORKERS_QUERY = `
 `
 
 export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
-  *[_type == "worker" && count(positions[status == "pending"]) > 0] | order(_createdAt desc) {
+  *[_type == "worker" && coalesce(status, "active") != "archived" && count(positions[status == "pending"]) > 0] | order(_createdAt desc) {
     _id,
     fullName,
     email,
@@ -134,11 +138,17 @@ export const DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY = `
       "csgbRoleKey": coalesce(csgbRole->slug.current, csgbRole->key),
       "canApproveExecutives": coalesce(csgbRole->canApproveExecutives, false),
       "hall": coalesce(hallRef->name, hall),
+      "hallName": coalesce(hallRef->name, hall),
+      "teamName": coalesce(team->name, teamName),
+      "teamTitle": coalesce(team->name, teamName),
       rank,
       status,
+      submittedAt,
       "teamId": coalesce(team._ref, team->_id),
       "teamKey": coalesce(team->key, team->slug.current),
-      "teamName": team->name,
+      decidedBy,
+      decidedById,
+      decidedByRole,
       decidedAt
     }
   }
@@ -364,6 +374,9 @@ export const DASHBOARD_EXECUTIVES_QUERY = `
       rank,
       status,
       submittedAt,
+      decidedBy,
+      decidedById,
+      decidedByRole,
       decidedAt,
       "csgbRoleTitle": coalesce(csgbRole->title, office),
       "csgbRoleRef": csgbRole._ref,
@@ -394,5 +407,88 @@ export const DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY = `
     "csgbRoleRef": csgbRole._ref,
     "hallName": coalesce(hallRef->name, hall),
     "teamTitle": coalesce(team->name, teamName)
+  }
+`
+
+// ---------------------------------------------------------------------------
+// Navigation attention counts
+//
+// One lightweight query powers the badges beside every dashboard tab so a
+// leader can see outstanding work from any page. Each count is permission-
+// gated and scoped exactly like the page it points to:
+// - Executives: pending appointments awaiting an approval decision.
+// - Workers: registrations / memberships still awaiting verification.
+// - First-Timers: visitors not yet followed up.
+// - Welfare: care requests still marked Pending.
+// - Prayer Requests: requests submitted in the rolling 7-day window.
+// - Announcements: unpublished drafts.
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_NAV_ATTENTION_QUERY = `
+  {
+    "executives": select($canExec => count(*[
+      _type == "worker" &&
+      !(_id in path("drafts.**")) &&
+      coalesce(status, "active") != "archived" &&
+      verificationStatus != "rejected"
+    ].positions[status == "pending" && defined(_key)]), 0),
+    "workers": select($canWorkers => count(*[
+      _type == "worker" &&
+      !(_id in path("drafts.**")) &&
+      coalesce(status, "active") != "archived" &&
+      ($hall == null || hall == $hall || lower(hall) == lower($hall)) &&
+      (
+        $team == null ||
+        $team in memberships[].team->name ||
+        count(memberships[team->name match $team || lower(team->name) == lower($team)]) > 0 ||
+        team->name == $team ||
+        team == $team ||
+        lower(team->name) == lower($team) ||
+        lower(team) == lower($team) ||
+        team->name match $team ||
+        team match $team ||
+        $team in teams[]->name ||
+        $team in teams ||
+        count((teams[]->name)[@ match $team || lower(@) == lower($team)]) > 0 ||
+        count(teams[@ match $team || lower(@) == lower($team)]) > 0 ||
+        ($cleanTeam != null && (
+          $cleanTeam in memberships[].team->name ||
+          count(memberships[team->name match $cleanTeam || lower(team->name) == lower($cleanTeam)]) > 0 ||
+          team->name match $cleanTeam ||
+          team match $cleanTeam ||
+          lower(team->name) == lower($cleanTeam) ||
+          lower(team) == lower($cleanTeam) ||
+          $cleanTeam in teams[]->name ||
+          $cleanTeam in teams ||
+          count((teams[]->name)[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0 ||
+          count(teams[@ match $cleanTeam || lower(@) == lower($cleanTeam)]) > 0
+        ))
+      ) &&
+      (
+        verificationStatus == "pending" ||
+        count(memberships[status == "pending"]) > 0
+      )
+    ]), 0),
+    "firstTimers": select($canFirstTimers => count(*[
+      _type == "firstTimer" &&
+      !(_id in path("drafts.**")) &&
+      followedUp != true &&
+      ($hall == null || hall == $hall || lower(hall) == lower($hall))
+    ]), 0),
+    "welfare": select($canWelfare => count(*[
+      _type == "welfareRequest" &&
+      !(_id in path("drafts.**")) &&
+      status == "Pending"
+    ]), 0),
+    "prayerRequests": select($canPrayer => count(*[
+      _type == "prayerRequest" &&
+      !(_id in path("drafts.**")) &&
+      dateSubmitted >= $weekStart
+    ]), 0),
+    "announcements": select($canAnnouncements => count(*[
+      _type == "announcement" &&
+      !(_id in path("drafts.**")) &&
+      isPublished != true
+    ]), 0)
   }
 `

@@ -22,7 +22,7 @@ import { createBlindIndex, encrypt } from '@/lib/encryption'
 import { getSession } from '@/lib/dashboard/auth'
 import { MOCK_WORKERS } from '@/lib/dashboard/mock/data'
 import { auditMemberDirectory, matchesTeam } from '@/lib/dashboard/data'
-import { hasPermission } from '@/lib/dashboard/rbac'
+import { getLeaderPostTitle, hasPermission } from '@/lib/dashboard/rbac'
 import { clerkClient } from '@clerk/nextjs/server'
 import type { ActionResult } from '@/lib/dashboard/action-result'
 import type { WorkerRole, ExcoPosition } from '@/types'
@@ -78,7 +78,11 @@ export async function verifyWorkerMembership(
         ? 'CSGB Admin'
         : `${session.leadingTeam || session.team} Team Lead`)
   const approverId: string = String(session.worker?._id || session.id)
-  const logMessage = `${actionLabel} by ${approverRole} on ${today}${input.reason ? ` (${input.reason})` : ''}`
+  const approverName =
+    session.name?.trim() ||
+    (typeof session.worker?.fullName === 'string' ? session.worker.fullName.trim() : '') ||
+    'CSGB Admin'
+  const logMessage = `${actionLabel} by ${approverName} (${approverRole}) on ${today}${input.reason ? ` (${input.reason})` : ''}`
 
   // Allowed team scopes for non-presidents
   const allowedTeamNames = [session.leadingTeam || session.team].filter(Boolean) as string[]
@@ -126,7 +130,9 @@ export async function verifyWorkerMembership(
 
         if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
           m.status = newStatus
-          m.decidedBy = approverId
+          m.decidedBy = approverName
+          m.decidedById = approverId
+          m.decidedByRole = approverRole
           m.decidedAt = now.toISOString()
         }
       })
@@ -141,6 +147,7 @@ export async function verifyWorkerMembership(
       worker.welcomeEmailSent = true
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/attendance')
     revalidatePath('/dashboard')
@@ -242,10 +249,9 @@ export async function verifyWorkerMembership(
         if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
           patch = patch.set({
             [`memberships[_key=="${m._key}"].status`]: newStatus,
-            [`memberships[_key=="${m._key}"].decidedBy`]: {
-              _type: 'reference',
-              _ref: approverId,
-            },
+            [`memberships[_key=="${m._key}"].decidedBy`]: approverName,
+            [`memberships[_key=="${m._key}"].decidedById`]: approverId,
+            [`memberships[_key=="${m._key}"].decidedByRole`]: approverRole,
             [`memberships[_key=="${m._key}"].decidedAt`]: now.toISOString(),
           })
         }
@@ -272,6 +278,7 @@ export async function verifyWorkerMembership(
 
     await patch.append('updateLog', [logMessage]).commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/attendance')
     revalidatePath('/dashboard')
@@ -302,7 +309,13 @@ export async function toggleExcoApproval(
   const now = new Date()
   const today = now.toLocaleDateString('en-CA')
   const actionLabel = input.approved ? 'Exco access approved' : 'Exco access revoked'
-  const logMessage = `${actionLabel} by CSGB Admin on ${today}`
+  const approverId = String(session.worker?._id || session.id)
+  const approverName =
+    session.name?.trim() ||
+    (typeof session.worker?.fullName === 'string' ? session.worker.fullName.trim() : '') ||
+    'CSGB Admin'
+  const approverRole = getLeaderPostTitle(session)
+  const logMessage = `${actionLabel} by ${approverName} (${approverRole}) on ${today}`
 
   const isMock =
     process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
@@ -320,12 +333,15 @@ export async function toggleExcoApproval(
         ...position,
         status: 'rejected' as const,
         decidedAt: now.toISOString(),
-        decidedBy: String(session.worker?._id || session.id),
+        decidedBy: approverName,
+        decidedById: approverId,
+        decidedByRole: approverRole,
       }))
     }
     worker.updatedAt = now.toISOString()
     worker.updateLog = [...(worker.updateLog || []), logMessage]
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
@@ -356,7 +372,9 @@ export async function toggleExcoApproval(
         ...position,
         status: 'rejected',
         decidedAt: now.toISOString(),
-        decidedBy: String(session.worker?._id || session.id),
+        decidedBy: approverName,
+        decidedById: approverId,
+        decidedByRole: approverRole,
       }))
     }
 
@@ -365,6 +383,7 @@ export async function toggleExcoApproval(
       .append('updateLog', [logMessage])
       .commit()
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
@@ -562,19 +581,24 @@ export async function deleteApprovedWorkerAction(
         ...position,
         status: 'rejected',
         decidedAt: nowIso,
-        decidedBy: actorId,
+        decidedBy: actorName,
+        decidedById: actorId,
+        decidedByRole: actorRole,
       }))
       rec.memberships = (worker.memberships || []).map((membership) => ({
         ...membership,
         status: 'rejected',
         decidedAt: nowIso,
-        decidedBy: actorId,
+        decidedBy: actorName,
+        decidedById: actorId,
+        decidedByRole: actorRole,
       }))
       const logs = Array.isArray(rec.updateLog) ? (rec.updateLog as string[]) : []
       logs.push(logMsg)
       rec.updateLog = logs
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
@@ -667,13 +691,17 @@ export async function deleteApprovedWorkerAction(
         ...position,
         status: 'rejected',
         decidedAt: nowIso,
-        decidedBy: actorId,
+        decidedBy: actorName,
+        decidedById: actorId,
+        decidedByRole: actorRole,
       }))
       const revokedMemberships = memberships.map((membership) => ({
         ...membership,
         status: 'rejected',
         decidedAt: nowIso,
-        decidedBy: actorId,
+        decidedBy: actorName,
+        decidedById: actorId,
+        decidedByRole: actorRole,
       }))
 
       const auditDoc = {
@@ -716,6 +744,7 @@ export async function deleteApprovedWorkerAction(
       if (existing.clerkUserId) {
         const warning = await revokeClerkSessions(existing.clerkUserId)
         if (warning) {
+          revalidatePath('/dashboard', 'layout')
           revalidatePath('/dashboard/workers')
           revalidatePath('/dashboard/executives')
           revalidatePath('/dashboard/settings')
@@ -732,6 +761,7 @@ export async function deleteApprovedWorkerAction(
       }
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/workers')
     revalidatePath('/dashboard/executives')
     revalidatePath('/dashboard/settings')
@@ -994,6 +1024,7 @@ export async function importWorkerRosterCsvAction(
     }
   }
 
+  revalidatePath('/dashboard', 'layout')
   revalidatePath('/dashboard/workers')
   revalidatePath('/dashboard/settings')
   revalidatePath('/dashboard')

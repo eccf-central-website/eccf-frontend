@@ -10,7 +10,7 @@
 
 import { cookies } from 'next/headers'
 import { isMockAuthEnabled, requireSession } from '@/lib/dashboard/auth'
-import { DEV_MOCK_STATE_COOKIE } from '@/lib/dashboard/data'
+import { DEV_MOCK_STATE_COOKIE, getNavigationAttention } from '@/lib/dashboard/data'
 import { canAccessSection, isMediaLeader } from '@/lib/dashboard/rbac'
 import { isDevMockState, SIDEBAR_COOKIE } from '@/lib/dashboard/shell'
 import { NAV_ITEMS } from '@/components/dashboard/shell/nav-items'
@@ -46,6 +46,7 @@ export default async function DashboardShellLayout({
   const sections = NAV_ITEMS.filter((item) => canAccessSection(session.role, item.section, session)).map(
     (item) => item.section
   )
+  const attention = await getNavigationAttention(session)
   const cookieStore = cookies()
   const sidebarCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === 'collapsed'
 
@@ -59,7 +60,7 @@ export default async function DashboardShellLayout({
   return (
     <div data-dashboard-root className="fixed inset-0 flex h-dvh w-full overflow-hidden bg-background">
       <SkipLink />
-      <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} />
+      <AppSidebar sections={sections} defaultCollapsed={sidebarCollapsed} attention={attention} />
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
         <TopBar
           sections={sections}
@@ -73,6 +74,7 @@ export default async function DashboardShellLayout({
           profileImageUrl={session.profileImageUrl}
           actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
           devTools={devTools}
+          attention={attention}
         />
         <main
           id="main-content"
@@ -86,6 +88,7 @@ export default async function DashboardShellLayout({
           role={session.role}
           isPresident={Boolean(session.access?.isPresident)}
           actions={isMediaLeader(session) ? <SyncSermonsButton /> : undefined}
+          attention={attention}
         />
       </div>
     </div>

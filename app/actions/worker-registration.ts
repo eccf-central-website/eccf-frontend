@@ -2245,6 +2245,8 @@ export async function registerWorker(
           team: { _type: 'reference', _ref: ref._ref },
           status: (existingMem.status as string) || 'pending',
           ...(existingMem.decidedBy ? { decidedBy: existingMem.decidedBy } : {}),
+          ...(existingMem.decidedById ? { decidedById: existingMem.decidedById } : {}),
+          ...(existingMem.decidedByRole ? { decidedByRole: existingMem.decidedByRole } : {}),
           ...(existingMem.decidedAt ? { decidedAt: existingMem.decidedAt } : {}),
         }
       }
@@ -2402,10 +2404,16 @@ export async function registerWorker(
         'birthDay',
         'team',
         'teams',
-        'role',
-        'excoPosition',
         'verificationStatus',
       ]
+
+      // Legacy leaders hold access through `isExcoApproved` + `role` /
+      // `excoPosition` rather than a positions[] entry. Never strip those
+      // fields while they still have no structured position to fall back on.
+      const preservesLegacyExcoAccess = !hasApprovedPositions && Boolean(existing.isExcoApproved)
+      if (!preservesLegacyExcoAccess) {
+        unsets.push('role', 'excoPosition')
+      }
       if (!hasApprovedPositions && !existing.isExcoApproved) {
         unsets.push('isExcoApproved')
       }
@@ -2419,6 +2427,7 @@ export async function registerWorker(
       if (verifiedWorker) {
         cookies().delete(SELF_SERVICE_COOKIE)
       }
+      revalidatePath('/dashboard', 'layout')
       revalidatePath('/dashboard/workers')
       revalidatePath('/register/status')
 
@@ -2576,6 +2585,7 @@ export async function registerWorker(
         console.error('[registerWorker] Worker registration received email error:', ackErr)
       })
 
+      revalidatePath('/dashboard', 'layout')
       revalidatePath('/dashboard/workers')
       revalidatePath('/register/status')
 
@@ -2897,6 +2907,7 @@ export async function uploadWorkerPhotoDirectAction({
       console.info('[uploadWorkerPhotoDirectAction] Google Drive backup not configured (missing GOOGLE_APPS_SCRIPT_WEBHOOK_URL or a <32-byte GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET)')
     }
 
+    revalidatePath('/dashboard', 'layout')
     revalidatePath('/register/status')
     revalidatePath('/dashboard/workers')
 

@@ -31,7 +31,12 @@ export interface WorkerPosition {
   rank?: 'lead' | 'assistant'
   status: 'pending' | 'approved' | 'rejected'
   submittedAt?: string
+  /** Full name of the leader who approved/declined this position. */
   decidedBy?: string
+  /** Worker document ID of that leader, for auditing. */
+  decidedById?: string
+  /** The approving leader's post at the time of the decision. */
+  decidedByRole?: string
   decidedAt?: string
 }
 
@@ -43,6 +48,8 @@ export interface WorkerMembership {
   teamName?: string
   status: 'pending' | 'verified' | 'rejected'
   decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
 }
 
@@ -95,6 +102,8 @@ export interface RawWorkerPosition {
   rank?: 'lead' | 'assistant'
   status?: 'pending' | 'approved' | 'rejected'
   decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
 }
 
@@ -103,6 +112,8 @@ export interface RawWorkerMembership {
   team?: { _ref?: string; _id?: string; name?: string; key?: string } | string
   status?: 'pending' | 'verified' | 'rejected'
   decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   decidedAt?: string
 }
 
@@ -115,6 +126,37 @@ export interface RawWorkerDoc {
   positions?: RawWorkerPosition[]
   memberships?: RawWorkerMembership[]
   [key: string]: unknown
+}
+
+/** "Vice President (Admin)" → ["vice", "president", "admin"]. */
+function officeTokens(value?: string): string[] {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+}
+
+/**
+ * The President is the President — never a Vice President or Deputy.
+ * Substring matching here previously made every "Vice President" a President.
+ */
+function isPresidentTitle(office?: string, roleKey?: string): boolean {
+  if (roleKey === 'president') return true
+  const tokens = officeTokens(office)
+  return tokens.includes('president') && !tokens.includes('vice') && !tokens.includes('deputy')
+}
+
+function isVicePresidentTitle(office?: string): boolean {
+  const tokens = officeTokens(office)
+  return tokens.includes('vp') || (tokens.includes('vice') && tokens.includes('president'))
+}
+
+function isVpAdminTitle(office?: string, roleKey?: string): boolean {
+  if (roleKey === 'vp-admin') return true
+  const tokens = officeTokens(office)
+  return isVicePresidentTitle(office) && tokens.includes('admin')
 }
 
 export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAccess {
@@ -181,6 +223,8 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       rank: pos.rank || 'lead',
       status: pos.status || 'pending',
       decidedBy: pos.decidedBy,
+      decidedById: pos.decidedById,
+      decidedByRole: pos.decidedByRole,
       decidedAt: pos.decidedAt,
     }
   })
@@ -201,6 +245,8 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
       teamName,
       status: mem.status || 'pending',
       decidedBy: mem.decidedBy,
+      decidedById: mem.decidedById,
+      decidedByRole: mem.decidedByRole,
       decidedAt: mem.decidedAt,
     }
   })
@@ -216,27 +262,21 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
 
   const isPresident =
     approvedPositions.some(
-      (p) =>
-        p.kind === 'csgb' &&
-        (p.office?.toLowerCase().includes('president') || p.csgbRoleKey === 'president')
+      (p) => p.kind === 'csgb' && isPresidentTitle(p.office, p.csgbRoleKey)
     ) ||
-    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('president'))
+    (legacyIsExcoApproved && isPresidentTitle(legacyExcoPosition))
 
   const isVP =
-    approvedPositions.some((p) => p.kind === 'csgb' && (p.office?.toLowerCase().includes('vp') || p.office?.toLowerCase().includes('vice president'))) ||
-    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('vp'))
+    approvedPositions.some(
+      (p) => p.kind === 'csgb' && isVicePresidentTitle(p.office)
+    ) ||
+    (legacyIsExcoApproved && isVicePresidentTitle(legacyExcoPosition))
 
   const isVPAdmin =
     approvedPositions.some(
-      (p) =>
-        p.kind === 'csgb' &&
-        (p.csgbRoleKey === 'vp-admin' ||
-          (p.office?.toLowerCase().includes('vice president') &&
-            p.office?.toLowerCase().includes('admin')))
+      (p) => p.kind === 'csgb' && isVpAdminTitle(p.office, p.csgbRoleKey)
     ) ||
-    (legacyIsExcoApproved &&
-      legacyExcoPosition?.toLowerCase().includes('vice president') &&
-      legacyExcoPosition?.toLowerCase().includes('admin'))
+    (legacyIsExcoApproved && isVpAdminTitle(legacyExcoPosition))
 
   // Explicit approver authority is separate from the President identity.
   // The President remains the fallback when no explicit flag is stored.

@@ -10,12 +10,19 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
+import type { NavigationAttention } from '@/lib/dashboard/types'
 import { Button } from '@/components/dashboard/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/dashboard/ui/sheet'
 import { SidebarBrand } from './AppSidebar'
 import NavLinks from './NavLinks'
 
-export default function MobileNav({ sections }: { sections: readonly DashboardSection[] }) {
+export default function MobileNav({
+  sections,
+  attention,
+}: {
+  sections: readonly DashboardSection[]
+  attention?: NavigationAttention
+}) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -45,7 +52,7 @@ export default function MobileNav({ sections }: { sections: readonly DashboardSe
           <SidebarBrand />
         </div>
         <nav aria-label="Dashboard" className="flex-1 overflow-y-auto p-3">
-          <NavLinks sections={sections} onNavigate={() => setOpen(false)} />
+          <NavLinks sections={sections} attention={attention} onNavigate={() => setOpen(false)} />
         </nav>
         <div className="shrink-0 p-3">
           <p className="px-3 text-xs text-sidebar-foreground/70">Theme lives in the account menu at the top right.</p>

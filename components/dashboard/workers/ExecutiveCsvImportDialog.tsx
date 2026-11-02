@@ -60,11 +60,11 @@ const MAX_FILE_BYTES = 4 * 1024 * 1024 // 4 MB
 const ACCEPT = '.csv,.xlsx,.xls'
 
 const TEMPLATE_CSV = [
-  'FullName,PositionType,PositionValue,Rank',
-  'Ada Osaretin,csgb,General Secretary,lead',
-  'Emeka Nwosu,hall,Hall 1,lead',
-  'Grace Iyoha,hall,Hall 2,assistant',
-  'Tunde Bakare,team,Media,lead',
+  'FullName,PositionType,PositionValue,Rank,Email',
+  'Ada Osaretin,csgb,General Secretary,lead,ada.osaretin@example.com',
+  'Emeka Nwosu,hall,Hall 1,lead,emeka.nwosu@example.com',
+  'Grace Iyoha,hall,Hall 2,assistant,grace.iyoha@example.com',
+  'Tunde Bakare,team,Media,lead,tunde.bakare@example.com',
 ].join('\n')
 
 interface ExecutiveCsvImportDialogProps {
@@ -440,6 +440,7 @@ export default function ExecutiveCsvImportDialog({
               <div className="flex flex-wrap gap-1.5">
                 {[
                   'Full Name (any word order)',
+                  'Email (recommended — links the role to the right person)',
                   'Position / Office / Role (auto-maps CSGB, Hall, Ministry Team)',
                   'Rank (lead · assistant, optional)',
                   'Hall (optional)',
@@ -861,7 +862,7 @@ export default function ExecutiveCsvImportDialog({
                     {commitResult.matchedCount} mapped to registered workers
                     {commitResult.unregisteredCount > 0 &&
                       ` • ${commitResult.unregisteredCount} unregistered appointment${commitResult.unregisteredCount === 1 ? '' : 's'} reserved (activates on registration)`}
-                    {commitResult.emailsSent > 0 && ` • ${commitResult.emailsSent} guidance email${commitResult.emailsSent === 1 ? '' : 's'} sent with dashboard links`}
+                    {commitResult.emailsSent > 0 && ` • ${commitResult.emailsSent} appointment email${commitResult.emailsSent === 1 ? '' : 's'} sent`}
                     .
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -894,7 +895,7 @@ export default function ExecutiveCsvImportDialog({
               <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium">
                 <Mail className="h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
                 <span>
-                  Official appointment guidance emails with direct dashboard access links were dispatched to {commitResult.emailsSent} leader{commitResult.emailsSent === 1 ? '' : 's'}.
+                  Appointment emails were dispatched to {commitResult.emailsSent} leader{commitResult.emailsSent === 1 ? '' : 's'} — registered leaders received dashboard access guidance, and unregistered appointees received a registration invitation.
                 </span>
               </div>
             )}
@@ -903,7 +904,7 @@ export default function ExecutiveCsvImportDialog({
               <div className="flex items-center gap-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-700 dark:text-sky-300 font-medium">
                 <Mail className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
                 <span>
-                  No duplicate emails sent — {commitResult.emailsSkipped} leader{commitResult.emailsSkipped === 1 ? ' had' : 's had'} already received appointment guidance.
+                  No duplicate emails sent — {commitResult.emailsSkipped} leader{commitResult.emailsSkipped === 1 ? ' has' : 's have'} already been emailed about this appointment.
                 </span>
               </div>
             )}

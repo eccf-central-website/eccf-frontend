@@ -15,16 +15,23 @@ import { usePathname } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { sectionForPath, type DashboardSection } from '@/lib/dashboard/rbac'
+import type { NavigationAttention } from '@/lib/dashboard/types'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/dashboard/ui/tooltip'
 import { NAV_ITEMS } from './nav-items'
 
 interface NavLinksProps {
   sections: readonly DashboardSection[]
+  attention?: NavigationAttention
   collapsed?: boolean
   onNavigate?: () => void
 }
 
-export default function NavLinks({ sections, collapsed = false, onNavigate }: NavLinksProps) {
+export default function NavLinks({
+  sections,
+  attention,
+  collapsed = false,
+  onNavigate,
+}: NavLinksProps) {
   const pathname = usePathname()
   const activeSection = sectionForPath(pathname || '')
   const [pendingHref, setPendingHref] = useState<string | null>(null)
@@ -45,6 +52,11 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
         const active = item.section === activeSection
         const isPending = pendingHref === item.href && !active
         const Icon = isPending ? Loader2 : item.icon
+        const count = attention?.[item.section] ?? 0
+        const countLabel =
+          count > 0
+            ? `${count} item${count === 1 ? '' : 's'} awaiting attention`
+            : undefined
 
         const link = (
           <Link
@@ -63,14 +75,34 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
               collapsed && 'justify-center px-0'
             )}
           >
-            <Icon
-              className={cn(
-                'h-5 w-5 shrink-0 transition-colors',
-                active ? 'text-[#70a3ff] dark:text-[#70a3ff]' : 'text-sidebar-foreground/75',
-                isPending && 'animate-spin text-sidebar-ring'
+            <span className="relative inline-flex shrink-0">
+              <Icon
+                className={cn(
+                  'h-5 w-5 shrink-0 transition-colors',
+                  active ? 'text-[#70a3ff] dark:text-[#70a3ff]' : 'text-sidebar-foreground/75',
+                  isPending && 'animate-spin text-sidebar-ring'
+                )}
+              />
+              {count > 0 && collapsed && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warning ring-2 ring-sidebar"
+                />
               )}
-            />
-            <span className={cn('truncate', collapsed && 'sr-only')}>{item.label}</span>
+            </span>
+            <span className={cn('truncate', collapsed ? 'sr-only' : 'flex-1')}>
+              {item.label}
+            </span>
+            {count > 0 && !collapsed && (
+              <span
+                aria-hidden="true"
+                title={countLabel}
+                className="ml-1 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warning px-1.5 text-[11px] font-semibold leading-none tabular-nums text-warning-foreground"
+              >
+                {count > 99 ? '99+' : count}
+              </span>
+            )}
+            {count > 0 && <span className="sr-only">{countLabel}</span>}
           </Link>
         )
 
@@ -79,7 +111,9 @@ export default function NavLinks({ sections, collapsed = false, onNavigate }: Na
             {collapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
+                <TooltipContent side="right">
+                  {count > 0 ? `${item.label} — ${countLabel}` : item.label}
+                </TooltipContent>
               </Tooltip>
             ) : (
               link

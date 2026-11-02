@@ -4,6 +4,14 @@
  */
 
 import type { AttendanceLedger } from '@/types'
+import type { DashboardSection } from './rbac'
+
+/**
+ * Outstanding-work counts for the navigation badges, keyed by section.
+ * Only sections with at least one item awaiting attention are present.
+ * `overview` carries the aggregate across every visible section.
+ */
+export type NavigationAttention = Partial<Record<DashboardSection, number>>
 
 export interface PeopleStats {
   firstTimersThisMonth: number

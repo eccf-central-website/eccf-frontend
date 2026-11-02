@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import type { WorkerRole } from '@/types'
 import { SECTION_PATHS, sectionForPath, isMediaTeam, type DashboardSection } from '@/lib/dashboard/rbac'
+import type { NavigationAttention } from '@/lib/dashboard/types'
 import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
@@ -32,6 +33,7 @@ interface TopBarProps {
   /** Right-side page/global actions, e.g. "Sync sermons" (later feature). */
   actions?: React.ReactNode
   devTools?: React.ReactNode
+  attention?: NavigationAttention
 }
 
 export default function TopBar({
@@ -46,6 +48,7 @@ export default function TopBar({
   profileImageUrl,
   actions,
   devTools,
+  attention,
 }: TopBarProps) {
   const pathname = usePathname()
   const section = sectionForPath(pathname || '') ?? 'overview'
@@ -55,7 +58,7 @@ export default function TopBar({
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
-      <MobileNav sections={sections} />
+      <MobileNav sections={sections} attention={attention} />
 
       <div className="min-w-0 flex-1">
         {/* The overview page renders its own big greeting as the h1, so the

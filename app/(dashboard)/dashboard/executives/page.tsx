@@ -1,6 +1,6 @@
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import { requireSection } from '@/lib/dashboard/auth'
-import { listExecutives } from '@/lib/dashboard/data'
+import { listExecutives, listPendingExecutiveApplications } from '@/lib/dashboard/data'
 import { canApproveExecutiveAppointments } from '@/lib/dashboard/rbac'
 import ExecutivesClient from '@/components/dashboard/executives/ExecutivesClient'
 
@@ -9,7 +9,12 @@ export const maxDuration = 60
 
 export default async function ExecutivesPage() {
   const session = await requireSection('executives')
-  const executives = await listExecutives(session)
+  const canManage = canApproveExecutiveAppointments(session)
+
+  const [executives, pendingApplications] = await Promise.all([
+    listExecutives(session),
+    canManage ? listPendingExecutiveApplications(session) : Promise.resolve([]),
+  ])
 
   const todayStr = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
@@ -21,7 +26,8 @@ export default async function ExecutivesPage() {
     <PageContainer>
       <ExecutivesClient
         initialExecutives={executives}
-        canManage={canApproveExecutiveAppointments(session)}
+        initialPendingApplications={pendingApplications}
+        canManage={canManage}
         today={todayStr}
       />
     </PageContainer>

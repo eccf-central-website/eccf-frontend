@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation'
 import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
+import type { NavigationAttention } from '@/lib/dashboard/types'
 import { SIDEBAR_COOKIE, SIDEBAR_COOKIE_MAX_AGE, type SidebarState } from '@/lib/dashboard/shell'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/dashboard/ui/tooltip'
 import NavLinks from './NavLinks'
@@ -25,6 +26,7 @@ import NavLinks from './NavLinks'
 interface AppSidebarProps {
   sections: readonly DashboardSection[]
   defaultCollapsed: boolean
+  attention?: NavigationAttention
 }
 
 /** Logo + product name, shared with the mobile Sheet header. */
@@ -53,7 +55,7 @@ export function SidebarBrand({ collapsed = false }: { collapsed?: boolean }) {
   )
 }
 
-export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarProps) {
+export default function AppSidebar({ sections, defaultCollapsed, attention }: AppSidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
 
@@ -86,7 +88,7 @@ export default function AppSidebar({ sections, defaultCollapsed }: AppSidebarPro
         aria-label="Dashboard"
         className="flex-1 overflow-x-hidden px-3 pt-6 lg:pt-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <NavLinks sections={sections} collapsed={collapsed} />
+        <NavLinks sections={sections} attention={attention} collapsed={collapsed} />
       </nav>
 
       {/* Sidebar Footer — Pinned Settings and Collapse trigger */}

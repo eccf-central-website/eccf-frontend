@@ -35,9 +35,11 @@ import type {
   WelfareRequestRow,
   WorkerRow,
   ExecutiveRow,
+  PendingExecutiveApplication,
 } from '@/types'
 import {
   canAccessSection,
+  canApproveExecutiveAppointments,
   canViewWelfareContact,
   hasPermission,
   isHallScoped,
@@ -45,18 +47,21 @@ import {
   isCSGBMember,
   isRegularTeamLeader,
 } from '../rbac'
+import type { DashboardSection } from '../rbac'
 import { isDevMockState, type DevMockState } from '../shell'
-import type { FinanceStats, OverviewStats, PeopleStats } from '../types'
+import type { FinanceStats, NavigationAttention, OverviewStats, PeopleStats } from '../types'
 import {
   DASHBOARD_ANNOUNCEMENTS_QUERY,
   DASHBOARD_ATTENDANCE_QUERY,
   DASHBOARD_FINANCE_QUERY,
   DASHBOARD_FIRST_TIMERS_QUERY,
+  DASHBOARD_NAV_ATTENTION_QUERY,
   DASHBOARD_PRAYER_REQUESTS_QUERY,
   DASHBOARD_WELFARE_LEDGER_QUERY,
   DASHBOARD_WELFARE_QUERY,
   DASHBOARD_WORKERS_QUERY,
   DASHBOARD_EXECUTIVES_QUERY,
+  DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY,
   DASHBOARD_UNREGISTERED_EXECUTIVES_QUERY,
   FINANCE_STATS_QUERY,
   PEOPLE_STATS_QUERY,
@@ -90,6 +95,9 @@ interface ReservedExecutiveAppointment {
   hall?: string
   teamName?: string
   importedAt?: string
+  decidedBy?: string
+  decidedById?: string
+  decidedByRole?: string
   csgbRoleTitle?: string
   csgbRoleRef?: string
   hallName?: string
@@ -256,6 +264,141 @@ export function matchesTeam(
       )
     })
   })
+}
+
+// ---------------------------------------------------------------------------
+// Navigation attention
+// ---------------------------------------------------------------------------
+
+interface NavAttentionCounts {
+  executives: number
+  workers: number
+  firstTimers: number
+  welfare: number
+  prayerRequests: number
+  announcements: number
+}
+
+/**
+ * Outstanding-work counts for the nav badges. Permission-gated per section and
+ * scoped like the page each badge points to. The layout depends on this, so a
+ * failed read degrades to no badges rather than breaking navigation.
+ */
+export async function getNavigationAttention(
+  session: ECCFSession
+): Promise<NavigationAttention> {
+  const canExecutives =
+    canAccessSection(session.role, 'executives', session) &&
+    canApproveExecutiveAppointments(session)
+  const canWorkers = canAccessSection(session.role, 'workers', session)
+  const canFirstTimers = canAccessSection(session.role, 'firstTimers', session)
+  const canWelfare = canAccessSection(session.role, 'welfare', session)
+  const canPrayerRequests = canAccessSection(session.role, 'prayerRequests', session)
+  const canAnnouncements = canAccessSection(session.role, 'announcements', session)
+
+  try {
+    const hall = await hallScope(session)
+    const team = teamScope(session)
+    let counts: NavAttentionCounts
+
+    if (dataSource() === 'mock') {
+      // The nav is chrome: honour empty/error states without delaying the shell
+      // the way the page-level slow state does.
+      const state = mockState()
+      if (state === 'empty' || state === 'error') return {}
+
+      const week = weekStart()
+      counts = {
+        executives: canExecutives
+          ? (MOCK_WORKERS || []).reduce(
+              (total, worker) =>
+                worker.status === 'archived' || worker.verificationStatus === 'rejected'
+                  ? total
+                  : total +
+                    (worker.positions || []).filter(
+                      (position) => position.status === 'pending' && Boolean(position._key)
+                    ).length,
+              0
+            )
+          : 0,
+        workers: canWorkers
+          ? (MOCK_WORKERS || []).filter(
+              (worker) =>
+                worker.status !== 'archived' &&
+                (worker.verificationStatus || 'verified') !== 'rejected' &&
+                matchesHall(worker.hall, hall) &&
+                matchesTeam(worker.team, worker.teams, team) &&
+                (worker.verificationStatus === 'pending' ||
+                  (worker.memberships || []).some(
+                    (membership) => membership.status === 'pending'
+                  ))
+            ).length
+          : 0,
+        firstTimers: canFirstTimers
+          ? (MOCK_FIRST_TIMERS || []).filter(
+              (firstTimer) =>
+                firstTimer.followedUp !== true && matchesHall(firstTimer.hall, hall)
+            ).length
+          : 0,
+        welfare: canWelfare
+          ? (MOCK_WELFARE || []).filter((request) => request.status === 'Pending').length
+          : 0,
+        prayerRequests: canPrayerRequests
+          ? (MOCK_PRAYER_REQUESTS || []).filter(
+              (request) => request.dateSubmitted >= week
+            ).length
+          : 0,
+        announcements: canAnnouncements
+          ? (MOCK_ANNOUNCEMENTS || []).filter(
+              (announcement) => announcement.isPublished !== true
+            ).length
+          : 0,
+      }
+    } else {
+      const cleanTeam = team
+        ? team.toLowerCase().trim().replace(/(?:\s+team)+$/i, '').trim()
+        : null
+      counts = await sanityPrivateClient.fetch<NavAttentionCounts>(
+        DASHBOARD_NAV_ATTENTION_QUERY,
+        {
+          hall,
+          team,
+          cleanTeam,
+          weekStart: weekStart(),
+          canExec: canExecutives,
+          canWorkers,
+          canFirstTimers,
+          canWelfare,
+          canPrayer: canPrayerRequests,
+          canAnnouncements,
+        }
+      )
+    }
+
+    const bySection: Array<[DashboardSection, number]> = [
+      ['executives', counts.executives],
+      ['workers', counts.workers],
+      ['firstTimers', counts.firstTimers],
+      ['welfare', counts.welfare],
+      ['prayerRequests', counts.prayerRequests],
+      ['announcements', counts.announcements],
+    ]
+
+    const attention: NavigationAttention = {}
+    let total = 0
+    for (const [section, value] of bySection) {
+      const count = Number.isFinite(value) && value > 0 ? Math.floor(value) : 0
+      if (count > 0) {
+        attention[section] = count
+        total += count
+      }
+    }
+    if (total > 0) attention.overview = total
+    return attention
+  } catch (err) {
+    console.error('[getNavigationAttention] Could not load attention counts:', err)
+    return {}
+  }
 }
 
 export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
@@ -717,6 +860,9 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
         rank: appointment.rank,
         status: 'approved' as const,
         submittedAt: appointment.importedAt,
+        decidedBy: appointment.decidedBy,
+        decidedById: appointment.decidedById,
+        decidedByRole: appointment.decidedByRole,
         decidedAt: appointment.importedAt,
         fromAppointment: true,
       })),
@@ -724,4 +870,98 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
   }
 
   return stripPII([...registered, ...unregistered])
+}
+
+/**
+ * Pending executive applications submitted through registration/profile flows.
+ * Only approvers see these; everyone else gets an empty list.
+ */
+export async function listPendingExecutiveApplications(
+  session?: ECCFSession
+): Promise<PendingExecutiveApplication[]> {
+  if (session && !canAccessSection(session.role, 'executives', session)) {
+    return []
+  }
+
+  if (dataSource() === 'mock') {
+    return (MOCK_WORKERS || []).flatMap((w) =>
+      (w.positions || [])
+        .filter((p) => p.status === 'pending')
+        .map((p) => ({
+          workerId: w._id,
+          fullName: w.fullName,
+          email: w.email || '',
+          hall: w.hall || '',
+          profileImageUrl: w.profileImageUrl,
+          createdAt: p.submittedAt,
+          position: {
+            key: p._key || `pos_${w._id}`,
+            kind: p.kind,
+            office: p.office,
+            csgbRoleTitle: p.office,
+            hall: p.hall,
+            hallName: p.hall,
+            teamName: p.teamName,
+            teamTitle: p.teamName,
+            rank: p.rank,
+            status: 'pending' as const,
+            submittedAt: p.submittedAt,
+          },
+        }))
+    )
+  }
+
+  try {
+    const rows = await sanityPrivateClient.fetch<
+      Array<{
+        _id: string
+        fullName?: string
+        email?: string
+        hall?: string
+        profileImageUrl?: string
+        createdAt?: string
+        positions?: Array<Record<string, unknown>>
+      }>
+    >(DASHBOARD_PENDING_EXECUTIVE_POSITIONS_QUERY)
+
+    return stripPII(
+      (rows || []).flatMap((row) =>
+        // Without a stable _key the decision action cannot address a single
+        // position, so legacy entries are left out rather than risking the
+        // wrong appointment being approved.
+        (row.positions || [])
+          .filter((position) => Boolean(position._key))
+          .map((position) => ({
+            workerId: row._id,
+            fullName: row.fullName || 'Unnamed worker',
+            email: row.email || '',
+            hall: row.hall || '',
+            profileImageUrl: row.profileImageUrl,
+            createdAt: row.createdAt,
+            position: {
+              key: String(position._key),
+              kind: position.kind as 'csgb' | 'hall' | 'team',
+              office: position.office as string | undefined,
+              csgbRoleTitle:
+                (position.csgbRoleTitle as string | undefined) ||
+                (position.office as string | undefined),
+              hall: position.hall as string | undefined,
+              hallName:
+                (position.hallName as string | undefined) ||
+                (position.hall as string | undefined),
+              teamName: position.teamName as string | undefined,
+              teamTitle:
+                (position.teamTitle as string | undefined) ||
+                (position.teamName as string | undefined),
+              rank: position.rank as 'lead' | 'assistant' | undefined,
+              status: 'pending' as const,
+              submittedAt: position.submittedAt as string | undefined,
+            },
+          }))
+      )
+    )
+  } catch (err) {
+    console.error('[listPendingExecutiveApplications] Sanity fetch error:', err)
+    return []
+  }
 }
