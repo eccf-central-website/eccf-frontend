@@ -87,6 +87,19 @@ export async function verifyWorkerMembership(
   // Allowed team scopes for non-presidents
   const allowedTeamNames = [session.leadingTeam || session.team].filter(Boolean) as string[]
 
+  // CSGB admins (including the VP Admin) see the full roster, so they may decide
+  // on any membership. Team leads remain scoped to the teams they lead.
+  const canDecideMembership = (membership: {
+    teamId?: string
+    teamKey?: string
+    teamName?: string
+  }) =>
+    isPresident ||
+    session.role === 'admin' ||
+    Boolean(membership.teamId && leadsTeamIds.includes(membership.teamId)) ||
+    Boolean(membership.teamKey && leadsTeamKeys.includes(membership.teamKey)) ||
+    Boolean(membership.teamName && matchesTeam(membership.teamName, [], allowedTeamNames))
+
   // Check data source: if mock mode, update in-memory mock workers
   const isMock =
     process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
@@ -118,27 +131,49 @@ export async function verifyWorkerMembership(
     }
 
     // Update structured memberships if present
-    if (Array.isArray(worker.memberships) && worker.memberships.length > 0) {
-      worker.memberships.forEach((m) => {
-        const matchesTarget =
-          input.membershipKey
-            ? m._key === input.membershipKey
-            : isPresident ||
-              (m.teamId && leadsTeamIds.includes(m.teamId)) ||
-              (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
-              (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+    const workerMemberships = Array.isArray(worker.memberships) ? worker.memberships : []
+    let updatedMembershipCount = 0
+    const updatedMembershipKeys = new Set<string>()
 
-        if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
-          m.status = newStatus
-          m.decidedBy = approverName
-          m.decidedById = approverId
-          m.decidedByRole = approverRole
-          m.decidedAt = now.toISOString()
-        }
-      })
+    workerMemberships.forEach((m) => {
+      const matchesTarget = input.membershipKey
+        ? m._key === input.membershipKey
+        : canDecideMembership(m)
+
+      if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
+        m.status = newStatus
+        m.decidedBy = approverName
+        m.decidedById = approverId
+        m.decidedByRole = approverRole
+        m.decidedAt = now.toISOString()
+        updatedMembershipCount += 1
+        if (m._key) updatedMembershipKeys.add(m._key)
+      }
+    })
+
+    if (workerMemberships.length > 0 && updatedMembershipCount === 0) {
+      return {
+        ok: false,
+        error: 'You can only verify memberships for the operational teams you lead.',
+      }
     }
 
-    worker.verificationStatus = newStatus
+    const hasRemainingPendingMembership = workerMemberships.some(
+      (m) => m.status === 'pending' && (!m._key || !updatedMembershipKeys.has(m._key))
+    )
+
+    worker.verificationStatus =
+      workerMemberships.length === 0
+        ? newStatus
+        : input.decision === 'approve'
+          ? hasRemainingPendingMembership
+            ? 'pending'
+            : 'verified'
+          : hasRemainingPendingMembership
+            ? 'pending'
+            : workerMemberships.some((m) => m.status === 'verified')
+              ? 'verified'
+              : 'rejected'
     worker.verifiedAt = now.toISOString()
     worker.verifiedBy = approverRole
     worker.updatedAt = now.toISOString()
@@ -228,6 +263,10 @@ export async function verifyWorkerMembership(
       }
     }
 
+    const existingMemberships = Array.isArray(existing.memberships) ? existing.memberships : []
+    let updatedMembershipCount = 0
+    const updatedMembershipKeys = new Set<string>()
+
     let patch = patchPrivateDocument(input.workerId).set({
       verifiedAt: now.toISOString(),
       verifiedBy: approverRole,
@@ -235,28 +274,51 @@ export async function verifyWorkerMembership(
     })
 
     // Update structured memberships in Sanity
-    if (Array.isArray(existing.memberships) && existing.memberships.length > 0) {
-      existing.memberships.forEach((m) => {
-        if (!m._key) return
-        const matchesTarget =
-          input.membershipKey
-            ? m._key === input.membershipKey
-            : isPresident ||
-              (m.teamId && leadsTeamIds.includes(m.teamId)) ||
-              (m.teamKey && leadsTeamKeys.includes(m.teamKey)) ||
-              (m.teamName && matchesTeam(m.teamName, [], allowedTeamNames))
+    existingMemberships.forEach((m) => {
+      if (!m._key) return
+      const matchesTarget = input.membershipKey
+        ? m._key === input.membershipKey
+        : canDecideMembership(m)
 
-        if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
-          patch = patch.set({
-            [`memberships[_key=="${m._key}"].status`]: newStatus,
-            [`memberships[_key=="${m._key}"].decidedBy`]: approverName,
-            [`memberships[_key=="${m._key}"].decidedById`]: approverId,
-            [`memberships[_key=="${m._key}"].decidedByRole`]: approverRole,
-            [`memberships[_key=="${m._key}"].decidedAt`]: now.toISOString(),
-          })
-        }
-      })
+      if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
+        updatedMembershipCount += 1
+        updatedMembershipKeys.add(m._key)
+        patch = patch.set({
+          [`memberships[_key=="${m._key}"].status`]: newStatus,
+          [`memberships[_key=="${m._key}"].decidedBy`]: approverName,
+          [`memberships[_key=="${m._key}"].decidedById`]: approverId,
+          [`memberships[_key=="${m._key}"].decidedByRole`]: approverRole,
+          [`memberships[_key=="${m._key}"].decidedAt`]: now.toISOString(),
+        })
+      }
+    })
+
+    // Never report success when the actor's scope matched nothing: the old code
+    // appended an audit-log entry and returned ok, so the row never cleared.
+    if (existingMemberships.length > 0 && updatedMembershipCount === 0) {
+      return {
+        ok: false,
+        error: 'You can only verify memberships for the operational teams you lead.',
+      }
     }
+
+    const hasRemainingPendingMembership = existingMemberships.some(
+      (m) => m.status === 'pending' && (!m._key || !updatedMembershipKeys.has(m._key))
+    )
+    const nextWorkerStatus =
+      existingMemberships.length === 0
+        ? newStatus
+        : input.decision === 'approve'
+          ? hasRemainingPendingMembership
+            ? 'pending'
+            : 'verified'
+          : hasRemainingPendingMembership
+            ? 'pending'
+            : existingMemberships.some((m) => m.status === 'verified')
+              ? 'verified'
+              : 'rejected'
+
+    patch = patch.set({ verificationStatus: nextWorkerStatus })
 
     // If the membership is approved and the worker has not received their official welcome email yet, dispatch it now!
     if (input.decision === 'approve' && existing.email && !existing.welcomeEmailSent) {
