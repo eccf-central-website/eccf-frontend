@@ -10,6 +10,33 @@ import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/ex
 import { executivePositionSignature, mergeExecutivePositions } from '@/lib/executive-positions'
 import { getLeaderPostTitle } from '@/lib/dashboard/rbac'
 
+/**
+ * Determine if an appointment name matches a worker's full name when the
+ * appointment was recorded with fewer name parts (e.g. "Elisha Airohi" vs
+ * "Elisha Osemudiamen Airohi").
+ *
+ * Exact normalized-key match is tried first by the caller. This fallback
+ * requires every appointment token to be present in the worker's name tokens,
+ * and the first and last tokens to match positionally — so a same-first-name
+ * registrant cannot hijack a reserved office by providing just a first name.
+ */
+function appointmentNameMatchesWorker(appName: string, workerName: string): boolean {
+  const appTokens = extractNameTokens(appName)
+  const workerTokens = extractNameTokens(workerName)
+
+  if (appTokens.length === 0 || workerTokens.length === 0) return false
+
+  // All appointment tokens must be found in the worker's name tokens.
+  const allPresent = appTokens.every((t) => workerTokens.includes(t))
+
+  // First and last names must line up positionally.
+  const firstMatches = appTokens[0] === workerTokens[0]
+  const lastMatches =
+    appTokens[appTokens.length - 1] === workerTokens[workerTokens.length - 1]
+
+  return allPresent && firstMatches && lastMatches
+}
+
 export interface CsvImportResult {
   ok: boolean
   imported: number
@@ -1479,15 +1506,27 @@ export async function claimPendingExecutiveAppointmentsForWorker(
         continue
       }
 
-      // Name-only reservations require an exact normalized-name match. Token
-      // subsets are deliberately not accepted.
+      // Name-only reservations: exact normalized-key match first, then fall back
+      // to a first+last-name match so appointments recorded with only two names
+      // (e.g. "Elisha Airohi") still match workers with fuller names
+      // (e.g. "Elisha Osemudiamen Airohi").
       if (app.normalizedName) {
-        if (app.normalizedName === normalizedKey) matchedAppointments.push(app)
-        continue
+        if (app.normalizedName === normalizedKey) {
+          matchedAppointments.push(app)
+          continue
+        }
       }
 
-      if (app.fullName && normalizeTokensKey(extractNameTokens(app.fullName)) === normalizedKey) {
-        matchedAppointments.push(app)
+      if (app.fullName) {
+        const appKey = normalizeTokensKey(extractNameTokens(app.fullName))
+        if (appKey === normalizedKey) {
+          matchedAppointments.push(app)
+          continue
+        }
+        if (appointmentNameMatchesWorker(app.fullName, fullName)) {
+          matchedAppointments.push(app)
+          continue
+        }
       }
     }
 
