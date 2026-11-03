@@ -81,7 +81,7 @@ function positionLabel(position: {
 }): string {
   if (position.kind === 'csgb') return position.office || position.csgbRoleTitle || 'CSGB Officer'
   if (position.kind === 'hall') return `Hall Pastor (${position.hallName || position.hall || 'Hall'})`
-  return `${position.teamTitle || position.teamName || 'Ministry'} Lead`
+  return position.teamTitle || position.teamName || 'Ministry'
 }
 
 /**
@@ -641,7 +641,7 @@ export default function ExecutivesClient({
                                   )}
                                   {pos.kind === 'team' && (
                                     <Badge className="border-none bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
-                                      Team Lead
+                                      Team
                                     </Badge>
                                   )}
                                   <span className="truncate text-xs font-semibold text-foreground">

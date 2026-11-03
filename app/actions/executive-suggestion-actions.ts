@@ -1003,7 +1003,7 @@ export async function commitExecutiveImport(payload: {
         ? item.office || 'CSGB Executive'
         : item.kind === 'hall'
         ? `Hall Pastor (${item.hall || 'Hall'})`
-        : `${item.teamName || 'Ministry'} Lead`
+        : item.teamName || 'Ministry'
 
     const targetEmail = (item.email || (targetWorkerId ? workerEmailsMap.get(targetWorkerId) : undefined) || '').trim().toLowerCase()
 
@@ -1622,7 +1622,7 @@ export async function claimPendingExecutiveAppointmentsForWorker(
             ? app.office || 'CSGB Executive'
             : app.kind === 'hall'
             ? `${app.hall || 'Hall'} Pastor`
-            : `${app.teamName || 'Ministry'} Lead`
+            : app.teamName || 'Ministry'
 
         sendExecutiveAppointmentEmail({
           recipientName: fullName,

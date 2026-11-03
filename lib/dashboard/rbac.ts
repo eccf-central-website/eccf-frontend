@@ -95,7 +95,7 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
     if (context.access?.isPresident) return 'President'
     if (context.access?.isVP) return 'Vice President'
     const csgbTitle = context.access?.titles?.find(
-      (t) => !t.startsWith('Hall Pastor') && !t.startsWith('Lead (')
+      (t) => !t.startsWith('Hall Pastor')
     )
     if (csgbTitle) return csgbTitle
     return 'CSGB Executive'
@@ -121,7 +121,7 @@ export function getLeaderPostTitle(context: LeaderPostContext): string {
   // 4. Role-based fallback with contextual team/hall assignment
   if (context.role === 'team_lead') {
     const teamName = context.leadingTeam || context.team
-    return teamName && teamName.toLowerCase() !== 'exco' ? `${teamName} Lead` : 'Team Leader'
+    return teamName && teamName.toLowerCase() !== 'exco' ? teamName : 'Fellowship Executive'
   }
   if (context.role === 'hall_rep') {
     const hallName = context.hall || context.access?.repsHalls?.[0]

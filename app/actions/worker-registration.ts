@@ -2539,7 +2539,7 @@ export async function registerWorker(
               ? office || 'CSGB Executive'
               : kind === 'hall'
               ? `${hall || 'Hall'} Pastor`
-              : `${teamName || 'Ministry'} Lead`
+              : `${teamName || 'Ministry'}`
 
           sendExecutiveAppointmentEmail({
             recipientName: cleanFullName,

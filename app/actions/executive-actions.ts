@@ -58,7 +58,7 @@ function positionLabel(position: Record<string, unknown>): string {
   const kind = String(position.kind || '')
   if (kind === 'csgb') return String(position.office || 'CSGB Office')
   if (kind === 'hall') return `Hall Pastor (${String(position.hall || position.hallName || 'Hall')})`
-  return `${String(position.teamName || position.teamTitle || 'Ministry')} Lead`
+  return String(position.teamName || position.teamTitle || 'Ministry')
 }
 
 interface ExecutiveWorkerRecord {

@@ -366,7 +366,7 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
   const titles = approvedPositions.map((p) => {
     if (p.kind === 'csgb') return p.office || 'CSGB Officer'
     if (p.kind === 'hall') return `${p.rank === 'assistant' ? 'Assistant ' : ''}Hall Pastor (${p.hall})`
-    return `${p.rank === 'assistant' ? 'Assistant ' : ''}Lead (${p.teamName || 'Team'})`
+    return p.teamName || 'Team'
   })
 
   if (titles.length === 0 && legacyExcoPosition) {
