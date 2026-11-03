@@ -73,10 +73,18 @@ export async function verifyWorkerMembership(
   const actionLabel = input.decision === 'approve' ? 'Membership verified' : 'Membership declined'
   const approverRole = isPresident
     ? 'Fellowship President'
-    : access?.titles?.[0] ||
-      (session.role === 'admin'
-        ? 'CSGB Admin'
-        : `${session.leadingTeam || session.team} Team Lead`)
+    : session.role === 'admin'
+      ? getLeaderPostTitle({
+          role: session.role,
+          // Admins can also lead a team; prefer their CSGB post over the team title.
+          excoPosition: null,
+          leadingTeam: session.leadingTeam,
+          team: session.team,
+          teams: session.teams,
+          hall: session.hall,
+          access: session.access,
+        })
+      : access?.titles?.[0] || `${session.leadingTeam || session.team} Team Lead`
   const approverId: string = String(session.worker?._id || session.id)
   const approverName =
     session.name?.trim() ||
@@ -132,8 +140,24 @@ export async function verifyWorkerMembership(
 
     // Update structured memberships if present
     const workerMemberships = Array.isArray(worker.memberships) ? worker.memberships : []
-    let updatedMembershipCount = 0
     const updatedMembershipKeys = new Set<string>()
+    const targetedMembershipExists =
+      !input.membershipKey || workerMemberships.some((m) => m._key === input.membershipKey)
+    const hasPendingMembership = workerMemberships.some((m) => m.status === 'pending')
+    const canResolvePendingMembership = workerMemberships.some(
+      (m) => m.status === 'pending' && Boolean(m._key) && canDecideMembership(m)
+    )
+
+    if (!targetedMembershipExists) {
+      return { ok: false, error: 'The selected membership could not be found on this worker.' }
+    }
+
+    if (!input.membershipKey && hasPendingMembership && !canResolvePendingMembership) {
+      return {
+        ok: false,
+        error: 'You can only verify memberships for the operational teams you lead.',
+      }
+    }
 
     workerMemberships.forEach((m) => {
       const matchesTarget = input.membershipKey
@@ -146,17 +170,9 @@ export async function verifyWorkerMembership(
         m.decidedById = approverId
         m.decidedByRole = approverRole
         m.decidedAt = now.toISOString()
-        updatedMembershipCount += 1
         if (m._key) updatedMembershipKeys.add(m._key)
       }
     })
-
-    if (workerMemberships.length > 0 && updatedMembershipCount === 0) {
-      return {
-        ok: false,
-        error: 'You can only verify memberships for the operational teams you lead.',
-      }
-    }
 
     const hasRemainingPendingMembership = workerMemberships.some(
       (m) => m.status === 'pending' && (!m._key || !updatedMembershipKeys.has(m._key))
@@ -264,8 +280,27 @@ export async function verifyWorkerMembership(
     }
 
     const existingMemberships = Array.isArray(existing.memberships) ? existing.memberships : []
-    let updatedMembershipCount = 0
     const updatedMembershipKeys = new Set<string>()
+    const targetedMembershipExists =
+      !input.membershipKey ||
+      existingMemberships.some((m) => m._key === input.membershipKey)
+    const hasPendingMembership = existingMemberships.some((m) => m.status === 'pending')
+    const canResolvePendingMembership = existingMemberships.some(
+      (m) => m.status === 'pending' && Boolean(m._key) && canDecideMembership(m)
+    )
+
+    if (!targetedMembershipExists) {
+      return { ok: false, error: 'The selected membership could not be found on this worker.' }
+    }
+
+    // Never report success when the actor's scope matched nothing: the old code
+    // appended an audit-log entry and returned ok, so the row never cleared.
+    if (!input.membershipKey && hasPendingMembership && !canResolvePendingMembership) {
+      return {
+        ok: false,
+        error: 'You can only verify memberships for the operational teams you lead.',
+      }
+    }
 
     let patch = patchPrivateDocument(input.workerId).set({
       verifiedAt: now.toISOString(),
@@ -281,7 +316,6 @@ export async function verifyWorkerMembership(
         : canDecideMembership(m)
 
       if (matchesTarget && (m.status === 'pending' || input.membershipKey)) {
-        updatedMembershipCount += 1
         updatedMembershipKeys.add(m._key)
         patch = patch.set({
           [`memberships[_key=="${m._key}"].status`]: newStatus,
@@ -292,15 +326,6 @@ export async function verifyWorkerMembership(
         })
       }
     })
-
-    // Never report success when the actor's scope matched nothing: the old code
-    // appended an audit-log entry and returned ok, so the row never cleared.
-    if (existingMemberships.length > 0 && updatedMembershipCount === 0) {
-      return {
-        ok: false,
-        error: 'You can only verify memberships for the operational teams you lead.',
-      }
-    }
 
     const hasRemainingPendingMembership = existingMemberships.some(
       (m) => m.status === 'pending' && (!m._key || !updatedMembershipKeys.has(m._key))
