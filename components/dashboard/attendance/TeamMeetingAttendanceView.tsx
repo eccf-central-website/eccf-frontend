@@ -16,8 +16,9 @@ import {
   CalendarCheck,
 } from 'lucide-react'
 import type { AttendanceRow, ECCFSession } from '@/types'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboard/ui/card'
+import type { AttendanceWorker } from '@/lib/dashboard/attendance-worker'
 import { Button } from '@/components/dashboard/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboard/ui/card'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -47,17 +48,12 @@ import {
 import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import { recordTeamAttendanceAction } from '@/app/actions/attendance-actions'
 import { toastFromResult } from '@/lib/dashboard/toast'
+import { workerLeaderLabel } from '@/lib/dashboard/attendance-worker'
 
 interface TeamMeetingAttendanceViewProps {
   session: ECCFSession
   rows: AttendanceRow[]
-  availableWorkers: Array<{
-    _id: string
-    fullName: string
-    team: string
-    teams?: string[]
-    hall: string
-  }>
+  availableWorkers: AttendanceWorker[]
   teamOptions: TeamUnitOption[]
   onSuccess?: () => void
 }
@@ -142,13 +138,19 @@ export default function TeamMeetingAttendanceView({
     })
   }, [availableWorkers, session, effectiveTeamName, targetTeam])
 
-  // Visible workers in the checklist during search
+  // Visible workers in the checklist during search — leaders sorted to the top
   const visibleWorkers = useMemo(() => {
     const q = (workerSearch || '').trim().toLowerCase()
-    if (!q) return filteredTeamWorkers
-    return filteredTeamWorkers.filter(
+    const filtered = filteredTeamWorkers.filter(
       (w) => (w.fullName || '').toLowerCase().includes(q) || (w.hall || '').toLowerCase().includes(q)
     )
+    return filtered.sort((a, b) => {
+      const aLeader = Boolean(workerLeaderLabel(a))
+      const bLeader = Boolean(workerLeaderLabel(b))
+      if (aLeader && !bLeader) return -1
+      if (!aLeader && bLeader) return 1
+      return (a.fullName || '').localeCompare(b.fullName || '')
+    })
   }, [filteredTeamWorkers, workerSearch])
 
   // Summary Metrics
@@ -506,9 +508,16 @@ export default function TeamMeetingAttendanceView({
                                 className="h-4 w-4 shrink-0"
                               />
                               <div className="truncate">
-                                <p className="truncate text-xs sm:text-sm font-semibold text-foreground">
-                                  {worker.fullName}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                                    {worker.fullName}
+                                  </p>
+                                  {workerLeaderLabel(worker) && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border border-primary/30 bg-primary/10 text-primary shrink-0">
+                                      {workerLeaderLabel(worker)}
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-[11px] text-muted-foreground truncate">
                                   {worker.hall || 'Campus'}
                                 </p>

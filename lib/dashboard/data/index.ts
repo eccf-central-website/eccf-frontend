@@ -36,6 +36,7 @@ import type {
   WorkerRow,
   ExecutiveRow,
   PendingExecutiveApplication,
+
 } from '@/types'
 import {
   canAccessSection,
@@ -256,12 +257,7 @@ export function matchesTeam(
     return targets.some((target) => {
       const normTarget = target.toLowerCase()
       const cleanTarget = normTarget.replace(/(?:\s+team)+$/i, '').trim()
-      return (
-        normWt === normTarget ||
-        cleanWt === cleanTarget ||
-        normWt.includes(cleanTarget) ||
-        cleanTarget.includes(cleanWt)
-      )
+      return normWt === normTarget || cleanWt === cleanTarget
     })
   })
 }
@@ -454,17 +450,31 @@ export async function listWorkers(session: ECCFSession): Promise<WorkerRow[]> {
   return stripPII(rows)
 }
 
+/** Attendance roster worker with role/position data for leader indicators. */
+import type { AttendanceWorker } from '@/lib/dashboard/attendance-worker'
+
 export async function fetchWorkersForAttendance(
   session: ECCFSession,
   targetTeam?: string
-): Promise<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]> {
+): Promise<AttendanceWorker[]> {
   const team = session.role === 'team_lead' ? (session.leadingTeam || session.team) : (targetTeam || null)
   const cleanTeam = team ? team.toLowerCase().trim().replace(/(?:\s+team)+$/i, '').trim() : null
   if (dataSource() === 'mock') {
     const all = await fromMock(MOCK_WORKERS, [])
     return all
       .filter((w) => (team === null || matchesTeam(w.team, w.teams, team)) && w.verificationStatus !== 'rejected')
-      .map(({ _id, fullName, team, teams, hall }) => ({ _id, fullName, team, teams, hall }))
+      .map((w): AttendanceWorker => ({
+        _id: w._id,
+        fullName: w.fullName,
+        team: w.team,
+        teams: w.teams,
+        hall: w.hall,
+        role: w.role,
+        positions: w.positions,
+        leadingTeam: w.leadingTeam,
+        verificationStatus: w.verificationStatus,
+        status: w.status,
+      }))
   }
 
   const query = `*[_type == "worker" && (
@@ -490,12 +500,24 @@ export async function fetchWorkersForAttendance(
     fullName,
     "team": coalesce(team->name, team),
     "teams": coalesce(teams[]->name, teams, [coalesce(team->name, team)]),
-    hall
+    hall,
+    role,
+    "positions": positions[]{
+      _key,
+      kind,
+      rank,
+      status,
+      teamName,
+    },
+    "leadingTeam": coalesce(leadingTeam->name, leadingTeam),
+    verificationStatus,
+    status
   }`
-  const rawRows = await sanityPrivateClient.fetch<Pick<WorkerRow, '_id' | 'fullName' | 'team' | 'teams' | 'hall'>[]>(query, { team, cleanTeam })
+  const rawRows = await sanityPrivateClient.fetch<AttendanceWorker[]>(query, { team, cleanTeam })
   const filtered = rawRows.filter((w) => team === null || matchesTeam(w.team, w.teams, team))
   return stripPII(filtered)
 }
+
 
 // ---------------------------------------------------------------------------
 // Ledgers

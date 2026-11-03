@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { BarChart3, Users } from 'lucide-react'
 import type { AttendanceRow, ECCFSession } from '@/types'
 import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
+import type { AttendanceWorker } from '@/lib/dashboard/attendance-worker'
 import UsheringHeadcountView from '@/components/dashboard/attendance/UsheringHeadcountView'
 import TeamMeetingAttendanceView from '@/components/dashboard/attendance/TeamMeetingAttendanceView'
 import { Badge } from '@/components/dashboard/ui/badge'
@@ -13,13 +14,7 @@ import { isRegularTeamLeader } from '@/lib/dashboard/rbac'
 interface AttendanceHubProps {
   session: ECCFSession
   rows: AttendanceRow[]
-  availableWorkers: Array<{
-    _id: string
-    fullName: string
-    team: string
-    teams?: string[]
-    hall: string
-  }>
+  availableWorkers: AttendanceWorker[]
   canUsher: boolean
   isTeamLead: boolean
   isUshering: boolean
