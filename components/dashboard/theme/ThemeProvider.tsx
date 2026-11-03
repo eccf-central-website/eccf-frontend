@@ -16,8 +16,20 @@ export const THEME_STORAGE_KEY = 'eccf_dashboard_theme'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Dark is the dashboard's identity; only an explicitly stored 'light'
-  // choice opts the user back out.
-  const [theme, setThemeState] = useState<Theme>('dark')
+  // choice opts the user back out. Read the stored preference lazily so the
+  // first client render already matches localStorage — this prevents a flash
+  // of dark theme before useEffect runs.
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null
+        if (stored === 'light' || stored === 'dark') return stored
+      } catch {
+        // localStorage unavailable — fall back to dark below
+      }
+    }
+    return 'dark'
+  })
 
   useEffect(() => {
     try {
@@ -35,8 +47,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     return () => {
-      // Remove dark class when navigating away from dashboard
-      document.documentElement.classList.remove('dark')
+      // Keep the current theme class when navigating between dashboard routes
+      // so there is no flash of the wrong theme.
     }
   }, [])
 
