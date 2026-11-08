@@ -430,8 +430,9 @@ export const DASHBOARD_NAV_ATTENTION_QUERY = `
       _type == "worker" &&
       !(_id in path("drafts.**")) &&
       coalesce(status, "active") != "archived" &&
-      verificationStatus != "rejected"
-    ].positions[status == "pending" && defined(_key)]), 0),
+      verificationStatus != "rejected" &&
+      count(positions[status == "pending" && defined(_key)]) > 0
+    ]), 0),
     "workers": select($canWorkers => count(*[
       _type == "worker" &&
       !(_id in path("drafts.**")) &&

@@ -310,10 +310,11 @@ export async function getNavigationAttention(
               (total, worker) =>
                 worker.status === 'archived' || worker.verificationStatus === 'rejected'
                   ? total
-                  : total +
-                    (worker.positions || []).filter(
+                  : (worker.positions || []).some(
                       (position) => position.status === 'pending' && Boolean(position._key)
-                    ).length,
+                    )
+                  ? total + 1
+                  : total,
               0
             )
           : 0,
