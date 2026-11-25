@@ -5,83 +5,101 @@ import Link from 'next/link'
 import { SignUp } from '@clerk/nextjs'
 import LoadingState from '@/components/common/LoadingState'
 import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
+import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
 
-/* Midnight-navy palette shared with the ECCF Midnight dashboard theme. */
-const NAVY = {
-  card: '#0f1420',
-  input: '#161d2e',
-  text: '#e8edf5',
-  textMuted: '#9aa7bd',
+function readCssHslVar(name: string): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  const match = raw.match(/^(\d+(?:\.\d+)?)\s+([\d.]+)%\s+([\d.]+)%$/)
+  if (!match) return undefined
+  return `hsl(${Math.round(Number(match[1]))}, ${match[2]}%, ${match[3]}%)`
+}
+
+function useClerkDashboardVariables() {
+  const { theme } = useTheme()
+  const [vars, setVars] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    setVars({
+      ...(readCssHslVar('--primary') ? { colorPrimary: readCssHslVar('--primary')! } : {}),
+      ...(readCssHslVar('--primary-foreground')
+        ? { colorTextOnPrimaryBackground: readCssHslVar('--primary-foreground')! }
+        : {}),
+      ...(readCssHslVar('--card') ? { colorBackground: readCssHslVar('--card')! } : {}),
+      ...(readCssHslVar('--popover')
+        ? { colorInputBackground: readCssHslVar('--popover')! }
+        : {}),
+      ...(readCssHslVar('--foreground')
+        ? {
+            colorInputText: readCssHslVar('--foreground')!,
+            colorText: readCssHslVar('--foreground')!,
+            colorNeutral: readCssHslVar('--foreground')!,
+          }
+        : {}),
+      ...(readCssHslVar('--muted-foreground')
+        ? { colorTextSecondary: readCssHslVar('--muted-foreground')! }
+        : {}),
+    })
+  }, [theme])
+
+  return vars
 }
 
 function ClerkSignUpCard() {
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setReady(true)
-    }, 1800)
-    return () => clearTimeout(timer)
-  }, [])
+  const clerkVariables = useClerkDashboardVariables()
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col items-center justify-center bg-[#0a0e19] px-4 py-12 text-slate-100">
+    <main
+      id="main-content"
+      className="flex min-h-screen flex-1 flex-col items-center justify-center bg-background px-4 py-12 text-foreground"
+    >
       <PwaPromptSuppressor />
 
-      {!ready ? (
-        <LoadingState
-          size="md"
-          theme="dark"
-          message="Loading Exco Portal"
-          subtext="Preparing secure fellowship authentication..."
+      <div className="flex w-full max-w-md flex-col items-center space-y-6">
+        <SignUp
+          routing="path"
+          path="/sign-up"
+          signInUrl="/login"
+          afterSignUpUrl="/dashboard"
+          appearance={{
+            variables: {
+              ...clerkVariables,
+              borderRadius: '0.75rem',
+            },
+            elements: {
+              rootBox: 'w-full shadow-2xl flex justify-center',
+              card: 'w-full bg-card border border-border text-card-foreground shadow-2xl rounded-2xl p-6 sm:p-8',
+              headerTitle: 'font-heading font-normal text-2xl text-foreground',
+              headerSubtitle: 'text-[13px] text-muted-foreground',
+              socialButtonsBlockButton:
+                'bg-popover border border-border text-foreground hover:bg-accent hover:text-accent-foreground transition-colors h-11 rounded-xl',
+              socialButtonsBlockButtonText: 'text-foreground font-medium text-[13px]',
+              dividerRow: 'my-4',
+              dividerLine: 'bg-border',
+              dividerText: 'text-muted-foreground text-xs uppercase tracking-wider',
+              formFieldLabel:
+                'text-foreground text-xs font-semibold uppercase tracking-wider mb-1',
+              formFieldInput:
+                'bg-popover border border-input text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 rounded-xl h-11 transition-colors',
+              formButtonPrimary:
+                'bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-11 transition-colors shadow-md mt-2',
+              footerAction: 'pt-4 border-t border-border text-muted-foreground text-[13px]',
+              footerActionLink: 'text-primary hover:text-primary/80 font-semibold transition-colors',
+            },
+          }}
         />
-      ) : (
-        <div className="w-full max-w-md flex flex-col items-center space-y-6 animate-in fade-in duration-500">
-          <SignUp
-            routing="path"
-            path="/sign-up"
-            signInUrl="/login"
-            afterSignUpUrl="/dashboard"
-            appearance={{
-              variables: {
-                colorPrimary: '#2563eb',
-                colorBackground: NAVY.card,
-                colorInputBackground: NAVY.input,
-                colorInputText: NAVY.text,
-                colorText: NAVY.text,
-                colorTextSecondary: NAVY.textMuted,
-                colorNeutral: NAVY.text,
-                borderRadius: '0.75rem',
-              },
-              elements: {
-                rootBox: 'w-full shadow-2xl flex justify-center',
-                card: 'w-full bg-[#0f1420] border border-[#1c2438] shadow-2xl rounded-2xl p-6 sm:p-8',
-                socialButtonsBlockButton:
-                  'bg-[#141b2c] border border-[#1e2740] text-slate-200 hover:bg-[#1c2740] hover:text-white transition-all h-11 rounded-xl',
-                socialButtonsBlockButtonText: 'text-slate-200 font-medium text-xs',
-                dividerRow: 'my-4',
-                dividerLine: 'bg-[#1e2740]',
-                dividerText: 'text-slate-400 text-xs uppercase tracking-wider',
-                formFieldLabel: 'text-slate-300 text-xs font-semibold uppercase tracking-wider mb-1',
-                formFieldInput:
-                  'bg-[#161d2e] border border-[#1e2740] text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-11 transition-all',
-                formButtonPrimary:
-                  'bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl h-11 transition-all shadow-md mt-2',
-                footerAction: 'pt-4 border-t border-[#1c2438] text-slate-400 text-xs',
-                footerActionLink: 'text-blue-400 hover:text-blue-300 font-semibold transition-colors',
-              },
-            }}
-          />
 
-          {/* Footer Navigation */}
-          <div className="text-center">
-            <Link href="/" className="text-xs text-slate-400 hover:text-slate-300 hover:underline transition-colors">
-              &larr; Return to main fellowship website
-            </Link>
-          </div>
+        {/* Footer Navigation */}
+        <div className="text-center">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-[13px] text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            &larr; Return to main fellowship website
+          </Link>
         </div>
-      )}
-    </div>
+      </div>
+    </main>
   )
 }
 
@@ -89,7 +107,7 @@ export default function SignUpPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-1 items-center justify-center bg-[#0a0e19] p-8">
+        <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
           <LoadingState
             size="md"
             theme="dark"

@@ -19,9 +19,9 @@ export type StatTone = 'primary' | 'success' | 'warning' | 'destructive' | 'mute
 
 /** Soft tint-of-token chips — colour as a subtle wash. */
 const TONE_CHIP: Record<StatTone, string> = {
-  primary: 'bg-primary/10 text-primary dark:text-[#70a3ff]',
-  success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  warning: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  primary: 'bg-primary/10 text-accent-foreground dark:text-primary',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/20 text-warning-foreground dark:bg-warning/15 dark:text-warning',
   destructive: 'bg-destructive/10 text-destructive',
   muted: 'bg-muted text-muted-foreground',
 }
@@ -40,9 +40,9 @@ export interface StatCardProps {
   tone?: StatTone
   /** Section link; omit when the role can't access the section. */
   href?: string
-  /** Accessible name for the whole-card link. */
+  /** Accessible name override for the whole-card link. */
   linkLabel?: string
-  /** h4 when the card sits under a group heading. */
+  /** h4 when the card sits under a sub-heading. */
   headingLevel?: 'h3' | 'h4'
   className?: string
 }
@@ -56,17 +56,15 @@ export default function StatCard({
   caption,
   tone = 'primary',
   href,
-  linkLabel,
   headingLevel: Heading = 'h3',
   className,
 }: StatCardProps) {
   const labelId = `${id}-label`
 
   const cardClassName = cn(
-    'group relative flex min-h-[136px] flex-col justify-between rounded-2xl bg-card p-4 text-card-foreground shadow-sm transition-all duration-150 sm:min-h-[148px] sm:p-5',
-    'border-0 hover:shadow-md',
+    'group relative flex min-h-[136px] flex-col justify-between rounded-2xl border-0 bg-card p-4 text-card-foreground shadow-sm transition-colors duration-150 sm:min-h-[148px] sm:p-5',
     href &&
-      'cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'cursor-pointer [touch-action:manipulation] hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     className
   )
 
@@ -76,7 +74,7 @@ export default function StatCard({
       <div className="flex items-start justify-between gap-2">
         <Heading
           id={labelId}
-          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm"
+          className="font-sans text-[13px] font-medium leading-snug text-muted-foreground sm:text-sm"
         >
           {label}
         </Heading>
@@ -92,15 +90,15 @@ export default function StatCard({
       </div>
 
       {/* Row 2: Figure */}
-      <div className="my-1">
-        <p className="break-words font-mono text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground sm:text-3xl">
+      <div className="my-1 min-w-0">
+        <p className="break-words font-sans text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground sm:text-3xl">
           {rawValue === undefined ? value : <data value={rawValue}>{value}</data>}
         </p>
       </div>
 
-      {/* Row 3: Caption — phrases stack on mobile as whole units */}
+      {/* Row 3: Caption — phrases stack cleanly on narrow viewports */}
       {caption && (
-        <div className="flex flex-col gap-0.5 text-xs font-normal text-muted-foreground sm:flex-row sm:items-center sm:gap-2 sm:text-sm">
+        <div className="flex flex-col gap-0.5 text-[13px] font-normal leading-snug text-muted-foreground sm:flex-row sm:items-center sm:gap-2 sm:text-sm">
           {caption}
         </div>
       )}
@@ -111,7 +109,7 @@ export default function StatCard({
     return (
       <Link
         href={href}
-        aria-label={linkLabel ? `${linkLabel}: ${label}` : `${label}: ${value}`}
+        aria-label={`${label}: ${value}`}
         className={cardClassName}
       >
         {body}

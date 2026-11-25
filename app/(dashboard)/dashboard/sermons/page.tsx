@@ -9,8 +9,10 @@
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import SermonsClient from '@/components/dashboard/sermons/SermonsClient'
 import { requireSection } from '@/lib/dashboard/auth'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
 import { SERMONS_QUERY } from '@/lib/queries'
-import { sanityPrivateClient, sanityClient } from '@/lib/sanity'
+import { sanityClient, sanityPrivateClient } from '@/lib/sanity'
 import type { SermonVault } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -38,9 +40,11 @@ export default async function SermonsDashboardPage() {
     }
   }
 
+  const today = formatDate(lagosDate())
+
   return (
     <PageContainer>
-      <SermonsClient initialSermons={sermons} />
+      <SermonsClient initialSermons={sermons} today={today} />
     </PageContainer>
   )
 }

@@ -11,10 +11,13 @@
 
 import { redirect } from 'next/navigation'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
-import { requireSession } from '@/lib/dashboard/auth'
-import { canAccessSection, hasPermission } from '@/lib/dashboard/rbac'
-import { listWorkers } from '@/lib/dashboard/data'
 import SettingsClient from '@/components/dashboard/settings/SettingsClient'
+import { PageHeader } from '@/components/dashboard/ui/page-header'
+import { requireSession } from '@/lib/dashboard/auth'
+import { listWorkers } from '@/lib/dashboard/data'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
+import { canAccessSection, hasPermission } from '@/lib/dashboard/rbac'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,27 +42,15 @@ export default async function SettingsPage() {
 
   const canImport = hasPermission(session.role, 'workers:import', session)
   const canDelete = hasPermission(session.role, 'workers:delete', session)
-
-  const todayStr = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date())
+  const today = formatDate(lagosDate())
 
   return (
     <PageContainer>
-      {/* Universal Page Header */}
-      <div className="space-y-1">
-        <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          {todayStr}
-        </p>
-        <h1 className="font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Settings & Admin Tools
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Privileged operational tools for fellowship workforce rosters and member databases.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={today}
+        title="Settings & Admin Tools"
+        description="Privileged operational tools for fellowship workforce rosters and member databases."
+      />
 
       <SettingsClient
         workers={workerOptions}

@@ -14,7 +14,6 @@ export interface SermonInput {
   scriptureReference: string
   series?: string
   topics?: string[]
-  mediaUrl?: string
   duration?: string
   spotifyUrl?: string
   youtubeUrl?: string
@@ -102,7 +101,6 @@ export async function createSermon(input: SermonInput): Promise<{
     scriptureReference,
     series: input.series?.trim() || undefined,
     topics: input.topics?.map((t) => t.trim()).filter(Boolean) || [],
-    mediaUrl: input.mediaUrl?.trim() || undefined,
     duration: input.duration?.trim() || undefined,
     spotifyUrl: input.spotifyUrl?.trim() || undefined,
     youtubeUrl: input.youtubeUrl?.trim() || undefined,
@@ -185,11 +183,6 @@ export async function updateSermon(
 
     if (input.topics !== undefined) {
       setObj.topics = input.topics.map((t) => t.trim()).filter(Boolean)
-    }
-
-    if (input.mediaUrl !== undefined) {
-      if (input.mediaUrl.trim()) setObj.mediaUrl = input.mediaUrl.trim()
-      else unsetArr.push('mediaUrl')
     }
 
     if (input.duration !== undefined) {

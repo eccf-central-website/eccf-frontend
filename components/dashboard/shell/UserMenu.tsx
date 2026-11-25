@@ -1,10 +1,6 @@
 /**
  * UserMenu — top-bar account menu: role badge, operational team, profile picture management,
- * public site link, theme toggle, and Clerk authenticated Sign out.
- *
- * Displays authenticated user's name, primary email, role badge,
- * official leadership title ([excoPosition] without em-dash), and operational teams.
- * Allows executives to view and update their official profile picture directly.
+ * PWA install control, public site link, theme toggle, and Clerk authenticated Sign out.
  */
 
 'use client'
@@ -29,6 +25,7 @@ import type { WorkerRole } from '@/types'
 import { ROLE_LABELS, getLeaderPostTitle } from '@/lib/dashboard/rbac'
 import { Button } from '@/components/dashboard/ui/button'
 import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
+import InstallPwaButton, { InstallPwaGuideDialog } from '@/components/dashboard/pwa/InstallPwaButton'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +71,11 @@ export default function UserMenu({
   const { signOut } = useClerk()
   const isDark = theme === 'dark'
 
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [installGuide, setInstallGuide] = useState<{ open: boolean; isIos: boolean }>({
+    open: false,
+    isIos: false,
+  })
   const [currentPhoto, setCurrentPhoto] = useState<string | undefined>(profileImageUrl)
   const [imgError, setImgError] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -143,7 +145,7 @@ export default function UserMenu({
     if (file) handleFileSelect(file)
   }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
@@ -210,14 +212,14 @@ export default function UserMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="h-10 gap-2 px-2 focus-visible:ring-2 sm:px-3"
+            className="min-h-11 gap-2 rounded-full border-0 bg-muted/50 px-2 hover:bg-muted focus-visible:ring-2 sm:min-h-10 sm:px-3"
             aria-label={`Account menu, signed in as ${displayName}`}
           >
-            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground text-xs font-semibold ring-1 ring-border shadow-xs">
+            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-semibold text-primary-foreground">
               {currentPhoto && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -232,15 +234,17 @@ export default function UserMenu({
                 <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />
               )}
             </span>
-            <span className="hidden text-sm font-medium sm:inline truncate max-w-[150px]">{displayName}</span>
+            <span className="hidden max-w-[150px] truncate text-sm font-medium sm:inline">
+              {displayName}
+            </span>
             <ChevronDown aria-hidden="true" className="hidden text-muted-foreground sm:block" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72">
           <DropdownMenuLabel className="p-3 font-normal">
             <div className="flex items-center gap-3">
-              <div className="relative group shrink-0">
-                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground text-sm font-semibold ring-2 ring-primary/20 shadow-xs">
+              <div className="group relative shrink-0">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {currentPhoto && !imgError ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -257,20 +261,29 @@ export default function UserMenu({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsDialogOpen(true)}
-                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setIsDialogOpen(true)
+                  }}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-background/75 text-foreground opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="Change profile picture"
                   aria-label="Change profile picture"
                 >
-                  <Camera className="h-4 w-4" />
+                  <Camera className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
 
-              <div className="min-w-0 flex-1 space-y-0.5">
-                {name && <span className="block text-sm font-semibold text-foreground truncate">{name}</span>}
-                {email && <span className="block text-xs text-muted-foreground truncate">{email}</span>}
+              <div className="min-w-0 flex-1 space-y-1">
+                {name && (
+                  <span className="block truncate text-sm font-semibold text-foreground">
+                    {name}
+                  </span>
+                )}
+                {email && (
+                  <span className="block truncate text-[13px] text-muted-foreground">{email}</span>
+                )}
                 <div className="pt-0.5">
-                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary border border-primary/20">
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                     {getLeaderPostTitle({ role, excoPosition, team, teams })}
                   </span>
                 </div>
@@ -278,17 +291,17 @@ export default function UserMenu({
             </div>
 
             {excoPosition && (
-              <p className="mt-2 text-xs text-muted-foreground truncate">
+              <p className="mt-2 truncate text-[13px] text-muted-foreground">
                 {displayTeam} {teams && teams.length > 1 ? 'teams' : 'team'}
               </p>
             )}
 
             {teams && teams.length > 1 && (
-              <div className="flex flex-wrap gap-1 pt-1.5">
+              <div className="flex flex-wrap gap-1.5 pt-2">
                 {teams.map((t) => (
                   <span
                     key={t}
-                    className="inline-flex items-center rounded-md bg-secondary/80 px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground"
+                    className="inline-flex items-center rounded-md bg-secondary/80 px-2 py-0.5 text-xs font-medium text-secondary-foreground"
                   >
                     {t}
                   </span>
@@ -301,16 +314,16 @@ export default function UserMenu({
 
           <DropdownMenuItem
             onSelect={() => setIsDialogOpen(true)}
-            className="h-10 cursor-pointer"
+            className="min-h-11 cursor-pointer sm:min-h-10"
           >
-            <Camera aria-hidden="true" className="mr-2 h-4 w-4 text-muted-foreground" />
+            <Camera aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
             Change profile picture
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={toggleTheme} className="h-10 cursor-pointer">
+          <DropdownMenuItem onClick={toggleTheme} className="min-h-11 cursor-pointer sm:min-h-10">
             {isDark ? (
               <>
-                <Sun aria-hidden="true" className="text-amber-400" />
+                <Sun aria-hidden="true" className="text-warning" />
                 Switch to light theme
               </>
             ) : (
@@ -321,7 +334,15 @@ export default function UserMenu({
             )}
           </DropdownMenuItem>
 
-          <DropdownMenuItem asChild className="h-10 cursor-pointer">
+          <InstallPwaButton
+            variant="menu"
+            onOpenGuide={(isIos) => {
+              setMenuOpen(false)
+              setInstallGuide({ open: true, isIos })
+            }}
+          />
+
+          <DropdownMenuItem asChild className="min-h-11 cursor-pointer sm:min-h-10">
             <a href="/" target="_blank" rel="noopener noreferrer">
               <ExternalLink aria-hidden="true" />
               View public site
@@ -331,7 +352,7 @@ export default function UserMenu({
 
           <DropdownMenuItem
             onClick={handleSignOut}
-            className="h-10 cursor-pointer text-destructive focus:text-destructive"
+            className="min-h-11 cursor-pointer text-destructive focus:text-destructive sm:min-h-10"
           >
             <LogOut aria-hidden="true" />
             Sign out
@@ -346,20 +367,27 @@ export default function UserMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <InstallPwaGuideDialog
+        open={installGuide.open}
+        onOpenChange={(open) => setInstallGuide((prev) => ({ ...prev, open }))}
+        isIos={installGuide.isIos}
+      />
+
       {/* Change Profile Picture Modal */}
       <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Update Profile Picture</DialogTitle>
             <DialogDescription>
-              Upload a clear portrait or headshot. This photo is displayed on your dashboard and official fellowship records.
+              Upload a clear portrait or headshot. This photo is displayed on your dashboard and
+              official fellowship records.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Avatar Preview Area */}
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className="relative h-28 w-28 overflow-hidden rounded-full border-2 border-primary/30 shadow-md bg-muted">
+              <div className="relative h-28 w-28 overflow-hidden rounded-full bg-muted ring-2 ring-primary/25">
                 {previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -375,8 +403,8 @@ export default function UserMenu({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary font-bold text-2xl">
-                    {initials || <UserRound className="h-10 w-10 text-primary/60" />}
+                  <div className="flex h-full w-full items-center justify-center bg-primary/10 text-2xl font-semibold text-primary">
+                    {initials || <UserRound className="h-10 w-10 text-primary/70" aria-hidden="true" />}
                   </div>
                 )}
 
@@ -384,21 +412,21 @@ export default function UserMenu({
                   <button
                     type="button"
                     onClick={resetSelection}
-                    className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow hover:bg-destructive/90 transition-colors"
+                    className="absolute right-0.5 top-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow transition-colors hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     title="Remove selected photo"
                     aria-label="Remove selected photo"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 )}
               </div>
 
               {selectedFile && (
                 <div className="text-center">
-                  <p className="text-xs font-medium text-foreground truncate max-w-[240px]">
+                  <p className="max-w-[240px] truncate text-[13px] font-medium text-foreground">
                     {selectedFile.name}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {(selectedFile.size / 1024).toFixed(0)} KB • Ready to save
                   </p>
                 </div>
@@ -411,11 +439,13 @@ export default function UserMenu({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
+              aria-label="Choose profile picture file"
               onChange={handleInputChange}
             />
 
             {/* Upload / Dropzone Box */}
-            <div
+            <button
+              type="button"
               onDragOver={(e) => {
                 e.preventDefault()
                 setIsDragging(true)
@@ -423,24 +453,24 @@ export default function UserMenu({
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${
+              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 isDragging
                   ? 'border-primary bg-primary/5'
                   : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/40'
               }`}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <UploadCloud className="h-5 w-5" />
+                <UploadCloud className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-0.5">
-                <p className="text-xs font-semibold text-foreground">
+                <p className="text-sm font-semibold text-foreground">
                   {selectedFile ? 'Choose a different photo' : 'Click to select or drag and drop'}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   JPG, PNG, or WebP up to 10MB (automatically compressed)
                 </p>
               </div>
-            </div>
+            </button>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -449,6 +479,7 @@ export default function UserMenu({
               variant="outline"
               onClick={() => handleCloseDialog(false)}
               disabled={isUploading}
+              className="min-h-11 sm:min-h-10"
             >
               Cancel
             </Button>
@@ -456,11 +487,11 @@ export default function UserMenu({
               type="button"
               onClick={handleSavePhoto}
               disabled={!selectedFile || isUploading}
-              className="gap-2"
+              className="min-h-11 gap-2 sm:min-h-10"
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                   Saving...
                 </>
               ) : (

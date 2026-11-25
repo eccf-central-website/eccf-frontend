@@ -3,7 +3,7 @@
  *
  * Left: the mobile nav trigger (below lg) and a title/breadcrumb derived
  * from the pathname via sectionForPath(). Right: an `actions` slot (the
- * future "Sync sermons" button) and the user menu.
+ * "Sync sermons" button) and the user menu.
  */
 
 'use client'
@@ -17,8 +17,6 @@ import type { NavigationAttention } from '@/lib/dashboard/types'
 import MobileNav from './MobileNav'
 import UserMenu from './UserMenu'
 import { navItemForSection } from './nav-items'
-import { ThemeToggle } from '@/components/dashboard/theme/ThemeToggle'
-import InstallPwaButton from '@/components/dashboard/pwa/InstallPwaButton'
 
 interface TopBarProps {
   sections: readonly DashboardSection[]
@@ -30,7 +28,7 @@ interface TopBarProps {
   excoPosition?: string
   leadingTeam?: string
   profileImageUrl?: string
-  /** Right-side page/global actions, e.g. "Sync sermons" (later feature). */
+  /** Right-side page/global actions, e.g. "Sync sermons". */
   actions?: React.ReactNode
   devTools?: React.ReactNode
   attention?: NavigationAttention
@@ -54,10 +52,12 @@ export default function TopBar({
   const section = sectionForPath(pathname || '') ?? 'overview'
   const title = navItemForSection(section).label
   const SectionIcon = navItemForSection(section).icon
-  const isMediaLeaderUser = isMediaTeam({ team, teams, excoPosition, leadingTeam }) && (role === 'team_lead' || role === 'admin')
+  const isMediaLeaderUser =
+    isMediaTeam({ team, teams, excoPosition, leadingTeam }) &&
+    (role === 'team_lead' || role === 'admin')
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-1 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-2 sm:px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:px-4 lg:px-6">
       <MobileNav sections={sections} attention={attention} />
 
       <div className="min-w-0 flex-1">
@@ -69,7 +69,7 @@ export default function TopBar({
               <li className="hidden sm:block">
                 <Link
                   href={SECTION_PATHS.overview}
-                  className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex min-h-11 items-center rounded-md px-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10"
                 >
                   Dashboard
                 </Link>
@@ -80,9 +80,9 @@ export default function TopBar({
               <li className="min-w-0">
                 <span
                   aria-current="page"
-                  className="truncate font-sans font-semibold text-base text-foreground sm:text-lg inline-flex items-center"
+                  className="inline-flex items-center truncate font-sans text-base font-semibold text-foreground sm:text-lg"
                 >
-                  <SectionIcon className="h-4 w-4 shrink-0 mr-2" aria-hidden="true" />
+                  <SectionIcon className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
                   {title}
                 </span>
               </li>
@@ -91,10 +91,8 @@ export default function TopBar({
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {isMediaLeaderUser && actions && <div className="hidden sm:block">{actions}</div>}
-        <ThemeToggle />
-        <InstallPwaButton />
         <UserMenu
           name={name}
           email={email}

@@ -1,43 +1,26 @@
 'use client'
 
 import * as React from 'react'
-import { useState, useTransition, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  Calendar,
-  Users,
-  CheckCircle2,
-  Plus,
-  Search,
-  UserCheck,
-  Eye,
-  X,
-  Loader2,
   BarChart3,
+  Calendar,
   CalendarCheck,
+  Eye,
+  Plus,
+  UserCheck,
+  Users,
 } from 'lucide-react'
 import type { AttendanceRow, ECCFSession } from '@/types'
+import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
 import type { AttendanceWorker } from '@/lib/dashboard/attendance-worker'
+import { formatCount, formatDate, formatPercent, toDateTimeAttr } from '@/lib/dashboard/format'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/dashboard/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboard/ui/card'
-import { Input } from '@/components/dashboard/ui/input'
+import { DataToolbar, type ActiveFilterChip } from '@/components/dashboard/ui/data-toolbar'
+import { KpiStrip, type KpiStripItem } from '@/components/dashboard/ui/kpi-strip'
 import { Label } from '@/components/dashboard/ui/label'
-import { Badge } from '@/components/dashboard/ui/badge'
-import { Checkbox } from '@/components/dashboard/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/dashboard/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/dashboard/ui/table'
+import { RecordSheet } from '@/components/dashboard/ui/record-sheet'
 import {
   Select,
   SelectContent,
@@ -45,17 +28,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/dashboard/ui/select'
-import type { TeamUnitOption } from '@/lib/dashboard/attendance-constants'
-import { recordTeamAttendanceAction } from '@/app/actions/attendance-actions'
-import { toastFromResult } from '@/lib/dashboard/toast'
-import { workerLeaderLabel } from '@/lib/dashboard/attendance-worker'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/dashboard/ui/table'
+import EmptyState from '@/components/dashboard/states/EmptyState'
 
 interface TeamMeetingAttendanceViewProps {
   session: ECCFSession
   rows: AttendanceRow[]
   availableWorkers: AttendanceWorker[]
   teamOptions: TeamUnitOption[]
-  onSuccess?: () => void
+  highlightedId?: string | null
+  onRecordClick?: () => void
 }
 
 export default function TeamMeetingAttendanceView({
@@ -63,41 +54,24 @@ export default function TeamMeetingAttendanceView({
   rows,
   availableWorkers,
   teamOptions,
-  onSuccess,
+  highlightedId,
+  onRecordClick,
 }: TeamMeetingAttendanceViewProps) {
-  const teamNames = teamOptions.map((option) => option.name)
-  const [isPending, startTransition] = useTransition()
-  const [isFormOpen, setIsFormOpen] = useState(false)
+  const teamNames = useMemo(() => teamOptions.map((option) => option.name), [teamOptions])
 
-  // Scope: effective team name
   const effectiveTeamName = useMemo(() => {
     if (session.role === 'team_lead') {
       return session.leadingTeam || session.teams?.[0] || session.team
     }
-    return session.team || 'All Teams'
+    return session.team || 'All teams'
   }, [session])
 
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>(
     session.role === 'team_lead' ? effectiveTeamName : 'all'
   )
-
-  // Meeting Form State
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
-  const [date, setDate] = useState(todayStr)
-  const [meetingTitle, setMeetingTitle] = useState('')
-  const [targetTeam, setTargetTeam] = useState<string>(effectiveTeamName)
-  const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set())
-  const [extraCount, setExtraCount] = useState<number>(0)
-  const [workerSearch, setWorkerSearch] = useState('')
-  const [meetingNotes, setMeetingNotes] = useState('')
-
-  // Detail Modal for past meeting roster
+  const [historySearch, setHistorySearch] = useState('')
   const [activeRosterRecord, setActiveRosterRecord] = useState<AttendanceRow | null>(null)
 
-  // History Filter
-  const [historySearch, setHistorySearch] = useState('')
-
-  // Filter team meeting rows
   const teamRows = useMemo(() => {
     return rows.filter((r) => {
       if (r.serviceType !== 'Team Meeting') return false
@@ -108,7 +82,7 @@ export default function TeamMeetingAttendanceView({
         return rowTeam.includes(leadTeam) || leadTeam.includes(rowTeam)
       }
       if (selectedTeamFilter !== 'all') {
-        const target = (selectedTeamFilter || '').toLowerCase()
+        const target = selectedTeamFilter.toLowerCase()
         const rowTeam = (r.teamName || '').toLowerCase()
         return rowTeam.includes(target) || target.includes(rowTeam)
       }
@@ -116,50 +90,49 @@ export default function TeamMeetingAttendanceView({
     })
   }, [rows, session, selectedTeamFilter])
 
-  // History search filter
   const filteredMeetingRows = useMemo(() => {
-    const q = (historySearch || '').trim().toLowerCase()
+    const q = historySearch.trim().toLowerCase()
     if (!q) return teamRows
     return teamRows.filter(
       (r) =>
         (r.meetingTitle || '').toLowerCase().includes(q) ||
         (r.teamName || '').toLowerCase().includes(q) ||
-        (r.loggedBy?.fullName || '').toLowerCase().includes(q)
+        (r.notes || '').toLowerCase().includes(q) ||
+        (r.loggedBy?.fullName || '').toLowerCase().includes(q) ||
+        formatDate(r.date).toLowerCase().includes(q)
     )
   }, [teamRows, historySearch])
 
-  // Workers belonging to the current target team
-  const filteredTeamWorkers = useMemo(() => {
+  const scopedWorkers = useMemo(() => {
+    const activeTeam = (
+      session.role === 'team_lead'
+        ? effectiveTeamName
+        : selectedTeamFilter !== 'all'
+          ? selectedTeamFilter
+          : ''
+    ).toLowerCase()
+
     return availableWorkers.filter((w) => {
-      const currentTeam = ((session.role === 'team_lead' ? effectiveTeamName : targetTeam) || '').toLowerCase()
-      if (!currentTeam || currentTeam === 'all') return true
-      const workerTeams = (w.teams && w.teams.length > 0 ? w.teams : [w.team]).filter(Boolean).map((t) => String(t).toLowerCase())
-      return workerTeams.some((wt) => wt.includes(currentTeam) || currentTeam.includes(wt))
+      if (!activeTeam || activeTeam === 'all') return true
+      const workerTeams = (w.teams && w.teams.length > 0 ? w.teams : [w.team])
+        .filter(Boolean)
+        .map((t) => String(t).toLowerCase())
+      return workerTeams.some((wt) => wt.includes(activeTeam) || activeTeam.includes(wt))
     })
-  }, [availableWorkers, session, effectiveTeamName, targetTeam])
+  }, [availableWorkers, session.role, effectiveTeamName, selectedTeamFilter])
 
-  // Visible workers in the checklist during search — leaders sorted to the top
-  const visibleWorkers = useMemo(() => {
-    const q = (workerSearch || '').trim().toLowerCase()
-    const filtered = filteredTeamWorkers.filter(
-      (w) => (w.fullName || '').toLowerCase().includes(q) || (w.hall || '').toLowerCase().includes(q)
-    )
-    return filtered.sort((a, b) => {
-      const aLeader = Boolean(workerLeaderLabel(a))
-      const bLeader = Boolean(workerLeaderLabel(b))
-      if (aLeader && !bLeader) return -1
-      if (!aLeader && bLeader) return 1
-      return (a.fullName || '').localeCompare(b.fullName || '')
-    })
-  }, [filteredTeamWorkers, workerSearch])
-
-  // Summary Metrics
   const metrics = useMemo(() => {
     const totalMeetings = teamRows.length
-    const totalWorkersPresent = teamRows.reduce((sum, r) => sum + (r.attendeeCount || r.totalCount || 0), 0)
+    const totalWorkersPresent = teamRows.reduce(
+      (sum, r) => sum + (r.attendeeCount || r.totalCount || 0),
+      0
+    )
     const avgAttendance = totalMeetings > 0 ? Math.round(totalWorkersPresent / totalMeetings) : 0
-    const rosterSize = filteredTeamWorkers.length
-    const attendanceRate = rosterSize > 0 && avgAttendance > 0 ? Math.min(100, Math.round((avgAttendance / rosterSize) * 100)) : 0
+    const rosterSize = scopedWorkers.length
+    const attendanceRate =
+      rosterSize > 0 && avgAttendance > 0
+        ? Math.min(100, Math.round((avgAttendance / rosterSize) * 100))
+        : 0
 
     return {
       totalMeetings,
@@ -167,520 +140,245 @@ export default function TeamMeetingAttendanceView({
       rosterSize,
       attendanceRate,
     }
-  }, [teamRows, filteredTeamWorkers])
+  }, [teamRows, scopedWorkers])
 
-  // Checkbox helpers
-  const toggleWorker = (id: string) => {
-    setSelectedWorkerIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const kpiItems: KpiStripItem[] = useMemo(
+    () => [
+      {
+        id: 'meetings-counted',
+        label: 'Meetings counted',
+        value: formatCount(metrics.totalMeetings),
+        rawValue: metrics.totalMeetings,
+        caption:
+          metrics.avgAttendance > 0
+            ? `Avg ${formatCount(metrics.avgAttendance)} present`
+            : 'No meetings logged yet',
+        icon: <CalendarCheck />,
+        tone: 'primary',
+      },
+      {
+        id: 'roster-size',
+        label: 'Roster size',
+        value: formatCount(metrics.rosterSize),
+        rawValue: metrics.rosterSize,
+        caption:
+          session.role === 'admin' && selectedTeamFilter !== 'all'
+            ? `${selectedTeamFilter} workers`
+            : 'Active team workers',
+        icon: <Users />,
+        tone: 'neutral',
+      },
+      {
+        id: 'attendance-rate',
+        label: 'Attendance rate',
+        value: formatPercent(metrics.attendanceRate, 0),
+        rawValue: metrics.attendanceRate,
+        caption: 'Average turnout',
+        icon: <BarChart3 />,
+        tone:
+          metrics.attendanceRate >= 70
+            ? 'success'
+            : metrics.attendanceRate >= 40
+              ? 'warning'
+              : 'neutral',
+      },
+    ],
+    [metrics, session.role, selectedTeamFilter]
+  )
+
+  const canFilterByTeam = session.role === 'admin'
+  const hasActiveFilters =
+    (canFilterByTeam && selectedTeamFilter !== 'all') || historySearch.trim().length > 0
+
+  const resetFilters = () => {
+    if (canFilterByTeam) setSelectedTeamFilter('all')
+    setHistorySearch('')
   }
 
-  const selectAllVisible = () => {
-    setSelectedWorkerIds((prev) => {
-      const next = new Set(prev)
-      visibleWorkers.forEach((w) => next.add(w._id))
-      return next
+  const activeFilters: ActiveFilterChip[] = []
+  if (canFilterByTeam && selectedTeamFilter !== 'all') {
+    activeFilters.push({
+      id: 'team',
+      label: 'Team',
+      value: selectedTeamFilter,
+      onRemove: () => setSelectedTeamFilter('all'),
     })
   }
-
-  const deselectAllVisible = () => {
-    setSelectedWorkerIds((prev) => {
-      const next = new Set(prev)
-      visibleWorkers.forEach((w) => next.delete(w._id))
-      return next
+  if (historySearch.trim()) {
+    activeFilters.push({
+      id: 'search',
+      label: 'Search',
+      value: historySearch.trim(),
+      onRemove: () => setHistorySearch(''),
     })
-  }
-
-  const totalPresentCount = selectedWorkerIds.size + Math.max(0, extraCount || 0)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (totalPresentCount === 0) return
-
-    startTransition(async () => {
-      const result = await recordTeamAttendanceAction({
-        date,
-        meetingTitle: meetingTitle.trim() || undefined,
-        teamName: session.role === 'team_lead' ? effectiveTeamName : targetTeam,
-        attendeeIds: Array.from(selectedWorkerIds),
-        extraCount: Math.max(0, extraCount || 0),
-        notes: meetingNotes.trim() || undefined,
-      })
-
-      if (
-        toastFromResult(result, {
-          success: `Meeting attendance for ${selectedWorkerIds.size} workers recorded successfully!`,
-        })
-      ) {
-        setIsFormOpen(false)
-        setSelectedWorkerIds(new Set())
-        setMeetingTitle('')
-        setExtraCount(0)
-        setWorkerSearch('')
-        setMeetingNotes('')
-        onSuccess?.()
-      }
-    })
-  }
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr)
-      return d.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    } catch {
-      return dateStr
-    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Team Meetings</span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <CalendarCheck className="h-4 w-4 shrink-0" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight text-foreground">
-                {metrics.totalMeetings}
-              </span>
-              <span className="text-xs text-muted-foreground">held</span>
-            </div>
-          </CardContent>
-        </Card>
+      <KpiStrip ariaLabel="Team meeting attendance summary" items={kpiItems} />
 
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Avg Present</span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Users className="h-4 w-4 shrink-0" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                {metrics.avgAttendance}
-              </span>
-              <span className="text-xs text-muted-foreground">workers</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Registered Crew</span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                <UserCheck className="h-4 w-4 shrink-0" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400">
-                {metrics.rosterSize}
-              </span>
-              <span className="text-xs text-muted-foreground">active</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Attendance Rate</span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <BarChart3 className="h-4 w-4 shrink-0" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight text-foreground">
-                {metrics.attendanceRate}%
-              </span>
-              <span className="text-xs text-muted-foreground">average</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Action Bar */}
-      <div className="flex flex-col gap-3 rounded-xl bg-card p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
-        <div>
-          <h3 className="font-serif text-lg font-bold text-foreground">
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="font-sans text-lg font-semibold tracking-tight text-foreground">
             {session.role === 'team_lead'
-              ? `${effectiveTeamName} Worker Attendance`
-              : 'Team Meetings & Unit Rosters'}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            Take attendance for rehearsals, departmental vigils, and unit committee meetings.
+              ? `${effectiveTeamName} meeting history`
+              : 'Team meeting history'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Recorded rehearsals, vigils, and unit meetings with worker attendance rosters.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {session.role === 'admin' && (
-            <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
-              <SelectTrigger className="w-[160px] text-xs h-9">
-                <SelectValue placeholder="All Teams" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teams</SelectItem>
-                {teamNames.map((t) => (
-                  <SelectItem key={t} value={t} className="text-xs">
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+        <DataToolbar
+          searchValue={historySearch}
+          onSearchChange={setHistorySearch}
+          searchLabel="Search meeting attendance logs"
+          searchPlaceholder="Search meeting topics, teams, or recorder…"
+          filterSheetTitle="Filter team meetings"
+          activeFilterCount={activeFilters.length}
+          activeFilters={activeFilters}
+          onResetFilters={resetFilters}
+          filters={
+            canFilterByTeam ? (
+              <>
+                <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
+                  <SelectTrigger aria-label="Filter by team" className="w-[220px] bg-card">
+                    <SelectValue placeholder="All teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All teams</SelectItem>
+                    {teamNames.map((teamName) => (
+                      <SelectItem key={teamName} value={teamName}>
+                        {teamName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-          <Button
-            onClick={() => setIsFormOpen((prev) => !prev)}
-            className="gap-2 h-9 text-xs sm:text-sm font-semibold"
-          >
-            {isFormOpen ? <X className="h-4 w-4 shrink-0" /> : <Plus className="h-4 w-4 shrink-0" />}
-            <span>{isFormOpen ? 'Close Roster Form' : 'Take Meeting Attendance'}</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Interactive Worker Checklist Form (Collapsible / Expandable) */}
-      {isFormOpen && (
-        <Card className="shadow-md transition-all">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="font-serif text-lg font-bold">
-                  Mark Present Workers — {session.role === 'team_lead' ? effectiveTeamName : targetTeam}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Tap or click each worker present. Tick-offs are logged against their worker profiles.
-                </CardDescription>
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {selectedWorkerIds.size} of {filteredTeamWorkers.length} Selected
-              </Badge>
-            </div>
-          </CardHeader>
-
-          <CardContent className="pt-5">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Meeting Details Row */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="tm-date" className="text-xs font-medium">
-                    Meeting Date
-                  </Label>
-                  <Input
-                    id="tm-date"
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="h-10 text-sm"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="tm-title" className="text-xs font-medium">
-                    Meeting Title / Topic
-                  </Label>
-                  <Input
-                    id="tm-title"
-                    placeholder="e.g. Sunday Morning Pre-Service Rehearsal, Weekly Prayer Vigil"
-                    value={meetingTitle}
-                    onChange={(e) => setMeetingTitle(e.target.value)}
-                    className="h-10 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              {session.role === 'admin' && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Team Selection</Label>
-                  <Select
-                    value={targetTeam}
-                    onValueChange={(t) => {
-                      setTargetTeam(t)
-                      setSelectedWorkerIds(new Set())
-                    }}
+                {hasActiveFilters && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={resetFilters}
+                    className="min-h-11 px-3 text-sm md:min-h-10"
                   >
-                    <SelectTrigger className="h-10 text-sm">
-                      <SelectValue placeholder="Select Team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teamNames.map((t) => (
-                        <SelectItem key={t} value={t} className="text-xs sm:text-sm">
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Worker Checklist Box */}
-              <div className="rounded-xl bg-muted/30 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h4 className="flex items-center gap-1.5 text-sm font-semibold">
-                      <Users className="h-4 w-4 shrink-0 text-primary" />
-                      <span>Team Member Roster</span>
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Tap any card to toggle attendance state.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs font-medium"
-                      onClick={selectAllVisible}
-                      disabled={visibleWorkers.length === 0}
-                    >
-                      Select All ({visibleWorkers.length})
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs font-medium"
-                      onClick={deselectAllVisible}
-                      disabled={selectedWorkerIds.size === 0}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Worker Search */}
-                <div className="relative mt-3">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Filter workers by name or residence hall..."
-                    value={workerSearch}
-                    onChange={(e) => setWorkerSearch(e.target.value)}
-                    className="pl-9 text-xs h-9"
-                  />
-                </div>
-
-                {/* Checklist Grid */}
-                <div className="mt-3 max-h-72 overflow-y-auto space-y-2 pr-1">
-                  {visibleWorkers.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-muted-foreground">
-                      No active workers registered under this team unit.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {visibleWorkers.map((worker) => {
-                        const isChecked = selectedWorkerIds.has(worker._id)
-                        return (
-                          <button
-                            type="button"
-                            key={worker._id}
-                            onClick={() => toggleWorker(worker._id)}
-                            aria-pressed={isChecked}
-                            className={`flex w-full cursor-pointer items-center justify-between rounded-xl p-2.5 text-left transition-all select-none ${
-                              isChecked
-                                ? 'bg-primary/10 shadow-xs'
-                                : 'bg-card hover:bg-muted/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={() => toggleWorker(worker._id)}
-                                className="h-4 w-4 shrink-0"
-                              />
-                              <div className="truncate">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="truncate text-xs sm:text-sm font-semibold text-foreground">
-                                    {worker.fullName}
-                                  </p>
-                                  {workerLeaderLabel(worker) && (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border border-primary/30 bg-primary/10 text-primary shrink-0">
-                                      {workerLeaderLabel(worker)}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-muted-foreground truncate">
-                                  {worker.hall || 'Campus'}
-                                </p>
-                              </div>
-                            </div>
-
-                            {isChecked ? (
-                              <Badge className="text-[10px] h-5 px-1.5 bg-primary font-medium shrink-0">
-                                Present
-                              </Badge>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground/60 mr-1 shrink-0">
-                                Absent
-                              </span>
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Extra Guests / Probationary Attendees */}
-              <div className="grid grid-cols-1 items-center gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="tm-extra" className="text-xs font-semibold text-foreground">
-                    Guest / Visiting Attendees
-                  </Label>
-                  <p className="text-[11px] text-muted-foreground">
-                    Visitors, observing freshers, or unassigned workers.
-                  </p>
-                </div>
-                <div>
-                  <Input
-                    id="tm-extra"
-                    type="number"
-                    min="0"
-                    value={extraCount}
-                    onChange={(e) => setExtraCount(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="text-right font-medium text-sm h-9"
-                  />
-                </div>
-              </div>
-
-              {/* Meeting Notes */}
-              <div className="space-y-1.5">
-                <Label htmlFor="tm-notes" className="text-xs font-medium">
-                  Meeting Notes / Agenda Summary{' '}
-                  <span className="text-muted-foreground font-normal">(Optional)</span>
+                    Reset
+                  </Button>
+                )}
+              </>
+            ) : undefined
+          }
+          mobileFilters={
+            canFilterByTeam ? (
+              <div className="space-y-2">
+                <Label htmlFor="mobile-team-filter" className="text-sm font-medium">
+                  Team
                 </Label>
-                <Input
-                  id="tm-notes"
-                  placeholder="Key decisions, rehearsal songs practiced, prayer focus..."
-                  value={meetingNotes}
-                  onChange={(e) => setMeetingNotes(e.target.value)}
-                  className="h-10 text-xs sm:text-sm"
-                />
+                <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
+                  <SelectTrigger id="mobile-team-filter" aria-label="Filter by team">
+                    <SelectValue placeholder="All teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All teams</SelectItem>
+                    {teamNames.map((teamName) => (
+                      <SelectItem key={teamName} value={teamName}>
+                        {teamName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            ) : undefined
+          }
+          meta={
+            <span>
+              Showing {formatCount(filteredMeetingRows.length)} of {formatCount(teamRows.length)}{' '}
+              {teamRows.length === 1 ? 'meeting' : 'meetings'}
+            </span>
+          }
+        />
 
-              {/* Live Headcount Summary Badge */}
-              <div className="flex items-center justify-between rounded-lg bg-primary/10 px-4 py-2.5 text-xs sm:text-sm">
-                <span className="font-medium text-muted-foreground">Calculated Attendance:</span>
-                <span className="font-bold text-primary">
-                  {selectedWorkerIds.size} workers + {extraCount} guests = {totalPresentCount} Total Present
-                </span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsFormOpen(false)}
-                  disabled={isPending}
-                  className="text-xs h-9"
-                >
-                  Cancel
+        {filteredMeetingRows.length === 0 ? (
+          <EmptyState
+            variant={hasActiveFilters ? 'no-results' : 'nothing-yet'}
+            headingLevel="h3"
+            title={
+              hasActiveFilters
+                ? 'No meeting logs match your filters'
+                : 'No team meetings recorded yet'
+            }
+            description={
+              hasActiveFilters
+                ? 'Try clearing the search query or selecting a different team.'
+                : 'Record your first team rehearsal or unit meeting to start building roster history.'
+            }
+            action={
+              hasActiveFilters ? (
+                <Button type="button" variant="outline" onClick={resetFilters}>
+                  Clear filters
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isPending || totalPresentCount === 0}
-                  className="gap-2 text-xs font-semibold h-9"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                      <span>Saving Roster...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 shrink-0" />
-                      <span>Save Attendance ({totalPresentCount})</span>
-                    </>
-                  )}
+              ) : onRecordClick ? (
+                <Button type="button" onClick={onRecordClick} className="gap-2">
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Record attendance</span>
                 </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* History of Team Meetings */}
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-xl bg-card p-3 sm:flex-row sm:items-center sm:justify-between shadow-sm">
-          <div>
-            <h3 className="font-serif text-base font-bold text-foreground">
-              Past Meeting Attendance Logs
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Recorded sessions with worker attendee rosters.
-            </p>
-          </div>
-
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search meeting topics..."
-              value={historySearch}
-              onChange={(e) => setHistorySearch(e.target.value)}
-              className="pl-9 text-xs h-9"
-            />
-          </div>
-        </div>
-
-        {/* Meeting Logs Table */}
-        <div className="hidden rounded-xl bg-card shadow-sm overflow-x-auto sm:block">
-          <Table aria-label="Team meeting attendance records">
-            <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead className="w-[140px]">Date</TableHead>
-                <TableHead>Meeting Topic</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead className="text-right">Present Count</TableHead>
-                <TableHead>Recorded By</TableHead>
-                <TableHead className="w-[90px] text-right">Roster</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMeetingRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-sm">
-                    No team meeting attendance records found yet. Click &quot;Take Meeting Attendance&quot; above to log your first meeting.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredMeetingRows.map((row) => (
-                    <TableRow key={row._id} className="hover:bg-muted/20 transition-colors">
-                      <TableCell className="font-medium text-xs whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-foreground">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span>{formatDate(row.date)}</span>
+              ) : undefined
+            }
+          />
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden overflow-hidden rounded-[var(--radius-card)] bg-card shadow-sm md:block">
+              <Table aria-label="Team meeting attendance records">
+                <TableCaption className="sr-only">
+                  Team meeting attendance history
+                </TableCaption>
+                <TableHeader sticky>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead scope="col" className="w-[150px]">
+                      Date
+                    </TableHead>
+                    <TableHead scope="col">Meeting topic</TableHead>
+                    <TableHead scope="col">Team</TableHead>
+                    <TableHead scope="col" className="text-right">
+                      Present
+                    </TableHead>
+                    <TableHead scope="col">Recorded by</TableHead>
+                    <TableHead scope="col" className="w-[120px] text-right">
+                      Roster
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredMeetingRows.map((row) => (
+                    <TableRow
+                      key={row._id}
+                      className={cn(
+                        row._id === highlightedId && 'bg-primary/10 hover:bg-primary/15'
+                      )}
+                    >
+                      <TableCell className="whitespace-nowrap text-sm font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar
+                            className="h-4 w-4 shrink-0 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                          <time dateTime={toDateTimeAttr(row.date)}>
+                            {formatDate(row.date)}
+                          </time>
                         </div>
                       </TableCell>
 
                       <TableCell>
                         <div className="space-y-0.5">
-                          <p className="text-xs font-semibold text-foreground">
-                            {row.meetingTitle || 'Standard Team Meeting'}
+                          <p className="text-sm font-semibold text-foreground">
+                            {row.meetingTitle || 'Standard team meeting'}
                           </p>
                           {row.notes && (
-                            <p className="text-[11px] text-muted-foreground line-clamp-1 italic">
+                            <p
+                              className="line-clamp-1 text-[13px] text-muted-foreground"
+                              title={row.notes}
+                            >
                               {row.notes}
                             </p>
                           )}
@@ -688,28 +386,32 @@ export default function TeamMeetingAttendanceView({
                       </TableCell>
 
                       <TableCell>
-                        <Badge variant="outline" className="text-xs font-normal">
-                          {row.teamName || 'Team Unit'}
-                        </Badge>
+                        <StatusBadge variant="neutral" dot>
+                          {row.teamName || 'Team unit'}
+                        </StatusBadge>
                       </TableCell>
 
-                      <TableCell className="text-right">
+                      <TableCell className="whitespace-nowrap text-right">
                         <div className="inline-flex flex-col items-end">
-                          <span className="font-bold text-sm text-foreground">
-                            {row.totalCount} present
+                          <span className="font-sans text-base font-semibold tabular-nums text-foreground">
+                            <data value={row.totalCount}>{formatCount(row.totalCount)}</data>{' '}
+                            present
                           </span>
                           {row.attendeeCount > 0 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {row.attendeeCount} registered
+                            <span className="text-[13px] text-muted-foreground tabular-nums">
+                              {formatCount(row.attendeeCount)} registered
                             </span>
                           )}
                         </div>
                       </TableCell>
 
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-xs text-foreground">
-                          <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span className="truncate max-w-[130px]">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 text-[13px] text-foreground">
+                          <UserCheck
+                            className="h-4 w-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                          />
+                          <span className="max-w-[140px] truncate">
                             {row.loggedBy?.fullName || 'Team Lead'}
                           </span>
                         </div>
@@ -717,155 +419,188 @@ export default function TeamMeetingAttendanceView({
 
                       <TableCell className="text-right">
                         <Button
+                          type="button"
                           variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1 text-xs text-primary hover:text-primary"
                           onClick={() => setActiveRosterRecord(row)}
+                          aria-label={`View roster for ${
+                            row.meetingTitle || 'team meeting'
+                          } on ${formatDate(row.date)}`}
+                          className="min-h-11 gap-1.5 px-3 text-sm text-primary hover:text-primary md:min-h-10"
                         >
-                          <Eye className="h-3.5 w-3.5 shrink-0" />
-                          <span className="hidden sm:inline">Roster</span>
+                          <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span>Roster</span>
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-        {/* Mobile meeting cards */}
-        <div className="sm:hidden space-y-3">
-          {filteredMeetingRows.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-sm text-muted-foreground">
-                No team meeting attendance records found yet. Click &quot;Take Meeting Attendance&quot; above to log your first meeting.
-              </CardContent>
-            </Card>
-          ) : (
-            filteredMeetingRows.map((row) => (
-              <Card key={row._id}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-medium text-foreground">{formatDate(row.date)}</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs font-normal shrink-0">
-                      {row.teamName || 'Team Unit'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm font-semibold text-foreground line-clamp-2">
-                    {row.meetingTitle || 'Standard Team Meeting'}
-                  </p>
-                  {row.notes && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 italic">{row.notes}</p>
+            {/* Mobile Cards */}
+            <div className="space-y-3 md:hidden">
+              {filteredMeetingRows.map((row) => (
+                <article
+                  key={row._id}
+                  className={cn(
+                    'space-y-3 rounded-[var(--radius-card)] bg-card p-4 shadow-sm',
+                    row._id === highlightedId && 'ring-1 ring-inset ring-primary/40 bg-primary/5'
                   )}
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <div className="inline-flex flex-col items-start">
-                      <span className="font-bold text-sm text-foreground">{row.totalCount} present</span>
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+                      <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <time dateTime={toDateTimeAttr(row.date)} className="text-foreground">
+                        {formatDate(row.date)}
+                      </time>
+                    </div>
+                    <StatusBadge variant="neutral" dot className="shrink-0">
+                      {row.teamName || 'Team unit'}
+                    </StatusBadge>
+                  </div>
+
+                  <h3 className="line-clamp-2 font-sans text-base font-semibold text-foreground">
+                    {row.meetingTitle || 'Standard team meeting'}
+                  </h3>
+
+                  {row.notes && (
+                    <p className="line-clamp-2 text-sm text-muted-foreground">{row.notes}</p>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="font-sans text-base font-semibold tabular-nums text-foreground">
+                        <data value={row.totalCount}>{formatCount(row.totalCount)}</data> present
+                      </p>
                       {row.attendeeCount > 0 && (
-                        <span className="text-[10px] text-muted-foreground">{row.attendeeCount} registered</span>
+                        <p className="text-[13px] text-muted-foreground tabular-nums">
+                          {formatCount(row.attendeeCount)} registered
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-                      <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <div className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+                      <UserCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       <span className="truncate">{row.loggedBy?.fullName || 'Team Lead'}</span>
                     </div>
                   </div>
+
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full h-9 gap-1 text-xs text-primary hover:text-primary"
+                    type="button"
+                    variant="outline"
                     onClick={() => setActiveRosterRecord(row)}
+                    aria-label={`View roster for ${
+                      row.meetingTitle || 'team meeting'
+                    } on ${formatDate(row.date)}`}
+                    className="min-h-11 w-full gap-2 text-sm font-medium"
                   >
-                    <Eye className="h-3.5 w-3.5 shrink-0" />
-                    View Roster
+                    <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>View roster</span>
                   </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>
-      <Dialog
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* Meeting Roster Detail Sheet */}
+      <RecordSheet
         open={Boolean(activeRosterRecord)}
-        onOpenChange={(open) => !open && setActiveRosterRecord(null)}
+        onOpenChange={(open) => {
+          if (!open) setActiveRosterRecord(null)
+        }}
+        side="right"
+        className="[&>button]:h-11 [&>button]:w-11"
+        title="Meeting attendance roster"
+        description={
+          activeRosterRecord ? (
+            <>
+              <span>{activeRosterRecord.meetingTitle || 'Standard team meeting'} · </span>
+              <time dateTime={toDateTimeAttr(activeRosterRecord.date)}>
+                {formatDate(activeRosterRecord.date)}
+              </time>
+            </>
+          ) : undefined
+        }
+        footer={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setActiveRosterRecord(null)}
+            className="min-h-11 w-full sm:w-auto"
+          >
+            Close
+          </Button>
+        }
       >
-        <DialogContent className="max-h-[85vh] sm:max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-primary">
-              <Users className="h-5 w-5 shrink-0" />
-              <DialogTitle className="font-serif text-lg">
-                Meeting Attendance Roster
-              </DialogTitle>
-            </div>
-            <DialogDescription>
-              {activeRosterRecord?.meetingTitle || 'Team Meeting'}
-              {' · '}
-              {activeRosterRecord?.date && formatDate(activeRosterRecord.date)}
-            </DialogDescription>
-          </DialogHeader>
-
-          {activeRosterRecord && (
-            <div className="space-y-4 py-2">
-              <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Team Unit: </span>
-                  <span className="font-semibold text-foreground">
-                    {activeRosterRecord.teamName || effectiveTeamName}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total Present: </span>
-                  <span className="font-bold text-primary">
-                    {activeRosterRecord.totalCount} Attendees
-                  </span>
-                </div>
-              </div>
-
+        {activeRosterRecord && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-3 rounded-[var(--radius-card)] bg-surface-raised p-4">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  Ticked Registered Workers ({activeRosterRecord.attendees?.length || activeRosterRecord.attendeeCount || 0})
-                </h4>
-
-                {activeRosterRecord.attendees && activeRosterRecord.attendees.length > 0 ? (
-                  <div className="rounded-xl bg-card max-h-60 overflow-y-auto">
-                    {activeRosterRecord.attendees.map((worker, i) => (
-                      <div key={worker._id || i} className="flex items-center justify-between p-2.5 text-xs">
-                        <span className="font-medium text-foreground">{worker.fullName}</span>
-                        {worker.team && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {worker.team}
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-muted/30 p-4 text-center text-xs text-muted-foreground">
-                    {activeRosterRecord.totalCount > 0
-                      ? `${activeRosterRecord.totalCount} attendees logged on this meeting entry.`
-                      : 'No worker attendee entries.'}
-                  </div>
-                )}
+                <p className="text-[13px] text-muted-foreground">Team</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">
+                  {activeRosterRecord.teamName || effectiveTeamName}
+                </p>
               </div>
+              <div className="text-right">
+                <p className="text-[13px] text-muted-foreground">Total present</p>
+                <p className="mt-0.5 font-sans text-lg font-semibold tabular-nums text-foreground">
+                  <data value={activeRosterRecord.totalCount}>
+                    {formatCount(activeRosterRecord.totalCount)}
+                  </data>
+                </p>
+              </div>
+            </div>
 
-              {activeRosterRecord.notes && (
-                <div className="rounded-md bg-muted/30 p-2.5 text-xs">
-                  <span className="font-semibold text-muted-foreground">Notes: </span>
-                  <span className="text-foreground">{activeRosterRecord.notes}</span>
-                </div>
-              )}
+            <div className="space-y-2.5">
+              <h3 className="font-sans text-sm font-semibold text-foreground">
+                Registered workers (
+                {formatCount(
+                  activeRosterRecord.attendees?.length || activeRosterRecord.attendeeCount || 0
+                )}
+                )
+              </h3>
 
-              {activeRosterRecord.loggedBy?.fullName && (
-                <div className="text-[11px] text-muted-foreground text-right italic">
-                  Recorded by {activeRosterRecord.loggedBy.fullName}
+              {activeRosterRecord.attendees && activeRosterRecord.attendees.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {activeRosterRecord.attendees.map((worker, idx) => (
+                    <li
+                      key={worker._id || idx}
+                      className="flex items-center justify-between gap-2 rounded-[var(--radius-control)] bg-surface-raised px-3.5 py-2.5 text-sm"
+                    >
+                      <span className="font-medium text-foreground">{worker.fullName}</span>
+                      {worker.team && (
+                        <StatusBadge variant="neutral" dot>
+                          {worker.team}
+                        </StatusBadge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-[var(--radius-control)] bg-surface-raised p-4 text-center text-sm text-muted-foreground">
+                  {activeRosterRecord.totalCount > 0
+                    ? `${formatCount(activeRosterRecord.totalCount)} attendees recorded for this meeting.`
+                    : 'No worker entries recorded.'}
                 </div>
               )}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            {activeRosterRecord.notes && (
+              <div className="space-y-1 rounded-[var(--radius-control)] bg-surface-raised p-3.5">
+                <p className="text-[13px] font-medium text-muted-foreground">Notes</p>
+                <p className="text-sm text-foreground">{activeRosterRecord.notes}</p>
+              </div>
+            )}
+
+            {activeRosterRecord.loggedBy?.fullName && (
+              <p className="text-[13px] text-muted-foreground">
+                Recorded by {activeRosterRecord.loggedBy.fullName}
+              </p>
+            )}
+          </div>
+        )}
+      </RecordSheet>
     </div>
   )
 }

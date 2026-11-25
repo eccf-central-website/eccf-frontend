@@ -31,6 +31,7 @@
 
   --card: 0 0% 100%; /* pure white #ffffff for crisp card elevation */
   --card-foreground: 222 42% 6%;
+  --surface-raised: 214 25% 96%; /* subtle tonal surface step above card */
   --popover: 0 0% 100%;
   --popover-foreground: 222 42% 6%;
 
@@ -43,16 +44,24 @@
   --accent: 205 100% 96%; /* sky-50 tint for hovers */
   --accent-foreground: 205 100% 30%;
 
-  --destructive: 0 72% 51%; /* red-600 */
+  --destructive: 0 72% 46%; /* calibrated for >=4.5:1 AA on white and /10 tint */
   --destructive-foreground: 0 0% 100%;
-  --success: 161 94% 30%; /* emerald-600 */
+  --success: 161 94% 24%; /* calibrated emerald-700 for >=4.5:1 AA on white and /10 tint */
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%; /* gold #f59e0b */
   --warning-foreground: 222 42% 6%;
+  --gold: 38 92% 50%; /* brand gold #f59e0b */
+  --gold-foreground: 222 47% 8%;
 
   --border: 214 20% 88%;
-  --input: 214 20% 88%;
+  --input: 214 20% 78%;
   --ring: 205 100% 50%; /* sky #0095ff */
+
+  /* Shape geometry tokens */
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+  --radius-pill: 999px;
 
   --sidebar: 222 42% 6%; /* navy */
   --sidebar-foreground: 213 27% 84%; /* slate-300 */
@@ -77,6 +86,7 @@
   /* Layered elevation surfaces — subtle steps, never pure black */
   --card: 222 38% 10%; /* #121725 */
   --card-foreground: 216 28% 88%;
+  --surface-raised: 220 30% 15%;
   --popover: 222 40% 12%; /* #161b2a */
   --popover-foreground: 216 28% 88%;
 
@@ -92,16 +102,18 @@
   --accent-foreground: 205 95% 78%;
 
   /* Status tokens calibrated for dark surfaces */
-  --destructive: 0 70% 58%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 0 76% 64%;
+  --destructive-foreground: 222 47% 8%;
   --success: 155 65% 48%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 222 47% 8%;
   --warning: 38 95% 56%; /* brand gold, lifted */
   --warning-foreground: 222 47% 8%;
+  --gold: 38 95% 56%; /* brand gold, lifted */
+  --gold-foreground: 222 47% 8%;
 
-  /* Refined hairline borders & inputs — mild, low-contrast dark lines */
+  /* Refined hairline borders & visible input boundaries */
   --border: 220 20% 11%;
-  --input: 220 20% 11%;
+  --input: 218 22% 28%;
   --ring: 206 100% 60%;
 
   /* Grounded navigation sidebar — deeper than canvas */
@@ -115,6 +127,17 @@
   /* Neutral dark theme-aware skeleton shimmer */
   --sk-base: rgba(214, 226, 241, 0.07);
   --sk-shine: rgba(214, 226, 241, 0.135);
+}
+
+/* Theme-aware aliases inside dashboard root so legacy CSS var usages render cleanly */
+[data-dashboard-root] {
+  --brand-gold: hsl(var(--gold));
+  --brand-navy: hsl(var(--foreground));
+}
+
+/* Selective text wrapping for headings and column headers (never *) */
+[data-dashboard-root] :where(h1, h2, th) {
+  text-wrap: balance;
 }
 
 /* Midnight atmosphere — a faint sky glow bleeding in from the top and a
@@ -165,5 +188,23 @@
   .animate-shimmer {
     animation: none;
     background: var(--sk-base);
+  }
+}
+
+/* Windows Forced Colors (High Contrast) Mode resilience:
+   box-shadow focus rings and tonal pill washes are stripped in forced-colors,
+   so reinforce focus outlines and pill boundaries with system color keywords. */
+@media (forced-colors: active) {
+  [data-dashboard-root] :focus-visible,
+  [role="dialog"] :focus-visible,
+  [role="listbox"] :focus-visible,
+  [data-sonner-toaster] :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+
+  [data-dashboard-root] [data-status-badge],
+  [role="dialog"] [data-status-badge] {
+    border: 1px solid CanvasText;
   }
 }

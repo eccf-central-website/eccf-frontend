@@ -3,13 +3,15 @@
  *
  * Implements Dual System:
  * - Ushering Team & Admins: General church service headcount console (Sunday, Wednesday, Academic, Special programmes)
- *   without ticking names. Fast, frictionless numeric entry with optional demographic breakdown.
+ *   without ticking names. Fast numeric entry in a drawer/sheet with optional demographic breakdown.
  * - Team Leaders: Operational team meeting worker attendance, scoped strictly to their team workers.
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listAttendance, fetchWorkersForAttendance } from '@/lib/dashboard/data'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
 import { isUsheringTeam } from '@/lib/dashboard/rbac'
 import { getTeamUnitOptions } from '@/lib/teams'
 import AttendanceHub from '@/components/dashboard/attendance/AttendanceHub'
@@ -20,9 +22,8 @@ interface AttendancePageProps {
   }>
 }
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AttendancePage({ searchParams }: AttendancePageProps) {
   const session = await requireSection('attendance')
@@ -37,6 +38,8 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
   const canUsher = session.role === 'admin' || isUsheringTeam(session)
   const isTeamLead = session.role === 'team_lead'
   const isUshering = isUsheringTeam(session)
+  const todayIso = lagosDate()
+  const dateEyebrow = formatDate(todayIso)
 
   return (
     <PageContainer>
@@ -49,6 +52,8 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         isUshering={isUshering}
         initialTab={resolvedSearchParams?.tab}
         teamOptions={teamOptions}
+        dateEyebrow={dateEyebrow}
+        todayIso={todayIso}
       />
     </PageContainer>
   )

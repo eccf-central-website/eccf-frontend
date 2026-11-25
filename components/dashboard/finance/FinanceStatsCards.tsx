@@ -1,79 +1,81 @@
 'use client'
 
-import React from 'react'
-import { ArrowDownRight, ArrowUpRight, Scale } from 'lucide-react'
+import * as React from 'react'
+import { useMemo } from 'react'
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Scale,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
+import { formatNaira } from '@/lib/dashboard/format'
+import { cn } from '@/lib/utils'
+import { KpiStrip, type KpiStripItem } from '@/components/dashboard/ui/kpi-strip'
 
 interface FinanceStatsCardsProps {
   totalIncome: number
   totalExpense: number
+  periodLabel?: string
 }
 
-export default function FinanceStatsCards({ totalIncome, totalExpense }: FinanceStatsCardsProps) {
+export default function FinanceStatsCards({
+  totalIncome,
+  totalExpense,
+  periodLabel,
+}: FinanceStatsCardsProps) {
   const netBalance = totalIncome - totalExpense
+  const isSurplus = netBalance >= 0
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-      {/* Income */}
-      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Income
-          </span>
-          <div className="h-8 w-8 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <ArrowDownRight className="h-4 w-4 shrink-0" />
-          </div>
-        </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
-            ₦{totalIncome.toLocaleString()}
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground mt-1">Total recorded inflows</span>
-      </div>
-
-      {/* Expense */}
-      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Expenses
-          </span>
-          <div className="h-8 w-8 shrink-0 rounded-xl bg-muted/60 flex items-center justify-center text-muted-foreground">
-            <ArrowUpRight className="h-4 w-4 shrink-0" />
-          </div>
-        </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
-            ₦{totalExpense.toLocaleString()}
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground mt-1">Total recorded disbursements</span>
-      </div>
-
-      {/* Net Position */}
-      <div className="rounded-2xl bg-card p-5 shadow-sm border-0 flex flex-col justify-between min-h-[120px]">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Net Position
-          </span>
-          <div className="h-8 w-8 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <Scale className="h-4 w-4 shrink-0" />
-          </div>
-        </div>
-        <div className="mt-3 flex items-baseline gap-2">
+  const items: KpiStripItem[] = useMemo(
+    () => [
+      {
+        id: 'income',
+        label: 'Income',
+        value: formatNaira(totalIncome),
+        rawValue: totalIncome,
+        caption: periodLabel ? `Inflows · ${periodLabel}` : 'Recorded inflows',
+        icon: <ArrowDownLeft />,
+        tone: 'success',
+      },
+      {
+        id: 'expenses',
+        label: 'Expenses',
+        value: formatNaira(totalExpense),
+        rawValue: totalExpense,
+        caption: periodLabel ? `Disbursements · ${periodLabel}` : 'Recorded disbursements',
+        icon: <ArrowUpRight />,
+        tone: 'neutral',
+      },
+      {
+        id: 'net-position',
+        label: 'Net position',
+        value: formatNaira(netBalance),
+        rawValue: netBalance,
+        caption: (
           <span
-            className={`font-sans text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${
-              netBalance >= 0
-                ? 'text-foreground'
-                : 'text-destructive'
-            }`}
+            className={cn(
+              'inline-flex items-center gap-1 font-medium',
+              isSurplus ? 'text-success' : 'text-destructive'
+            )}
           >
-            {netBalance < 0 ? '-' : ''}₦{Math.abs(netBalance).toLocaleString()}
+            {isSurplus ? (
+              <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <TrendingDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            <span>
+              {isSurplus ? 'Surplus' : 'Deficit'}
+              {periodLabel ? ` · ${periodLabel}` : ''}
+            </span>
           </span>
-        </div>
-        <span className="text-xs text-muted-foreground mt-1">
-          {netBalance >= 0 ? 'Surplus this period' : 'Deficit this period'}
-        </span>
-      </div>
-    </div>
+        ),
+        icon: <Scale />,
+        tone: isSurplus ? 'primary' : 'destructive',
+      },
+    ],
+    [totalIncome, totalExpense, netBalance, isSurplus, periodLabel]
   )
+
+  return <KpiStrip ariaLabel="Financial position summary" items={items} />
 }

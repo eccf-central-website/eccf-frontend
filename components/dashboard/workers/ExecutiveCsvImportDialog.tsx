@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * ExecutiveCsvImportDialog — 2-step bulk-import for executive positions from CSV/XLSX.
+ * ExecutiveCsvImportDialog — 3-step bulk-import for executive positions from CSV/XLSX.
  *
  * Step 1: Upload spreadsheet and select options (e.g. reserve roles for unregistered EXCOs).
  * Step 2: Interactive Mapping & Preview table:
@@ -14,7 +14,7 @@
  */
 
 import * as React from 'react'
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
@@ -34,8 +34,10 @@ import {
   UserCheck,
   UserPlus,
 } from 'lucide-react'
-import { Button } from '@/components/dashboard/ui/button'
+import { Button, type ButtonProps } from '@/components/dashboard/ui/button'
 import { Checkbox } from '@/components/dashboard/ui/checkbox'
+import { Input } from '@/components/dashboard/ui/input'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
 import {
   Dialog,
   DialogContent,
@@ -70,14 +72,48 @@ const TEMPLATE_CSV = [
 interface ExecutiveCsvImportDialogProps {
   className?: string
   buttonLabel?: string
+  variant?: ButtonProps['variant']
+}
+
+function renderRoleCategoryBadge(kind: ExecutivePreviewRow['kind']) {
+  switch (kind) {
+    case 'csgb':
+      return (
+        <StatusBadge variant="gold" dot className="w-fit">
+          CSGB Executive
+        </StatusBadge>
+      )
+    case 'hall':
+      return (
+        <StatusBadge variant="warning" dot className="w-fit">
+          Hall Pastorate
+        </StatusBadge>
+      )
+    case 'team':
+      return (
+        <StatusBadge variant="info" dot className="w-fit">
+          Ministry Team
+        </StatusBadge>
+      )
+    case 'unknown':
+    default:
+      return (
+        <StatusBadge variant="destructive" className="w-fit">
+          Unrecognized Role
+        </StatusBadge>
+      )
+  }
 }
 
 export default function ExecutiveCsvImportDialog({
   className,
   buttonLabel = 'Import from Spreadsheet',
+  variant = 'default',
 }: ExecutiveCsvImportDialogProps) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchInputId = useId()
+  const fileInputId = useId()
 
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<'upload' | 'preview' | 'result'>('upload')
@@ -289,15 +325,12 @@ export default function ExecutiveCsvImportDialog({
     }
   }
 
-  // Filtered rows for the preview table
   const filteredRows = useMemo(() => {
     return rows.filter((r) => {
-      // Tab filter
       if (filterTab === 'matched' && r.isNewWorker) return false
       if (filterTab === 'new' && !r.isNewWorker) return false
       if (filterTab === 'warning' && r.status !== 'warning') return false
 
-      // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         const matchName = r.rawName.toLowerCase().includes(query)
@@ -320,15 +353,16 @@ export default function ExecutiveCsvImportDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <Button
-        size="sm"
+        type="button"
+        variant={variant}
         onClick={() => setOpen(true)}
         className={cn(
-          'h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs',
+          'min-h-11 md:min-h-10 px-4 font-semibold text-sm',
           className
         )}
       >
-        <FileSpreadsheet className="h-4 w-4 shrink-0 mr-1.5" />
-        {buttonLabel}
+        <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>{buttonLabel}</span>
       </Button>
 
       <DialogContent
@@ -337,8 +371,8 @@ export default function ExecutiveCsvImportDialog({
           step === 'preview'
             ? 'max-w-5xl w-[95vw] max-h-[92vh] flex flex-col'
             : step === 'result'
-            ? 'sm:max-w-xl max-h-[90vh] flex flex-col'
-            : 'sm:max-w-lg max-h-[90vh] flex flex-col'
+              ? 'sm:max-w-xl max-h-[90vh] flex flex-col'
+              : 'sm:max-w-lg max-h-[90vh] flex flex-col'
         )}
       >
         {/* =================================================================== */}
@@ -347,19 +381,21 @@ export default function ExecutiveCsvImportDialog({
         {step === 'upload' && (
           <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-serif font-black tracking-tight text-foreground flex items-center gap-2 text-base sm:text-lg min-w-0">
-                <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
+              <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg min-w-0">
+                <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                 <span className="truncate">Bulk-Import Leadership Positions</span>
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                Upload your executive or unit leadership spreadsheet. In the next step, you will be able to preview and modify all name & position mappings before anything is imported.
+              <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed [text-wrap:pretty]">
+                Upload your executive or unit leadership spreadsheet. In the next step, you will be able to preview and modify all name &amp; position mappings before anything is imported.
               </DialogDescription>
             </DialogHeader>
 
             <input
+              id={fileInputId}
               ref={inputRef}
               type="file"
               accept={ACCEPT}
+              aria-label="Upload executive spreadsheet file"
               className="sr-only"
               onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
               disabled={isAnalyzing}
@@ -371,7 +407,10 @@ export default function ExecutiveCsvImportDialog({
               aria-label="Choose a CSV or Excel file"
               onClick={() => inputRef.current?.click()}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  inputRef.current?.click()
+                }
               }}
               onDragOver={(e) => {
                 e.preventDefault()
@@ -384,30 +423,30 @@ export default function ExecutiveCsvImportDialog({
                 if (!isAnalyzing) pickFile(e.dataTransfer.files?.[0] ?? null)
               }}
               className={cn(
-                'flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring w-full min-w-0 max-w-full overflow-hidden',
+                'flex min-h-36 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring w-full min-w-0 max-w-full overflow-hidden',
                 dragActive
                   ? 'border-primary bg-primary/10'
                   : 'border-border hover:border-primary/50 hover:bg-muted/40'
               )}
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
-                <Upload className="h-6 w-6" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-accent-foreground dark:text-primary">
+                <Upload className="h-6 w-6" aria-hidden="true" />
               </div>
               {file ? (
                 <div className="w-full min-w-0 px-2 flex flex-col items-center">
-                  <span className="text-sm font-bold text-foreground w-full truncate text-center block">
+                  <span className="text-sm font-semibold text-foreground w-full truncate text-center block">
                     {file.name}
                   </span>
-                  <span className="text-xs text-muted-foreground text-center break-words mt-0.5">
+                  <span className="text-[13px] text-muted-foreground text-center break-words mt-0.5 tabular-nums">
                     {(file.size / 1024).toFixed(0)} KB — click to choose a different file
                   </span>
                 </div>
               ) : (
                 <div className="w-full min-w-0 px-2 flex flex-col items-center">
-                  <span className="text-sm font-bold text-foreground text-center">
+                  <span className="text-sm font-semibold text-foreground text-center">
                     Drop your spreadsheet here or click to browse
                   </span>
-                  <span className="text-xs text-muted-foreground text-center mt-0.5">
+                  <span className="text-[13px] text-muted-foreground text-center mt-0.5">
                     CSV, XLSX or XLS — up to 4 MB
                   </span>
                 </div>
@@ -415,14 +454,15 @@ export default function ExecutiveCsvImportDialog({
             </div>
 
             {/* Reserve appointments for unregistered EXCOs */}
-            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/30 border border-border cursor-pointer select-none hover:bg-muted/50 transition-colors">
+            <label className="flex items-start gap-3 p-3.5 rounded-xl bg-surface-raised cursor-pointer select-none hover:bg-muted/60 transition-colors min-h-11">
               <Checkbox
                 checked={includeUnregistered}
                 onCheckedChange={(c) => setIncludeUnregistered(Boolean(c))}
+                aria-label="Include unregistered EXCOs"
                 className="mt-0.5"
                 disabled={isAnalyzing}
               />
-              <div className="text-xs leading-normal">
+              <div className="text-[13px] leading-relaxed">
                 <span className="font-semibold text-foreground block">
                   Include unregistered EXCOs
                 </span>
@@ -433,9 +473,9 @@ export default function ExecutiveCsvImportDialog({
             </label>
 
             {/* Column hints */}
-            <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5 w-full min-w-0 overflow-hidden">
-              <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
-                Supported columns (flexible & auto-detected)
+            <div className="rounded-xl bg-surface-raised p-3.5 space-y-2 w-full min-w-0 overflow-hidden">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Supported columns (flexible &amp; auto-detected)
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {[
@@ -447,7 +487,7 @@ export default function ExecutiveCsvImportDialog({
                 ].map((col) => (
                   <span
                     key={col}
-                    className="px-2 py-0.5 rounded-md bg-card border border-border text-[11px] font-mono text-foreground"
+                    className="px-2.5 py-1 rounded-md bg-card text-[13px] text-foreground shadow-sm"
                   >
                     {col}
                   </span>
@@ -456,62 +496,59 @@ export default function ExecutiveCsvImportDialog({
             </div>
 
             {error && (
-              <p className="text-xs text-destructive font-semibold break-words" role="alert">
+              <p className="text-[13px] text-destructive font-semibold break-words" role="alert">
                 {error}
               </p>
             )}
 
-            <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center">
-              <div className="flex items-center gap-2 flex-wrap">
+            <DialogFooter className="gap-2 pt-2 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center sm:space-x-0">
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
                   onClick={downloadTemplate}
                   disabled={downloading}
-                  className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                  className="min-h-11 md:min-h-10 text-[13px] font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
                 >
                   {downloading ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                   ) : (
-                    <Download className="h-4 w-4 shrink-0 mr-1.5" />
+                    <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
                   )}
-                  Template
+                  <span>Template</span>
                 </Button>
 
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   onClick={handleReconcile}
                   disabled={isReconciling}
-                  className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                  className="min-h-11 md:min-h-10 text-[13px] font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
                 >
                   {isReconciling ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                   ) : (
-                    <RotateCcw className="h-4 w-4 shrink-0 mr-1.5" />
+                    <RotateCcw className="h-4 w-4 shrink-0" aria-hidden="true" />
                   )}
-                  Sync Exco Registrations
+                  <span>Sync Exco Registrations</span>
                 </Button>
               </div>
 
               <Button
                 type="button"
-                size="sm"
                 onClick={handleAnalyze}
                 disabled={!file || isAnalyzing}
-                className="h-10 sm:h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
+                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
-                    Analyzing Sheet...
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                    <span>Analyzing Sheet…</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4 shrink-0 mr-1.5" />
-                    Preview & Map Rows
+                    <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>Preview &amp; Map Rows</span>
                   </>
                 )}
               </Button>
@@ -525,114 +562,109 @@ export default function ExecutiveCsvImportDialog({
         {step === 'preview' && (
           <div className="flex flex-col h-full max-h-[92vh] min-h-0">
             {/* Header with summary chips */}
-            <div className="p-4 sm:p-5 border-b border-border bg-card/60 backdrop-blur-xs shrink-0 space-y-3">
+            <div className="p-4 sm:p-5 border-b border-border/50 bg-card shrink-0 space-y-3 pr-12">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                  <DialogTitle className="font-serif font-black tracking-tight text-foreground flex items-center gap-2 text-base sm:text-lg">
-                    <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-                    <span>Review & Map Positions</span>
-                    <span className="text-xs font-normal font-sans text-muted-foreground">
-                      ({rows.length} total rows detected)
+                  <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg">
+                    <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    <span>Review &amp; Map Positions</span>
+                    <span className="text-[13px] font-normal text-muted-foreground tabular-nums">
+                      ({rows.length} total rows)
                     </span>
                   </DialogTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <DialogDescription className="text-[13px] text-muted-foreground mt-0.5">
                     Review and verify all detected workers and roles before importing into the database.
-                  </p>
+                  </DialogDescription>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
-                    <UserCheck className="h-3.5 w-3.5 shrink-0" />
-                    <span>{matchedCount} Registered</span>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-sky-700 dark:text-sky-400 text-xs font-semibold">
-                    <UserPlus className="h-3.5 w-3.5 shrink-0" />
-                    <span>{newWorkerCount} Unregistered</span>
-                  </div>
+                  <StatusBadge
+                    variant="success"
+                    icon={<UserCheck className="h-3.5 w-3.5" aria-hidden="true" />}
+                  >
+                    <span className="tabular-nums">{matchedCount} Registered</span>
+                  </StatusBadge>
+                  <StatusBadge
+                    variant="info"
+                    icon={<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />}
+                  >
+                    <span className="tabular-nums">{newWorkerCount} Unregistered</span>
+                  </StatusBadge>
                   {warningCount > 0 && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-semibold">
-                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-                      <span>{warningCount} Warnings</span>
-                    </div>
+                    <StatusBadge
+                      variant="warning"
+                      icon={<TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />}
+                    >
+                      <span className="tabular-nums">{warningCount} Warnings</span>
+                    </StatusBadge>
                   )}
                 </div>
               </div>
 
               {/* Toolbar: Search & Filter Tabs */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/50 border border-border text-xs w-full sm:w-auto overflow-x-auto">
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab('all')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap',
-                      filterTab === 'all'
-                        ? 'bg-card text-foreground shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    All ({rows.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab('matched')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap',
-                      filterTab === 'matched'
-                        ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Registered ({matchedCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab('new')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap',
-                      filterTab === 'new'
-                        ? 'bg-card text-sky-600 dark:text-sky-400 shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Unregistered ({newWorkerCount})
-                  </button>
-                  {warningCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setFilterTab('warning')}
-                      className={cn(
-                        'px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap',
-                        filterTab === 'warning'
-                          ? 'bg-card text-amber-600 dark:text-amber-400 shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      Warnings ({warningCount})
-                    </button>
-                  )}
+                <div
+                  role="tablist"
+                  aria-label="Filter spreadsheet rows"
+                  className="flex items-center gap-1 p-1 rounded-xl bg-surface-raised text-[13px] w-full sm:w-auto overflow-x-auto"
+                >
+                  {[
+                    { id: 'all' as const, label: `All (${rows.length})` },
+                    { id: 'matched' as const, label: `Registered (${matchedCount})` },
+                    { id: 'new' as const, label: `Unregistered (${newWorkerCount})` },
+                    ...(warningCount > 0
+                      ? [{ id: 'warning' as const, label: `Warnings (${warningCount})` }]
+                      : []),
+                  ].map((tab) => {
+                    const isActive = filterTab === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => setFilterTab(tab.id)}
+                        className={cn(
+                          'min-h-11 md:min-h-10 px-3 rounded-lg font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          isActive
+                            ? 'bg-card text-foreground font-semibold shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <span className="tabular-nums">{tab.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1 sm:w-64">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <input
+                    <label htmlFor={searchInputId} className="sr-only">
+                      Search parsed spreadsheet rows
+                    </label>
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id={searchInputId}
                       type="text"
-                      placeholder="Search name, role, hall..."
+                      placeholder="Search name, role, hall…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full h-8 pl-8 pr-3 rounded-lg border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="pl-9 min-h-11 md:min-h-10 text-sm"
                     />
                   </div>
 
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     onClick={() => handleToggleAll(filteredRows)}
-                    className="h-8 px-2.5 text-xs rounded-lg whitespace-nowrap"
+                    className="min-h-11 md:min-h-10 px-3 text-[13px] font-semibold whitespace-nowrap"
                   >
-                    {filteredRows.every((r) => r.selected) ? 'Deselect All' : 'Select All'}
+                    {filteredRows.length > 0 && filteredRows.every((r) => r.selected)
+                      ? 'Deselect All'
+                      : 'Select All'}
                   </Button>
                 </div>
               </div>
@@ -640,30 +672,46 @@ export default function ExecutiveCsvImportDialog({
 
             {/* Scrollable Preview Table */}
             <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-xs border-b border-border text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+              <table className="w-full text-left border-collapse text-sm">
+                <caption className="sr-only">
+                  Preview of parsed executive leadership spreadsheet rows and mapped roles
+                </caption>
+                <thead className="sticky top-0 z-10 bg-surface-raised text-[13px] font-semibold text-muted-foreground">
                   <tr>
-                    <th className="py-2.5 pl-4 pr-2 w-10">
+                    <th scope="col" className="h-11 pl-4 pr-2 w-12">
                       <Checkbox
                         checked={
                           filteredRows.length > 0 && filteredRows.every((r) => r.selected)
                         }
                         onCheckedChange={() => handleToggleAll(filteredRows)}
+                        aria-label="Select all visible rows"
                       />
                     </th>
-                    <th className="py-2.5 px-2 w-12 text-center">#</th>
-                    <th className="py-2.5 px-3 min-w-[160px]">Sheet Name</th>
-                    <th className="py-2.5 px-3 min-w-[200px]">Mapped Worker</th>
-                    <th className="py-2.5 px-3 min-w-[200px]">Mapped Role / Office</th>
-                    <th className="py-2.5 px-3 w-32">Rank</th>
-                    <th className="py-2.5 px-3 w-24 text-right pr-4">Status</th>
+                    <th scope="col" className="h-11 px-2 w-12 text-center">
+                      #
+                    </th>
+                    <th scope="col" className="h-11 px-3 min-w-[160px]">
+                      Sheet Name
+                    </th>
+                    <th scope="col" className="h-11 px-3 min-w-[200px]">
+                      Mapped Worker
+                    </th>
+                    <th scope="col" className="h-11 px-3 min-w-[200px]">
+                      Mapped Role / Office
+                    </th>
+                    <th scope="col" className="h-11 px-3 w-36">
+                      Rank
+                    </th>
+                    <th scope="col" className="h-11 px-3 w-28 text-right pr-4">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
                   {filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-muted-foreground">
-                        <Filter className="h-6 w-6 mx-auto mb-2 opacity-40" />
+                      <td colSpan={7} className="py-12 text-center text-muted-foreground text-sm">
+                        <Filter className="h-6 w-6 mx-auto mb-2 opacity-50" aria-hidden="true" />
                         No rows match your current filter.
                       </td>
                     </tr>
@@ -675,7 +723,7 @@ export default function ExecutiveCsvImportDialog({
                         <tr
                           key={row.rowId}
                           className={cn(
-                            'transition-colors hover:bg-muted/40',
+                            'min-h-12 transition-colors hover:bg-muted/30',
                             !isRowSelected && 'opacity-60 bg-muted/10'
                           )}
                         >
@@ -684,11 +732,12 @@ export default function ExecutiveCsvImportDialog({
                             <Checkbox
                               checked={isRowSelected}
                               onCheckedChange={() => handleToggleRow(row.rowId)}
+                              aria-label={`Select ${row.rawName}`}
                             />
                           </td>
 
                           {/* Row Index */}
-                          <td className="py-3 px-2 text-center font-mono text-[11px] text-muted-foreground">
+                          <td className="py-3 px-2 text-center text-[13px] tabular-nums text-muted-foreground">
                             {row.rowIndex}
                           </td>
 
@@ -697,7 +746,7 @@ export default function ExecutiveCsvImportDialog({
                             <span className="font-semibold text-foreground block">
                               {row.rawName}
                             </span>
-                            <span className="text-[11px] text-muted-foreground block truncate max-w-[180px]">
+                            <span className="text-[13px] text-muted-foreground block truncate max-w-[180px]">
                               {row.rawEmail || row.rawPosition}
                             </span>
                           </td>
@@ -705,19 +754,25 @@ export default function ExecutiveCsvImportDialog({
                           {/* Mapped Worker */}
                           <td className="py-3 px-3">
                             <div className="flex flex-col gap-1">
-                              <span className="font-bold text-foreground">
+                              <span className="font-semibold text-foreground">
                                 {row.workerDisplayName}
                               </span>
                               {!row.isNewWorker ? (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-mono text-[10px] w-fit font-bold">
-                                  <Check className="h-3 w-3" />
+                                <StatusBadge
+                                  variant="success"
+                                  icon={<Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                                  className="w-fit"
+                                >
                                   Registered Worker
-                                </span>
+                                </StatusBadge>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-500/15 text-sky-700 dark:text-sky-400 font-mono text-[10px] w-fit font-bold">
-                                  <UserPlus className="h-3 w-3" />
+                                <StatusBadge
+                                  variant="info"
+                                  icon={<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />}
+                                  className="w-fit"
+                                >
                                   Unregistered
-                                </span>
+                                </StatusBadge>
                               )}
                             </div>
                           </td>
@@ -728,28 +783,7 @@ export default function ExecutiveCsvImportDialog({
                               <span className="font-medium text-foreground">
                                 {row.office || row.hall || row.teamName || row.rawPosition}
                               </span>
-                              <div className="flex items-center gap-1">
-                                {row.kind === 'csgb' && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-700 dark:text-purple-400 font-mono text-[10px] font-bold">
-                                    CSGB Executive
-                                  </span>
-                                )}
-                                {row.kind === 'hall' && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[10px] font-bold">
-                                    Hall Pastorate
-                                  </span>
-                                )}
-                                {row.kind === 'team' && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-700 dark:text-blue-400 font-mono text-[10px] font-bold">
-                                    Ministry Team
-                                  </span>
-                                )}
-                                {row.kind === 'unknown' && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-destructive/15 text-destructive font-mono text-[10px] font-bold">
-                                    Unrecognized Role
-                                  </span>
-                                )}
-                              </div>
+                              {renderRoleCategoryBadge(row.kind)}
                             </div>
                           </td>
 
@@ -758,31 +792,31 @@ export default function ExecutiveCsvImportDialog({
                             <button
                               type="button"
                               onClick={() => handleToggleRank(row.rowId)}
+                              aria-label={`Toggle rank for ${row.rawName}, currently ${row.rank === 'lead' ? 'Lead' : 'Assistant'}`}
                               className={cn(
-                                'px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors inline-flex items-center gap-1',
+                                'min-h-11 md:min-h-10 px-3 rounded-[var(--radius-control)] text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 row.rank === 'lead'
-                                  ? 'bg-primary/10 border-primary/30 text-primary'
-                                  : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+                                  ? 'bg-primary/10 text-accent-foreground dark:text-primary'
+                                  : 'bg-surface-raised text-muted-foreground hover:text-foreground'
                               )}
                               title="Click to toggle Lead / Assistant"
                             >
                               <span>{row.rank === 'lead' ? 'Lead' : 'Assistant'}</span>
-                              <RotateCcw className="h-3 w-3 opacity-60 ml-0.5" />
+                              <RotateCcw className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
                             </button>
                           </td>
 
                           {/* Status */}
                           <td className="py-3 px-3 text-right pr-4">
                             {row.status === 'valid' ? (
-                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Ready
-                              </span>
+                              <StatusBadge variant="success">Ready</StatusBadge>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold text-[11px]" title={row.statusMessage}>
-                                <TriangleAlert className="h-3.5 w-3.5" />
+                              <StatusBadge
+                                variant="warning"
+                                title={row.statusMessage}
+                              >
                                 Review
-                              </span>
+                              </StatusBadge>
                             )}
                           </td>
                         </tr>
@@ -794,40 +828,38 @@ export default function ExecutiveCsvImportDialog({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-border bg-card shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-4 border-t border-border/50 bg-card shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
                 onClick={() => setStep('upload')}
                 disabled={isCommitting}
-                className="h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                className="min-h-11 md:min-h-10 text-sm font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
               >
-                <ArrowLeft className="h-4 w-4 mr-1.5" />
-                Back to Upload
+                <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Back to Upload</span>
               </Button>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <span className="text-xs text-muted-foreground">
-                  <span className="font-bold text-foreground">{selectedCount}</span> of {rows.length} rows selected
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto justify-end">
+                <span className="text-[13px] text-muted-foreground tabular-nums">
+                  <span className="font-semibold text-foreground">{selectedCount}</span> of {rows.length} rows selected
                 </span>
 
                 <Button
                   type="button"
-                  size="sm"
                   onClick={handleCommit}
                   disabled={selectedCount === 0 || isCommitting}
-                  className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
+                  className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
                 >
                   {isCommitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-1.5" />
-                      Importing {selectedCount} Positions...
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                      <span>Importing {selectedCount} Positions…</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4 shrink-0 mr-1.5" />
-                      Confirm & Import ({selectedCount})
+                      <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>Confirm &amp; Import ({selectedCount})</span>
                     </>
                   )}
                 </Button>
@@ -842,58 +874,59 @@ export default function ExecutiveCsvImportDialog({
         {step === 'result' && commitResult && (
           <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-serif font-black tracking-tight text-foreground flex items-center gap-2 text-base sm:text-lg">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
                 <span>Import Finished</span>
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed">
                 Positions have been saved. When you close this dialog, the workforce table will refresh.
               </DialogDescription>
             </DialogHeader>
 
             {commitResult.imported > 0 ? (
-              <div className="flex items-start gap-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-4">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+              <div className="flex items-start gap-3 rounded-2xl bg-success/10 p-4">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-success mt-0.5" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-semibold text-foreground tabular-nums">
                     Imported {commitResult.imported} position{commitResult.imported === 1 ? '' : 's'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[13px] text-muted-foreground mt-0.5 tabular-nums">
                     {commitResult.matchedCount} mapped to registered workers
                     {commitResult.unregisteredCount > 0 &&
-                      ` • ${commitResult.unregisteredCount} unregistered appointment${commitResult.unregisteredCount === 1 ? '' : 's'} reserved (activates on registration)`}
-                    {commitResult.emailsSent > 0 && ` • ${commitResult.emailsSent} appointment email${commitResult.emailsSent === 1 ? '' : 's'} sent`}
+                      ` · ${commitResult.unregisteredCount} unregistered appointment${commitResult.unregisteredCount === 1 ? '' : 's'} reserved (activates on registration)`}
+                    {commitResult.emailsSent > 0 &&
+                      ` · ${commitResult.emailsSent} appointment email${commitResult.emailsSent === 1 ? '' : 's'} sent`}
                     .
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     {commitResult.skipped.length
                       ? `${commitResult.skipped.length} row${commitResult.skipped.length === 1 ? ' was' : 's were'} skipped below.`
                       : 'All selected entries were imported cleanly.'}
                   </p>
                   {commitResult.unregisteredCount > 0 && (
-                    <p className="text-xs text-sky-700 dark:text-sky-400 mt-1.5">
+                    <p className="text-[13px] text-accent-foreground dark:text-primary mt-1.5">
                       Reserved leaders appear on the Executive Roster as “Unregistered · Awaiting registration” until they register.
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 rounded-2xl bg-destructive/10 border border-destructive/25 p-4">
-                <AlertCircle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+              <div className="flex items-start gap-3 rounded-2xl bg-destructive/10 p-4">
+                <AlertCircle className="h-5 w-5 shrink-0 text-destructive mt-0.5" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-destructive">
+                  <p className="text-sm font-semibold text-destructive">
                     0 positions imported
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[13px] text-muted-foreground mt-0.5">
                     None of the positions could be imported. Review any skipped rows below.
                   </p>
                 </div>
               </div>
             )}
 
-                        {commitResult.emailsSent > 0 && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium">
-                <Mail className="h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+            {commitResult.emailsSent > 0 && (
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-primary/10 text-[13px] text-accent-foreground dark:text-primary font-medium">
+                <Mail className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>
                   Appointment emails were dispatched to {commitResult.emailsSent} leader{commitResult.emailsSent === 1 ? '' : 's'} — registered leaders received dashboard access guidance, and unregistered appointees received a registration invitation.
                 </span>
@@ -901,8 +934,8 @@ export default function ExecutiveCsvImportDialog({
             )}
 
             {commitResult.emailsSkipped > 0 && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-700 dark:text-sky-300 font-medium">
-                <Mail className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-surface-raised text-[13px] text-foreground font-medium">
+                <Mail className="h-4 w-4 shrink-0 text-primary mt-0.5" aria-hidden="true" />
                 <span>
                   No duplicate emails sent — {commitResult.emailsSkipped} leader{commitResult.emailsSkipped === 1 ? ' has' : 's have'} already been emailed about this appointment.
                 </span>
@@ -910,16 +943,19 @@ export default function ExecutiveCsvImportDialog({
             )}
 
             {commitResult.skipped.length > 0 && (
-              <div className="rounded-xl bg-warning/10 border border-warning/25 p-3.5 space-y-2">
+              <div className="rounded-xl bg-warning/20 dark:bg-warning/15 p-3.5 space-y-2">
                 <div className="flex items-center gap-1.5">
-                  <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  <TriangleAlert
+                    className="h-4 w-4 shrink-0 text-warning-foreground dark:text-warning"
+                    aria-hidden="true"
+                  />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-warning-foreground dark:text-warning">
                     Skipped rows ({commitResult.skipped.length})
                   </span>
                 </div>
                 <ul className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-border/20">
                   {commitResult.skipped.map((reason, i) => (
-                    <li key={i} className="text-xs text-muted-foreground leading-relaxed break-words pt-1.5 first:pt-0">
+                    <li key={i} className="text-[13px] text-foreground leading-relaxed break-words pt-1.5 first:pt-0">
                       • {reason}
                     </li>
                   ))}
@@ -927,28 +963,26 @@ export default function ExecutiveCsvImportDialog({
               </div>
             )}
 
-            <DialogFooter className="gap-2 sm:gap-0 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <DialogFooter className="gap-2 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-0">
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
                 onClick={resetDialog}
-                className="h-10 sm:h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                className="min-h-11 md:min-h-10 text-sm font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
               >
-                <RotateCcw className="h-4 w-4 mr-1.5" />
-                Import Another File
+                <RotateCcw className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Import Another File</span>
               </Button>
 
               <Button
                 type="button"
-                size="sm"
                 onClick={() => {
                   setOpen(false)
                   if (commitResult.imported > 0) {
                     router.refresh()
                   }
                 }}
-                className="h-10 sm:h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-xs w-full sm:w-auto"
+                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
               >
                 Done
               </Button>

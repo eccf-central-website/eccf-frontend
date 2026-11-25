@@ -39,6 +39,10 @@ export function toastError(message: string, opts: DashboardToastOptions = {}) {
   return toast.error(message, { ...opts, duration: ERROR_DURATION })
 }
 
+export function toastInfo(message: string, opts: DashboardToastOptions = {}) {
+  return toast.info(message, { ...opts, duration: SUCCESS_DURATION })
+}
+
 interface FromResultOptions<T> extends Omit<DashboardToastOptions, 'action'> {
   /** Success copy, or a builder from the action's data. */
   success: string | ((data: T) => string)

@@ -1,8 +1,10 @@
 import PageContainer from '@/components/dashboard/shell/PageContainer'
+import ExecutivesClient from '@/components/dashboard/executives/ExecutivesClient'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listExecutives, listPendingExecutiveApplications } from '@/lib/dashboard/data'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
 import { canApproveExecutiveAppointments } from '@/lib/dashboard/rbac'
-import ExecutivesClient from '@/components/dashboard/executives/ExecutivesClient'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -16,11 +18,7 @@ export default async function ExecutivesPage() {
     canManage ? listPendingExecutiveApplications(session) : Promise.resolve([]),
   ])
 
-  const todayStr = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date())
+  const today = formatDate(lagosDate())
 
   return (
     <PageContainer>
@@ -28,7 +26,7 @@ export default async function ExecutivesPage() {
         initialExecutives={executives}
         initialPendingApplications={pendingApplications}
         canManage={canManage}
-        today={todayStr}
+        today={today}
       />
     </PageContainer>
   )

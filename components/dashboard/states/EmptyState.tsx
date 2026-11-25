@@ -48,7 +48,7 @@ export default function EmptyState({
     <div
       role={variant === 'no-results' ? 'status' : undefined}
       className={cn(
-        'flex flex-col items-center rounded-2xl bg-card/60 px-6 py-12 text-center sm:py-16',
+        'flex flex-col items-center rounded-2xl border-0 bg-card px-6 py-12 text-center sm:py-16',
         className
       )}
     >
@@ -58,9 +58,19 @@ export default function EmptyState({
       >
         {icon ?? DEFAULT_ICONS[variant]}
       </div>
-      <Heading className="mt-4 font-serif text-xl text-foreground">{title}</Heading>
-      {description && <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>}
-      {action && <div className="mt-6 flex flex-wrap justify-center gap-2">{action}</div>}
+      <Heading className="mt-4 font-sans text-lg font-semibold text-foreground text-balance sm:text-xl">
+        {title}
+      </Heading>
+      {description && (
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground text-pretty">
+          {description}
+        </p>
+      )}
+      {action && (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 [&_a]:min-h-11 [&_button]:min-h-11">
+          {action}
+        </div>
+      )}
     </div>
   )
 }

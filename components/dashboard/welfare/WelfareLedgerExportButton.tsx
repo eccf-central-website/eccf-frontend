@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@/components/dashboard/ui/button'
 import { Download } from 'lucide-react'
+import { Button } from '@/components/dashboard/ui/button'
 import type { WelfareLedgerRow } from '@/types'
 
 interface WelfareLedgerExportButtonProps {
@@ -56,14 +56,14 @@ export default function WelfareLedgerExportButton({ entries }: WelfareLedgerExpo
 
   return (
     <Button
+      type="button"
       onClick={handleExport}
       variant="outline"
-      size="sm"
       disabled={entries.length === 0}
-      className="shadow-xs rounded-xl"
+      className="min-h-11 md:min-h-10"
     >
-      <Download className="mr-1.5 h-4 w-4 shrink-0" />
-      Export CSV
+      <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>Export CSV</span>
     </Button>
   )
 }

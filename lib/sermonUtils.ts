@@ -12,7 +12,6 @@ export interface SermonPlayerItem {
   youtubeMusicUrl?: string
   spotifyEmbedId?: string
   youtubeVideoId?: string
-  mediaUrl?: string
   thumbnailUrl?: string
 }
 

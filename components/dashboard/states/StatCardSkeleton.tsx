@@ -9,16 +9,21 @@ import LoadingRegion from './LoadingRegion'
 
 export function StatCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-2xl bg-card p-4 sm:p-5 shadow-sm border-0 flex flex-col justify-between min-h-[134px]', className)}>
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-3.5 w-24 shrink-0 rounded-md" />
-        <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+    <div
+      className={cn(
+        'flex min-h-[136px] flex-col justify-between rounded-2xl border-0 bg-card p-4 shadow-sm sm:min-h-[148px] sm:p-5',
+        className
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <Skeleton className="h-4 w-24 shrink-0 rounded-md" />
+        <Skeleton className="h-8 w-8 shrink-0 rounded-xl sm:h-9 sm:w-9" />
       </div>
-      <div className="my-2">
-        <Skeleton className="h-8 w-20 shrink-0 rounded-md" />
+      <div className="my-1">
+        <Skeleton className="h-7 w-24 shrink-0 rounded-md sm:h-8" />
       </div>
       <div className="flex flex-col gap-1">
-        <Skeleton className="h-3 w-32 shrink-0 rounded-md" />
+        <Skeleton className="h-3.5 w-32 shrink-0 rounded-md" />
       </div>
     </div>
   )

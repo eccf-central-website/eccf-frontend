@@ -2,7 +2,7 @@
 
 > **Audience:** developers joining or returning to this codebase. This is the technical companion to `docs/OPERATIONAL_MANUAL.md` (operations & user flows), `docs/TESTING_PLAN.md` (manual QA), `docs/operational-data-privacy.md`, and `docs/ENCRYPTION_KEY_UNIFICATION.md`.
 >
-> **Snapshot of record:** 29 October 2026 — frontend code at `ae03c64`, backend (`eccf-backend`) at `dfff7fe`.
+> **Snapshot of record:** November 2026 — Dashboard UI modernization wave + Meeting Minutes module (against `eccf-backend` + `meetingMinute` schema).
 
 ---
 
@@ -14,8 +14,8 @@
 | `eccf-backend` | Sanity Studio v3 + schema definitions | Studio at `https://eccf-backend.sanity.studio` |
 
 - Sanity project **`ynnot4j0`**, dataset **`production`**, access mode **private**. Anonymous API access is denied **even for published content**; every read authenticates with `SANITY_READ_TOKEN` (see `lib/sanity.ts` — `useCdn: false` everywhere, no public CDN).
-- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, the operational set `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`, the **`executiveAppointment`** reservation doc (`pending_claim` → `claimed`, `guidanceEmailSentAt` idempotency), plus **published reference tables** `hallResidence` (Halls of Residence) and `csgbRole` (CSGB offices) that intake forms and access checks read dynamically.
-- Schema drift in the Oct waves (`dfff7fe`): `teamUnit` gained optional `meetingDay`/`meetingTime`/`meetingVenue`; `firstTimer` gained follow-up attribution (`followedUp`, `followedUpAt`, `followedBy`, `followUpNotes`); `worker` gained `welcomeEmailSent`, `profileImageUrl`, and per-position `csgbRole`/`hallRef` references with projections (`csgbTitle: csgbRole.title`, `hallName: hallRef.name`); `attendanceLedger` entries carry a denormalised `loggedByName`; `csgbRole` documents carry `canApproveExecutives`/`isExecutiveShepherd`. The frontend also writes **`worker.isExcoApproved`** on every activation path — the schema field is an *uncommitted* backend edit (`git diff schemaTypes/worker.ts`), commit it to keep schema and writers aligned.
+- Content types (`eccf-backend/schemaTypes`): `siteSettings`, `serviceSchedule`, `aboutPage`, `sermonVault`, `announcement`, **`meetingMinute`** (CSGB Read/Write + EXCO Read-Only when `isPostedToExcos == true`), `galleryItem`, `teamUnit`, `publicLeader`, `subscriber`, `qaChecklist`, the operational set `worker`, `attendanceLedger`, `financeLedger`, `welfareLedger`, `firstTimer`, `welfareRequest`, `prayerRequest`, the **`executiveAppointment`** reservation doc (`pending_claim` → `claimed`, `guidanceEmailSentAt` idempotency), plus **published reference tables** `hallResidence` (Halls of Residence) and `csgbRole` (CSGB offices) that intake forms and access checks read dynamically.
+- Schema alignment across `dfff7fe` → `8cd342f`: `teamUnit` gained optional `meetingDay`/`meetingTime`/`meetingVenue`; `firstTimer` gained follow-up attribution (`followedUp`, `followedUpAt`, `followedBy`, `followUpNotes`); `worker` gained `welcomeEmailSent`, `profileImageUrl`, `isExcoApproved`, per-position `csgbRole`/`hallRef` references (`csgbTitle: csgbRole.title`, `hallName: hallRef.name`), `teamName` fallback, `submittedAt`, and string audit fields (`decidedBy`, `decidedById`, `decidedByRole`); `attendanceLedger` entries carry a denormalised `loggedByName`; `csgbRole` documents carry `canApproveExecutives`/`isExecutiveShepherd`; `executiveAppointment` documents carry `registrationStatus`, `claimedBy`/`claimedAt`, `importedBy*`/`decidedBy*`/`decidedAt` audit strings, and `invitationEmailSentAt`/`guidanceEmailSentAt` timestamps (all committed in backend `8cd342f`).
 
 ---
 
@@ -53,11 +53,12 @@ eccf-frontend/
 │  └─ api/                           # auth, preview, exit-preview, sync-sermons (cron),
 │                                    # upload-drive (Drive bridge), webhooks/announcement
 ├─ components/
-│  ├─ dashboard/…                    # overview/, shell/, pwa/, states/, ui/, sections…,
-│  │                                 # executives/, workers/, welfare/, settings/ (clients)
+│  ├─ dashboard/…                    # overview/, shell/, pwa/, states/, ui/, minutes/,
+│  │                                 # executives/, workers/, attendance/, finance/, welfare/,
+│  │                                 # first-timers/, prayer/, announcements/, sermons/, settings/
 │  ├─ forms/                         # WorkerRegistrationForm, Welfare/FirstTimer/Prayer, TurnstileWidget
 │  ├─ about/ home/ sermons/ announcements/ connect/ layout/ common/ qa/
-│  └─ ui/                            # shadcn-style primitives
+│  └─ ui/                            # shadcn-style primitives + tokens
 ├─ lib/
 │  ├─ sanity.ts                      # the ONLY Sanity client configuration (4 clients, §6)
 │  ├─ queries.ts                     # central GROQ (SITE_SETTINGS_QUERY, TEAMS_QUERY, GALLERY_QUERY, …)
@@ -68,10 +69,10 @@ eccf-frontend/
 │  ├─ executive-positions.ts         # signature-based position merge (no duplicate roles)
 │  ├─ maintenance.ts, email/ (from.ts sender, layout.ts shared design system, executive-appointment.ts
 │  │  appointment-guidance email), security/, teams.ts, sermonSync.ts, image-compression.ts
-│  └─ dashboard/                     # access, auth, rbac (≈530-line matrix), action-result, queries, format,
+│  └─ dashboard/                     # access, auth, rbac (≈640-line matrix), action-result, queries, format,
 │                                    # toast, dev-actions, shell.ts, attendance-constants + data/ and mock/
 ├─ scripts/                          # ops scripts — only tracked files; unchecked _*.mjs are gitignored
-├─ tests/mobile-smoke.spec.ts        # Playwright mobile smoke
+├─ tests/e2e/                        # Playwright suites (dashboard-shell, executives, settings, minutes, mobile-smoke)
 └─ docs/                             # OPERATIONAL_MANUAL, this guide, TESTING_PLAN, privacy & crypto notes
 ```
 
@@ -112,8 +113,8 @@ Route-group subtlety: route groups don't affect URLs. `/login` is served by `app
   - `prayerRequests` — `isPrayerTeamAdmin` only (hall reps and outreach leads are out).
   - `finance` — `admin`/`finance` **roles** plus legacy financial positions; a CSGB flag alone no longer grants it.
   - `settings` — `admin`, `isPresident`, `isCSGB`, or `canDeleteWorkers` (the Chaplain reaches it with delete-offboarding tools; import is gated separately by `canImport`).
-  - `sermons` — media positions only; `announcements` — CSGB members; `firstTimers` — admin/hall_rep, or outreach-leading team-lead.
-- `PERMISSIONS` adds `workers:delete` (delegates to `canDeleteWorkers`) beside `attendance:create`, `finance:create`, `welfare:create`, `welfare:resolve`. `requirePermission()` re-checks server-side on every action.
+  - `sermons` — media positions only; `announcements` — CSGB members; `meetingMinutes` — all EXCOs (`minutes:view`) for posted, non-archived records, with `minutes:manage` (write/drafts/organize/post/archive/delete) restricted exclusively to CSGB (`isCSGBMember`); `firstTimers` — admin/hall_rep, or outreach-leading team-lead.
+- `PERMISSIONS` adds `minutes:view`, `minutes:manage`, and `workers:delete` (delegates to `canDeleteWorkers`) beside `attendance:create`, `finance:create`, `welfare:create`, `welfare:resolve`. `requirePermission()` re-checks server-side on every action.
 - `SECTION_PATHS` maps sections to routes; UI adds `ROLE_LABELS` (admin→"CSGB Executive", team_lead→"Team Leader", hall_rep→"Hall Pastor") and `getLeaderPostTitle()` resolves the office from the approved position — including `csgbRole.title` ("President", "Hall Pastor (Hall 3)", "CSGB Executive" fallback); the cockpit greeting consumes it.
 - CSGB offices and Halls are **dynamic data**: `lib/csgb-roles.ts` + `lib/halls.ts` cache-read `csgbRole`/`hallResidence` documents with published fallbacks (baseline office list; Halls 1–8). Changing them in the Studio changes labels, dropdowns, filters, and capabilities without a code change.
 
@@ -121,9 +122,9 @@ Route-group subtlety: route groups don't affect URLs. `/login` is served by `app
 
 ## 7. Dashboard Sections (`app/(dashboard)/dashboard`)
 
-`overview` (Executive Cockpit: date eyebrow + greeting, `AttentionQueue` fed live by `getLiveAttentionItems()` in `lib/dashboard/data/overview.ts`, stat pulse strip, two activity columns), `executives` (Executive Council & Leadership Roster: read + bulk CSV/XLSX import with canonical position resolver), `workers` (directory + profile drawer + email card), `attendance`, `finance`, `first-timers` (follow-up toggle/notes), `welfare` (Welfare Hub: Purse Ledger + requests tabs), `prayer-requests`, `announcements` (+broadcast engine), `sermons` (media leads), `settings` (CSV roster import / verified offboarding / directory sync), `dev/ui-states`.
+`overview` (Executive Cockpit: date eyebrow + greeting, `AttentionQueue` fed live by `getLiveAttentionItems()` in `lib/dashboard/data/overview.ts`, 4-metric pulse strip, 4-row activity lists), `executives` (Executive Council & Leadership Roster: read, bulk CSV/XLSX import with canonical position resolver, per-role `deleteExecutivePosition` transaction cleanup), `workers` (segmented `Directory`, `Approvals`, and `Email` tabs + `RecordSheet` profile drawer), `attendance` (headcount & team rosters + `RecordAttendanceSheet`), `finance` (ledger + Month filter + `RecordSheet`), `first-timers` (status tabs + follow-up sheet/attribution), `welfare` (Welfare Hub: Purse Ledger + Care Requests `Open case` confirmation sheet), `prayer-requests` (2-signal strip + `Open` drawer), `announcements` (desktop table + broadcast confirmation), **`minutes`** (Meeting Minutes archive: folders, types, action items, CSGB drafts vs posted read-only EXCO view), `sermons` (media leads, desktop table default), `settings` (CSV roster import / verified offboarding / directory sync), `dev/ui-states`.
 
-Shell components in `components/dashboard/shell/`: `AppSidebar`, `TopBar`, `MobileNav`/`BottomNav`, `UserMenu` (theme toggle lives there), `DeniedToast`, `InstallPwaButton` (`components/dashboard/pwa/`). PWA scope/start URL is `/dashboard`, manifest name "ECCF Exco Dashboard", with section shortcuts. Nav data lives in `shell/nav-items.ts` (sidebar order, filtered by `canAccessSection()` server-side).
+Shell components in `components/dashboard/shell/`: `AppSidebar`, `TopBar`, `MobileNav` (includes `ThemeToggle` + `InstallPwaButton`), `BottomNav` (4 role-prioritised tabs + `All` sheet), `UserMenu` (`ThemeToggle` + `InstallPwaButton`), `DeniedToast`, and `InstallPwaButton` (`components/dashboard/pwa/`). Shared dashboard primitives live in `components/dashboard/ui/` (`PageHeader`, `KpiStrip`, `DataToolbar`, `StatusBadge`, `RecordSheet`, `ConfirmDialog`). PWA scope/start URL is `/dashboard`, manifest name "ECCF Exco Dashboard", with section shortcuts. Nav data lives in `shell/nav-items.ts` (sidebar order, filtered by `canAccessSection()` server-side).
 
 ---
 
@@ -136,11 +137,12 @@ This is the **only** mutation surface — no client-side Sanity calls exist. Eve
 | `worker-registration.ts` | 8-step intake: `checkWorkerPhoneAndInitiateVerification` (OTP + magic-link), email-ownership OTP for first-timers, profile refresh, submission; `sendWorkerWelcomeEmail()` helper (sent once on first membership verification, gated by `worker.welcomeEmailSent`) |
 | `worker-actions.ts`, `worker-email-actions.ts` | Worker CRM — verification approvals, `toggleExcoApproval`, profile photo update (`updateDashboardProfilePhotoAction`), verified offboarding (`deleteApprovedWorkerAction`), CSV roster import (`importWorkerRosterCsvAction`) — plus workforce mail |
 | `executive-suggestion-actions.ts` | Leadership spreadsheet import pipeline: `previewExecutiveSpreadsheet` (canonical `csgbRole`/`hallResidence`/`teamUnit` resolver + worker name matching) and `commitExecutiveImport` — batched writes with per-row retry, `claimed` appointments for matched workers, **reservations** (`pending_claim`) for unregistered leaders when "Include unregistered EXCOs" is on, one-time guidance email per leader (`guidanceEmailSentAt` guard); also `claimPendingExecutiveAppointmentsForWorker` / `reconcileRegisteredExecutives`; auth = President/VP/Chaplain/admin |
-| `executive-actions.ts` | `relieveExecutivePosition` / `updateExecutiveRank` — **orphaned since `d6fcf54`** (the console's relieve/rank controls were removed); delete or re-wire |
+| `executive-actions.ts` | `decideExecutivePosition`, `deleteExecutivePosition` (removes a worker role + linked `executiveAppointment` placeholders in one Sanity transaction so deleted roles cannot auto-reclaim; wired into `ExecutivesClient`), `relieveExecutivePosition` (`@deprecated` wrapper delegating to `deleteExecutivePosition`), and `updateExecutiveRank` |
 | `first-timer-actions.ts` | Follow-up toggle + remarks (`toggleFirstTimerFollowUpAction`), leader attribution & timestamps |
 | `welfare-ledger-actions.ts` | Welfare Purse Ledger entries — record (`recordWelfareLedgerEntry`) / delete, with running balance |
 | `finance-actions.ts`, `attendance-actions.ts` | Ledgers & rosters (operational drafts); attendance rows carry denormalised `loggedByName` |
 | `announcement-actions.ts`, `announcement-broadcast-actions.ts` | Publishing + Resend broadcasts to subscribers |
+| `meeting-minutes-actions.ts` | CSGB-only create, update, `toggleMeetingMinuteVisibility` (`isPostedToExcos`), pin, archive, action-item toggle, and delete |
 | `intake-actions.ts` | First-timer / welfare / prayer forms (Turnstile + NDPR consent) |
 | `sermon-management-actions.ts`, `sermon-sync-actions.ts` | Sermon Vault sync |
 | `subscriber-actions.ts`, `qa-actions.ts` | Newsletter subs; QA portal progress (PIN-hashed in `qaChecklist`) |
@@ -206,41 +208,25 @@ npx playwright install          # first run
 npx playwright test             # tests/mobile-smoke.spec.ts → test-results/
 ```
 
-Manual test suites: `/qa` (public, noindex — six suites / 61 checks, 4-digit PIN) and `docs/TESTING_PLAN.md`. Note the **TESTING_PLAN's** header still lists "NextAuth.js … Bcrypt" in its stack line — stale, Clerk replaced both.
+Manual test suites: `/qa` (public, noindex — six suites / 61 checks, 4-digit PIN) and `docs/TESTING_PLAN.md` (updated for Clerk passwordless auth, `/login`, and AES-256-GCM + HMAC-SHA256 field encryption).
 
 **Env essentials** (full table: `docs/OPERATIONAL_MANUAL.md` §12.1): `SANITY_READ_TOKEN` (**required for every read** — private dataset), `SANITY_WRITE_TOKEN`, `ENCRYPTION_KEY` + `HMAC_PEPPER`, Clerk keys (note `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/register`), `RESEND_API_KEY` + `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`, `CRON_SECRET`, `SANITY_WEBHOOK_SECRET`, `GOOGLE_APPS_SCRIPT_WEBHOOK_URL` + `…_SECRET`, sermon RSS URLs.
-`.env.example` comments reference a "CLAUDE.md Section 9" that isn't in the repo — treat the privacy guidance as living in `docs/operational-data-privacy.md`.
+Secret-handling and operational data privacy guidance lives in `docs/operational-data-privacy.md` (referenced by `.env.example`).
 
 ---
 
-## 13. Where We Stopped — Open Threads (as of 26 Oct 2026)
+## 13. Modernization Wave & Current Baseline
 
-**Landed in the Oct 26 dashboard-redesign wave** (`410d527` → `d6fcf54`, backend `5bf71fc` → `b4f94ba`):
+**Landed in the Oct 29 – Nov 25 waves (after `8cef8e9` → `7be32ec`, backend `8cd342f` + `meetingMinute`):**
 
-- **Overview → Executive Cockpit:** date eyebrow, `"Good morning, {firstName} — {post}"` greeting, live `AttentionQueue` (`getLiveAttentionItems()` — pending verifications, executive onboarding, welfare follow-ups, unfollowed first-timers), aligned stat strip (regular team leads see "Last meeting attendance"), two-column activity lists. The mail CTA left the overview — the workers page owns email.
-- **Executives console rebuilt** (`d6fcf54` included): CSGB + Chaplain access, `ExecutivesClient` roster with counters/tabs, bulk CSV/XLSX **Import Leadership Roster** (`ExecutiveCsvImportDialog` 3-step flow → `previewExecutiveSpreadsheet`/`commitExecutiveImport`) with a canonical position resolver (exact `csgbRole`/`hallResidence`/`teamUnit` matches, comprehensive synonyms) and worker name-matching/dedupe (exact email → sorted-token keys), auto-created profiles, and immediate activation. CSGB offices + Halls became Sanity-driven (`lib/csgb-roles.ts`, `lib/halls.ts`).
-- **New `/dashboard/settings`:** CSV worker-roster import, verified offboarding (`deleteApprovedWorkerAction` with safety steps), directory-sync pipeline; gated admin/`isPresident`/`isCSGB`/`canDeleteWorkers`.
-- **Welfare Hub:** `/dashboard/welfare` tabs (`WelfareHub`) — new **Welfare Purse Ledger** (`welfareLedger` docs, `welfare-ledger-actions.ts`, category + xlsx export + delete) beside the care-requests queue; access tightened to Welfare team / CSGB / Chaplain (phone visibility now matches section access).
-- **First-timer follow-up tracking:** `first-timer-actions.ts` toggle stamps `followedBy`/`followedUpAt`/`followUpNotes`; counters + attention-queue integration.
-- **Auth tightening:** sessions only for `isExecutive` workers → `/login?denied=approval_pending`; Google verified-email bridge; PWA renamed "ECCF Exco Dashboard"; 404 → `/`; `/dashboard/sign-up` → `/sign-up`; mandatory registration photo (compressed, ≤2 MB stored); team `meetingDay/Time/Venue` chips on About cards.
-- **Email:** shared design system `lib/email/layout.ts` + `NEXT_PUBLIC_SITE_URL`; send-once worker welcome email (`welcomeEmailSent`).
+- **Backend schema alignment (`8cd342f` + `meetingMinute`):** Committed `executiveAppointment` schema fields (`registrationStatus`, `claimedBy`/`claimedAt`, `importedBy*`/`decidedBy*`/`decidedAt` string audit fields, `invitationEmailSentAt`, `guidanceEmailSentAt`), `worker` updates (`isExcoApproved`, position `submittedAt`/`teamName`, string `decidedBy*` audit fields), and the new `meetingMinute` document schema (`isPostedToExcos`, folders, attendees/absentees, agenda, decisions, action items, pin/archive).
+- **Executive role deletion & matching (`8e5fd8a`, `fd3c561`, `d8461e3`):** Replaced the old Relieve workflow with `deleteExecutivePosition` in `app/actions/executive-actions.ts` and `ExecutivesClient.tsx`, deleting linked `executiveAppointment` placeholders in the same Sanity transaction so deleted roles cannot auto-reclaim (`relieveExecutivePosition` kept only as a `@deprecated` wrapper). Short-name vs full-name appointment matching and position titles landed alongside worker approval persistence.
+- **Cross-tab `navigationAttention` badges (`8e5fd8a`, `7be32ec`):** `getNavigationAttention()` computes role- and scope-filtered pending counts (`executives`, `workers`, `firstTimers`, `welfare`, `prayerRequests`, `announcements`, and `overview`), rendered across `AppSidebar`, `NavLinks`, `MobileNav`, `TopBar`, and `BottomNav`.
+- **Dashboard UI Modernization Wave:** Adopted tokenized semantic design system (`PageHeader`, `KpiStrip`, `DataToolbar`, `StatusBadge`, `RecordSheet`, `ConfirmDialog`), reserved Belleza strictly for `<h1>` titles (`Work Sans` `tabular-nums` for figures/currency), unified responsive `>= 44px` mobile / `>= 40px` desktop targets, added `ThemeToggle` + `InstallPwaButton` into `MobileNav`/`BottomNav`/`UserMenu`, cleaned legacy midnight hexes on `/login`/`/sign-up`, upgraded skeletons/states (`AccessDeniedState`, `EmptyState`, `ErrorState`, `StatCardSkeleton`), and verified WCAG 2.2 AA accessibility gates.
+- **Meeting Minutes Module (`/dashboard/minutes`):** Added CSGB Read/Write secretariat authoring & folder organization (`app/actions/meeting-minutes-actions.ts`, `components/dashboard/minutes/`) paired with strict server- and UI-enforced EXCO Read-Only visibility (`isPostedToExcos == true && archived != true`).
 
-**Landed in the follow-up wave** (`3b04b47` → `ae03c64`, backend `dfff7fe`): executive appointment **reservations** — unmatched import rows become `executiveAppointment` docs (`pending_claim`) instead of placeholder workers, claimed automatically at registration with `worker.isExcoApproved` set; batched import writes with per-row retry and the result dialog stays open; one-time **appointment-guidance email** (`lib/email/executive-appointment.ts`) with a direct dashboard link, deduped across re-imports via `guidanceEmailSentAt`; a `reconcileRegisteredExecutives()` sweep button; the console shows registered/awaiting counts and a reserved-leaders notice; shared position-merge helpers (`lib/executive-positions.ts`, `lib/executive-matching.ts`); plus a public body-copy +3px pass and dashboard dark-mode/table-contrast polish.
-
-**Open UI debt** — verified still present at `ae03c64`; nobody has implemented fixes yet:
-
-1. `components/dashboard/shell/MobileNav.tsx` — no theme toggle; the panel still says "Theme lives in the account menu at the top right." Decide: add the toggle or accept the pointer.
-2. `components/dashboard/pwa/InstallPwaButton.tsx` — mobile tap target is `h-8` (32 px, under the 44–48 px minimum) and still hardcodes `#0077cc`/`#0095ff` instead of tokens.
-3. `components/dashboard/states/StatCardSkeleton.tsx` — **base padding is fixed** (now `p-4 sm:p-5`, matching `overview/StatCard.tsx`). Residual: the skeleton chip stays `h-8 w-8 rounded-lg` while the real chip grows `sm:h-9 sm:w-9 rounded-xl`, and the skeleton's flat `min-h-[134px]` doesn't track the card's `136/148 px` responsive heights.
-4. `app/(dashboard)/login/[[...rest]]/page.tsx` — login page still uses ~15 hardcoded brand hex values rather than theme tokens.
-
-**Repo/process debt:**
-
-- `app/actions/executive-actions.ts` is still **dead code** — `relieveExecutivePosition`/`updateExecutiveRank` exist but no component imports them (the console controls were removed in `d6fcf54`). Choose: delete it or re-wire a replacement management control.
-- **Backend working tree** pends the `worker.isExcoApproved` boolean (`git diff schemaTypes/worker.ts` in `eccf-backend`) that the frontend writes on every activation path — commit it to keep the API contract explicit.
-- `.env.example` references the missing `CLAUDE.md` (§12) — privacy guidance lives in `docs/operational-data-privacy.md`.
-- `docs/TESTING_PLAN.md` is still stale: its stack line lists "NextAuth.js" and "Bcrypt" (plus a `passwordHash` double-layer test) — Clerk replaced both and passwords are gone.
-- After committing this update, `main` is **1 commit ahead** of `origin` — **push when ready**.
+**Low-priority compatibility exports retained:**
+- `app/actions/executive-actions.ts` retains `relieveExecutivePosition` (`@deprecated` wrapper delegating to `deleteExecutivePosition`) and `updateExecutiveRank` for backward compatibility.
 
 ---
 

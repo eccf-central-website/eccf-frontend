@@ -29,6 +29,7 @@ import type {
   ECCFSession,
   FinanceRow,
   FirstTimerRow,
+  MeetingMinute,
   PrayerRequest,
   WelfareLedger,
   WelfareLedgerRow,
@@ -56,6 +57,7 @@ import {
   DASHBOARD_ATTENDANCE_QUERY,
   DASHBOARD_FINANCE_QUERY,
   DASHBOARD_FIRST_TIMERS_QUERY,
+  DASHBOARD_MEETING_MINUTES_QUERY,
   DASHBOARD_NAV_ATTENTION_QUERY,
   DASHBOARD_PRAYER_REQUESTS_QUERY,
   DASHBOARD_WELFARE_LEDGER_QUERY,
@@ -73,6 +75,7 @@ import {
   MOCK_ATTENDANCE,
   MOCK_FINANCE,
   MOCK_FIRST_TIMERS,
+  MOCK_MEETING_MINUTES,
   MOCK_PRAYER_REQUESTS,
   MOCK_WELFARE_LEDGER,
   MOCK_WELFARE,
@@ -986,5 +989,63 @@ export async function listPendingExecutiveApplications(
   } catch (err) {
     console.error('[listPendingExecutiveApplications] Sanity fetch error:', err)
     return []
+  }
+}
+
+function sortAndNormalizeMinutes(rows: MeetingMinute[]): MeetingMinute[] {
+  return [...rows]
+    .map((m) => ({
+      ...m,
+      attendees: Array.isArray(m.attendees) ? m.attendees : [],
+      absentees: Array.isArray(m.absentees) ? m.absentees : [],
+      agenda: Array.isArray(m.agenda) ? m.agenda : [],
+      decisions: Array.isArray(m.decisions) ? m.decisions : [],
+      actionItems: Array.isArray(m.actionItems) ? m.actionItems : [],
+      tags: Array.isArray(m.tags) ? m.tags : [],
+      isPinned: Boolean(m.isPinned),
+      isPostedToExcos: Boolean(m.isPostedToExcos),
+      archived: Boolean(m.archived),
+    }))
+    .sort((a, b) => {
+      const pinDiff = Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned))
+      if (pinDiff !== 0) return pinDiff
+      const dateDiff = (b.meetingDate || '').localeCompare(a.meetingDate || '')
+      if (dateDiff !== 0) return dateDiff
+      return (b.createdAt || b._createdAt || '').localeCompare(a.createdAt || a._createdAt || '')
+    })
+}
+
+/**
+ * List meeting minutes with strict CSGB vs EXCO visibility enforcement:
+ * - CSGB members receive all minutes (CSGB-only drafts, posted EXCO minutes, and archived).
+ * - Non-CSGB EXCOs strictly receive posted, non-archived minutes (`isPostedToExcos === true && archived !== true`).
+ */
+export async function listMeetingMinutes(session: ECCFSession): Promise<MeetingMinute[]> {
+  if (!canAccessSection(session.role, 'meetingMinutes', session)) {
+    return []
+  }
+
+  const canManage = isCSGBMember(session)
+
+  if (dataSource() === 'mock') {
+    const rows = await fromMock(MOCK_MEETING_MINUTES, [])
+    const visible = canManage
+      ? rows
+      : rows.filter((m) => m.isPostedToExcos === true && m.archived !== true)
+    return sortAndNormalizeMinutes(stripPII(visible))
+  }
+
+  try {
+    const rows = await sanityPrivateClient.fetch<MeetingMinute[]>(
+      DASHBOARD_MEETING_MINUTES_QUERY,
+      { includePrivate: canManage }
+    )
+    const visible = canManage
+      ? rows || []
+      : (rows || []).filter((m) => m.isPostedToExcos === true && m.archived !== true)
+    return sortAndNormalizeMinutes(stripPII(visible))
+  } catch (err) {
+    console.error('[listMeetingMinutes] Sanity fetch error:', err)
+    throw new Error('Could not load meeting minutes.')
   }
 }

@@ -1,10 +1,9 @@
 /**
  * AppSidebar — persistent navy navigation for lg+ screens.
  *
- * Implements the calm, flat executive cockpit layout:
- * - 40px visible space between desktop logo and navigation menu (30px on short laptops).
- * - Zero vertical scrollbar with fixed 44px destination rows.
- * - Flat destination list of all ten permitted fellowship sections.
+ * Implements the calm, grouped executive cockpit layout:
+ * - Compact vertical rhythm keeping all groups + footer scroll-free at 900px height.
+ * - Semantic destination groups (Today, People, Care & services, Stewardship) at 44px row height.
  * - Pinned 44px Settings link with "Admin tools" sublabel in the footer.
  * - Icon-only 44px collapse trigger; in collapsed rail mode (68px), labels are hidden
  *   and icons center inside 44px hit targets with accessible tooltips.
@@ -48,7 +47,7 @@ export function SidebarBrand({ collapsed = false }: { collapsed?: boolean }) {
         className="h-8 w-8 shrink-0 object-contain"
       />
       <span className={cn('flex min-w-0 flex-col leading-none', collapsed && 'sr-only')}>
-        <span className="text-base font-semibold tracking-tight text-white">ECCF</span>
+        <span className="text-base font-semibold tracking-tight text-sidebar-accent-foreground">ECCF</span>
         <span className="mt-1 truncate text-xs font-semibold text-sidebar-foreground/75">Exco Dashboard</span>
       </span>
     </Link>
@@ -83,10 +82,10 @@ export default function AppSidebar({ sections, defaultCollapsed, attention }: Ap
         <SidebarBrand collapsed={collapsed} />
       </div>
 
-      {/* Navigation List — with 40px top gap on desktop, 30px on short laptops, zero scrollbar */}
+      {/* Navigation List — grouped sections, scroll-free at 900px viewport */}
       <nav
         aria-label="Dashboard"
-        className="flex-1 overflow-x-hidden px-3 pt-6 lg:pt-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 lg:pt-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <NavLinks sections={sections} attention={attention} collapsed={collapsed} />
       </nav>
@@ -101,7 +100,7 @@ export default function AppSidebar({ sections, defaultCollapsed, attention }: Ap
                 aria-current={isSettingsActive ? 'page' : undefined}
                 className={cn(
                   'flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring/40',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                   isSettingsActive
                     ? 'bg-sidebar-accent/80 text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
@@ -111,13 +110,13 @@ export default function AppSidebar({ sections, defaultCollapsed, attention }: Ap
                 <Settings
                   className={cn(
                     'h-5 w-5 shrink-0 transition-colors',
-                    isSettingsActive ? 'text-[#70a3ff]' : 'text-sidebar-foreground/75'
+                    isSettingsActive ? 'text-sidebar-ring' : 'text-sidebar-foreground/75'
                   )}
                   aria-hidden="true"
                 />
                 <div className={cn('flex flex-col text-left leading-tight', collapsed && 'sr-only')}>
                   <span>Settings</span>
-                  <span className="text-[11px] text-sidebar-foreground/60 font-normal">Admin tools</span>
+                  <span className="text-xs text-sidebar-foreground/75 font-normal">Admin tools</span>
                 </div>
               </Link>
             </TooltipTrigger>
@@ -134,7 +133,7 @@ export default function AppSidebar({ sections, defaultCollapsed, attention }: Ap
               aria-expanded={!collapsed}
               className={cn(
                 'flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring/40',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                 collapsed && 'justify-center px-0'
               )}
             >

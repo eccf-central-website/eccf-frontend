@@ -2,17 +2,20 @@
  * Announcements — /dashboard/announcements
  *
  * Implements the notices & broadcast queue:
- * - One semantic h1: Announcements
+ * - One semantic h1: Announcements (Belleza via PageHeader inside AnnouncementsClient)
  * - Subtitle: Plan, schedule, and broadcast notices.
- * - Date-only eyebrow.
+ * - Date-only eyebrow via formatDate(lagosDate()).
  * - Guarded by requireSection('announcements').
  */
 
-import { requireSection } from '@/lib/dashboard/auth'
-import { listAnnouncements } from '@/lib/dashboard/data'
+import type { Metadata } from 'next'
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import AnnouncementsClient from '@/components/dashboard/announcements/AnnouncementsClient'
-import type { Metadata } from 'next'
+import { requireSection } from '@/lib/dashboard/auth'
+import { listAnnouncements } from '@/lib/dashboard/data'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
+import { sanityPrivateClient } from '@/lib/sanity'
 
 export const metadata: Metadata = {
   title: 'Announcements — ECCF Exco Dashboard',
@@ -21,33 +24,38 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
+async function getActiveSubscriberCount(): Promise<number | null> {
+  const isMock =
+    process.env.DASHBOARD_DATA_SOURCE === 'mock' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.DASHBOARD_DATA_SOURCE)
+  if (isMock || !sanityPrivateClient.config().token) return null
+
+  try {
+    const count = await sanityPrivateClient.fetch<number>(
+      `count(*[_type == "subscriber" && isActive != false && defined(email) && email != ""])`
+    )
+    return typeof count === 'number' ? count : null
+  } catch {
+    return null
+  }
+}
+
 export default async function AnnouncementsPage() {
   const session = await requireSection('announcements')
-  const announcements = await listAnnouncements(session)
+  const [announcements, subscriberCount] = await Promise.all([
+    listAnnouncements(session),
+    getActiveSubscriberCount(),
+  ])
 
-  const todayStr = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date())
+  const todayLabel = formatDate(lagosDate())
 
   return (
     <PageContainer>
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {todayStr}
-        </p>
-        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Announcements
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Plan, schedule, and broadcast notices.
-        </p>
-      </div>
-
       <AnnouncementsClient
         initialAnnouncements={announcements}
         session={session}
+        today={todayLabel}
+        subscriberCount={subscriberCount}
       />
     </PageContainer>
   )

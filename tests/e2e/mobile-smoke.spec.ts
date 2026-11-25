@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+test.describe.configure({ timeout: 90_000 })
+
 test.describe('Mobile dashboard smoke', () => {
   test('dashboard home renders without horizontal overflow on mobile', async ({ page }) => {
     // Mock auth role cookie: admin

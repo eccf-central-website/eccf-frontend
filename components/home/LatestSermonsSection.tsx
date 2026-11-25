@@ -71,7 +71,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
               const youtubeId = getYoutubeVideoId(sermon)
               const thumbnailUrl = getSermonThumbnailUrl(sermon)
               const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
-              const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.mediaUrl || sermon.youtubeUrl || sermon.spotifyUrl)
+              const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.youtubeUrl || sermon.spotifyUrl)
 
               return (
                 <motion.div
@@ -117,7 +117,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                       {/* Play Button Trigger */}
                       {hasPlayableMedia ? (
                         <a
-                          href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                          href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Play ${sermon.title}`}
@@ -138,7 +138,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
 
                     <div className="p-6 sm:p-7">
                       <a
-                        href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                        href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`block font-serif font-bold text-lg sm:text-xl text-slate-950 group-hover:text-[#0077cc] transition-colors leading-snug ${
@@ -157,7 +157,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                   <div className="px-6 pb-6 pt-3 flex items-center justify-between border-t border-slate-100">
                     {hasPlayableMedia ? (
                       <a
-                        href={sermon.youtubeUrl || sermon.spotifyUrl || sermon.mediaUrl || '#'}
+                        href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0077cc] hover:text-sky-800 transition-colors"

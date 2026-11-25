@@ -2,17 +2,20 @@
  * Prayer requests — /dashboard/prayer-requests
  *
  * Implements the calm prayer feed:
- * - One semantic h1: Prayer requests
+ * - One semantic h1: Prayer requests (Belleza via PageHeader)
  * - Subtitle: A quiet feed for intercession and follow-up.
- * - Date-only eyebrow.
+ * - Date-only eyebrow via formatDate(lagosDate()).
  * - Tonal card surfaces for intercessory requests without nested borders.
  */
 
 import PageContainer from '@/components/dashboard/shell/PageContainer'
 import SectionEmpty from '@/components/dashboard/shell/SectionEmpty'
 import PrayerRequestsFeed from '@/components/dashboard/prayer/PrayerRequestsFeed'
+import { PageHeader } from '@/components/dashboard/ui/page-header'
 import { requireSection } from '@/lib/dashboard/auth'
 import { listPrayerRequests } from '@/lib/dashboard/data'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatDate } from '@/lib/dashboard/format'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,28 +33,18 @@ export default async function PrayerRequestsPage() {
     )
   }
 
-  const todayStr = new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date())
+  const todayIso = lagosDate()
 
   return (
     <PageContainer>
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {todayStr}
-        </p>
-        <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Prayer requests
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          A quiet feed for intercession and follow-up.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={formatDate(todayIso)}
+        title="Prayer requests"
+        description="A quiet feed for intercession and follow-up."
+      />
 
-      {/* Main Feed Component */}
-      <PrayerRequestsFeed requests={rows} />
+      <PrayerRequestsFeed requests={rows} todayIso={todayIso} />
     </PageContainer>
   )
 }
+

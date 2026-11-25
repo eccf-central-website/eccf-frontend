@@ -11,35 +11,40 @@ import LoadingState from './LoadingState'
  * look like the app flickering back to a splash screen.
  */
 const APP_SHELL_PREFIXES = ['/dashboard', '/login', '/sign-up', '/register']
+const INTRO_DURATION_MS = 400
 
 export default function InitialPageLoader() {
   const pathname = usePathname() ?? ''
-  const [mounted, setMounted] = useState(false)
-  const [active, setActive] = useState(true)
-
-  useEffect(() => {
-    setMounted(true)
-    // Hold the loading animation for 2.2 seconds so visitors can enjoy the branded transition
-    const timer = setTimeout(() => {
-      setActive(false)
-    }, 2200)
-
-    return () => clearTimeout(timer)
-  }, [])
-
   const hasOwnShell = APP_SHELL_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
+  const [visible, setVisible] = useState(false)
 
-  if (!mounted || !active || hasOwnShell) return null
+  useEffect(() => {
+    if (hasOwnShell) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return
+    }
+
+    setVisible(true)
+    const timer = setTimeout(() => {
+      setVisible(false)
+    }, INTRO_DURATION_MS)
+
+    return () => clearTimeout(timer)
+  }, [hasOwnShell])
+
+  if (!visible || hasOwnShell) return null
 
   return (
-    <LoadingState
-      fullscreen
-      size="md"
-      theme="light"
-      message="Welcome to ECCF Family"
-      subtext="Preparing fellowship space..."
-    />
+    <div className="pointer-events-none">
+      <LoadingState
+        fullscreen
+        size="md"
+        theme="light"
+        message="Welcome to ECCF Family"
+        subtext="Preparing fellowship space..."
+      />
+    </div>
   )
 }

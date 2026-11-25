@@ -1,9 +1,9 @@
 # ECCF Website & Platform — Developer Functional Testing Plan
 
-> **Version:** 1.0 (Production Candidate)  
+> **Version:** 1.1 (Production Candidate)  
 > **Target Environment:** Local Dev (`http://localhost:3000`) & Staging / Production  
-> **Stack:** Next.js 14 App Router, Sanity Studio v3, NextAuth.js, Tailwind CSS, Resend, Google Drive Apps Script Bridge  
-> **Security Baseline:** AES-256-GCM Field-Level Encryption + HMAC-SHA256 Blind Indexing + Bcrypt  
+> **Stack:** Next.js 14 App Router, Sanity Studio v3, Clerk (`@clerk/nextjs`), Tailwind CSS, Resend, Google Drive Apps Script Bridge  
+> **Security Baseline:** Clerk Passwordless Auth (Google OAuth + Emailed OTP) + AES-256-GCM Field-Level Encryption + HMAC-SHA256 Blind Indexing + Cloudflare Turnstile  
 
 ---
 
@@ -22,7 +22,7 @@
   - [ ] Logo displays clearly and routes back to `/` when clicked.
   - [ ] All primary links (`Home`, `About`, `Sermons`, `Announcements`, `Connect`, `Give`) route to their respective pages.
   - [ ] Active route indicator correctly highlights the current page.
-  - [ ] Exco Portal / Portal Login icon or link correctly routes to `/dashboard/login`.
+  - [ ] Exco Portal / Portal Login icon or link correctly routes to `/login` (and legacy `/dashboard/login` redirects to `/login`).
   - [ ] Worker registration link (`/register`) is **not** present in the public header menu (per security mandate).
 - [ ] **Mobile Navigation Drawer**
   - [ ] Hamburger menu button toggles drawer smoothly with animation.
@@ -107,7 +107,7 @@
   - [ ] Submission triggers loading state on button ("Submitting...").
   - [ ] Success card renders with a warm confirmation message and next steps.
 - [ ] **Encryption & Storage Verification**
-  - [ ] Submitted record creates a `firstTimer` document in Sanity.
+  - [ ] Submitted record creates a `firstTimer` document in Sanity as an unpublished draft.
   - [ ] Sensitive fields (`phoneNumber`) are stored as AES-256-GCM ciphertexts (`enc:v1:...`).
   - [ ] Searchable blind index `phoneBlindIndex` is generated as HMAC-SHA256 (`bidx:v1:...`).
   - [ ] Document does **not** store raw unencrypted phone numbers.
@@ -128,48 +128,42 @@
   - [ ] Page header is clean (no duplicate titles, no emoji clutter).
 - [ ] **Form Validation Steps**
   - [ ] Name fields: `firstName`, `middleName` (optional), `lastName`.
-  - [ ] Email: strictly validates email format.
-  - [ ] Phone Number: validated and checked against Sanity blind indexes.
-  - [ ] Hostel & Room: Hall dropdown lists all campus hostels (e.g., Hall 1, Hall 2, Hall 3, Hall 4, NDDC, etc.) + room number.
+  - [ ] Email & Ownership OTP: strictly validates email format and verifies email ownership via a 6-digit emailed OTP code (10-minute expiry, 60 s resend cooldown, ≤5 attempts) unless already signed in with Clerk.
+  - [ ] Phone Number & Turnstile: validated and checked against Sanity blind indexes (`bidx:v1:...`); Cloudflare Turnstile runs once at Step 1 (skipped when signed in with Clerk).
+  - [ ] Hostel & Room: Hall dropdown lists campus hostels from `hallResidence` (with `Hall 1`–`Hall 8` fallback) + room number.
   - [ ] Department / Teams: Multi-select allows primary and secondary unit selections.
   - [ ] Birthday: Formatted strictly as `MM-DD` (no birth year requested for privacy).
-  - [ ] Exco Designation: Option to specify requested Exco role (Admin, Team Lead, Hall Rep, Finance).
-  - [ ] Password: Requires minimum 8 characters with strength validation.
+  - [ ] Exco Designation: Option to specify requested Exco role (`Admin` / CSGB, `Team Lead`, `Hall Rep`, `Finance`).
+  - [ ] Passwordless Onboarding: **No password field** is presented anywhere in registration; authentication uses Clerk passwordless auth (Google OAuth or emailed OTP codes).
 - [ ] **Passport / Headshot Image Handling**
-  - [ ] Uploading high-res image triggers client-side image compression (`sharp` / canvas) under 500KB.
-  - [ ] Image upload safely sends to Google Drive via Apps Script bridge or direct Sanity asset upload.
+  - [ ] Uploading high-res image triggers client-side compression (`compressImage`) and Sanity asset upload (≤2 MB stored).
+  - [ ] Optional Google Drive backup runs via `/api/upload-drive` (Apps Script HMAC bridge; non-fatal if unavailable).
   - [ ] File type restriction prevents non-image uploads (rejects PDFs, EXEs).
 - [ ] **Duplicate Prevention & Security Storage**
-  - [ ] Attempting to register with an existing phone number or email rejects with a clean error message and points to the Exco Login portal.
-  - [ ] Record created in Sanity with `verificationStatus: "pending"` and `isExcoApproved: false`.
-  - [ ] Double-Layer Password Security: Password is first hashed with `bcryptjs` (salt rounds: 10), and the resulting bcrypt hash is encrypted with AES-256-GCM before saving into `passwordHash`.
+  - [ ] Attempting to register with an existing phone number triggers the returning-worker verification flow (emailed OTP/magic-link or Clerk-authenticated profile refresh) rather than creating a duplicate record.
+  - [ ] Record created in Sanity as an unpublished draft (`drafts.<id>`) with `verificationStatus: "pending"` and `isExcoApproved: false` (unless claiming a reserved `executiveAppointment`).
+  - [ ] Field-Level Encryption & Blind Indexing: Sensitive fields (`phoneNumber`, `roomNumber`) are encrypted with AES-256-GCM (`enc:v1:...`) and searchable lookup indexes (`phoneBlindIndex`, `birthdayBlindIndex`) are stored as HMAC-SHA256 (`bidx:v1:...`); no passwords or plaintext PII are stored.
 
 ---
 
-## 3. Exco Portal Authentication & PWA (`/dashboard/login`)
+## 3. Exco Portal Authentication & PWA (`/login`)
 
-### 3.1 Authentication & Credential Verification
-- [ ] **Valid Sign-in**
-  - [ ] Exco enters valid phone number (`08168730661` or `+2348168730661`) or email + password.
-  - [ ] System derives candidate blind indexes, locates the worker document, decrypts `passwordHash`, and validates bcrypt.
-  - [ ] Authenticated user is redirected to `/dashboard`.
-- [ ] **Invalid Credentials**
-  - [ ] Incorrect password returns *"Invalid phone number/email or password."*
-  - [ ] Unregistered phone/email returns error without leaking user existence.
-- [ ] **Unapproved / Pending Exco Gate**
-  - [ ] Account with `verificationStatus: "pending"` or `isExcoApproved: false` is blocked with:  
-    *"Your account is awaiting Executive Council approval. Please contact the General Secretary."*
-- [ ] **Missing Password Self-Service Recovery**
-  - [ ] Account verified in Sanity but lacking `passwordHash` displays error banner with clickable:  
-    **"Set up your dashboard password now →"**
-  - [ ] Clicking opens the **Set/Reset Password Dialog**.
-  - [ ] Submitting phone/email + new 8+ character password successfully writes encrypted bcrypt hash to Sanity.
-  - [ ] User can immediately sign in with the new password.
+### 3.1 Clerk Passwordless Authentication & Approval Gate
+- [ ] **Valid Sign-in (Google OAuth or Emailed OTP)**
+  - [ ] Exco signs in at `/login` via Clerk (`Google OAuth` or emailed verification OTP code — **no passwords**).
+  - [ ] System resolves the worker record in Sanity by `clerkUserId` or Clerk-verified email (auto-patching `clerkUserId` onto the worker profile on first verified email match) and derives RBAC `access`.
+  - [ ] Approved executive is redirected to `/dashboard`.
+- [ ] **Unverified / Unlinked Accounts**
+  - [ ] Unverified Clerk emails are never auto-linked to worker profiles.
+  - [ ] Registered workers having trouble accessing their account with Google can expand **"Trouble accessing your account with Google?"** on `/login` and submit their registered email via **Sync Account Access**.
+- [ ] **Unapproved / Non-Executive Gate**
+  - [ ] Signed-in Clerk user without an approved executive appointment (`isExecutive === false`), or an archived/rejected worker, is denied a dashboard session and redirected to `/login?denied=approval_pending`, displaying the *"Executive Approval Required"* notice.
 
 ### 3.2 Session & Route Protection (Middleware)
-- [ ] Unauthenticated visitor navigating to `/dashboard/*` is redirected to `/dashboard/login?callbackUrl=...`.
+- [ ] Unauthenticated visitor navigating to `/dashboard/*` is protected by `clerkMiddleware` (`auth().protect()`) and redirected to `/login` (unless `DASHBOARD_MOCK_AUTH=1` in non-production local dev).
+- [ ] Legacy routes `/dashboard/login` and `/dashboard/sign-up` redirect to `/login` and `/sign-up` respectively while preserving query parameters.
 - [ ] Session persists across browser refreshes and tab closures.
-- [ ] Clicking **Sign Out** in the user profile menu clears NextAuth session cookie and redirects to `/dashboard/login`.
+- [ ] Clicking **Sign Out** in the user profile menu clears the Clerk session and redirects to `/login`.
 
 ### 3.3 Progressive Web App (PWA) Functionality
 - [ ] **Manifest & Service Worker**
@@ -177,7 +171,7 @@
   - [ ] Icons (192x192, 512x512) load without 404s.
   - [ ] Standalone display mode functions properly (hides browser URL bar on mobile).
 - [ ] **Install Prompt Banner**
-  - [ ] On supported mobile browsers, the PWA installation banner/prompt appears.
+  - [ ] On supported mobile browsers, the PWA installation banner/prompt appears inside the dashboard.
   - [ ] Installing places the ECCF Portal icon on the device home screen.
 - [ ] **Offline Handling**
   - [ ] Disconnecting network displays an offline fallback state rather than browser generic error.
@@ -195,12 +189,15 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 | **First-Timers** (`/dashboard/first-timers`) | All Visitors | Outreach Lead Only | Own Hall Only | Restricted (403) |
 | **Attendance** (`/dashboard/attendance`) | Full Access | Submit & View Team | Submit & View Hall | Restricted (403) |
 | **Finance Ledger** (`/dashboard/finance`) | Full Access | Restricted (403) | Restricted (403) | Full Access |
-| **Welfare** (`/dashboard/welfare`) | Global | View & Resolve | Own Hall Only | Restricted (403) |
-| **Prayer Requests** (`/dashboard/prayer-requests`) | Global | View & Assign | Own Hall Only | Restricted (403) |
-| **Announcements** (`/dashboard/announcements`) | Full Access | Restricted (403) | Restricted (403) | Restricted (403) |
+| **Welfare** (`/dashboard/welfare`) | Global | Welfare Team Only | Restricted (403) | Restricted (403) |
+| **Prayer Requests** (`/dashboard/prayer-requests`) | Global | Prayer Team Only | Restricted (403) | Restricted (403) |
+| **Announcements** (`/dashboard/announcements`) | Full Access | CSGB Positions Only | Restricted (403) | Restricted (403) |
+| **Meeting Minutes** (`/dashboard/minutes`) | Full Read/Write + Drafts | Read-Only (Posted Only) | Read-Only (Posted Only) | Read-Only (Posted Only) |
+| **Sermons** (`/dashboard/sermons`) | Media Position Only | Media Team Only | Restricted (403) | Restricted (403) |
+| **Settings** (`/dashboard/settings`) | Full Admin Tools | Restricted (Redirect) | Restricted (Redirect) | Restricted (Redirect) |
 
 ### 4.1 CSGB Admin Testing
-- [ ] Admin navigation sidebar displays all 8 modules.
+- [ ] Admin navigation sidebar displays all permitted modules (plus pinned Settings for President/VP Admin/authorized approvers).
 - [ ] Directly accessing any `/dashboard/*` route succeeds with status 200.
 - [ ] Full create, update, and resolve permissions active.
 
@@ -209,7 +206,7 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 - [ ] **First-Timers & Connect Intake** (`/dashboard/first-timers`) appears in sidebar.
 - [ ] Page header shows *"Outreach & Follow-Up Portal"*.
 - [ ] Can view all connect form submissions across campus for pastoral follow-up.
-- [ ] Attempting to access `/dashboard/finance` directly redirects or returns 403 Forbidden.
+- [ ] Attempting to access `/dashboard/finance` directly redirects or displays restricted access feedback.
 
 ### 4.3 Hall Representative Testing
 - [ ] Log in with a worker account having `role: "hall_rep"` and assigned `hall: "Hall 2"`.
@@ -234,7 +231,7 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
   - [ ] No `[Encrypted Data]` or raw `enc:v1:...` strings leak in the UI.
 - [ ] **Verification & Approval Workflow (Admin)**
   - [ ] Pending worker displays **Approve** and **Decline** action buttons.
-  - [ ] Clicking **Approve** updates Sanity document to `verificationStatus: "verified"` and `isExcoApproved: true`.
+  - [ ] Clicking **Approve** updates Sanity document to `verificationStatus: "verified"` and `isExcoApproved: true` (when executive positions are approved).
   - [ ] Clicking **Decline** updates status to `verificationStatus: "rejected"`.
   - [ ] Roster table updates optimistically or revalidates immediately.
 - [ ] **Birthday Calendar / Filter**
@@ -245,13 +242,13 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
   - [ ] Shows visitor name, phone number, hostel, date visited, and prayer requests.
   - [ ] "Call" button launches native device dialer (`tel:08168730661`).
   - [ ] "WhatsApp" button opens direct chat with pre-filled greeting (`https://wa.me/2348168730661?text=...`).
-  - [ ] Follow-up status dropdown (Pending Contact, Contacted, Welcomed, Established) persists update to Sanity.
+  - [ ] Follow-up status / toggle persists updates to Sanity.
 
 ### 5.3 Attendance Ledger (`/dashboard/attendance`)
 - [ ] **Record Intake**
   - [ ] "Record Attendance" modal collects: Service Date, Service Type (Sunday Service, Midweek, Workers Meeting), Total Count, Males, Females, Children, and First Timers.
   - [ ] Validation ensures sum of breakdowns aligns with total count or warns on mismatch.
-  - [ ] Successful submission creates `attendanceLedger` document in Sanity and updates recent attendance charts.
+  - [ ] Successful submission creates `attendanceLedger` document in Sanity and updates recent attendance metrics.
 
 ### 5.4 Finance Ledger (`/dashboard/finance`)
 - [ ] **Transaction Entry**
@@ -266,8 +263,19 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 ### 5.6 Announcements & Broadcast Management (`/dashboard/announcements`)
 - [ ] **Creation & Publishing**
   - [ ] Admin creates announcement with Title, Event Date, Body, and Pin toggle.
-  - [ ] Publishing triggers optional email broadcast to verified subscribers via Resend API.
+  - [ ] Publishing triggers optional email broadcast to verified subscribers via Resend API (`<ConfirmDialog>` naming title and active subscriber count).
   - [ ] Announcement updates live on the public `/announcements` page immediately via Next.js on-demand ISR revalidation.
+
+### 5.7 Meeting Minutes & Secretariat Archive (`/dashboard/minutes`)
+- [ ] **CSGB Read & Write Workflow (`admin` / CSGB member)**
+  - [ ] Page displays `CSGB Read & Write` badge and `"New minute"` CTA.
+  - [ ] Writing a minute saves as `CSGB Draft` (`isPostedToExcos: false`) by default; draft appears under `CSGB Drafts` / `All` tabs.
+  - [ ] Organization controls filter accurately by **Folder / Session** pills, **Meeting Type** (`CSGB`, `General EXCO`, `Emergency`, `Retreat & Planning`, `Committee`), **Visibility Status**, and search keywords.
+  - [ ] **Post to EXCOs** toggles visibility (`Posted to EXCOs`); pinning moves the minute to the top; toggling action items updates completion progress; archiving/deleting requires confirmation and persists.
+- [ ] **EXCO Read-Only Visibility (`team_lead`, `hall_rep`, `finance`)**
+  - [ ] Page displays `EXCO Read-Only` badge and hides `"New minute"`, `"CSGB Drafts"` tab, edit/post/pin/archive/delete controls, and internal draft records.
+  - [ ] Only non-archived minutes with `isPostedToExcos: true` appear in UI and server responses; clicking **Open** opens the read-only detail sheet with Markdown copy & Print.
+  - [ ] Calling any mutation action (`createMeetingMinute`, `updateMeetingMinute`, `deleteMeetingMinute`, etc.) as a non-CSGB EXCO fails with an authorization error.
 
 ---
 
@@ -280,8 +288,8 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 
 ### 6.2 Sermon Sync Service (`/api/sync-sermons`)
 - [ ] Triggering manual sync from dashboard validates secret bearer token.
-- [ ] Scans designated Google Drive / Audio folder, extracts metadata, and upserts `sermonVault` records.
-- [ ] Avoids creating duplicate sermon entries for identical file IDs.
+- [ ] Scans designated RSS / YouTube / Spotify feeds, extracts metadata, and upserts `sermonVault` records.
+- [ ] Avoids creating duplicate sermon entries for identical source IDs.
 
 ### 6.3 Email Delivery Service (Resend)
 - [ ] Triggering announcement broadcast sends emails via Resend.
@@ -329,6 +337,6 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 ### Final Release Sign-Off
 - [ ] **Public Website Testing Completed**: All links, forms, schedules, and media tested.
 - [ ] **Exco Portal RBAC Verified**: All 4 roles tested with positive and negative permission boundary tests.
-- [ ] **Security & Cryptography Verified**: No unencrypted PII or passwords present in Sanity Studio.
+- [ ] **Security & Cryptography Verified**: No unencrypted PII (`enc:v1:` / `bidx:v1:` enforced) or legacy password fields present in Sanity Studio.
 - [ ] **PWA & Mobile Install Verified**: Standalone manifest and offline handling confirmed.
 - [ ] **QA Lead / Dev Lead Approval**: ___________________________ Date: ____________

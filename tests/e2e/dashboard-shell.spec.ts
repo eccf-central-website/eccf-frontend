@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 
 /**
  * Shell regression coverage for the two navigation surfaces:
- * - lg+ sidebar: nine flat destinations at 44px with no scrollbar and a
+ * - lg+ sidebar: ten flat destinations at 44px with no scrollbar and a
  *   pinned 44px Settings footer.
  * - phone bottom bar: four role-prioritised links plus All, with the active
  *   tab styled by colour/weight rather than a filled background.
@@ -32,8 +32,8 @@ test.describe('Dashboard shell navigation', () => {
     await expect(sidebar).toBeVisible()
 
     const flatLinks = sidebar.locator('nav[aria-label="Dashboard"] a')
-    await expect(flatLinks).toHaveCount(9)
-    await expect(flatLinks).toHaveText([
+    await expect(flatLinks).toHaveCount(10)
+    await expect(flatLinks.locator('span.truncate')).toHaveText([
       'Overview',
       'Executives',
       'Workers',
@@ -43,6 +43,7 @@ test.describe('Dashboard shell navigation', () => {
       'Prayer Requests',
       'Finance',
       'Announcements',
+      'Meeting Minutes',
     ])
 
     // Settings must not also appear inside the flat list.
@@ -89,7 +90,12 @@ test.describe('Dashboard shell navigation', () => {
 
     const primaryLinks = bottomNav.getByRole('link')
     await expect(primaryLinks).toHaveCount(4)
-    await expect(primaryLinks).toHaveText(['Overview', 'Executives', 'Workers', 'Attendance'])
+    await expect(primaryLinks.locator('span.truncate')).toHaveText([
+      'Overview',
+      'Executives',
+      'Workers',
+      'Attendance',
+    ])
 
     const allButton = bottomNav.getByRole('button', { name: /All fellowship sections/i })
     await expect(allButton).toBeVisible()
@@ -100,7 +106,7 @@ test.describe('Dashboard shell navigation', () => {
 
     const activeStyles = await active.evaluate((link) => {
       const icon = link.querySelector('svg')!
-      const label = link.querySelector('span')!
+      const label = link.querySelector('span.truncate')!
       const iconColor = getComputedStyle(icon).color
       const alpha = getComputedStyle(link).backgroundColor
       return {
@@ -111,9 +117,14 @@ test.describe('Dashboard shell navigation', () => {
       }
     })
 
-    // Transparent tab, brand-blue icon, stronger label, comfortable target.
+    // Transparent tab, primary blue icon token, stronger label, comfortable target.
     expect(activeStyles.background).toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
-    expect(['rgb(0, 149, 255)', 'rgb(112, 163, 255)']).toContain(activeStyles.iconColor)
+    expect([
+      'rgb(0, 119, 204)',
+      'rgb(26, 159, 255)',
+      'rgb(0, 149, 255)',
+      'rgb(112, 163, 255)',
+    ]).toContain(activeStyles.iconColor)
     expect(activeStyles.labelWeight).toBeGreaterThanOrEqual(600)
     expect(activeStyles.height).toBeGreaterThanOrEqual(44)
 
@@ -127,14 +138,11 @@ test.describe('Dashboard shell navigation', () => {
     await page.goto('/dashboard')
     await waitForDashboard(page)
 
-    // The mock team lead is the Media lead: Sermons is permitted while
-    // First-Timers is not (that requires an outreach leader or hall rep).
-    await expect(page.locator('nav[aria-label="Primary"]').getByRole('link')).toHaveText([
-      'Overview',
-      'Workers',
-      'Attendance',
-      'Sermons',
-    ])
+    // The mock team lead is the Media lead: Meeting Minutes is permitted (placed
+    // ahead of Sermons in NAV_ITEMS) while First-Timers is not.
+    await expect(
+      page.locator('nav[aria-label="Primary"]').getByRole('link').locator('span.truncate')
+    ).toHaveText(['Overview', 'Workers', 'Attendance', 'Meeting Minutes'])
   })
 
   test('All sheet lists 44px destinations and pins Settings', async ({ page }) => {
@@ -148,7 +156,7 @@ test.describe('Dashboard shell navigation', () => {
     // The dialog is modal, so the trigger leaves the accessibility tree while
     // it is open; read the aria state from the DOM element instead.
     const allTrigger = page.locator(
-      'nav[aria-label="Primary"] button[aria-label="All fellowship sections and admin tools"]'
+      'nav[aria-label="Primary"] button[aria-label^="All fellowship sections and admin tools"]'
     )
     await expect(allTrigger).toHaveAttribute('aria-expanded', 'true')
     await expect(page.getByRole('dialog', { name: 'All Sections' })).toBeVisible()
@@ -156,7 +164,7 @@ test.describe('Dashboard shell navigation', () => {
 
     const sheetNav = page.locator('nav[aria-label="All dashboard destinations"]')
     const rows = sheetNav.getByRole('link')
-    await expect(rows).toHaveCount(10)
+    await expect(rows).toHaveCount(11)
 
     const rowHeights = await rows.evaluateAll((links) =>
       links.map((link) => Math.round(link.getBoundingClientRect().height))

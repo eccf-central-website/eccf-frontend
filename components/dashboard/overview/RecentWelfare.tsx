@@ -1,19 +1,18 @@
 /**
- * RecentWelfare — the latest five welfare requests on the overview.
+ * RecentWelfare — the latest four welfare requests on the overview.
  *
  * Async Server Component; the page wraps it in its own <Suspense> and
  * BlockErrorBoundary so it streams independently of the stats. Renders
  * name, status and a relative date only; request details stay on the
- * welfare page. Status is a word in a badge, not just a colour.
+ * welfare page. Status renders via StatusBadge with semantic icon + label.
  */
 
 import { HeartHandshake } from 'lucide-react'
 import type { ECCFSession } from '@/types'
 import { getRecentWelfare } from '@/lib/dashboard/data/overview'
 import { formatDate, formatRelativeDay, toDateTimeAttr } from '@/lib/dashboard/format'
-import { cn } from '@/lib/utils'
 import EmptyState from '@/components/dashboard/states/EmptyState'
-import { Badge } from '@/components/dashboard/ui/badge'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
 import { ActivityItem, RelativeTime } from './ActivityList'
 
 export default async function RecentWelfare({ session }: { session: ECCFSession }) {
@@ -23,7 +22,7 @@ export default async function RecentWelfare({ session }: { session: ECCFSession 
   if (rows.length === 0) {
     return (
       <EmptyState
-        headingLevel="h4"
+        headingLevel="h3"
         icon={<HeartHandshake />}
         title="No welfare requests yet"
         description="Requests submitted through the Connect form will show up here."
@@ -33,7 +32,7 @@ export default async function RecentWelfare({ session }: { session: ECCFSession 
   }
 
   return (
-    <ul>
+    <ul className="divide-y divide-border/50">
       {rows.map((w) => (
         <ActivityItem
           key={w._id}
@@ -46,15 +45,12 @@ export default async function RecentWelfare({ session }: { session: ECCFSession 
           }
         >
           <p className="truncate text-sm font-medium text-foreground">{w.name}</p>
-          <Badge
-            variant={w.status === 'Pending' ? 'default' : 'secondary'}
-            className={cn(
-              'mt-1 shadow-none',
-              w.status === 'Pending' && 'bg-warning text-warning-foreground hover:bg-warning'
-            )}
+          <StatusBadge
+            variant={w.status === 'Pending' ? 'warning' : 'success'}
+            className="mt-1.5"
           >
             {w.status}
-          </Badge>
+          </StatusBadge>
         </ActivityItem>
       ))}
     </ul>

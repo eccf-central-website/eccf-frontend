@@ -1,28 +1,30 @@
 'use client'
 
 import * as React from 'react'
-import { useState, useTransition, useEffect } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import {
-  Upload,
-  Trash2,
-  RefreshCw,
   AlertTriangle,
-  FileText,
   CheckCircle2,
+  FileText,
+  RefreshCw,
   ShieldAlert,
+  Trash2,
+  Upload,
   Users,
 } from 'lucide-react'
-import { Button } from '@/components/dashboard/ui/button'
-import { Input } from '@/components/dashboard/ui/input'
 import {
   deleteApprovedWorkerAction,
   importWorkerRosterCsvAction,
   syncMemberDirectoryAction,
+  type MemberDirectorySyncResult,
   type WorkerRosterCsvRow,
   type WorkerRosterImportResult,
-  type MemberDirectorySyncResult,
 } from '@/app/actions/worker-actions'
-import { toastSuccess, toastError } from '@/lib/dashboard/toast'
+import { Button } from '@/components/dashboard/ui/button'
+import { Input } from '@/components/dashboard/ui/input'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
+import { formatCount } from '@/lib/dashboard/format'
+import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 import { cn } from '@/lib/utils'
 
 interface WorkerOption {
@@ -138,7 +140,6 @@ export default function SettingsClient({
     selectedWorker &&
     confirmName.trim().toLowerCase() === selectedWorker.fullName.trim().toLowerCase()
 
-  // Handle CSV file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -274,10 +275,14 @@ export default function SettingsClient({
         setSyncResult(res.data)
         setSyncTimestamp(new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' }))
         if (res.data.pendingAnomalies === 0) {
-          toastSuccess(`Directory sync complete: ${res.data.scanned} records scanned, no anomalies.`)
+          toastSuccess(
+            `Directory sync complete: ${res.data.scanned} records scanned, no anomalies.`
+          )
         } else {
           toastSuccess(
-            `Directory sync complete: ${res.data.pendingAnomalies} item${res.data.pendingAnomalies === 1 ? '' : 's'} need attention.`
+            `Directory sync complete: ${res.data.pendingAnomalies} item${
+              res.data.pendingAnomalies === 1 ? '' : 's'
+            } need attention.`
           )
         }
       } else {
@@ -289,21 +294,30 @@ export default function SettingsClient({
 
   const tabClass = (tab: SettingsTab, destructive = false) =>
     cn(
-      'flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors',
+      'flex min-h-11 items-center gap-2 rounded-[calc(var(--radius-control)-2px)] px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
       activeTab === tab
         ? destructive
           ? 'bg-destructive/10 font-semibold text-destructive'
-          : 'bg-primary/10 font-semibold text-primary'
+          : 'bg-primary/10 font-semibold text-accent-foreground dark:text-primary'
         : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
     )
 
   return (
     <div className="space-y-6">
-      {/* Settings Navigation Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto rounded-xl bg-muted/50 p-1">
+      {/* Settings Navigation Tabs (>= 44px touch targets) */}
+      <div
+        role="group"
+        aria-label="Settings tools"
+        className="flex gap-1.5 overflow-x-auto rounded-[var(--radius-control)] bg-surface-raised p-1"
+      >
         {visibleTabs.includes('import') && (
-          <button type="button" onClick={() => setActiveTab('import')} className={tabClass('import')}>
-            <Upload className="h-4 w-4 shrink-0" />
+          <button
+            type="button"
+            aria-pressed={activeTab === 'import'}
+            onClick={() => setActiveTab('import')}
+            className={tabClass('import')}
+          >
+            <Upload className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">Worker CSV Roster</span>
           </button>
         )}
@@ -311,17 +325,23 @@ export default function SettingsClient({
         {visibleTabs.includes('delete') && (
           <button
             type="button"
+            aria-pressed={activeTab === 'delete'}
             onClick={() => setActiveTab('delete')}
             className={tabClass('delete', true)}
           >
-            <Trash2 className="h-4 w-4 shrink-0" />
+            <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">Worker Offboarding</span>
           </button>
         )}
 
         {visibleTabs.includes('sync') && (
-          <button type="button" onClick={() => setActiveTab('sync')} className={tabClass('sync')}>
-            <RefreshCw className="h-4 w-4 shrink-0" />
+          <button
+            type="button"
+            aria-pressed={activeTab === 'sync'}
+            onClick={() => setActiveTab('sync')}
+            className={tabClass('sync')}
+          >
+            <RefreshCw className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">Member Directory Sync</span>
           </button>
         )}
@@ -329,22 +349,28 @@ export default function SettingsClient({
 
       {/* Tab 1: Worker CSV Roster Import */}
       {activeTab === 'import' && canImport && (
-        <section className="space-y-5 rounded-2xl bg-card p-5 sm:p-6">
+        <section className="space-y-5 rounded-[var(--radius-card)] bg-card p-5 shadow-sm sm:p-6">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Worker CSV Roster Import</h2>
+            <h2 className="font-sans text-lg font-semibold text-foreground">
+              Worker CSV Roster Import
+            </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Upload a bulk CSV of fellowship workers to create or update roster records and team allocations.
+              Upload a bulk CSV of fellowship workers to create or update roster records and team
+              allocations.
             </p>
           </div>
 
-          <div className="space-y-3 rounded-xl bg-muted/30 p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="space-y-3 rounded-[var(--radius-card)] bg-surface-raised p-6 text-center">
+            <div
+              aria-hidden="true"
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-accent-foreground dark:text-primary"
+            >
               <FileText className="h-6 w-6" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label
                 htmlFor="csv-upload"
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl px-3 text-sm font-semibold text-primary hover:underline focus-within:ring-2 focus-within:ring-ring"
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[var(--radius-control)] px-4 text-sm font-semibold text-accent-foreground transition-colors hover:bg-primary/10 focus-within:ring-2 focus-within:ring-ring dark:text-primary"
               >
                 Choose worker CSV file
                 <input
@@ -355,7 +381,7 @@ export default function SettingsClient({
                   className="sr-only"
                 />
               </label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 Required columns: Full Name, Email. Optional: Phone, Team, Hall.
                 {fileName ? ` Selected: ${fileName}` : ''}
               </p>
@@ -363,29 +389,36 @@ export default function SettingsClient({
           </div>
 
           {parseError && (
-            <div className="flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
+            <div
+              role="alert"
+              className="flex items-center gap-2.5 rounded-[var(--radius-control)] bg-destructive/10 p-3.5 text-sm font-medium text-destructive"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{parseError}</span>
             </div>
           )}
 
           {importResult && (
-            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+            <div className="space-y-3 rounded-[var(--radius-control)] bg-surface-raised p-4">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
                 <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  {importResult.importedCount + importResult.updatedCount} processed
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                  {formatCount(importResult.importedCount + importResult.updatedCount)} processed
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {importResult.importedCount} created · {importResult.updatedCount} updated ·{' '}
-                  {importResult.skippedCount} skipped
+                <span className="text-[13px] text-muted-foreground tabular-nums">
+                  {formatCount(importResult.importedCount)} created ·{' '}
+                  {formatCount(importResult.updatedCount)} updated ·{' '}
+                  {formatCount(importResult.skippedCount)} skipped
                 </span>
               </div>
               {importResult.errors.length > 0 && (
-                <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                <ul className="max-h-40 space-y-1.5 overflow-y-auto text-[13px] text-muted-foreground">
                   {importResult.errors.map((error, index) => (
-                    <li key={index} className="flex gap-1.5">
-                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-[var(--brand-gold)]" />
+                    <li key={index} className="flex items-start gap-2">
+                      <AlertTriangle
+                        className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground dark:text-warning"
+                        aria-hidden="true"
+                      />
                       <span>{error}</span>
                     </li>
                   ))}
@@ -401,28 +434,32 @@ export default function SettingsClient({
                   Ready to import {parsedRows.length} worker{parsedRows.length === 1 ? '' : 's'}
                 </span>
                 <Button
+                  type="button"
                   onClick={handleImportSubmit}
                   disabled={isPending || !canImport}
+                  aria-busy={isPending || undefined}
                   className="min-h-11 w-full px-6 sm:w-auto"
                 >
                   {isPending ? 'Importing…' : `Confirm & Ingest ${parsedRows.length} Workers`}
                 </Button>
               </div>
 
-              <div className="max-h-64 divide-y divide-border/20 overflow-y-auto rounded-xl bg-muted/20 text-xs">
+              <div className="max-h-64 divide-y divide-border/30 overflow-y-auto rounded-[var(--radius-control)] bg-surface-raised text-[13px]">
                 {parsedRows.slice(0, 15).map((row, idx) => (
                   <div
                     key={`${row.email}-${idx}`}
-                    className="flex min-w-0 flex-col justify-between gap-1 p-2.5 px-3 sm:flex-row sm:items-center"
+                    className="flex min-w-0 flex-col justify-between gap-1 px-3.5 py-2.5 sm:flex-row sm:items-center"
                   >
                     <span className="truncate font-medium text-foreground">{row.fullName}</span>
                     <span className="truncate text-muted-foreground">{row.email}</span>
-                    <span className="shrink-0 text-muted-foreground">{row.team || 'Unassigned'}</span>
+                    <span className="shrink-0 text-muted-foreground">
+                      {row.team || 'Unassigned'}
+                    </span>
                   </div>
                 ))}
                 {parsedRows.length > 15 && (
-                  <div className="bg-muted/20 p-2 text-center text-muted-foreground">
-                    + {parsedRows.length - 15} more rows
+                  <div className="bg-surface-raised p-2.5 text-center text-[13px] text-muted-foreground tabular-nums">
+                    + {formatCount(parsedRows.length - 15)} more rows
                   </div>
                 )}
               </div>
@@ -433,14 +470,19 @@ export default function SettingsClient({
 
       {/* Tab 2: Worker Deletion & Offboarding */}
       {activeTab === 'delete' && canDelete && (
-        <section className="space-y-5 rounded-2xl bg-card p-5 sm:p-6">
+        <section className="space-y-5 rounded-[var(--radius-card)] bg-card p-5 shadow-sm sm:p-6">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+            <div
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-destructive/10 text-destructive"
+            >
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Offboard / Delete Approved Worker</h2>
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <h2 className="font-sans text-lg font-semibold text-foreground">
+                Offboard / Delete Approved Worker
+              </h2>
+              <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
                 Archiving revokes leadership positions and team duties immediately and removes the
                 leader from the Executives roster. Permanent deletion also erases the worker record
                 and their linked sign-in account.
@@ -449,8 +491,11 @@ export default function SettingsClient({
           </div>
 
           <div className="max-w-lg space-y-4">
-            <div>
-              <label htmlFor="worker-select" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="worker-select"
+                className="block text-[13px] font-semibold text-foreground"
+              >
                 Select Worker Record
               </label>
               <select
@@ -460,17 +505,17 @@ export default function SettingsClient({
                   setSelectedWorkerId(e.target.value)
                   setConfirmName('')
                 }}
-                className="h-11 w-full rounded-xl bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="h-11 w-full rounded-[var(--radius-control)] border border-input bg-background px-3 text-base text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:text-sm"
               >
                 <option value="">— Choose approved worker —</option>
                 {workers.map((w) => (
                   <option key={w._id} value={w._id}>
-                    {w.fullName} {w.team ? `(${w.team})` : ''}
+                    {w.team ? `${w.fullName} (${w.team})` : w.fullName}
                   </option>
                 ))}
               </select>
               {workers.length === 0 && (
-                <p className="mt-1.5 text-xs text-muted-foreground">
+                <p className="mt-1.5 text-[13px] text-muted-foreground">
                   No approved workers are currently available to offboard.
                 </p>
               )}
@@ -478,43 +523,56 @@ export default function SettingsClient({
 
             {selectedWorker && (
               <>
-                <div className="space-y-2">
-                  <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <fieldset className="space-y-2">
+                  <legend className="text-[13px] font-semibold text-foreground">
                     Offboarding Policy
-                  </span>
-                  <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-muted/30 p-3">
+                  </legend>
+                  <div className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius-control)] bg-surface-raised p-3">
                       <input
                         type="radio"
                         name="policy"
                         value="archive"
                         checked={deletePolicy === 'archive'}
                         onChange={() => setDeletePolicy('archive')}
+                        className="h-4 w-4 accent-primary"
                       />
                       <div>
-                        <span className="block font-medium">Archive & Revoke</span>
-                        <span className="text-xs text-muted-foreground">Keep attendance, revoke duty</span>
+                        <span className="block font-medium text-foreground">
+                          Archive &amp; Revoke
+                        </span>
+                        <span className="text-[13px] text-muted-foreground">
+                          Keep attendance, revoke duty
+                        </span>
                       </div>
                     </label>
 
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-destructive/5 p-3">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius-control)] bg-destructive/10 p-3">
                       <input
                         type="radio"
                         name="policy"
                         value="permanent"
                         checked={deletePolicy === 'permanent'}
                         onChange={() => setDeletePolicy('permanent')}
+                        className="h-4 w-4 accent-destructive"
                       />
                       <div>
-                        <span className="block font-medium text-destructive">Permanent Purge</span>
-                        <span className="text-xs text-muted-foreground">Erase from database</span>
+                        <span className="block font-medium text-destructive">
+                          Permanent Purge
+                        </span>
+                        <span className="text-[13px] text-muted-foreground">
+                          Erase from database
+                        </span>
                       </div>
                     </label>
                   </div>
-                </div>
+                </fieldset>
 
-                <div>
-                  <label htmlFor="delete-reason" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="delete-reason"
+                    className="block text-[13px] font-semibold text-foreground"
+                  >
                     Offboarding Reason
                   </label>
                   <Input
@@ -522,34 +580,40 @@ export default function SettingsClient({
                     placeholder="e.g. Graduated, relocated, voluntary resignation"
                     value={deleteReason}
                     onChange={(e) => setDeleteReason(e.target.value)}
-                    className="h-11 rounded-xl"
+                    className="h-11 rounded-[var(--radius-control)] bg-background"
                   />
                 </div>
 
-                <div className="space-y-2 rounded-xl bg-destructive/10 p-3.5">
-                  <p className="text-xs font-medium text-destructive">
+                <div className="space-y-2 rounded-[var(--radius-control)] bg-destructive/10 p-4">
+                  <label
+                    htmlFor="confirm-worker-name"
+                    className="block text-[13px] font-medium text-destructive"
+                  >
                     Type <strong>{selectedWorker.fullName}</strong> below to confirm removal:
-                  </p>
+                  </label>
                   <Input
+                    id="confirm-worker-name"
                     placeholder={selectedWorker.fullName}
                     value={confirmName}
                     onChange={(e) => setConfirmName(e.target.value)}
-                    className="h-11 rounded-xl border-destructive/40 bg-background"
+                    className="h-11 rounded-[var(--radius-control)] border-destructive/40 bg-background"
                     aria-label={`Type ${selectedWorker.fullName} to confirm`}
                   />
                 </div>
 
                 <Button
+                  type="button"
                   variant="destructive"
                   onClick={handleDeleteSubmit}
                   disabled={isPending || !isNameConfirmed}
+                  aria-busy={isPending || undefined}
                   className="min-h-11 w-full"
                 >
                   {isPending
                     ? 'Processing…'
                     : deletePolicy === 'archive'
-                    ? 'Archive Worker Record'
-                    : 'Permanently Delete Worker'}
+                      ? 'Archive Worker Record'
+                      : 'Permanently Delete Worker'}
                 </Button>
               </>
             )}
@@ -559,67 +623,81 @@ export default function SettingsClient({
 
       {/* Tab 3: Member Directory Sync */}
       {activeTab === 'sync' && (
-        <section className="space-y-5 rounded-2xl bg-card p-5 sm:p-6">
+        <section className="space-y-5 rounded-[var(--radius-card)] bg-card p-5 shadow-sm sm:p-6">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Member Directory Sync</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Audit registered congregation records against the EXCO operational database and surface
-              missing contact details, unassigned members, and memberships awaiting verification.
+            <h2 className="font-sans text-lg font-semibold text-foreground">
+              Member Directory Sync
+            </h2>
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+              Audit registered congregation records against the EXCO operational database and
+              surface missing contact details, unassigned members, and memberships awaiting
+              verification.
             </p>
           </div>
 
-          <div className="flex flex-col justify-between gap-4 rounded-xl bg-muted/30 p-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col justify-between gap-4 rounded-[var(--radius-control)] bg-surface-raised p-4 sm:flex-row sm:items-center">
             <div>
-              <span className="block text-sm font-semibold text-foreground">Live member directory audit</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
+              <span className="block text-sm font-semibold text-foreground">
+                Live member directory audit
+              </span>
+              <span className="mt-0.5 block text-[13px] text-muted-foreground">
                 {syncTimestamp
                   ? `Last checked: ${syncTimestamp} · Lagos time`
                   : 'Runs on demand. Registration changes are picked up in real time.'}
               </span>
             </div>
             <Button
+              type="button"
               onClick={handleMemberSync}
               disabled={isPending || (!canImport && !canDelete)}
-              className="min-h-11 shrink-0 px-5"
+              aria-busy={isPending || undefined}
+              className="min-h-11 shrink-0 gap-2 px-5"
             >
-              <RefreshCw className={cn('mr-2 h-4 w-4', isPending && 'animate-spin')} />
-              Run Member Sync
+              <RefreshCw
+                className={cn(
+                  'h-4 w-4 shrink-0',
+                  isPending && 'animate-spin motion-reduce:animate-none'
+                )}
+                aria-hidden="true"
+              />
+              <span>Run Member Sync</span>
             </Button>
           </div>
 
           {syncError && (
-            <div className="flex items-center gap-2 rounded-xl bg-destructive/10 p-3.5 text-sm font-medium text-destructive">
-              <AlertTriangle className="h-5 w-5 shrink-0" />
+            <div
+              role="alert"
+              className="flex items-center gap-2.5 rounded-[var(--radius-control)] bg-destructive/10 p-3.5 text-sm font-medium text-destructive"
+            >
+              <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />
               <span>{syncError}</span>
             </div>
           )}
 
           {syncResult && (
-            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-                <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                  <Users className="h-4 w-4 text-primary" />
-                  {syncResult.scanned} records scanned
+            <div className="space-y-3 rounded-[var(--radius-control)] bg-surface-raised p-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <span className="flex items-center gap-1.5 font-semibold text-foreground tabular-nums">
+                  <Users className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {formatCount(syncResult.scanned)} records scanned
                 </span>
-                <span
-                  className={cn(
-                    'text-xs font-medium',
-                    syncResult.pendingAnomalies > 0
-                      ? 'text-[var(--brand-gold)]'
-                      : 'text-emerald-600 dark:text-emerald-400'
-                  )}
-                >
+                <StatusBadge variant={syncResult.pendingAnomalies > 0 ? 'warning' : 'success'}>
                   {syncResult.pendingAnomalies > 0
-                    ? `${syncResult.pendingAnomalies} item${syncResult.pendingAnomalies === 1 ? '' : 's'} need attention`
+                    ? `${formatCount(syncResult.pendingAnomalies)} item${
+                        syncResult.pendingAnomalies === 1 ? '' : 's'
+                      } need attention`
                     : 'No pending anomalies'}
-                </span>
+                </StatusBadge>
               </div>
 
               {syncResult.details.length > 0 && (
-                <ul className="max-h-56 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                <ul className="max-h-56 space-y-1.5 overflow-y-auto text-[13px] text-muted-foreground">
                   {syncResult.details.map((detail, index) => (
-                    <li key={index} className="flex gap-1.5">
-                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-[var(--brand-gold)]" />
+                    <li key={index} className="flex items-start gap-2">
+                      <AlertTriangle
+                        className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground dark:text-warning"
+                        aria-hidden="true"
+                      />
                       <span>{detail}</span>
                     </li>
                   ))}
@@ -631,7 +709,7 @@ export default function SettingsClient({
       )}
 
       {visibleTabs.length === 0 && (
-        <div className="rounded-2xl bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-[var(--radius-card)] bg-card p-6 text-sm text-muted-foreground shadow-sm">
           Your role does not have access to any Settings tools.
         </div>
       )}

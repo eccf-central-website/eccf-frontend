@@ -1,6 +1,24 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import {
+  Calendar,
+  Clock,
+  FileText,
+  Loader2,
+  MapPin,
+  Pin,
+  Send,
+  Sparkles,
+  Tag,
+} from 'lucide-react'
+import type { Announcement } from '@/types'
+import {
+  createAnnouncement,
+  updateAnnouncement,
+} from '@/app/actions/announcement-actions'
+import { Button } from '@/components/dashboard/ui/button'
+import { Checkbox } from '@/components/dashboard/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -9,27 +27,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/dashboard/ui/dialog'
-import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
-import type { Announcement } from '@/types'
-import {
-  createAnnouncement,
-  updateAnnouncement,
-} from '@/app/actions/announcement-actions'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 import { portableTextToString } from '@/lib/portable-text-helpers'
-import { toast } from 'sonner'
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Pin,
-  Send,
-  Loader2,
-  FileText,
-  Tag,
-  Sparkles,
-} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export const ANNOUNCEMENT_CATEGORIES = [
   { value: 'WEEKLY SERVICES', label: 'Weekly Services' },
@@ -65,21 +68,19 @@ export default function AnnouncementModal({
   const [isPublished, setIsPublished] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Populate form on edit mode change
   useEffect(() => {
+    const today = lagosDate()
     if (announcement) {
       setTitle(announcement.title || '')
       setCategory(announcement.category || 'WEEKLY SERVICES')
       setEventDate(announcement.eventDate || '')
-      setPublishDate(announcement.publishDate || new Date().toISOString().split('T')[0])
+      setPublishDate(announcement.publishDate || today)
       setTime(announcement.time || '08:00 AM')
       setLocation(announcement.location || 'NLT 5, Faculty of Law, ESUI')
       setContent(portableTextToString(announcement.content))
       setIsPinned(Boolean(announcement.isPinned))
       setIsPublished(announcement.isPublished !== false)
     } else {
-      // Default new announcement values
-      const today = new Date().toISOString().split('T')[0]
       setTitle('')
       setCategory('WEEKLY SERVICES')
       setEventDate(today)
@@ -96,20 +97,21 @@ export default function AnnouncementModal({
     e.preventDefault()
 
     if (!title.trim() || title.trim().length < 3) {
-      toast.error('Please enter a descriptive announcement title (at least 3 characters).')
+      toastError('Please enter a descriptive announcement title (at least 3 characters).')
       return
     }
 
     setIsSubmitting(true)
 
     try {
+      const today = lagosDate()
       if (isEditing && announcement?._id) {
         const res = await updateAnnouncement({
           _id: announcement._id,
           title: title.trim(),
           category,
           eventDate: eventDate || undefined,
-          publishDate: publishDate || new Date().toISOString().split('T')[0],
+          publishDate: publishDate || today,
           time: time.trim() || undefined,
           location: location.trim() || 'NLT 5, Faculty of Law, ESUI',
           content: content.trim(),
@@ -118,11 +120,11 @@ export default function AnnouncementModal({
         })
 
         if (!res.ok) {
-          toast.error(res.error || 'Failed to update announcement.')
+          toastError(res.error || 'Failed to update announcement.')
           return
         }
 
-        toast.success('Announcement updated successfully!')
+        toastSuccess('Announcement updated successfully.')
         onSuccess({
           ...announcement,
           title: title.trim(),
@@ -141,7 +143,7 @@ export default function AnnouncementModal({
           title: title.trim(),
           category,
           eventDate: eventDate || undefined,
-          publishDate: publishDate || new Date().toISOString().split('T')[0],
+          publishDate: publishDate || today,
           time: time.trim() || undefined,
           location: location.trim() || 'NLT 5, Faculty of Law, ESUI',
           content: content.trim(),
@@ -150,13 +152,13 @@ export default function AnnouncementModal({
         })
 
         if (!res.ok) {
-          toast.error(res.error || 'Failed to create announcement.')
+          toastError(res.error || 'Failed to create announcement.')
           return
         }
 
-        toast.success(
+        toastSuccess(
           isPublished
-            ? 'Announcement published successfully!'
+            ? 'Announcement published successfully.'
             : 'Announcement saved as draft.'
         )
         onSuccess(res.data)
@@ -164,13 +166,12 @@ export default function AnnouncementModal({
       }
     } catch (err: unknown) {
       console.error('Error saving announcement:', err)
-      toast.error('An unexpected error occurred while saving.')
+      toastError('An unexpected error occurred while saving.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Preset templates helper for fast CSGB workflow
   const applyTemplate = (type: 'sunday' | 'vigil' | 'midweek' | 'exam') => {
     if (type === 'sunday') {
       setTitle('Sunday Worship Encounter: Divine Elevation')
@@ -208,87 +209,93 @@ export default function AnnouncementModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0 gap-0 border-0 bg-background shadow-2xl">
-        <DialogHeader className="p-6 pb-4 bg-muted/30">
-          <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
-            <FileText className="w-4 h-4" />
-            <span>{isEditing ? 'Edit Notice' : 'New Notice'}</span>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
+      <DialogContent className="max-h-[90dvh] gap-0 overflow-y-auto border-border/60 bg-card p-0 shadow-2xl sm:max-w-2xl">
+        <DialogHeader className="bg-surface-raised p-6 pb-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+            <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{isEditing ? 'Edit notice' : 'New notice'}</span>
           </div>
-          <DialogTitle className="text-xl sm:text-2xl font-serif font-bold text-foreground mt-1">
+          <DialogTitle className="mt-1 font-sans text-xl font-semibold text-foreground sm:text-2xl">
             {isEditing ? 'Edit Fellowship Announcement' : 'Create Sunday Announcement'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground mt-1">
+          <DialogDescription className="mt-1 text-sm text-muted-foreground">
             Configure announcement details, schedule date, and event location.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Quick template chips */}
+        {/* Quick template chips (44px / 40px targets) */}
         {!isEditing && (
-          <div className="px-6 py-2.5 bg-muted/40 flex items-center gap-2 overflow-x-auto text-xs">
-            <span className="flex items-center gap-1 text-muted-foreground font-medium shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Templates:
+          <div className="flex flex-wrap items-center gap-2 bg-surface-raised/60 px-6 py-3">
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+              <Sparkles
+                className="h-4 w-4 shrink-0 text-gold"
+                aria-hidden="true"
+              />
+              <span>Templates:</span>
             </span>
             <button
               type="button"
               onClick={() => applyTemplate('sunday')}
-              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] bg-card px-3.5 text-[13px] font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10"
             >
               Sunday Service
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('midweek')}
-              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] bg-card px-3.5 text-[13px] font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10"
             >
               Wednesday Study
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('vigil')}
-              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] bg-card px-3.5 text-[13px] font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10"
             >
               Night Vigil
             </button>
             <button
               type="button"
               onClick={() => applyTemplate('exam')}
-              className="px-2.5 py-1 rounded-full bg-background hover:bg-accent hover:text-accent-foreground text-foreground transition-colors shrink-0"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] bg-card px-3.5 text-[13px] font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10"
             >
               Exams Clinic
             </button>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Headline / Title */}
+        <form onSubmit={handleSubmit} className="space-y-5 p-6">
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              Announcement Title <span className="text-destructive">*</span>
+            <Label htmlFor="announcement-title" className="text-sm font-semibold text-foreground">
+              Announcement Title <span aria-hidden="true" className="text-destructive">*</span>
             </Label>
             <Input
-              id="title"
+              id="announcement-title"
               placeholder="e.g. Sunday Worship Encounter & Praise Harvest"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-base font-medium h-11"
+              className="h-11 bg-background text-base font-medium md:h-10"
               required
+              disabled={isSubmitting}
             />
           </div>
 
-          {/* Category & Status Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="category" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
-                Category
+              <Label
+                htmlFor="announcement-category"
+                className="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+              >
+                <Tag className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>Category</span>
               </Label>
               <select
-                id="category"
+                id="announcement-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                disabled={isSubmitting}
+                className="flex h-11 w-full rounded-[var(--radius-control)] border border-input bg-background px-3 py-2 text-base text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:text-sm"
               >
                 {ANNOUNCEMENT_CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -299,163 +306,204 @@ export default function AnnouncementModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="time" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                Time
+              <Label
+                htmlFor="announcement-time"
+                className="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+              >
+                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>Time</span>
               </Label>
               <Input
-                id="time"
+                id="announcement-time"
                 placeholder="e.g. 08:00 AM or 04:50 PM"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="h-10"
+                disabled={isSubmitting}
+                className="bg-background"
               />
             </div>
           </div>
 
-          {/* Event Date & Publish Date */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="eventDate" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                Event / Service Date
+              <Label
+                htmlFor="announcement-eventDate"
+                className="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+              >
+                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>Event / Service Date</span>
               </Label>
               <Input
-                id="eventDate"
+                id="announcement-eventDate"
                 type="date"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="h-10"
+                aria-describedby="announcement-eventDate-hint"
+                disabled={isSubmitting}
+                className="bg-background"
               />
-              <p className="text-xs text-muted-foreground">
-                Displayed in the date badge of the announcement card.
+              <p id="announcement-eventDate-hint" className="text-[13px] text-muted-foreground">
+                Displayed in the schedule summary of the notice.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="publishDate" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                Publish Date
+              <Label
+                htmlFor="announcement-publishDate"
+                className="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+              >
+                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>Publish Date</span>
               </Label>
               <Input
-                id="publishDate"
+                id="announcement-publishDate"
                 type="date"
                 value={publishDate}
                 onChange={(e) => setPublishDate(e.target.value)}
-                className="h-10"
+                aria-describedby="announcement-publishDate-hint"
+                disabled={isSubmitting}
+                className="bg-background"
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="announcement-publishDate-hint" className="text-[13px] text-muted-foreground">
                 Date this bulletin is officially recorded for.
               </p>
             </div>
           </div>
 
-          {/* Location / Venue */}
           <div className="space-y-1.5">
-            <Label htmlFor="location" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-              Venue / Location
+            <Label
+              htmlFor="announcement-location"
+              className="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+            >
+              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span>Venue / Location</span>
             </Label>
             <Input
-              id="location"
+              id="announcement-location"
               placeholder="e.g. NLT 5, Faculty of Law, ESUI"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="h-10"
+              disabled={isSubmitting}
+              className="bg-background"
             />
           </div>
 
-          {/* Content / Body */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="content" className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                Announcement Body & Details
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label htmlFor="announcement-content" className="text-sm font-semibold text-foreground">
+                Announcement Body &amp; Details
               </Label>
-              <span className="text-xs text-muted-foreground">
-                Supports multiple paragraphs and bullet points (- or *)
+              <span className="text-[13px] text-muted-foreground">
+                Supports paragraphs and bullet points (- or *)
               </span>
             </div>
             <textarea
-              id="content"
+              id="announcement-content"
               rows={5}
               placeholder="Enter the full announcement notice body. For lists, start lines with - or *"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full p-3 text-sm font-normal rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent leading-relaxed resize-y"
+              disabled={isSubmitting}
+              className="w-full resize-y rounded-[var(--radius-control)] border border-input bg-background p-3 text-base font-normal leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
             />
           </div>
 
           {/* Toggles: Pin to Top & Publish Now */}
-          <div className="rounded-xl bg-card/60 p-4 space-y-3.5">
-            {/* Pin to top */}
-            <label className="flex items-center justify-between cursor-pointer group">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg transition-colors ${isPinned ? 'bg-amber-500/10 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
-                  <Pin className="w-4 h-4" />
+          <div className="space-y-3 rounded-[var(--radius-card)] bg-surface-raised p-4">
+            <div className="flex min-h-11 items-center justify-between gap-4">
+              <label
+                htmlFor="announcement-pin"
+                className="flex flex-1 cursor-pointer items-center gap-3"
+              >
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] transition-colors',
+                    isPinned
+                      ? 'bg-gold/20 text-gold-foreground dark:bg-gold/15 dark:text-gold'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  <Pin className="h-4 w-4" />
                 </div>
-                <div>
-                  <span className="text-sm font-semibold text-foreground block">
+                <div className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">
                     Pin Notice to Top
                   </span>
-                  <span className="text-xs text-muted-foreground block">
-                    Display at the very top of both Exco Dashboard and Public Announcements
+                  <span className="block text-[13px] text-muted-foreground">
+                    Display first in both Exco Dashboard and Public Announcements
                   </span>
                 </div>
-              </div>
-              <input
-                type="checkbox"
+              </label>
+              <Checkbox
+                id="announcement-pin"
                 checked={isPinned}
-                onChange={(e) => setIsPinned(e.target.checked)}
-                className="h-5 w-5 shrink-0 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                onCheckedChange={(checked) => setIsPinned(Boolean(checked))}
+                disabled={isSubmitting}
+                className="h-5 w-5"
               />
-            </label>
+            </div>
 
-
-            {/* Publish Now */}
-            <label className="flex items-center justify-between cursor-pointer group">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg transition-colors ${isPublished ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                  <Send className="w-4 h-4" />
+            <div className="flex min-h-11 items-center justify-between gap-4">
+              <label
+                htmlFor="announcement-publish"
+                className="flex flex-1 cursor-pointer items-center gap-3"
+              >
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] transition-colors',
+                    isPublished
+                      ? 'bg-success/10 text-success'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  <Send className="h-4 w-4" />
                 </div>
-                <div>
-                  <span className="text-sm font-semibold text-foreground block">
+                <div className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">
                     {isPublished ? 'Publish Now (Live)' : 'Save as Private Draft'}
                   </span>
-                  <span className="text-xs text-muted-foreground block">
+                  <span className="block text-[13px] text-muted-foreground">
                     {isPublished
                       ? 'Visible to public fellowship visitors at /announcements'
                       : 'Saved privately in dashboard — invisible to public until published'}
                   </span>
                 </div>
-              </div>
-              <input
-                type="checkbox"
+              </label>
+              <Checkbox
+                id="announcement-publish"
                 checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                className="h-5 w-5 shrink-0 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                onCheckedChange={(checked) => setIsPublished(Boolean(checked))}
+                disabled={isSubmitting}
+                className="h-5 w-5"
               />
-            </label>
+            </div>
           </div>
 
-          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row gap-2">
+          <DialogFooter className="gap-2 pt-2 sm:space-x-0">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
-              className="w-full sm:w-auto"
+              className="min-h-11 w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto font-medium"
+              aria-busy={isSubmitting || undefined}
+              className="min-h-11 w-full gap-2 sm:w-auto"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Saving...
+                  <Loader2
+                    className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
+                  <span>Saving…</span>
                 </>
               ) : isEditing ? (
                 'Save Changes'

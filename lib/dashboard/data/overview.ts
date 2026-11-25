@@ -11,6 +11,7 @@ import 'server-only'
 
 import type { ECCFSession, SafeFirstTimer, SafeWelfareRequest } from '@/types'
 import { canAccessSection, SECTION_PATHS } from '../rbac'
+import { lagosDaysAgo } from '../dates'
 import {
   auditMemberDirectory,
   countUnregisteredExecutiveAppointments,
@@ -19,7 +20,7 @@ import {
   listWorkers,
 } from './index'
 
-export const RECENT_LIMIT = 5
+export const RECENT_LIMIT = 4
 
 export type RecentFirstTimer = Pick<
   SafeFirstTimer,
@@ -224,10 +225,7 @@ export async function getLiveAttentionItems(
   if (canAccessSection(session.role, 'firstTimers', session)) {
     try {
       const firstTimers = await listFirstTimers(session)
-      const now = new Date()
-      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0]
+      const fourteenDaysAgo = lagosDaysAgo(14)
       const recentVisitors = firstTimers.filter(
         (f) => f.dateVisited && f.dateVisited >= fourteenDaysAgo && !f.followedUp
       )

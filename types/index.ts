@@ -339,8 +339,6 @@ export interface SermonVault {
   topics?: string[]
   datePreached: string // ISO date YYYY-MM-DD
   scriptureReference: string
-  /** Direct URL to audio/video. Streams from source — never proxied through Vercel */
-  mediaUrl?: string
   duration?: string
   spotifyUrl?: string
   youtubeUrl?: string
@@ -522,3 +520,57 @@ export interface FirstTimerRow {
   createdAt?: string
 }
 
+
+// ---------------------------------------------------------------------------
+// Meeting Minutes (CSGB Secretariat & EXCO Archive)
+// ---------------------------------------------------------------------------
+
+export type MeetingMinuteType =
+  | 'CSGB'
+  | 'General EXCO'
+  | 'Emergency'
+  | 'Retreat & Planning'
+  | 'Committee'
+
+export interface MeetingMinuteActionItem {
+  _key?: string
+  task: string
+  owner?: string
+  dueDate?: string // ISO date YYYY-MM-DD
+  status: 'open' | 'done'
+}
+
+export interface MeetingMinute {
+  _id: string
+  _type?: 'meetingMinute'
+  title: string
+  meetingDate: string // ISO date YYYY-MM-DD
+  meetingType: MeetingMinuteType | string
+  folder?: string
+  venue?: string
+  startTime?: string
+  endTime?: string
+  chairperson?: string
+  recorderName?: string
+  attendees?: string[]
+  absentees?: string[]
+  agenda?: string[]
+  summary?: string
+  body?: string
+  decisions?: string[]
+  actionItems?: MeetingMinuteActionItem[]
+  tags?: string[]
+  isPinned?: boolean
+  /** Controls visibility — false = CSGB-only draft; true = read-only visible to all EXCOs */
+  isPostedToExcos: boolean
+  postedAt?: string
+  postedBy?: string
+  archived?: boolean
+  createdById?: string
+  createdByName?: string
+  createdAt?: string
+  updatedByName?: string
+  updatedAt?: string
+  _createdAt?: string
+  _updatedAt?: string
+}

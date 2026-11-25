@@ -1,8 +1,16 @@
 'use client'
 
-import React, { useState } from 'react'
+import * as React from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import type { FinanceCategory, FinanceType } from '@/types'
+import { recordFinanceEntry } from '@/app/actions/finance-actions'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
+import { Label } from '@/components/dashboard/ui/label'
+import { RecordSheet } from '@/components/dashboard/ui/record-sheet'
 import {
   Select,
   SelectContent,
@@ -10,10 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/dashboard/ui/select'
-import { recordFinanceEntry } from '@/app/actions/finance-actions'
-import { toast } from 'sonner'
-import { Loader2, PlusCircle, X } from 'lucide-react'
-import type { FinanceCategory, FinanceType } from '@/types'
 
 const CATEGORIES: FinanceCategory[] = [
   'Tithe',
@@ -26,8 +30,10 @@ const CATEGORIES: FinanceCategory[] = [
   'Miscellaneous',
 ]
 
-interface RecordTransactionModalProps {
-  onClose: () => void
+export interface RecordTransactionModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  todayIso?: string
   onSuccess: (newEntry: {
     _id: string
     transactionDate: string
@@ -38,21 +44,53 @@ interface RecordTransactionModalProps {
   }) => void
 }
 
-export default function RecordTransactionModal({ onClose, onSuccess }: RecordTransactionModalProps) {
-  const [transactionDate, setTransactionDate] = useState(
-    new Date().toISOString().split('T')[0]
-  )
+export default function RecordTransactionModal({
+  open,
+  onOpenChange,
+  todayIso,
+  onSuccess,
+}: RecordTransactionModalProps) {
+  const defaultDate = todayIso || lagosDate()
+  const [transactionDate, setTransactionDate] = useState(defaultDate)
   const [type, setType] = useState<FinanceType>('Income')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<FinanceCategory>('Tithe')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const dateInputRef = useRef<HTMLInputElement>(null)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      setFormError(null)
+    }
+  }, [open])
+
+  const resetForm = () => {
+    setTransactionDate(todayIso || lagosDate())
+    setType('Income')
+    setAmount('')
+    setCategory('Tithe')
+    setDescription('')
+    setFormError(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError(null)
+
+    if (!transactionDate || !/^\d{4}-\d{2}-\d{2}$/.test(transactionDate)) {
+      setFormError('Please select a valid transaction date.')
+      dateInputRef.current?.focus()
+      return
+    }
+
     const numericAmount = parseFloat(amount)
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      toast.error('Please enter a valid positive amount.')
+      setFormError('Please enter a valid positive amount in Naira.')
+      amountInputRef.current?.focus()
       return
     }
 
@@ -67,7 +105,7 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
       })
 
       if (res.success && res.id) {
-        toast.success('Transaction recorded successfully.')
+        toastSuccess('Transaction recorded successfully.')
         onSuccess({
           _id: res.id,
           transactionDate,
@@ -76,128 +114,177 @@ export default function RecordTransactionModal({ onClose, onSuccess }: RecordTra
           category,
           description: description.trim() || undefined,
         })
+        resetForm()
       } else {
-        toast.error(res.error || 'Failed to save transaction.')
+        const message = res.error || 'Failed to save transaction.'
+        setFormError(message)
+        toastError(message)
       }
     } catch {
-      toast.error('An unexpected error occurred.')
+      const message = 'An unexpected error occurred while saving the transaction.'
+      setFormError(message)
+      toastError(message)
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-2xl bg-background p-6 shadow-xl space-y-5 animate-in fade-in-0 zoom-in-95">
-        <div className="flex items-center justify-between pb-3">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <PlusCircle className="h-5 w-5 shrink-0 text-primary" />
-            Record Transaction
-          </h2>
-          <button
+    <RecordSheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!submitting) onOpenChange(next)
+      }}
+      side="right"
+      className="[&>button]:h-11 [&>button]:w-11"
+      title="Record transaction"
+      description="Add an inflow or disbursement entry to the fellowship finance ledger."
+      footer={
+        <div className="flex w-full items-center gap-2 sm:justify-end">
+          <Button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+            className="min-h-11 flex-1 sm:flex-none"
           >
-            <X className="h-5 w-5 shrink-0" />
-          </button>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="record-transaction-form"
+            disabled={submitting}
+            aria-busy={submitting || undefined}
+            className="min-h-11 flex-1 font-semibold sm:flex-none"
+          >
+            {submitting ? (
+              <>
+                <Loader2
+                  className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+                <span>Saving…</span>
+              </>
+            ) : (
+              <span>Save transaction</span>
+            )}
+          </Button>
         </div>
+      }
+    >
+      <form
+        id="record-transaction-form"
+        onSubmit={handleSubmit}
+        className="space-y-5"
+        noValidate
+      >
+        {formError && (
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-[var(--radius-control)] bg-destructive/10 px-3.5 py-3 text-sm text-destructive"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{formError}</span>
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase text-muted-foreground mb-1">
-                Date
-              </label>
-              <Input
-                type="date"
-                required
-                value={transactionDate}
-                onChange={(e) => setTransactionDate(e.target.value)}
-                className="bg-card"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase text-muted-foreground mb-1">
-                Type
-              </label>
-              <Select value={type} onValueChange={(val) => setType(val as FinanceType)}>
-                <SelectTrigger className="bg-card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Income">Income (+)</SelectItem>
-                  <SelectItem value="Expense">Expense (-)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="tx-date" className="text-sm font-medium text-foreground">
+              Transaction date
+            </Label>
+            <Input
+              ref={dateInputRef}
+              id="tx-date"
+              name="transactionDate"
+              type="date"
+              required
+              value={transactionDate}
+              onChange={(e) => {
+                setTransactionDate(e.target.value)
+                setFormError(null)
+              }}
+            />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-muted-foreground mb-1">
-              Category
-            </label>
-            <Select value={category} onValueChange={(val) => setCategory(val as FinanceCategory)}>
-              <SelectTrigger className="bg-card">
-                <SelectValue />
+          <div className="space-y-2">
+            <Label htmlFor="tx-type" className="text-sm font-medium text-foreground">
+              Type
+            </Label>
+            <Select
+              value={type}
+              onValueChange={(val) => setType(val as FinanceType)}
+            >
+              <SelectTrigger id="tx-type" aria-label="Transaction type">
+                <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
+                <SelectItem value="Income">Income (+)</SelectItem>
+                <SelectItem value="Expense">Expense (-)</SelectItem>
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-muted-foreground mb-1">
-              Amount (NGN)
-            </label>
-            <Input
-              type="number"
-              step="any"
-              min="1"
-              required
-              placeholder="e.g. 50000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="bg-card font-mono"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="tx-category" className="text-sm font-medium text-foreground">
+            Category
+          </Label>
+          <Select
+            value={category}
+            onValueChange={(val) => setCategory(val as FinanceCategory)}
+          >
+            <SelectTrigger id="tx-category" aria-label="Transaction category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-muted-foreground mb-1">
-              Description / Notes (Optional)
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g. Sunday Service thanksgiving offering"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-card"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="tx-amount" className="text-sm font-medium text-foreground">
+            Amount (NGN)
+          </Label>
+          <Input
+            ref={amountInputRef}
+            id="tx-amount"
+            name="amount"
+            type="number"
+            step="any"
+            min="1"
+            inputMode="decimal"
+            required
+            placeholder="e.g. 50000"
+            value={amount}
+            onChange={(e) => {
+              setAmount(e.target.value)
+              setFormError(null)
+            }}
+            className="font-sans text-lg font-semibold tabular-nums md:text-base"
+          />
+        </div>
 
-          <div className="flex justify-end gap-2.5 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground">
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Transaction'
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="space-y-2">
+          <Label htmlFor="tx-description" className="text-sm font-medium text-foreground">
+            Description{' '}
+            <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            id="tx-description"
+            name="description"
+            type="text"
+            placeholder="e.g. Sunday service thanksgiving offering"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+      </form>
+    </RecordSheet>
   )
 }

@@ -1,10 +1,39 @@
 'use client'
 
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
+import {
+  BookOpen,
+  Calendar,
+  Clock,
+  Edit,
+  Layers,
+  LayoutGrid,
+  List,
+  Pause,
+  Play,
+  Plus,
+  Radio,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react'
+import type { SermonVault } from '@/types'
+import { deleteSermon } from '@/app/actions/sermon-management-actions'
+import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
 import { Button } from '@/components/dashboard/ui/button'
-import { Input } from '@/components/dashboard/ui/input'
-import { Badge } from '@/components/dashboard/ui/badge'
-import { Card, CardContent } from '@/components/dashboard/ui/card'
+import { ConfirmDialog } from '@/components/dashboard/ui/confirm-dialog'
+import { DataToolbar, type ActiveFilterChip } from '@/components/dashboard/ui/data-toolbar'
+import { KpiStrip } from '@/components/dashboard/ui/kpi-strip'
+import { PageHeader } from '@/components/dashboard/ui/page-header'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/dashboard/ui/select'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
 import {
   Table,
   TableBody,
@@ -13,74 +42,55 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/dashboard/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/dashboard/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/dashboard/ui/dialog'
-import {
-  Search,
-  Plus,
-  Play,
-  Pause,
-  Calendar,
-  BookOpen,
-  Clock,
-  Edit,
-  Trash2,
-  Radio,
-  RefreshCw,
-  Sparkles,
-  Layers,
-  LayoutGrid,
-  List,
-  Loader2,
-  X,
-} from 'lucide-react'
 import { SpotifyIcon, YouTubeIcon } from '@/components/ui/PlatformIcons'
-import SyncSermonsButton from '@/components/dashboard/shell/SyncSermonsButton'
-import SermonModal from './SermonModal'
-import { deleteSermon } from '@/app/actions/sermon-management-actions'
 import { toast } from 'sonner'
-import type { SermonVault } from '@/types'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { formatCount, formatDate, toDateTimeAttr } from '@/lib/dashboard/format'
+import { toastError, toastSuccess } from '@/lib/dashboard/toast'
+import SermonModal from './SermonModal'
 
 interface SermonsClientProps {
   initialSermons: SermonVault[]
+  today?: string
 }
 
-export default function SermonsClient({ initialSermons }: SermonsClientProps) {
+type OriginFilter = 'all' | 'synced' | 'manual'
+
+function isValidIso(dateStr?: string): dateStr is string {
+  if (!dateStr) return false
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return true
+  return !Number.isNaN(new Date(dateStr).getTime())
+}
+
+function safeFormatDate(dateStr?: string): string {
+  if (!isValidIso(dateStr)) return dateStr || 'Date unavailable'
+  return formatDate(dateStr)
+}
+
+export default function SermonsClient({
+  initialSermons,
+  today,
+}: SermonsClientProps) {
   const [sermons, setSermons] = useState<SermonVault[]>(initialSermons)
   const [search, setSearch] = useState('')
   const [topicFilter, setTopicFilter] = useState('all')
-  const [originFilter, setOriginFilter] = useState<'all' | 'synced' | 'manual'>('all')
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
+  const [originFilter, setOriginFilter] = useState<OriginFilter>('all')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
 
-  // Modal states
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSermon, setEditingSermon] = useState<SermonVault | null>(null)
 
-  // Delete confirmation dialog
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Audio preview player state
   const [playingSermonId, setPlayingSermonId] = useState<string | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [audioTitle, setAudioTitle] = useState('')
   const [audioPreacher, setAudioPreacher] = useState('')
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Derive unique topics
+  const eyebrowDate = today || formatDate(lagosDate())
+
   const allTopics = useMemo(() => {
     const set = new Set<string>()
     sermons.forEach((s) => {
@@ -91,13 +101,17 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
     return Array.from(set).sort()
   }, [sermons])
 
-  // Stats
   const totalCount = sermons.length
-  const autoSyncedCount = useMemo(() => sermons.filter((s) => s.isAutoSynced).length, [sermons])
+  const autoSyncedCount = useMemo(
+    () => sermons.filter((s) => s.isAutoSynced).length,
+    [sermons]
+  )
   const manualCount = totalCount - autoSyncedCount
-  const uniquePreachers = useMemo(() => new Set(sermons.map((s) => s.preacher).filter(Boolean)).size, [sermons])
+  const uniquePreachers = useMemo(
+    () => new Set(sermons.map((s) => s.preacher).filter(Boolean)).size,
+    [sermons]
+  )
 
-  // Filtered sermons
   const filteredSermons = useMemo(() => {
     const query = search.trim().toLowerCase()
     return sermons.filter((s) => {
@@ -107,21 +121,57 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       const seriesMatch = (s.series || '').toLowerCase().includes(query)
       const topicMatch = s.topics?.some((t) => t.toLowerCase().includes(query)) ?? false
 
-      const matchesSearch = !query || titleMatch || preacherMatch || scriptureMatch || seriesMatch || topicMatch
-      const matchesTopic = topicFilter === 'all' || (s.topics && s.topics.includes(topicFilter))
+      const matchesSearch =
+        !query ||
+        titleMatch ||
+        preacherMatch ||
+        scriptureMatch ||
+        seriesMatch ||
+        topicMatch
+      const matchesTopic =
+        topicFilter === 'all' || (s.topics && s.topics.includes(topicFilter))
       const matchesOrigin =
         originFilter === 'all' ||
-        (originFilter === 'synced' && s.isAutoSynced) ||
+        (originFilter === 'synced' && Boolean(s.isAutoSynced)) ||
         (originFilter === 'manual' && !s.isAutoSynced)
 
       return matchesSearch && matchesTopic && matchesOrigin
     })
   }, [sermons, search, topicFilter, originFilter])
 
-  // Audio player handler
+  const hasActiveFilters = Boolean(
+    search.trim() || topicFilter !== 'all' || originFilter !== 'all'
+  )
+
+  const handleResetFilters = () => {
+    setSearch('')
+    setTopicFilter('all')
+    setOriginFilter('all')
+  }
+
+  const activeFilterChips: ActiveFilterChip[] = useMemo(() => {
+    const chips: ActiveFilterChip[] = []
+    if (topicFilter !== 'all') {
+      chips.push({
+        id: 'topic',
+        label: 'Topic',
+        value: topicFilter,
+        onRemove: () => setTopicFilter('all'),
+      })
+    }
+    if (originFilter !== 'all') {
+      chips.push({
+        id: 'origin',
+        label: 'Source',
+        value: originFilter === 'synced' ? 'Auto-Synced (RSS)' : 'Curated (Manual)',
+        onRemove: () => setOriginFilter('all'),
+      })
+    }
+    return chips
+  }, [topicFilter, originFilter])
+
   const handleToggleAudio = (sermon: SermonVault) => {
     if (playingSermonId === sermon._id) {
-      // Toggle pause/play
       if (audioRef.current) {
         if (audioRef.current.paused) {
           audioRef.current.play()
@@ -133,23 +183,12 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       return
     }
 
-    if (sermon.mediaUrl) {
-      setAudioUrl(sermon.mediaUrl)
-      setAudioTitle(sermon.title)
-      setAudioPreacher(sermon.preacher)
-      setPlayingSermonId(sermon._id)
-      setTimeout(() => {
-        audioRef.current?.play().catch((err) => {
-          console.warn('[AudioPlayer] Autoplay prevented:', err)
-          toast.info('Click play in audio player bar to begin listening.')
-        })
-      }, 50)
-    } else if (sermon.spotifyUrl) {
-      window.open(sermon.spotifyUrl, '_blank')
+    if (sermon.spotifyUrl) {
+      window.open(sermon.spotifyUrl, '_blank', 'noopener,noreferrer')
     } else if (sermon.youtubeUrl) {
-      window.open(sermon.youtubeUrl, '_blank')
+      window.open(sermon.youtubeUrl, '_blank', 'noopener,noreferrer')
     } else {
-      toast.info('No audio stream or platform URL available for this sermon.')
+      toast.info('No platform URL available for this sermon.')
     }
   }
 
@@ -162,7 +201,6 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
     setAudioUrl(null)
   }
 
-  // Create & Edit modal
   const handleOpenCreate = () => {
     setEditingSermon(null)
     setModalOpen(true)
@@ -185,14 +223,13 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
     })
   }
 
-  // Delete action
   const confirmDeleteSermon = async () => {
     if (!deletingId) return
     setIsDeleting(true)
     try {
       const res = await deleteSermon(deletingId)
       if (res.success) {
-        toast.success('Sermon successfully removed from vault.')
+        toastSuccess('Sermon successfully removed from vault.')
         if (res.warning) toast.info(res.warning)
         setSermons((prev) => prev.filter((s) => s._id !== deletingId))
         if (playingSermonId === deletingId) {
@@ -200,10 +237,10 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
         }
         setDeletingId(null)
       } else {
-        toast.error(res.error || 'Failed to delete sermon.')
+        toastError(res.error || 'Failed to delete sermon.')
       }
     } catch {
-      toast.error('Unexpected error while deleting sermon.')
+      toastError('Unexpected error while deleting sermon.')
     } finally {
       setIsDeleting(false)
     }
@@ -211,252 +248,503 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
   const sermonToDelete = sermons.find((s) => s._id === deletingId)
 
+  const renderCardGrid = (className?: string) => (
+    <ul className={className ?? 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'}>
+      {filteredSermons.map((sermon) => {
+        const isPlaying = playingSermonId === sermon._id
+        const validDate = isValidIso(sermon.datePreached)
+
+        return (
+          <li key={sermon._id}>
+            <article className="flex h-full flex-col justify-between gap-4 rounded-[var(--radius-card)] bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="space-y-3">
+                {/* Top row: source badge + date */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {sermon.isAutoSynced ? (
+                    <StatusBadge
+                      variant="success"
+                      icon={<RefreshCw className="h-3.5 w-3.5" />}
+                    >
+                      Auto-Synced (RSS)
+                    </StatusBadge>
+                  ) : (
+                    <StatusBadge
+                      variant="primary"
+                      icon={<Sparkles className="h-3.5 w-3.5" />}
+                    >
+                      Curated
+                    </StatusBadge>
+                  )}
+
+                  <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground tabular-nums">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {validDate ? (
+                      <time dateTime={toDateTimeAttr(sermon.datePreached)}>
+                        {formatDate(sermon.datePreached)}
+                      </time>
+                    ) : (
+                      <span>{safeFormatDate(sermon.datePreached)}</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Title and Preacher (Work Sans, never Belleza on cards) */}
+                <div>
+                  <h2 className="line-clamp-2 font-sans text-base font-semibold leading-snug text-foreground">
+                    {sermon.title}
+                  </h2>
+                  <p className="mt-0.5 text-[13px] text-muted-foreground">
+                    {sermon.preacher}
+                  </p>
+                </div>
+
+                {/* Scripture, Series & Duration */}
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <span className="inline-flex items-center rounded-[var(--radius-control)] bg-surface-raised px-2.5 py-1 text-[13px] font-medium text-foreground">
+                    {sermon.scriptureReference}
+                  </span>
+                  {sermon.series && (
+                    <StatusBadge variant="neutral">{sermon.series}</StatusBadge>
+                  )}
+                  {sermon.duration && (
+                    <span className="ml-auto inline-flex items-center gap-1 font-sans text-[13px] text-muted-foreground tabular-nums">
+                      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span>{sermon.duration}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Topics chips */}
+                {sermon.topics && sermon.topics.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {sermon.topics.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center rounded-[var(--radius-pill)] bg-primary/10 px-2.5 py-0.5 text-[13px] font-medium text-accent-foreground dark:text-primary"
+                      >
+                        #{t}
+                      </span>
+                    ))}
+                    {sermon.topics.length > 3 && (
+                      <span className="self-center text-[13px] text-muted-foreground">
+                        +{formatCount(sermon.topics.length - 3)} more
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Audio Test & Actions */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant={isPlaying ? 'default' : 'outline'}
+                    onClick={() => handleToggleAudio(sermon)}
+                    className="min-h-11 gap-1.5 px-3.5 md:min-h-10"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause className="h-4 w-4 shrink-0 fill-current" aria-hidden="true" />
+                        <span>Playing</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 shrink-0 fill-current" aria-hidden="true" />
+                        <span>Test Audio</span>
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {sermon.spotifyUrl && (
+                      <a
+                        href={sermon.spotifyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Listen to ${sermon.title} on Spotify`}
+                        title="Open Spotify"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground transition-colors hover:bg-success/10 hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10"
+                      >
+                        <SpotifyIcon className="h-4 w-4 shrink-0" />
+                      </a>
+                    )}
+                    {sermon.youtubeUrl && (
+                      <a
+                        href={sermon.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Watch ${sermon.title} on YouTube`}
+                        title="Open YouTube"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-control)] text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10"
+                      >
+                        <YouTubeIcon className="h-4 w-4 shrink-0" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => handleOpenEdit(sermon)}
+                    aria-label={`Edit ${sermon.title}`}
+                    className="min-h-11 gap-1.5 px-3 text-muted-foreground hover:text-foreground md:min-h-10"
+                  >
+                    <Edit className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>Edit</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setDeletingId(sermon._id)}
+                    aria-label={`Delete ${sermon.title}`}
+                    className="min-h-11 gap-1.5 px-3 text-destructive hover:bg-destructive/10 hover:text-destructive md:min-h-10"
+                  >
+                    <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>Delete</span>
+                  </Button>
+                </div>
+              </div>
+            </article>
+          </li>
+        )
+      })}
+    </ul>
+  )
+
   return (
     <div className="space-y-6">
-      {/* Media Management Desk Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Sermons
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Publish and manage service recordings.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <SyncSermonsButton variant="button" />
-          <Button onClick={handleOpenCreate} className="min-h-[44px] px-4 rounded-xl gap-2 font-semibold text-xs sm:text-sm shadow-xs">
-            <Plus className="h-4 w-4 shrink-0" />
-            <span>New Sermon</span>
+      <PageHeader
+        eyebrow={eyebrowDate}
+        title="Sermons"
+        description="Publish and manage service recordings."
+        secondaryActions={
+          <SyncSermonsButton
+            variant="button"
+            className="min-h-11 px-4 md:min-h-10"
+          />
+        }
+        primaryAction={
+          <Button
+            type="button"
+            onClick={handleOpenCreate}
+            className="min-h-11 gap-2 px-4 md:min-h-10"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>New sermon</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* KPI Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
-          <CardContent className="p-4 flex flex-col justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Total Messages
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif">
-                {totalCount}
-              </span>
-              <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Strip — Work Sans tabular-nums, semantic tokens */}
+      <KpiStrip
+        ariaLabel="Sermon vault summary"
+        items={[
+          {
+            id: 'total-messages',
+            label: 'Total messages',
+            value: formatCount(totalCount),
+            rawValue: totalCount,
+            icon: <BookOpen className="h-4 w-4" />,
+            tone: 'neutral',
+            active: originFilter === 'all',
+            onClick: () => setOriginFilter('all'),
+          },
+          {
+            id: 'auto-synced',
+            label: 'Auto-synced (RSS)',
+            value: formatCount(autoSyncedCount),
+            rawValue: autoSyncedCount,
+            icon: <RefreshCw className="h-4 w-4" />,
+            tone: 'success',
+            active: originFilter === 'synced',
+            onClick: () =>
+              setOriginFilter((prev) => (prev === 'synced' ? 'all' : 'synced')),
+          },
+          {
+            id: 'manually-curated',
+            label: 'Manually curated',
+            value: formatCount(manualCount),
+            rawValue: manualCount,
+            icon: <Sparkles className="h-4 w-4" />,
+            tone: 'primary',
+            active: originFilter === 'manual',
+            onClick: () =>
+              setOriginFilter((prev) => (prev === 'manual' ? 'all' : 'manual')),
+          },
+          {
+            id: 'ministers',
+            label: 'Ministers / speakers',
+            value: formatCount(uniquePreachers),
+            rawValue: uniquePreachers,
+            icon: <Layers className="h-4 w-4" />,
+            tone: 'neutral',
+          },
+        ]}
+      />
 
-        <Card>
-          <CardContent className="p-4 flex flex-col justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Auto-Synced (RSS)
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-serif">
-                {autoSyncedCount}
-              </span>
-              <RefreshCw className="h-4 w-4 shrink-0 text-emerald-500/80" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 flex flex-col justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Manually Curated
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-blue-600 dark:text-blue-400 font-serif">
-                {manualCount}
-              </span>
-              <Sparkles className="h-4 w-4 shrink-0 text-blue-500/80" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 flex flex-col justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Ministers / Speakers
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-serif">
-                {uniquePreachers}
-              </span>
-              <Layers className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card p-3 rounded-xl shadow-sm">
-        <div className="flex flex-1 flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-          {/* Search Box */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title, minister, scripture, series, topic..."
-              className="pl-9 h-9 bg-background"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      {/* Search, Topic/Origin Filters & View Mode Switch */}
+      <DataToolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchLabel="Search sermons"
+        searchPlaceholder="Search by title, minister, scripture, series, or topic…"
+        activeFilterCount={activeFilterChips.length}
+        activeFilters={activeFilterChips}
+        onResetFilters={handleResetFilters}
+        filterSheetTitle="Filter sermons"
+        filterSheetDescription="Narrow recordings by sermon topic or publishing source."
+        meta={`${formatCount(filteredSermons.length)} ${filteredSermons.length === 1 ? 'sermon' : 'sermons'}`}
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={topicFilter} onValueChange={setTopicFilter}>
+              <SelectTrigger
+                aria-label="Filter sermons by topic"
+                className="w-[175px] bg-card"
               >
-                <X className="h-3.5 w-3.5 shrink-0" />
-              </button>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Topics</SelectItem>
+                {allTopics.map((topic) => (
+                  <SelectItem key={topic} value={topic}>
+                    {topic}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={originFilter}
+              onValueChange={(val) => setOriginFilter(val as OriginFilter)}
+            >
+              <SelectTrigger
+                aria-label="Filter sermons by source"
+                className="w-[180px] bg-card"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="synced">Auto-Synced (RSS)</SelectItem>
+                <SelectItem value="manual">Curated (Manual)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleResetFilters}
+                className="min-h-11 px-3 text-sm text-muted-foreground hover:text-foreground md:min-h-10"
+              >
+                Reset
+              </Button>
             )}
           </div>
+        }
+        mobileFilters={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label
+                htmlFor="mobile-sermon-topic"
+                className="block text-[13px] font-semibold text-foreground"
+              >
+                Topic
+              </label>
+              <Select value={topicFilter} onValueChange={setTopicFilter}>
+                <SelectTrigger
+                  id="mobile-sermon-topic"
+                  aria-label="Filter sermons by topic"
+                  className="w-full bg-background"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Topics</SelectItem>
+                  {allTopics.map((topic) => (
+                    <SelectItem key={topic} value={topic}>
+                      {topic}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Topic Filter */}
-          <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="w-full sm:w-[170px] h-9 bg-background">
-              <SelectValue placeholder="All Topics" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Topics</SelectItem>
-              {allTopics.map((topic) => (
-                <SelectItem key={topic} value={topic}>
-                  {topic}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Origin Filter */}
-          <Select
-            value={originFilter}
-            onValueChange={(val) => setOriginFilter(val as 'all' | 'synced' | 'manual')}
+            <div className="space-y-2">
+              <label
+                htmlFor="mobile-sermon-origin"
+                className="block text-[13px] font-semibold text-foreground"
+              >
+                Source
+              </label>
+              <Select
+                value={originFilter}
+                onValueChange={(val) => setOriginFilter(val as OriginFilter)}
+              >
+                <SelectTrigger
+                  id="mobile-sermon-origin"
+                  aria-label="Filter sermons by source"
+                  className="w-full bg-background"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="synced">Auto-Synced (RSS)</SelectItem>
+                  <SelectItem value="manual">Curated (Manual)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        }
+        actions={
+          <div
+            role="group"
+            aria-label="Display mode"
+            className="hidden items-center gap-1 rounded-[var(--radius-control)] bg-surface-raised p-1 md:inline-flex"
           >
-            <SelectTrigger className="w-full sm:w-[160px] h-9 bg-background">
-              <SelectValue placeholder="All Sources" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value="synced">Auto-Synced (RSS)</SelectItem>
-              <SelectItem value="manual">Curated (Manual)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* View Mode Toggle (Table vs Cards) */}
-        <div className="flex items-center gap-1 self-end sm:self-auto rounded-lg p-0.5 bg-muted/40">
-          <Button
-            type="button"
-            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-            className="h-8 px-2.5 text-xs gap-1"
-            aria-label="Table view"
-          >
-            <List className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden md:inline">Table</span>
-          </Button>
-          <Button
-            type="button"
-            variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('cards')}
-            className="h-8 px-2.5 text-xs gap-1"
-            aria-label="Cards view"
-          >
-            <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden md:inline">Cards</span>
-          </Button>
-        </div>
-      </div>
+            <Button
+              type="button"
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              onClick={() => setViewMode('table')}
+              aria-pressed={viewMode === 'table'}
+              aria-label="Table view"
+              className="h-10 gap-1.5 px-3 text-[13px]"
+            >
+              <List className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Table</span>
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              onClick={() => setViewMode('cards')}
+              aria-pressed={viewMode === 'cards'}
+              aria-label="Cards view"
+              className="h-10 gap-1.5 px-3 text-[13px]"
+            >
+              <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Cards</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* Sermons Display */}
       {filteredSermons.length === 0 ? (
-        <div className="rounded-2xl bg-card/60 p-10 text-center">
-          <Radio className="mx-auto h-10 w-10 shrink-0 text-muted-foreground/50 mb-3" />
-          <h3 className="text-base font-semibold text-foreground">No sermons found</h3>
-          <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-            {search || topicFilter !== 'all' || originFilter !== 'all'
+        <div
+          role="status"
+          className="flex flex-col items-center rounded-[var(--radius-card)] bg-card px-6 py-12 text-center shadow-sm"
+        >
+          <div
+            aria-hidden="true"
+            className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground"
+          >
+            <Radio className="h-6 w-6" />
+          </div>
+          <h2 className="font-sans text-lg font-semibold text-foreground [text-wrap:balance]">
+            No sermons found
+          </h2>
+          <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground [text-wrap:pretty]">
+            {hasActiveFilters
               ? 'No teachings matched your active filters. Try clearing your search or filter selections.'
-              : 'The Sermon Vault currently contains no sermons. Use "New Sermon" or "Sync Feeds" to populate.'}
+              : 'The Sermon Vault currently contains no sermons. Use "New sermon" or "Sync Feeds" to populate.'}
           </p>
-          {(search || topicFilter !== 'all' || originFilter !== 'all') && (
+          {hasActiveFilters && (
             <Button
+              type="button"
               variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearch('')
-                setTopicFilter('all')
-                setOriginFilter('all')
-              }}
-              className="mt-4"
+              onClick={handleResetFilters}
+              className="mt-5 min-h-11 px-5 md:min-h-10"
             >
-              Reset Filters
+              Reset filters
             </Button>
           )}
         </div>
       ) : viewMode === 'table' ? (
-        /* Desktop & Tablet Table View */
-        <div className="rounded-2xl bg-card shadow-sm">
-          <div className="overflow-x-auto">
-      <Table aria-label="Sermon vault records">
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="w-[110px]">Source</TableHead>
-                  <TableHead className="min-w-[220px]">Title &amp; Minister</TableHead>
-                  <TableHead className="min-w-[150px]">Scripture / Series</TableHead>
-                  <TableHead className="min-w-[120px]">Date &amp; Length</TableHead>
-                  <TableHead className="w-[120px] text-center">Audio Test</TableHead>
-                  <TableHead className="w-[90px] text-center">Links</TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+        <>
+          {/* Desktop Table View (default on md+) */}
+          <div className="hidden overflow-hidden rounded-[var(--radius-card)] bg-card shadow-sm md:block">
+            <Table>
+              <caption className="sr-only">
+                Sermon vault recordings, scripture references, audio streams, and actions
+              </caption>
+              <TableHeader sticky>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead sticky scope="col" className="w-[125px]">
+                    Source
+                  </TableHead>
+                  <TableHead sticky scope="col" className="min-w-[220px]">
+                    Title &amp; Minister
+                  </TableHead>
+                  <TableHead sticky scope="col" className="min-w-[165px]">
+                    Scripture / Series
+                  </TableHead>
+                  <TableHead sticky scope="col" className="min-w-[140px]">
+                    Date &amp; Length
+                  </TableHead>
+                  <TableHead sticky scope="col" className="w-[130px] text-center">
+                    Audio Test
+                  </TableHead>
+                  <TableHead sticky scope="col" className="w-[110px] text-center">
+                    Links
+                  </TableHead>
+                  <TableHead sticky scope="col" className="w-[110px] text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSermons.map((sermon) => {
                   const isPlaying = playingSermonId === sermon._id
+                  const validDate = isValidIso(sermon.datePreached)
+
                   return (
-                    <TableRow key={sermon._id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow
+                      key={sermon._id}
+                      className="transition-colors hover:bg-surface-raised/60"
+                    >
                       {/* Source Badge */}
                       <TableCell>
                         {sermon.isAutoSynced ? (
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 whitespace-nowrap"
+                          <StatusBadge
+                            variant="success"
+                            icon={<RefreshCw className="h-3.5 w-3.5" />}
                           >
-                            <RefreshCw className="h-3 w-3 shrink-0" />
                             RSS
-                          </Badge>
+                          </StatusBadge>
                         ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1 whitespace-nowrap"
+                          <StatusBadge
+                            variant="primary"
+                            icon={<Sparkles className="h-3.5 w-3.5" />}
                           >
-                            <Sparkles className="h-3 w-3 shrink-0" />
                             Curated
-                          </Badge>
+                          </StatusBadge>
                         )}
                       </TableCell>
 
                       {/* Title & Minister */}
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-foreground text-sm line-clamp-1">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="line-clamp-1 text-sm font-medium text-foreground">
                             {sermon.title}
                           </span>
-                          <span className="text-xs text-muted-foreground">{sermon.preacher}</span>
+                          <span className="text-[13px] text-muted-foreground">
+                            {sermon.preacher}
+                          </span>
                         </div>
                       </TableCell>
 
                       {/* Scripture & Series */}
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs font-mono font-medium text-foreground bg-muted px-1.5 py-0.5 rounded w-fit">
+                          <span className="w-fit rounded-[var(--radius-control)] bg-surface-raised px-2 py-0.5 text-[13px] font-medium text-foreground">
                             {sermon.scriptureReference}
                           </span>
                           {sermon.series && (
-                            <span className="text-[11px] text-muted-foreground line-clamp-1">
+                            <span className="line-clamp-1 text-[13px] text-muted-foreground">
                               Series: {sermon.series}
                             </span>
                           )}
@@ -465,55 +753,70 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
 
                       {/* Date & Duration */}
                       <TableCell>
-                        <div className="flex flex-col text-xs text-muted-foreground">
-                          <span>{sermon.datePreached}</span>
+                        <div className="flex flex-col gap-0.5 text-[13px] tabular-nums">
+                          {validDate ? (
+                            <time
+                              dateTime={toDateTimeAttr(sermon.datePreached)}
+                              className="text-foreground"
+                            >
+                              {formatDate(sermon.datePreached)}
+                            </time>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {safeFormatDate(sermon.datePreached)}
+                            </span>
+                          )}
                           {sermon.duration && (
-                            <span className="text-[11px] font-mono text-foreground/80">
+                            <span className="font-sans text-[13px] text-muted-foreground tabular-nums">
                               {sermon.duration}
                             </span>
                           )}
                         </div>
                       </TableCell>
 
-                      {/* Audio Test Button */}
+                      {/* Audio Test */}
                       <TableCell className="text-center">
                         <Button
-                          size="sm"
+                          type="button"
                           variant={isPlaying ? 'default' : 'outline'}
                           onClick={() => handleToggleAudio(sermon)}
-                          className="h-8 px-2.5 text-xs gap-1.5 font-medium"
+                          aria-label={
+                            isPlaying
+                              ? `Pause audio test for ${sermon.title}`
+                              : `Test audio for ${sermon.title}`
+                          }
                           title={
-                            sermon.mediaUrl
-                              ? 'Test live audio stream playback'
-                              : sermon.spotifyUrl || sermon.youtubeUrl
+                            sermon.spotifyUrl || sermon.youtubeUrl
                               ? 'Open platform link'
                               : 'No stream available'
                           }
+                          className="h-10 gap-1.5 px-3 text-[13px]"
                         >
                           {isPlaying ? (
                             <>
-                              <Pause className="h-3.5 w-3.5 shrink-0 fill-current" />
+                              <Pause className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
                               <span>Playing</span>
                             </>
                           ) : (
                             <>
-                              <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
+                              <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
                               <span>Test</span>
                             </>
                           )}
                         </Button>
                       </TableCell>
 
-                      {/* External Platform Icons */}
+                      {/* External Links */}
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                        <div className="inline-flex items-center justify-center gap-1 text-muted-foreground">
                           {sermon.spotifyUrl && (
                             <a
                               href={sermon.spotifyUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1 rounded hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                              aria-label={`Listen to ${sermon.title} on Spotify`}
                               title="Listen on Spotify"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-control)] transition-colors hover:bg-success/10 hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <SpotifyIcon className="h-4 w-4 shrink-0" />
                             </a>
@@ -523,38 +826,43 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
                               href={sermon.youtubeUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1 rounded hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              aria-label={`Watch ${sermon.title} on YouTube`}
                               title="Watch on YouTube"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-control)] transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <YouTubeIcon className="h-4 w-4 shrink-0" />
                             </a>
                           )}
                           {!sermon.spotifyUrl && !sermon.youtubeUrl && (
-                            <span className="text-xs text-muted-foreground/40">—</span>
+                            <span className="text-[13px] text-muted-foreground">—</span>
                           )}
                         </div>
                       </TableCell>
 
                       {/* Actions */}
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="inline-flex items-center justify-end gap-1">
                           <Button
+                            type="button"
                             size="icon"
                             variant="ghost"
                             onClick={() => handleOpenEdit(sermon)}
-                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                            aria-label={`Edit ${sermon.title}`}
                             title="Edit sermon record"
+                            className="h-10 w-10 text-muted-foreground hover:text-foreground"
                           >
-                            <Edit className="h-3.5 w-3.5 shrink-0" />
+                            <Edit className="h-4 w-4 shrink-0" aria-hidden="true" />
                           </Button>
                           <Button
+                            type="button"
                             size="icon"
                             variant="ghost"
                             onClick={() => setDeletingId(sermon._id)}
-                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+                            aria-label={`Delete ${sermon.title}`}
                             title="Delete sermon"
+                            className="h-10 w-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
-                            <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                            <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                           </Button>
                         </div>
                       </TableCell>
@@ -564,187 +872,49 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
               </TableBody>
             </Table>
           </div>
-        </div>
+
+          {/* Mobile Card Fallback (< md) */}
+          {renderCardGrid('grid grid-cols-1 gap-4 md:hidden')}
+        </>
       ) : (
-        /* Mobile-First Cards Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredSermons.map((sermon) => {
-            const isPlaying = playingSermonId === sermon._id
-            return (
-              <Card key={sermon._id} className="flex flex-col justify-between transition-shadow hover:shadow-md">
-                <CardContent className="p-4 space-y-3">
-                  {/* Top row: badge + date */}
-                  <div className="flex items-center justify-between gap-2">
-                    {sermon.isAutoSynced ? (
-                      <Badge
-                        variant="outline"
-                        className="text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1"
-                      >
-                        <RefreshCw className="h-3 w-3 shrink-0" />
-                        Auto-Synced (RSS)
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-[11px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 gap-1"
-                      >
-                        <Sparkles className="h-3 w-3 shrink-0" />
-                        Curated
-                      </Badge>
-                    )}
-
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3 shrink-0" />
-                      {sermon.datePreached}
-                    </span>
-                  </div>
-
-                  {/* Title and Preacher */}
-                  <div>
-                    <h4 className="font-serif font-bold text-base text-foreground leading-snug line-clamp-2">
-                      {sermon.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">{sermon.preacher}</p>
-                  </div>
-
-                  {/* Scripture and Series badges */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-xs font-mono font-medium text-foreground bg-muted px-2 py-0.5 rounded">
-                      {sermon.scriptureReference}
-                    </span>
-                    {sermon.series && (
-                      <Badge variant="secondary" className="text-[11px] font-normal">
-                        {sermon.series}
-                      </Badge>
-                    )}
-                    {sermon.duration && (
-                      <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1 ml-auto">
-                        <Clock className="h-3 w-3 shrink-0" />
-                        {sermon.duration}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Topics chips */}
-                  {sermon.topics && sermon.topics.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {sermon.topics.slice(0, 3).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[10px] bg-primary/10 text-primary font-medium px-1.5 py-0.5 rounded"
-                        >
-                          #{t}
-                        </span>
-                      ))}
-                      {sermon.topics.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground self-center">
-                          +{sermon.topics.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Audio Test Bar & External Links */}
-                  <div className="flex items-center justify-between pt-3 mt-1">
-                    <Button
-                      size="sm"
-                      variant={isPlaying ? 'default' : 'outline'}
-                      onClick={() => handleToggleAudio(sermon)}
-                      className="h-8 px-2.5 text-xs gap-1.5 font-medium"
-                    >
-                      {isPlaying ? (
-                        <>
-                          <Pause className="h-3.5 w-3.5 shrink-0 fill-current" />
-                          <span>Playing</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
-                          <span>Test Audio</span>
-                        </>
-                      )}
-                    </Button>
-
-                    <div className="flex items-center gap-1.5">
-                      {sermon.spotifyUrl && (
-                        <a
-                          href={sermon.spotifyUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-                          title="Open Spotify"
-                        >
-                          <SpotifyIcon className="h-4 w-4 shrink-0" />
-                        </a>
-                      )}
-                      {sermon.youtubeUrl && (
-                        <a
-                          href={sermon.youtubeUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                          title="Open YouTube"
-                        >
-                          <YouTubeIcon className="h-4 w-4 shrink-0" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card actions: Edit / Delete */}
-                  <div className="flex items-center justify-end gap-1 pt-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleOpenEdit(sermon)}
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit className="h-3 w-3 shrink-0 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeletingId(sermon._id)}
-                      className="h-7 text-xs text-muted-foreground hover:text-red-600"
-                    >
-                      <Trash2 className="h-3 w-3 shrink-0 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+        renderCardGrid()
       )}
 
-      {/* Floating Audio Stream Player Bar (active when test audio is playing) */}
+      {/* Floating Audio Stream Player Bar */}
       {audioUrl && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-[460px] z-50 rounded-xl bg-background/95 backdrop-blur-md p-3.5 shadow-2xl animate-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between gap-2 mb-2">
+        <div
+          role="region"
+          aria-label="Audio stream player"
+          className="fixed bottom-4 left-4 right-4 z-50 rounded-[var(--radius-card)] border border-border/60 bg-card/95 p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-200 sm:left-auto sm:right-6 sm:w-[460px]"
+        >
+          <div className="mb-2.5 flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold tracking-wider uppercase text-primary font-mono block">
+              <span className="block text-xs font-semibold uppercase tracking-wider text-primary">
                 Audio Stream Test
               </span>
-              <p className="text-xs font-semibold text-foreground truncate">{audioTitle}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{audioPreacher}</p>
+              <p className="truncate text-sm font-semibold text-foreground">
+                {audioTitle}
+              </p>
+              <p className="truncate text-[13px] text-muted-foreground">
+                {audioPreacher}
+              </p>
             </div>
             <Button
+              type="button"
               size="icon"
               variant="ghost"
               onClick={handleStopAudio}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+              className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground md:h-10 md:w-10"
               aria-label="Close audio player"
             >
-              <X className="h-4 w-4 shrink-0" />
+              <X className="h-4 w-4 shrink-0" aria-hidden="true" />
             </Button>
           </div>
           <audio
             ref={audioRef}
             src={audioUrl}
             controls
-            className="w-full h-8 accent-primary focus:outline-none"
+            className="h-10 w-full accent-primary focus:outline-none"
             onEnded={() => setPlayingSermonId(null)}
           />
         </div>
@@ -759,50 +929,20 @@ export default function SermonsClient({ initialSermons }: SermonsClientProps) {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={Boolean(deletingId)} onOpenChange={(open) => !open && setDeletingId(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive flex items-center gap-2">
-              <Trash2 className="h-5 w-5 shrink-0" />
-              Delete Sermon Record
-            </DialogTitle>
-            <DialogDescription className="text-sm pt-2">
-              Are you sure you want to delete{' '}
-              <span className="font-semibold text-foreground">
-                &ldquo;{sermonToDelete?.title || 'this sermon'}&rdquo;
-              </span>
-              ?
-              <br />
-              <br />
-              This will permanently remove the message from the Sermon Vault in Sanity and unpublish it from the public website and homepage.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setDeletingId(null)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteSermon}
-              disabled={isDeleting}
-              className="gap-2"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Sermon'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={Boolean(deletingId)}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null)
+        }}
+        tone="destructive"
+        title={`Delete “${sermonToDelete?.title || 'this sermon'}”?`}
+        description="This permanently removes the message from the Sermon Vault in Sanity."
+        effectSummary="This sermon will be unpublished from the public website and homepage and can no longer be streamed."
+        confirmLabel="Delete sermon"
+        loading={isDeleting}
+        loadingLabel="Deleting…"
+        onConfirm={confirmDeleteSermon}
+      />
     </div>
   )
 }

@@ -24,7 +24,7 @@ test.describe('Settings access and tools', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await signInAs(page, 'team_lead')
 
-    await page.goto('/dashboard/settings')
+    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByText("You don't have access to Settings.")).toBeVisible({
       timeout: 20_000,

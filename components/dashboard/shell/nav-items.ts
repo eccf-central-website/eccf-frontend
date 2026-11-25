@@ -1,5 +1,5 @@
 /**
- * Dashboard navigation config — one entry per RBAC section, in sidebar order.
+ * Dashboard navigation config — one entry per RBAC section, grouped semantically.
  *
  * Pure data, imported by the client shell components for labels and icons.
  * The server layout filters by role with canAccessSection() and passes only
@@ -13,6 +13,7 @@ import {
   HeartHandshake,
   LayoutDashboard,
   Megaphone,
+  NotebookPen,
   Radio,
   Settings,
   UserPlus,
@@ -29,6 +30,20 @@ export interface NavItem {
   label: string
   href: string
   icon: LucideIcon | React.ComponentType<{ className?: string; size?: number | string }>
+}
+
+export type NavGroupId = 'today' | 'people' | 'care' | 'stewardship'
+
+export interface NavGroup {
+  id: NavGroupId
+  label: string
+  sections: readonly DashboardSection[]
+}
+
+export interface GroupedNavItems {
+  id: NavGroupId
+  label: string
+  items: NavItem[]
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -52,6 +67,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: Megaphone,
   },
   {
+    section: 'meetingMinutes',
+    label: 'Meeting Minutes',
+    href: SECTION_PATHS.meetingMinutes,
+    icon: NotebookPen,
+  },
+  {
     section: 'sermons',
     label: 'Sermons',
     href: SECTION_PATHS.sermons,
@@ -61,6 +82,27 @@ export const NAV_ITEMS: readonly NavItem[] = [
   // footer item and the pinned All-sheet entry, never in the flat list.
   { section: 'settings', label: 'Settings', href: SECTION_PATHS.settings, icon: Settings },
 ]
+
+export const NAV_GROUPS: readonly NavGroup[] = [
+  { id: 'today', label: 'Today', sections: ['overview'] },
+  { id: 'people', label: 'People', sections: ['executives', 'workers', 'firstTimers'] },
+  { id: 'care', label: 'Care & services', sections: ['attendance', 'welfare', 'prayerRequests'] },
+  {
+    id: 'stewardship',
+    label: 'Stewardship',
+    sections: ['finance', 'announcements', 'meetingMinutes', 'sermons'],
+  },
+]
+
+export function getGroupedNavItems(sections: readonly DashboardSection[]): GroupedNavItems[] {
+  return NAV_GROUPS.map((group) => ({
+    id: group.id,
+    label: group.label,
+    items: group.sections
+      .filter((section) => sections.includes(section))
+      .map((section) => navItemForSection(section)),
+  })).filter((group) => group.items.length > 0)
+}
 
 export function navItemForSection(section: DashboardSection): NavItem {
   return NAV_ITEMS.find((item) => item.section === section) ?? NAV_ITEMS[0]

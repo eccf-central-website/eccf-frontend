@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
-import { Button } from '@/components/dashboard/ui/button'
+import * as React from 'react'
 import { Download } from 'lucide-react'
 import type { FinanceRow } from '@/types'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { Button } from '@/components/dashboard/ui/button'
 
 interface FinanceExportButtonProps {
   entries: FinanceRow[]
@@ -13,7 +14,14 @@ export default function FinanceExportButton({ entries }: FinanceExportButtonProp
   const handleExport = () => {
     if (entries.length === 0) return
 
-    const header = ['Transaction Date', 'Type', 'Amount (NGN)', 'Category', 'Description', 'Flutterwave Ref']
+    const header = [
+      'Transaction Date',
+      'Type',
+      'Amount (NGN)',
+      'Category',
+      'Description',
+      'Flutterwave Ref',
+    ]
     const rows = entries.map((e) => [
       e.transactionDate,
       e.type,
@@ -31,7 +39,7 @@ export default function FinanceExportButton({ entries }: FinanceExportButtonProp
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `eccf_finance_ledger_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `eccf_finance_ledger_${lagosDate()}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -40,14 +48,14 @@ export default function FinanceExportButton({ entries }: FinanceExportButtonProp
 
   return (
     <Button
+      type="button"
       onClick={handleExport}
       variant="outline"
-      size="sm"
       disabled={entries.length === 0}
-      className="shadow-xs"
+      className="min-h-11 gap-2 px-4 md:min-h-10"
     >
-      <Download className="mr-1.5 h-4 w-4 shrink-0" />
-      Export CSV
+      <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>Export CSV</span>
     </Button>
   )
 }

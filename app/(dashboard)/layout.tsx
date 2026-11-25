@@ -44,7 +44,13 @@ export default function DashboardGroupLayout({
           </div>
           {/* Toasts portal to body, outside the themed root — they still
               pick up .dark because it is toggled on <html>. */}
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster
+            position="bottom-right"
+            offset={{ bottom: 24, right: 24 }}
+            mobileOffset={{ bottom: 76, left: 12, right: 12 }}
+            richColors
+            closeButton
+          />
         </TooltipProvider>
       </ThemeProvider>
     </>

@@ -25,8 +25,7 @@ export const SERMONS_QUERY = `
     spotifyEmbedId,
     youtubeVideoId,
     thumbnailUrl,
-    isAutoSynced,
-    mediaUrl
+    isAutoSynced
   }
 `
 /** Fetch latest 3 sermons for homepage */
@@ -66,8 +65,7 @@ export const SERMON_BY_ID_QUERY = `
     spotifyEmbedId,
     youtubeVideoId,
     thumbnailUrl,
-    isAutoSynced,
-    mediaUrl
+    isAutoSynced
   }
 `
 
@@ -262,8 +260,6 @@ export const SITE_SETTINGS_QUERY = `
     heroCredo,
     heroParagraph,
     liveStatusText,
-    heroPhoto,
-    "heroPhotoUrl": heroPhoto.asset->url,
     whoWeArePhotoMinister,
     "whoWeArePhotoMinisterUrl": whoWeArePhotoMinister.asset->url,
     whoWeArePhotoAudience,

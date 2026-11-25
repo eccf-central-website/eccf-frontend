@@ -55,6 +55,13 @@ const config: Config = {
           DEFAULT: "hsl(var(--success) / <alpha-value>)",
           foreground: "hsl(var(--success-foreground) / <alpha-value>)",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold) / <alpha-value>)",
+          foreground: "hsl(var(--gold-foreground) / <alpha-value>)",
+        },
+        surface: {
+          raised: "hsl(var(--surface-raised) / <alpha-value>)",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover) / <alpha-value>)",
           foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
@@ -71,6 +78,12 @@ const config: Config = {
           border: "hsl(var(--sidebar-border) / <alpha-value>)",
           ring: "hsl(var(--sidebar-ring) / <alpha-value>)",
         },
+      },
+      borderRadius: {
+        control: "var(--radius-control)",
+        card: "var(--radius-card)",
+        panel: "var(--radius-panel)",
+        pill: "var(--radius-pill)",
       },
       fontFamily: {
         sans: [

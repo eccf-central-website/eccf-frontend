@@ -25,6 +25,7 @@ export type DashboardSection =
   | 'welfare'
   | 'prayerRequests'
   | 'announcements'
+  | 'meetingMinutes'
   | 'sermons'
   | 'settings'
 
@@ -36,6 +37,8 @@ export type DashboardPermission =
   | 'sermons:sync'
   | 'sermons:manage'
   | 'announcements:manage'
+  | 'minutes:view'
+  | 'minutes:manage'
   | 'workers:import'
   | 'workers:delete'
   | 'settings:view'
@@ -145,6 +148,7 @@ export const SECTION_PATHS: Record<DashboardSection, string> = {
   welfare: '/dashboard/welfare',
   prayerRequests: '/dashboard/prayer-requests',
   announcements: '/dashboard/announcements',
+  meetingMinutes: '/dashboard/minutes',
   sermons: '/dashboard/sermons',
   settings: '/dashboard/settings',
 }
@@ -159,6 +163,7 @@ const SECTION_ACCESS: Record<DashboardSection, readonly WorkerRole[]> = {
   welfare: ['admin'],
   prayerRequests: ['admin'],
   announcements: ['admin', 'team_lead'],
+  meetingMinutes: ['admin', 'team_lead', 'finance', 'hall_rep'],
   sermons: ['admin', 'team_lead'],
   settings: ['admin'],
 }
@@ -172,6 +177,8 @@ const PERMISSIONS: Record<DashboardPermission, readonly WorkerRole[]> = {
   'sermons:sync': ['admin', 'team_lead'],
   'sermons:manage': ['admin', 'team_lead'],
   'announcements:manage': ['admin', 'team_lead'],
+  'minutes:view': ['admin', 'team_lead', 'finance', 'hall_rep'],
+  'minutes:manage': ['admin', 'team_lead'],
   'workers:import': ['admin'],
   'workers:delete': ['admin'],
   'settings:view': ['admin'],
@@ -269,6 +276,7 @@ export function isCSGBMember(
   } | null
 ): boolean {
   if (!session) return false
+  if (Boolean(session.access?.isCSGB)) return true
   if (session.access?.isPrayerCoordinator) return true
   if (session.role === 'admin') return true
   const position = (session.excoPosition || '').toLowerCase()
@@ -515,6 +523,12 @@ export function hasPermission(
   }
   if ((permission === 'welfare:create' || permission === 'welfare:resolve') && session) {
     return isWelfareTeamMember(session as unknown as LeaderPostContext)
+  }
+  if (permission === 'minutes:manage') {
+    return session ? isCSGBMember(session) : role === 'admin'
+  }
+  if (permission === 'minutes:view') {
+    return SECTION_ACCESS.meetingMinutes.includes(role)
   }
   return PERMISSIONS[permission].includes(role)
 }

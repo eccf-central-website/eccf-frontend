@@ -29,8 +29,6 @@ export interface SiteSettingsData {
   heroCredo?: string
   heroParagraph?: string
   heroTopPill?: string
-  heroPhoto?: unknown
-  heroPhotoUrl?: string
   heroCollagePhotos?: CollagePhotoItem[]
   whoWeArePhotoMinister?: unknown
   whoWeArePhotoMinisterUrl?: string
@@ -130,11 +128,6 @@ export default function HeroSection({ settings }: Props) {
           alt: item.alt || DEFAULT_COLLAGE[idx].alt,
         }))
       : DEFAULT_COLLAGE
-
-  const legacyPhoto = urlForImage(settings?.heroPhoto) || settings?.heroPhotoUrl
-  if (legacyPhoto && (!rawCollage || rawCollage.length < 5)) {
-    photos[3] = { src: legacyPhoto, alt: 'ECCF Fellowship Life' }
-  }
 
   // Ensure 5 distinct photos (no duplicate adjacent photos)
   if (photos[4] && photos[3] && photos[4].src === photos[3].src) {

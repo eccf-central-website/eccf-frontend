@@ -23,7 +23,10 @@ export default function PageHeaderSkeleton({
 }: PageHeaderSkeletonProps) {
   return (
     <LoadingRegion label={label} announce={announce} className={className}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        aria-hidden="true"
+        className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
         <div className="space-y-2">
           {/* Date eyebrow */}
           <Skeleton className="h-3.5 w-40 rounded-md" />
@@ -32,7 +35,7 @@ export default function PageHeaderSkeleton({
           {/* Description */}
           {description && <Skeleton className="h-4 w-80 max-w-full rounded-md" />}
         </div>
-        {action && <Skeleton className="h-11 w-full sm:w-44 shrink-0 rounded-xl" />}
+        {action && <Skeleton className="h-11 w-full shrink-0 rounded-xl sm:w-44" />}
       </div>
     </LoadingRegion>
   )

@@ -15,6 +15,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/dashboard/ui/sheet'
+import { ThemeToggle } from '@/components/dashboard/theme/ThemeToggle'
+import InstallPwaButton, { InstallPwaGuideDialog } from '@/components/dashboard/pwa/InstallPwaButton'
 import { cn } from '@/lib/utils'
 
 interface BottomNavProps {
@@ -52,7 +54,6 @@ function isItemActive(pathname: string | null, href: string): boolean {
   return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
 }
 
-
 export default function BottomNav({
   sections,
   role,
@@ -62,6 +63,10 @@ export default function BottomNav({
 }: BottomNavProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [installGuide, setInstallGuide] = useState<{ open: boolean; isIos: boolean }>({
+    open: false,
+    isIos: false,
+  })
 
   useEffect(() => {
     setOpen(false)
@@ -72,11 +77,11 @@ export default function BottomNav({
   const permittedItems = NAV_ITEMS.filter(
     (item) => item.section !== 'settings' && sections.includes(item.section)
   )
-  
+
   // Resolve 4 role-prioritised primary tabs that the user is permitted to view
   const rolePreferred = getRolePrimarySections(role, isPresident)
   const primaryKeys: DashboardSection[] = []
-  
+
   for (const key of rolePreferred) {
     if (sections.includes(key) && !primaryKeys.includes(key) && primaryKeys.length < 4) {
       primaryKeys.push(key)
@@ -129,7 +134,7 @@ export default function BottomNav({
                   aria-current={active ? 'page' : undefined}
                   className={cn(
                     'flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors [touch-action:manipulation]',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                     active
                       ? 'bg-transparent font-semibold text-foreground'
                       : 'font-medium text-muted-foreground hover:text-foreground'
@@ -139,7 +144,7 @@ export default function BottomNav({
                     <Icon
                       className={cn(
                         'h-5 w-5 shrink-0 transition-colors',
-                        active ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                        active ? 'text-primary' : 'text-muted-foreground'
                       )}
                       aria-hidden="true"
                     />
@@ -147,7 +152,7 @@ export default function BottomNav({
                       <span
                         aria-hidden="true"
                         title={countLabel}
-                        className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[9px] font-bold leading-none tabular-nums text-warning-foreground"
+                        className="absolute -right-2.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-semibold leading-none tabular-nums text-warning-foreground"
                       >
                         {count > 99 ? '99+' : count}
                       </span>
@@ -174,7 +179,7 @@ export default function BottomNav({
                   aria-expanded={open}
                   className={cn(
                     'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 px-1 py-1 text-xs transition-colors [touch-action:manipulation]',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                     allActive
                       ? 'bg-transparent font-semibold text-foreground'
                       : 'font-medium text-muted-foreground hover:text-foreground'
@@ -184,7 +189,7 @@ export default function BottomNav({
                     <LayoutGrid
                       className={cn(
                         'h-5 w-5 shrink-0',
-                        allActive ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                        allActive ? 'text-primary' : 'text-muted-foreground'
                       )}
                       aria-hidden="true"
                     />
@@ -202,18 +207,25 @@ export default function BottomNav({
                 side="bottom"
                 className="flex max-h-[90vh] flex-col rounded-t-3xl border-t border-border/50 bg-card px-4 pb-6 pt-3"
               >
-                <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden="true" />
+                <div
+                  className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30"
+                  aria-hidden="true"
+                />
                 <div className="mb-2 flex items-center justify-between px-2">
                   <SheetTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                     All Sections
                   </SheetTitle>
                   <SheetDescription className="sr-only">
-                    Complete list of permitted fellowship operational sections and administrative tools.
+                    Complete list of permitted fellowship operational sections and administrative
+                    tools.
                   </SheetDescription>
                 </div>
 
                 <div className="flex-1 overflow-y-auto overscroll-contain pr-1">
-                  <nav aria-label="All dashboard destinations" className="flex flex-col divide-y divide-border/30 py-1">
+                  <nav
+                    aria-label="All dashboard destinations"
+                    className="flex flex-col divide-y divide-border/30 py-1"
+                  >
                     {permittedItems.map((item) => {
                       const Icon = item.icon
                       const active = isItemActive(pathname, item.href)
@@ -229,7 +241,7 @@ export default function BottomNav({
                           onClick={() => setOpen(false)}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
-                            'flex h-11 items-center gap-3.5 rounded-xl px-3 text-sm font-medium transition-colors',
+                            'flex h-12 min-h-12 items-center gap-3.5 rounded-xl px-3 text-sm font-medium transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             active
                               ? 'bg-transparent font-semibold text-foreground'
@@ -239,7 +251,7 @@ export default function BottomNav({
                           <Icon
                             className={cn(
                               'h-5 w-5 shrink-0',
-                              active ? 'text-[#0095ff] dark:text-[#70a3ff]' : 'text-muted-foreground'
+                              active ? 'text-primary' : 'text-muted-foreground'
                             )}
                             aria-hidden="true"
                           />
@@ -248,13 +260,16 @@ export default function BottomNav({
                             <span
                               aria-hidden="true"
                               title={countLabel}
-                              className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warning px-1.5 text-[11px] font-semibold leading-none tabular-nums text-warning-foreground"
+                              className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-semibold leading-none tabular-nums text-warning-foreground"
                             >
                               {count > 99 ? '99+' : count}
                             </span>
                           )}
                           {count > 0 && <span className="sr-only">{countLabel}</span>}
-                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-muted-foreground/50"
+                            aria-hidden="true"
+                          />
                         </Link>
                       )
                     })}
@@ -264,9 +279,11 @@ export default function BottomNav({
                       <Link
                         href="/dashboard/settings"
                         onClick={() => setOpen(false)}
-                        aria-current={isItemActive(pathname, '/dashboard/settings') ? 'page' : undefined}
+                        aria-current={
+                          isItemActive(pathname, '/dashboard/settings') ? 'page' : undefined
+                        }
                         className={cn(
-                          'mt-2 flex h-11 items-center gap-3.5 rounded-xl bg-muted/20 px-3 text-sm font-medium transition-colors',
+                          'mt-2 flex h-12 min-h-12 items-center gap-3.5 rounded-xl bg-muted/20 px-3 text-sm font-medium transition-colors',
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isItemActive(pathname, '/dashboard/settings')
                             ? 'bg-muted/60 font-semibold text-foreground'
@@ -277,22 +294,43 @@ export default function BottomNav({
                           className={cn(
                             'h-5 w-5 shrink-0',
                             isItemActive(pathname, '/dashboard/settings')
-                              ? 'text-[#0095ff] dark:text-[#70a3ff]'
+                              ? 'text-primary'
                               : 'text-muted-foreground'
                           )}
                           aria-hidden="true"
                         />
                         <div className="flex flex-1 flex-col leading-tight">
                           <span>Settings</span>
-                          <span className="text-xs font-normal text-muted-foreground">Admin tools</span>
+                          <span className="text-[13px] font-normal text-muted-foreground">
+                            Admin tools
+                          </span>
                         </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0 text-muted-foreground/50"
+                          aria-hidden="true"
+                        />
                       </Link>
                     )}
                   </nav>
                 </div>
 
-                {actions && <div className="mt-3 flex justify-center pt-3">{actions}</div>}
+                <div className="mt-2 flex shrink-0 flex-col gap-2 border-t border-border/50 pt-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <InstallPwaButton
+                      variant="menu"
+                      className="min-h-11 flex-1 rounded-xl px-3 font-medium hover:bg-muted/50"
+                      onOpenGuide={(isIos) => {
+                        setOpen(false)
+                        setInstallGuide({ open: true, isIos })
+                      }}
+                    />
+                    <ThemeToggle
+                      className="ml-auto h-11 w-11 shrink-0 rounded-xl bg-muted/40 hover:bg-muted"
+                      alignTooltip="top"
+                    />
+                  </div>
+                  {actions && <div className="flex justify-center pt-1">{actions}</div>}
+                </div>
               </SheetContent>
             </Sheet>
           </li>
@@ -302,6 +340,11 @@ export default function BottomNav({
         className="h-14 shrink-0 sm:hidden"
         aria-hidden="true"
         style={{ height: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
+      />
+      <InstallPwaGuideDialog
+        open={installGuide.open}
+        onOpenChange={(nextOpen) => setInstallGuide((prev) => ({ ...prev, open: nextOpen }))}
+        isIos={installGuide.isIos}
       />
     </>
   )

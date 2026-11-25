@@ -69,7 +69,7 @@ export default function ErrorState({
     <div
       role="alert"
       className={cn(
-        'flex flex-col items-center rounded-xl border border-destructive/30 bg-card px-6 py-12 text-center sm:py-16',
+        'flex flex-col items-center rounded-2xl border-0 bg-card px-6 py-12 text-center shadow-sm sm:py-16',
         className
       )}
     >
@@ -82,24 +82,46 @@ export default function ErrorState({
       <Heading
         ref={headingRef}
         tabIndex={-1}
-        className="mt-4 rounded-sm font-serif text-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          'mt-4 rounded-sm text-foreground text-balance focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          Heading === 'h1'
+            ? 'font-heading text-2xl font-normal sm:text-3xl'
+            : 'font-sans text-lg font-semibold sm:text-xl'
+        )}
       >
         {title}
       </Heading>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground text-pretty">
+        {description}
+      </p>
       {digest && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Reference: <code className="select-all rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">{digest}</code>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Reference:{' '}
+          <code className="select-all rounded bg-muted px-2 py-0.5 font-mono text-[13px] text-foreground">
+            {digest}
+          </code>
         </p>
       )}
 
-      <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Button onClick={retry} disabled={isPending} className="h-10 px-5 focus-visible:ring-2">
-          {isPending ? <Loader2 aria-hidden="true" className="motion-safe:animate-spin" /> : <RotateCw aria-hidden="true" />}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Button
+          onClick={retry}
+          disabled={isPending}
+          className="h-auto min-h-11 px-5 py-2.5 focus-visible:ring-2"
+        >
+          {isPending ? (
+            <Loader2 aria-hidden="true" className="motion-safe:animate-spin" />
+          ) : (
+            <RotateCw aria-hidden="true" />
+          )}
           {isPending ? 'Retrying…' : 'Retry'}
         </Button>
         {backHref !== null && pathname !== backHref && (
-          <Button asChild variant="outline" className="h-10 px-5 focus-visible:ring-2">
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto min-h-11 px-5 py-2.5 focus-visible:ring-2"
+          >
             <Link href={backHref}>
               <ArrowLeft aria-hidden="true" />
               {backLabel}

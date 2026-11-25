@@ -26,14 +26,14 @@ export function ThemeToggle({ className, alignTooltip = 'bottom' }: ThemeToggleP
           onClick={toggleTheme}
           aria-label={label}
           className={cn(
-            'relative h-10 w-10 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring transition-colors',
+            'relative h-11 w-11 md:h-10 md:w-10 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring transition-colors',
             className
           )}
         >
           {isDark ? (
-            <Sun className="h-4 w-4 shrink-0 text-amber-400 transition-transform duration-200" aria-hidden="true" />
+            <Sun className="h-4 w-4 shrink-0 text-warning transition-transform duration-200" aria-hidden="true" />
           ) : (
-            <Moon className="h-4 w-4 shrink-0 text-slate-700 transition-transform duration-200" aria-hidden="true" />
+            <Moon className="h-4 w-4 shrink-0 text-foreground/80 transition-transform duration-200" aria-hidden="true" />
           )}
           <span className="sr-only">{label}</span>
         </Button>

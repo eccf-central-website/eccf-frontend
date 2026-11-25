@@ -34,7 +34,7 @@ function GallerySection({ title, note, children }: { title: string; note?: strin
   return (
     <section className="space-y-4">
       <div>
-        <h3 className="font-serif text-lg text-foreground">{title}</h3>
+        <h3 className="font-sans text-lg font-semibold text-foreground">{title}</h3>
         {note && <p className="text-sm text-muted-foreground">{note}</p>}
       </div>
       {children}
@@ -48,10 +48,10 @@ export default function UiStatesGalleryPage() {
   return (
     <PageContainer className="space-y-10">
       <div className="space-y-1">
-        <h2 className="font-serif text-2xl text-foreground">UI states gallery</h2>
+        <h2 className="font-heading text-2xl font-normal text-foreground">UI states gallery</h2>
         <p className="text-sm text-muted-foreground">
           Dev only. Every loading, empty, error and toast primitive from{' '}
-          <code className="font-mono text-xs">components/dashboard/states</code>.
+          <code className="font-mono text-[13px]">components/dashboard/states</code>.
         </p>
       </div>
 

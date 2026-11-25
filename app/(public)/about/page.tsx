@@ -186,8 +186,6 @@ export default async function AboutPage({
   const heroImage =
     urlForImage(aboutData?.heroPhoto) ||
     aboutData?.heroPhotoUrl ||
-    urlForImage(settings?.heroPhoto) ||
-    settings?.heroPhotoUrl ||
     '/gallery/gallery-1.jpg'
 
   const storyPhoto1 =

@@ -1,6 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { Loader2, Plus, Sparkles, X } from 'lucide-react'
+import type { SermonVault } from '@/types'
+import {
+  createSermon,
+  updateSermon,
+  type SermonInput,
+} from '@/app/actions/sermon-management-actions'
+import { Button } from '@/components/dashboard/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -9,13 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/dashboard/ui/dialog'
-import { Button } from '@/components/dashboard/ui/button'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
-import { createSermon, updateSermon, type SermonInput } from '@/app/actions/sermon-management-actions'
 import { toast } from 'sonner'
-import { Loader2, Plus, Sparkles, X } from 'lucide-react'
-import type { SermonVault } from '@/types'
+import { lagosDate } from '@/lib/dashboard/dates'
+import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 
 interface SermonModalProps {
   open: boolean
@@ -39,14 +45,12 @@ export default function SermonModal({
   const [series, setSeries] = useState('')
   const [topicInput, setTopicInput] = useState('')
   const [topics, setTopics] = useState<string[]>([])
-  const [mediaUrl, setMediaUrl] = useState('')
   const [duration, setDuration] = useState('')
   const [spotifyUrl, setSpotifyUrl] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Populate fields when editing or reset when creating
   useEffect(() => {
     if (sermon) {
       setTitle(sermon.title || '')
@@ -56,7 +60,6 @@ export default function SermonModal({
       setSeries(sermon.series || '')
       setTopics(sermon.topics || [])
       setTopicInput('')
-      setMediaUrl(sermon.mediaUrl || '')
       setDuration(sermon.duration || '')
       setSpotifyUrl(sermon.spotifyUrl || '')
       setYoutubeUrl(sermon.youtubeUrl || '')
@@ -64,12 +67,11 @@ export default function SermonModal({
     } else {
       setTitle('')
       setPreacher('')
-      setDatePreached(new Date().toISOString().split('T')[0])
+      setDatePreached(lagosDate())
       setScriptureReference('')
       setSeries('')
       setTopics([])
       setTopicInput('')
-      setMediaUrl('')
       setDuration('')
       setSpotifyUrl('')
       setYoutubeUrl('')
@@ -109,23 +111,22 @@ export default function SermonModal({
     const trimmedScripture = scriptureReference.trim()
 
     if (!trimmedTitle || trimmedTitle.length < 3) {
-      toast.error('Sermon title is required (at least 3 characters).')
+      toastError('Sermon title is required (at least 3 characters).')
       return
     }
     if (!trimmedPreacher) {
-      toast.error('Preacher name is required.')
+      toastError('Preacher name is required.')
       return
     }
     if (!datePreached) {
-      toast.error('Date preached is required.')
+      toastError('Date preached is required.')
       return
     }
     if (!trimmedScripture) {
-      toast.error('Scripture reference is required (e.g. Romans 8:28).')
+      toastError('Scripture reference is required (e.g. Romans 8:28).')
       return
     }
 
-    // Flush any pending text in topicInput
     let currentTopics = [...topics]
     if (topicInput.trim()) {
       const extra = topicInput
@@ -142,7 +143,6 @@ export default function SermonModal({
       scriptureReference: trimmedScripture,
       series: series.trim() || undefined,
       topics: currentTopics.length > 0 ? currentTopics : undefined,
-      mediaUrl: mediaUrl.trim() || undefined,
       duration: duration.trim() || undefined,
       spotifyUrl: spotifyUrl.trim() || undefined,
       youtubeUrl: youtubeUrl.trim() || undefined,
@@ -154,7 +154,7 @@ export default function SermonModal({
       if (isEditing && sermon?._id) {
         const res = await updateSermon(sermon._id, payload)
         if (res.success) {
-          toast.success('Sermon updated successfully.')
+          toastSuccess('Sermon updated successfully.')
           if (res.warning) toast.info(res.warning)
           onSuccess({
             ...sermon,
@@ -162,35 +162,40 @@ export default function SermonModal({
           })
           onOpenChange(false)
         } else {
-          toast.error(res.error || 'Failed to update sermon.')
+          toastError(res.error || 'Failed to update sermon.')
         }
       } else {
         const res = await createSermon(payload)
         if (res.success && res.sermon) {
-          toast.success('New sermon created in Sermon Vault.')
+          toastSuccess('New sermon created in Sermon Vault.')
           if (res.warning) toast.info(res.warning)
           onSuccess(res.sermon)
           onOpenChange(false)
         } else {
-          toast.error(res.error || 'Failed to create sermon.')
+          toastError(res.error || 'Failed to create sermon.')
         }
       }
     } catch {
-      toast.error('An unexpected error occurred while saving.')
+      toastError('An unexpected error occurred while saving.')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!submitting) onOpenChange(next)
+      }}
+    >
+      <DialogContent className="max-h-[90dvh] overflow-y-auto border-border/60 bg-card p-5 sm:max-w-2xl sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold font-serif">
-            <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-            {isEditing ? 'Edit Sermon Record' : 'Add New Sermon to Vault'}
+          <DialogTitle className="flex items-center gap-2 font-sans text-xl font-semibold text-foreground">
+            <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <span>{isEditing ? 'Edit Sermon Record' : 'Add New Sermon to Vault'}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+          <DialogDescription className="text-sm text-muted-foreground">
             {isEditing
               ? 'Update sermon details, scripture text, and streaming links in Sanity.'
               : 'Add a new teaching to the ECCF Sermon Vault. All updates propagate to the public site.'}
@@ -200,8 +205,8 @@ export default function SermonModal({
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {/* Title */}
           <div className="space-y-1.5">
-            <Label htmlFor="sermon-title" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-              Sermon Title <span className="text-red-500">*</span>
+            <Label htmlFor="sermon-title" className="text-sm font-semibold text-foreground">
+              Sermon Title <span aria-hidden="true" className="text-destructive">*</span>
             </Label>
             <Input
               id="sermon-title"
@@ -215,10 +220,10 @@ export default function SermonModal({
           </div>
 
           {/* Preacher & Date Preached */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-preacher" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Preacher <span className="text-red-500">*</span>
+              <Label htmlFor="sermon-preacher" className="text-sm font-semibold text-foreground">
+                Preacher <span aria-hidden="true" className="text-destructive">*</span>
               </Label>
               <Input
                 id="sermon-preacher"
@@ -231,8 +236,8 @@ export default function SermonModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-date" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Date Preached <span className="text-red-500">*</span>
+              <Label htmlFor="sermon-date" className="text-sm font-semibold text-foreground">
+                Date Preached <span aria-hidden="true" className="text-destructive">*</span>
               </Label>
               <Input
                 id="sermon-date"
@@ -247,10 +252,10 @@ export default function SermonModal({
           </div>
 
           {/* Scripture Reference & Series */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-scripture" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Scripture Reference <span className="text-red-500">*</span>
+              <Label htmlFor="sermon-scripture" className="text-sm font-semibold text-foreground">
+                Scripture Reference <span aria-hidden="true" className="text-destructive">*</span>
               </Label>
               <Input
                 id="sermon-scripture"
@@ -263,8 +268,11 @@ export default function SermonModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-series" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Series Name <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+              <Label htmlFor="sermon-series" className="text-sm font-semibold text-foreground">
+                Series Name{' '}
+                <span className="text-[13px] font-normal text-muted-foreground">
+                  (Optional)
+                </span>
               </Label>
               <Input
                 id="sermon-series"
@@ -279,87 +287,73 @@ export default function SermonModal({
 
           {/* Topics / Tags */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-foreground">
-              Topics / Tags <span className="text-xs text-muted-foreground font-normal">(Press Enter or Comma to add)</span>
+            <Label htmlFor="sermon-topics" className="text-sm font-semibold text-foreground">
+              Topics / Tags{' '}
+              <span className="text-[13px] font-normal text-muted-foreground">
+                (Press Enter or comma to add)
+              </span>
             </Label>
             <div className="flex gap-2">
               <Input
+                id="sermon-topics"
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyDown={handleKeyDownTopic}
-                placeholder="e.g. Faith, Grace, Holiness..."
+                placeholder="e.g. Faith, Grace, Holiness…"
                 disabled={submitting}
-                className="bg-background flex-1"
+                className="flex-1 bg-background"
               />
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
                 onClick={handleAddTopic}
                 disabled={submitting || !topicInput.trim()}
-                className="shrink-0"
+                className="min-h-11 shrink-0 gap-1.5 px-4 md:min-h-10"
               >
-                <Plus className="h-4 w-4 shrink-0 mr-1" />
-                Add
+                <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Add</span>
               </Button>
             </div>
             {topics.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
+              <div className="flex flex-wrap gap-1.5 pt-1.5">
                 {topics.map((t) => (
-                  <span
+                  <button
                     key={t}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary border border-primary/20"
+                    type="button"
+                    onClick={() => handleRemoveTopic(t)}
+                    aria-label={`Remove topic ${t}`}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-pill)] bg-primary/10 px-3 text-[13px] font-medium text-accent-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-primary"
                   >
-                    #{t}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTopic(t)}
-                      className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
-                      aria-label={`Remove topic ${t}`}
-                    >
-                      <X className="h-3 w-3 shrink-0" />
-                    </button>
-                  </span>
+                    <span>#{t}</span>
+                    <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Media Audio Stream Link & Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label htmlFor="sermon-mediaUrl" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Audio Stream Link <span className="text-xs text-muted-foreground font-normal">(Direct MP3 / CDN URL)</span>
-              </Label>
-              <Input
-                id="sermon-mediaUrl"
-                type="url"
-                value={mediaUrl}
-                onChange={(e) => setMediaUrl(e.target.value)}
-                placeholder="https://.../sermon.mp3"
-                disabled={submitting}
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sermon-duration" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                Duration <span className="text-xs text-muted-foreground font-normal">(e.g. 48:15)</span>
-              </Label>
-              <Input
-                id="sermon-duration"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="45:30"
-                disabled={submitting}
-                className="bg-background"
-              />
-            </div>
+          {/* Duration */}
+          <div className="space-y-1.5 max-w-xs">
+            <Label htmlFor="sermon-duration" className="text-sm font-semibold text-foreground">
+              Duration{' '}
+              <span className="text-[13px] font-normal text-muted-foreground">
+                (e.g. 48:15)
+              </span>
+            </Label>
+            <Input
+              id="sermon-duration"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="45:30"
+              disabled={submitting}
+              className="bg-background"
+            />
           </div>
 
-          {/* External Platform Links (Spotify & YouTube) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* External Platform Links */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-spotify" className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              <Label htmlFor="sermon-spotify" className="text-sm font-semibold text-foreground">
                 Spotify Episode Link
               </Label>
               <Input
@@ -369,11 +363,11 @@ export default function SermonModal({
                 onChange={(e) => setSpotifyUrl(e.target.value)}
                 placeholder="https://open.spotify.com/episode/..."
                 disabled={submitting}
-                className="bg-background text-xs"
+                className="bg-background"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sermon-youtube" className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              <Label htmlFor="sermon-youtube" className="text-sm font-semibold text-foreground">
                 YouTube Video Watch URL
               </Label>
               <Input
@@ -383,14 +377,14 @@ export default function SermonModal({
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
                 disabled={submitting}
-                className="bg-background text-xs"
+                className="bg-background"
               />
             </div>
           </div>
 
           {/* Sermon Summary / Notes */}
           <div className="space-y-1.5">
-            <Label htmlFor="sermon-notes" className="text-xs font-semibold uppercase tracking-wider text-foreground">
+            <Label htmlFor="sermon-notes" className="text-sm font-semibold text-foreground">
               Sermon Summary / Message Notes
             </Label>
             <textarea
@@ -400,24 +394,33 @@ export default function SermonModal({
               placeholder="Outline, key takeaways, and study notes..."
               rows={3}
               disabled={submitting}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[88px] w-full rounded-[var(--radius-control)] border border-input bg-background px-3 py-2 text-base text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
             />
           </div>
 
-          <DialogFooter className="pt-3 gap-2">
+          <DialogFooter className="gap-2 pt-3 sm:space-x-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={submitting}
+              className="min-h-11 w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting} className="min-w-[120px]">
+            <Button
+              type="submit"
+              disabled={submitting}
+              aria-busy={submitting || undefined}
+              className="min-h-11 w-full min-w-[130px] gap-2 sm:w-auto"
+            >
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-                  Saving...
+                  <Loader2
+                    className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
+                  <span>Saving…</span>
                 </>
               ) : isEditing ? (
                 'Save Changes'

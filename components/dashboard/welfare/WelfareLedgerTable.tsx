@@ -1,85 +1,98 @@
 'use client'
 
 import React, { useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, Loader2, Receipt, Trash2 } from 'lucide-react'
 import type { WelfareLedgerRow } from '@/types'
-import { Badge } from '@/components/dashboard/ui/badge'
-import { formatNaira } from '@/lib/dashboard/format'
-import { ArrowDownLeft, ArrowUpRight, Loader2, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { formatDate, formatNaira, toDateTimeAttr } from '@/lib/dashboard/format'
+import { Button } from '@/components/dashboard/ui/button'
+import { ConfirmDialog } from '@/components/dashboard/ui/confirm-dialog'
+import { StatusBadge } from '@/components/dashboard/ui/status-badge'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/dashboard/ui/table'
+import EmptyState from '@/components/dashboard/states/EmptyState'
 import { deleteWelfareLedgerEntry } from '@/app/actions/welfare-ledger-actions'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface WelfareLedgerTableProps {
   entries: WelfareLedgerRow[]
   onDeleteEntry?: (id: string) => void
+  hasActiveFilters?: boolean
+  onResetFilters?: () => void
 }
 
-/** One shared row badge for Credit (Inflow) vs Debit (Outflow) */
+function isValidIso(iso?: string | null): iso is string {
+  if (!iso) return false
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00Z`) : new Date(iso)
+  return !Number.isNaN(parsed.getTime())
+}
+
+function safeFormatDate(iso?: string | null): string {
+  if (!isValidIso(iso)) return iso || '—'
+  return formatDate(iso)
+}
+
 function TransactionTypeBadge({ type }: { type: 'Credit' | 'Debit' }) {
   const isCredit = type === 'Credit'
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        'inline-flex items-center gap-1 font-semibold text-xs',
-        isCredit
-          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
-          : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
-      )}
+    <StatusBadge
+      variant={isCredit ? 'success' : 'destructive'}
+      icon={
+        isCredit ? (
+          <ArrowDownLeft className="h-3.5 w-3.5" />
+        ) : (
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        )
+      }
     >
-      {isCredit ? (
-        <ArrowDownLeft className="h-3 w-3 shrink-0" aria-hidden="true" />
-      ) : (
-        <ArrowUpRight className="h-3 w-3 shrink-0" aria-hidden="true" />
-      )}
-      <span>{isCredit ? 'Credit (Inflow)' : 'Debit (Outflow)'}</span>
-    </Badge>
+      {isCredit ? 'Credit (Inflow)' : 'Debit (Outflow)'}
+    </StatusBadge>
   )
 }
 
 function AmountDisplay({ entry }: { entry: WelfareLedgerRow }) {
   const isCredit = entry.type === 'Credit'
   return (
-    <span
+    <data
+      value={isCredit ? entry.amount : -entry.amount}
       className={cn(
-        'font-semibold tabular-nums',
-        isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+        'font-sans text-sm font-semibold tabular-nums',
+        isCredit ? 'text-success' : 'text-destructive'
       )}
     >
       {isCredit ? '+' : '-'}
       {formatNaira(entry.amount)}
-    </span>
+    </data>
   )
 }
 
-function formatDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr)
-    if (isNaN(d.getTime())) return dateStr
-    return d.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLedgerTableProps) {
+export default function WelfareLedgerTable({
+  entries,
+  onDeleteEntry,
+  hasActiveFilters = false,
+  onResetFilters,
+}: WelfareLedgerTableProps) {
+  const [pendingDeleteEntry, setPendingDeleteEntry] = useState<WelfareLedgerRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this Welfare Purse transaction?')) {
-      return
-    }
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteEntry) return
+    const targetId = pendingDeleteEntry._id
+    setDeletingId(targetId)
 
-    setDeletingId(id)
     try {
-      const res = await deleteWelfareLedgerEntry(id)
+      const res = await deleteWelfareLedgerEntry(targetId)
       if (res.success) {
-        toast.success('Transaction removed successfully.')
-        onDeleteEntry?.(id)
+        toast.success('Transaction removed from the Welfare Purse ledger.')
+        setPendingDeleteEntry(null)
+        onDeleteEntry?.(targetId)
       } else {
         toast.error(res.error || 'Failed to delete transaction.')
       }
@@ -93,227 +106,288 @@ export default function WelfareLedgerTable({ entries, onDeleteEntry }: WelfareLe
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-card/40 p-8 text-center text-sm text-muted-foreground">
-        No Welfare Purse transactions match your search criteria.
-      </div>
+      <EmptyState
+        variant={hasActiveFilters ? 'no-results' : 'nothing-yet'}
+        title={
+          hasActiveFilters
+            ? 'No matching ledger entries'
+            : 'No Welfare Purse transactions yet'
+        }
+        description={
+          hasActiveFilters
+            ? 'Try clearing your search query or adjusting the flow and category filters.'
+            : 'Record your first inflow or assistance disbursement to start tracking the Welfare Purse balance.'
+        }
+        icon={<Receipt />}
+        action={
+          hasActiveFilters && onResetFilters ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onResetFilters}
+              className="min-h-11 md:min-h-10"
+            >
+              Clear filters
+            </Button>
+          ) : undefined
+        }
+      />
     )
   }
 
   return (
     <>
-      {/* Mobile: stacked cards */}
-      <div className="md:hidden space-y-3">
-        {entries.map((entry) => (
-          <div
-            key={entry._id}
-            className="rounded-2xl bg-card p-4 shadow-xs space-y-3 transition-colors"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  {formatDate(entry.date)}
-                </span>
-                <p className="font-semibold text-sm text-foreground leading-snug">
-                  {entry.description}
-                </p>
-              </div>
-              <TransactionTypeBadge type={entry.type} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-              <div>
-                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
-                  Amount
-                </span>
-                <AmountDisplay entry={entry} />
-              </div>
-
-              <div>
-                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
-                  Bank Charge
-                </span>
-                <span className="font-mono text-muted-foreground">
-                  {entry.bankCharge && entry.bankCharge > 0
-                    ? `₦${entry.bankCharge.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : '—'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
-                  Purse Balance
-                </span>
-                <span className="font-semibold text-sm tabular-nums text-foreground">
-                  ₦{entry.runningBalance.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {entry.category && (
-                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                    {entry.category}
-                  </Badge>
-                )}
-                {onDeleteEntry && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(entry._id)}
-                    disabled={deletingId === entry._id}
-                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-md"
-                    title="Delete transaction"
+      {/* Mobile: stacked tonal cards */}
+      <div className="space-y-3 md:hidden">
+        {entries.map((entry) => {
+          const isDeleting = deletingId === entry._id
+          return (
+            <article
+              key={entry._id}
+              className="space-y-3 rounded-[var(--radius-card)] bg-card p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <time
+                    dateTime={isValidIso(entry.date) ? toDateTimeAttr(entry.date) : undefined}
+                    className="block text-[13px] font-medium text-muted-foreground"
                   >
-                    {deletingId === entry._id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                )}
+                    {safeFormatDate(entry.date)}
+                  </time>
+                  <h3 className="font-sans text-base font-semibold leading-snug text-foreground">
+                    {entry.description}
+                  </h3>
+                </div>
+                <TransactionTypeBadge type={entry.type} />
               </div>
-            </div>
 
-            {(entry.recipient || entry.reference) && (
-              <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                {entry.recipient && <span>Beneficiary: {entry.recipient}</span>}
-                {entry.reference && <span className="font-mono">Ref: {entry.reference}</span>}
+              <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-control)] bg-surface-raised p-3 text-[13px]">
+                <div className="min-w-0">
+                  <span className="block text-[13px] text-muted-foreground">Amount</span>
+                  <div className="mt-0.5">
+                    <AmountDisplay entry={entry} />
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <span className="block text-[13px] text-muted-foreground">Fee</span>
+                  <span className="mt-0.5 block font-sans text-sm tabular-nums text-foreground">
+                    {entry.bankCharge && entry.bankCharge > 0
+                      ? formatNaira(entry.bankCharge)
+                      : '—'}
+                  </span>
+                </div>
+
+                <div className="min-w-0 text-right">
+                  <span className="block text-[13px] text-muted-foreground">Balance</span>
+                  <data
+                    value={entry.runningBalance}
+                    className="mt-0.5 block font-sans text-sm font-semibold tabular-nums text-foreground"
+                  >
+                    {formatNaira(entry.runningBalance)}
+                  </data>
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {(entry.category || entry.recipient || entry.reference || entry.loggedByName) && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted-foreground">
+                  {entry.category && (
+                    <StatusBadge variant="neutral" dot>
+                      {entry.category}
+                    </StatusBadge>
+                  )}
+                  {entry.recipient && <span>To: {entry.recipient}</span>}
+                  {entry.reference && (
+                    <span className="font-mono text-[13px] text-muted-foreground">
+                      {entry.reference}
+                    </span>
+                  )}
+                  {entry.loggedByName && <span>By: {entry.loggedByName}</span>}
+                </div>
+              )}
+
+              {onDeleteEntry && (
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isDeleting}
+                    onClick={() => setPendingDeleteEntry(entry)}
+                    aria-label={`Delete transaction ${entry.description}`}
+                    className="min-h-11 gap-1.5 px-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    {isDeleting ? (
+                      <Loader2
+                        className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>Delete</span>
+                  </Button>
+                </div>
+              )}
+            </article>
+          )
+        })}
       </div>
 
       {/* Desktop: Calm tabular view */}
-      <div className="hidden md:block rounded-2xl bg-card shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-4 py-3.5 w-[110px]">
-                  Date
-                </th>
-                <th scope="col" className="px-4 py-3.5">
-                  Description
-                </th>
-                <th scope="col" className="px-4 py-3.5 w-[160px]">
-                  Debit / Credit
-                </th>
-                <th scope="col" className="px-4 py-3.5 w-[120px] text-right">
-                  Bank Charge
-                </th>
-                <th scope="col" className="px-4 py-3.5 w-[150px] text-right">
-                  Balance
-                </th>
-                {onDeleteEntry && (
-                  <th scope="col" className="px-3 py-3.5 w-[50px] text-center">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {entries.map((entry) => (
-                <tr key={entry._id} className="hover:bg-muted/30 transition-colors">
-                  {/* Date */}
-                  <td className="px-4 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    {formatDate(entry.date)}
-                  </td>
+      <div className="hidden overflow-hidden rounded-[var(--radius-card)] bg-card shadow-sm md:block">
+        <Table>
+          <TableCaption className="sr-only">
+            Welfare purse ledger transactions with inflows, outflows, bank charges, and running balance
+          </TableCaption>
+          <TableHeader sticky>
+            <TableRow className="hover:bg-transparent">
+              <TableHead sticky scope="col" className="w-[125px]">
+                Date
+              </TableHead>
+              <TableHead sticky scope="col">
+                Description
+              </TableHead>
+              <TableHead sticky scope="col" className="w-[170px]">
+                Flow
+              </TableHead>
+              <TableHead sticky scope="col" className="w-[130px] text-right">
+                Amount
+              </TableHead>
+              <TableHead sticky scope="col" className="w-[120px] text-right">
+                Bank charge
+              </TableHead>
+              <TableHead sticky scope="col" className="w-[140px] text-right">
+                Balance
+              </TableHead>
+              {onDeleteEntry && (
+                <TableHead sticky scope="col" className="w-[64px] text-right">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map((entry) => {
+              const isDeleting = deletingId === entry._id
+              return (
+                <TableRow
+                  key={entry._id}
+                  className="border-b border-border/40 last:border-b-0"
+                >
+                  <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    <time
+                      dateTime={isValidIso(entry.date) ? toDateTimeAttr(entry.date) : undefined}
+                    >
+                      {safeFormatDate(entry.date)}
+                    </time>
+                  </TableCell>
 
-                  {/* Description & metadata */}
-                  <td className="px-4 py-3">
+                  <TableCell>
                     <div className="space-y-1">
-                      <p className="font-medium text-foreground text-sm leading-snug">
+                      <p className="font-sans text-sm font-medium leading-snug text-foreground">
                         {entry.description}
                       </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        {entry.category && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                            {entry.category}
-                          </Badge>
-                        )}
-                        {entry.recipient && (
-                          <span>
-                            To: <strong className="text-foreground/80 font-medium">{entry.recipient}</strong>
-                          </span>
-                        )}
-                        {entry.reference && (
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            Ref: {entry.reference}
-                          </span>
-                        )}
-                        {entry.loggedByName && (
-                          <span className="text-[11px] text-muted-foreground">
-                            By: {entry.loggedByName}
-                          </span>
-                        )}
-                      </div>
+                      {(entry.category ||
+                        entry.recipient ||
+                        entry.reference ||
+                        entry.loggedByName) && (
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-muted-foreground">
+                          {entry.category && (
+                            <StatusBadge variant="neutral" dot>
+                              {entry.category}
+                            </StatusBadge>
+                          )}
+                          {entry.recipient && (
+                            <span>
+                              To:{' '}
+                              <span className="font-medium text-foreground">
+                                {entry.recipient}
+                              </span>
+                            </span>
+                          )}
+                          {entry.reference && (
+                            <span className="font-mono text-[13px] text-muted-foreground">
+                              {entry.reference}
+                            </span>
+                          )}
+                          {entry.loggedByName && <span>By: {entry.loggedByName}</span>}
+                        </div>
+                      )}
                     </div>
-                  </td>
+                  </TableCell>
 
-                  {/* Debit / Credit */}
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <TransactionTypeBadge type={entry.type} />
-                      <div>
-                        <AmountDisplay entry={entry} />
-                      </div>
-                    </div>
-                  </td>
+                  <TableCell className="whitespace-nowrap">
+                    <TransactionTypeBadge type={entry.type} />
+                  </TableCell>
 
-                  {/* Bank charge */}
-                  <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {entry.bankCharge && entry.bankCharge > 0 ? (
-                      <span>
-                        ₦
-                        {entry.bankCharge.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    ) : (
-                      <span>—</span>
-                    )}
-                  </td>
+                  <TableCell className="whitespace-nowrap text-right">
+                    <AmountDisplay entry={entry} />
+                  </TableCell>
 
-                  {/* Balance */}
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <span className="font-semibold text-sm tabular-nums text-foreground">
-                      ₦
-                      {entry.runningBalance.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                  </td>
+                  <TableCell className="whitespace-nowrap text-right font-sans text-sm tabular-nums text-muted-foreground">
+                    {entry.bankCharge && entry.bankCharge > 0
+                      ? formatNaira(entry.bankCharge)
+                      : '—'}
+                  </TableCell>
 
-                  {/* Action */}
+                  <TableCell className="whitespace-nowrap text-right">
+                    <data
+                      value={entry.runningBalance}
+                      className="font-sans text-sm font-semibold tabular-nums text-foreground"
+                    >
+                      {formatNaira(entry.runningBalance)}
+                    </data>
+                  </TableCell>
+
                   {onDeleteEntry && (
-                    <td className="px-3 py-3 text-center">
-                      <button
+                    <TableCell className="text-right">
+                      <Button
                         type="button"
-                        onClick={() => handleDelete(entry._id)}
-                        disabled={deletingId === entry._id}
-                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
-                        title="Delete entry"
+                        variant="ghost"
+                        size="icon"
+                        disabled={isDeleting}
+                        onClick={() => setPendingDeleteEntry(entry)}
+                        aria-label={`Delete transaction ${entry.description}`}
+                        title="Delete transaction"
+                        className="min-h-11 min-w-11 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:min-h-10 md:min-w-10"
                       >
-                        {deletingId === entry._id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {isDeleting ? (
+                          <Loader2
+                            className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                         )}
-                      </button>
-                    </td>
+                      </Button>
+                    </TableCell>
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteEntry)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteEntry(null)
+        }}
+        tone="destructive"
+        title="Delete purse transaction?"
+        description={
+          pendingDeleteEntry
+            ? `Remove "${pendingDeleteEntry.description}" (${formatNaira(pendingDeleteEntry.amount)}) from the Welfare Purse ledger?`
+            : undefined
+        }
+        effectSummary="Running purse balances will recalculate immediately. This cannot be undone."
+        confirmLabel="Delete transaction"
+        loading={Boolean(deletingId)}
+        loadingLabel="Deleting…"
+        onConfirm={handleConfirmDelete}
+      />
     </>
   )
 }

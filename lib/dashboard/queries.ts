@@ -347,6 +347,55 @@ export const DASHBOARD_ANNOUNCEMENTS_QUERY = `
 
 
 // ---------------------------------------------------------------------------
+// Meeting Minutes (CSGB Read/Write + EXCO Read-Only when Posted)
+// ---------------------------------------------------------------------------
+
+export const DASHBOARD_MEETING_MINUTES_QUERY = `
+  *[_type == "meetingMinute" && (
+    $includePrivate == true ||
+    (!(_id in path("drafts.**")) && isPostedToExcos == true && coalesce(archived, false) != true)
+  )] | order(coalesce(isPinned, false) desc, meetingDate desc, _createdAt desc) {
+    _id,
+    _type,
+    title,
+    meetingDate,
+    meetingType,
+    folder,
+    venue,
+    startTime,
+    endTime,
+    chairperson,
+    recorderName,
+    "attendees": coalesce(attendees, []),
+    "absentees": coalesce(absentees, []),
+    "agenda": coalesce(agenda, []),
+    summary,
+    body,
+    "decisions": coalesce(decisions, []),
+    "actionItems": coalesce(actionItems, [])[]{
+      _key,
+      task,
+      owner,
+      dueDate,
+      status
+    },
+    "tags": coalesce(tags, []),
+    "isPinned": coalesce(isPinned, false),
+    "isPostedToExcos": coalesce(isPostedToExcos, false),
+    postedAt,
+    postedBy,
+    "archived": coalesce(archived, false),
+    createdById,
+    createdByName,
+    createdAt,
+    updatedByName,
+    updatedAt,
+    _createdAt,
+    _updatedAt
+  }
+`
+
+// ---------------------------------------------------------------------------
 // Executives Console (All appointed and approved executive leaders)
 // ---------------------------------------------------------------------------
 

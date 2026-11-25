@@ -1,13 +1,18 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useId, useMemo, useState } from 'react'
+import { PlusCircle } from 'lucide-react'
 import type { WelfareLedgerRow } from '@/types'
+import { formatCount } from '@/lib/dashboard/format'
 import WelfareStatsCards from './WelfareStatsCards'
 import WelfareLedgerTable from './WelfareLedgerTable'
 import WelfareLedgerExportButton from './WelfareLedgerExportButton'
 import RecordWelfareTransactionModal from './RecordWelfareTransactionModal'
 import { Button } from '@/components/dashboard/ui/button'
-import { Input } from '@/components/dashboard/ui/input'
+import {
+  DataToolbar,
+  type ActiveFilterChip,
+} from '@/components/dashboard/ui/data-toolbar'
 import {
   Select,
   SelectContent,
@@ -15,17 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/dashboard/ui/select'
-import { PlusCircle, Search } from 'lucide-react'
 
 interface WelfareLedgerClientProps {
   initialEntries: WelfareLedgerRow[]
+  onEntriesCountChange?: (count: number) => void
 }
 
 /**
  * Recomputes running balances chronologically (oldest to newest), then returns newest first.
  */
 function recalculateRunningBalances(list: WelfareLedgerRow[]): WelfareLedgerRow[] {
-  // Sort ascending by date & createdAt
   const sorted = [...list].sort((a, b) => {
     const da = new Date(a.date).getTime()
     const db = new Date(b.date).getTime()
@@ -50,11 +54,13 @@ function recalculateRunningBalances(list: WelfareLedgerRow[]): WelfareLedgerRow[
     }
   })
 
-  // Return newest first
   return computed.reverse()
 }
 
-export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerClientProps) {
+export default function WelfareLedgerClient({
+  initialEntries,
+  onEntriesCountChange,
+}: WelfareLedgerClientProps) {
   const [entries, setEntries] = useState<WelfareLedgerRow[]>(() =>
     recalculateRunningBalances(initialEntries)
   )
@@ -63,7 +69,17 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
   const [typeFilter, setTypeFilter] = useState<'all' | 'Credit' | 'Debit'>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
-  // Overall financial position of the Welfare Purse
+  const mobileTypeId = useId()
+  const mobileCategoryId = useId()
+
+  useEffect(() => {
+    setEntries(recalculateRunningBalances(initialEntries))
+  }, [initialEntries])
+
+  useEffect(() => {
+    onEntriesCountChange?.(entries.length)
+  }, [entries.length, onEntriesCountChange])
+
   const { totalCredit, totalDebit, totalBankCharges, currentBalance } = useMemo(() => {
     let credit = 0
     let debit = 0
@@ -80,9 +96,8 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
       }
     })
 
-    // Available purse balance = (Total Credits - Bank Charges on Credits) - (Total Debits + Bank Charges on Debits)
-    // which equals latest running balance if transactions exist, else credit - debit - charges
-    const balance = entries.length > 0 ? entries[0].runningBalance : credit - debit - charges
+    const balance =
+      entries.length > 0 ? entries[0].runningBalance : credit - debit - charges
 
     return {
       totalCredit: credit,
@@ -92,7 +107,6 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
     }
   }, [entries])
 
-  // Extract unique categories for filter dropdown
   const uniqueCategories = useMemo(() => {
     const set = new Set<string>()
     entries.forEach((e) => {
@@ -101,7 +115,6 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
     return Array.from(set).sort()
   }, [entries])
 
-  // Filtered rows for table & export
   const filteredEntries = useMemo(() => {
     return entries.filter((e) => {
       const term = search.toLowerCase().trim()
@@ -126,12 +139,138 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
   }
 
   const handleDeleteEntry = (deletedId: string) => {
-    setEntries((prev) => recalculateRunningBalances(prev.filter((e) => e._id !== deletedId)))
+    setEntries((prev) =>
+      recalculateRunningBalances(prev.filter((e) => e._id !== deletedId))
+    )
   }
+
+  const handleResetFilters = () => {
+    setSearch('')
+    setTypeFilter('all')
+    setCategoryFilter('all')
+  }
+
+  const activeFilters: ActiveFilterChip[] = []
+  if (typeFilter !== 'all') {
+    activeFilters.push({
+      id: 'flow',
+      label: 'Flow',
+      value: typeFilter === 'Credit' ? 'Credits (+)' : 'Debits (-)',
+      onRemove: () => setTypeFilter('all'),
+    })
+  }
+  if (categoryFilter !== 'all') {
+    activeFilters.push({
+      id: 'category',
+      label: 'Category',
+      value: categoryFilter,
+      onRemove: () => setCategoryFilter('all'),
+    })
+  }
+
+  const hasActiveFilters =
+    Boolean(search.trim()) || typeFilter !== 'all' || categoryFilter !== 'all'
+
+  const desktopFilters = (
+    <>
+      <Select
+        value={typeFilter}
+        onValueChange={(val) => setTypeFilter(val as 'all' | 'Credit' | 'Debit')}
+      >
+        <SelectTrigger
+          aria-label="Filter by transaction flow"
+          className="w-[155px] bg-card"
+        >
+          <SelectValue placeholder="All flows" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All flows</SelectItem>
+          <SelectItem value="Credit">Credits (+)</SelectItem>
+          <SelectItem value="Debit">Debits (-)</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {uniqueCategories.length > 0 && (
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger
+            aria-label="Filter by category"
+            className="w-[210px] bg-card"
+          >
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {uniqueCategories.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </>
+  )
+
+  const mobileFilters = (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <label
+          htmlFor={mobileTypeId}
+          className="block text-[13px] font-medium text-foreground"
+        >
+          Transaction flow
+        </label>
+        <Select
+          value={typeFilter}
+          onValueChange={(val) => setTypeFilter(val as 'all' | 'Credit' | 'Debit')}
+        >
+          <SelectTrigger
+            id={mobileTypeId}
+            aria-label="Filter by transaction flow"
+            className="w-full"
+          >
+            <SelectValue placeholder="All flows" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All flows</SelectItem>
+            <SelectItem value="Credit">Credits (+)</SelectItem>
+            <SelectItem value="Debit">Debits (-)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {uniqueCategories.length > 0 && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor={mobileCategoryId}
+            className="block text-[13px] font-medium text-foreground"
+          >
+            Category
+          </label>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger
+              id={mobileCategoryId}
+              aria-label="Filter by category"
+              className="w-full"
+            >
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {uniqueCategories.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      {/* Financial Position Stats Cards */}
       <WelfareStatsCards
         currentBalance={currentBalance}
         totalCredit={totalCredit}
@@ -139,76 +278,48 @@ export default function WelfareLedgerClient({ initialEntries }: WelfareLedgerCli
         totalBankCharges={totalBankCharges}
       />
 
-      {/* Toolbar: Search, Type filter, Category filter, Export, Add Transaction */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-        <div className="flex flex-1 flex-wrap gap-2 items-center">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search description, recipient, ref, or category..."
-              className="pl-9 h-11 rounded-xl bg-background text-xs sm:text-sm"
-            />
-          </div>
+      <DataToolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchLabel="Search welfare purse ledger"
+        searchPlaceholder="Search description, beneficiary, ref, or category…"
+        filters={desktopFilters}
+        mobileFilters={mobileFilters}
+        activeFilterCount={activeFilters.length}
+        activeFilters={activeFilters}
+        onResetFilters={handleResetFilters}
+        filterSheetTitle="Filter ledger"
+        filterSheetDescription="Narrow Welfare Purse entries by flow or category."
+        actions={
+          <>
+            <WelfareLedgerExportButton entries={filteredEntries} />
+            <Button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="min-h-11 md:min-h-10"
+            >
+              <PlusCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Record transaction</span>
+            </Button>
+          </>
+        }
+        meta={`${formatCount(filteredEntries.length)} of ${formatCount(entries.length)} transactions`}
+      />
 
-          {/* Type Filter */}
-          <Select
-            value={typeFilter}
-            onValueChange={(val) => setTypeFilter(val as 'all' | 'Credit' | 'Debit')}
-          >
-            <SelectTrigger className="w-[140px] h-11 rounded-xl bg-background text-xs sm:text-sm">
-              <SelectValue placeholder="All Flows" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Flows</SelectItem>
-              <SelectItem value="Credit">Credits (+)</SelectItem>
-              <SelectItem value="Debit">Debits (-)</SelectItem>
-            </SelectContent>
-          </Select>
+      <h2 className="sr-only">Welfare purse transactions</h2>
 
-          {/* Category Filter */}
-          {uniqueCategories.length > 0 && (
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[160px] h-11 rounded-xl bg-background text-xs sm:text-sm">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {uniqueCategories.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+      <WelfareLedgerTable
+        entries={filteredEntries}
+        onDeleteEntry={handleDeleteEntry}
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+      />
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 self-end lg:self-auto">
-          <WelfareLedgerExportButton entries={filteredEntries} />
-          <Button
-            onClick={() => setShowModal(true)}
-            className="min-h-[44px] px-4 rounded-xl shadow-xs font-semibold text-xs sm:text-sm"
-          >
-            <PlusCircle className="mr-1.5 h-4 w-4 shrink-0" />
-            Record Transaction
-          </Button>
-        </div>
-      </div>
-
-      {/* Ledger Table */}
-      <WelfareLedgerTable entries={filteredEntries} onDeleteEntry={handleDeleteEntry} />
-
-      {/* Modal for recording transactions */}
-      {showModal && (
-        <RecordWelfareTransactionModal
-          onClose={() => setShowModal(false)}
-          onSuccess={handleAddEntry}
-        />
-      )}
+      <RecordWelfareTransactionModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        onSuccess={handleAddEntry}
+      />
     </div>
   )
 }

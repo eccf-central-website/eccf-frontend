@@ -1,5 +1,5 @@
 /**
- * RecentFirstTimers — the latest five first-timers on the overview.
+ * RecentFirstTimers — the latest four first-timers on the overview.
  *
  * Async Server Component; the page wraps it in its own <Suspense> and
  * BlockErrorBoundary so it streams independently of the stats. Renders
@@ -20,7 +20,7 @@ export default async function RecentFirstTimers({ session }: { session: ECCFSess
   if (rows.length === 0) {
     return (
       <EmptyState
-        headingLevel="h4"
+        headingLevel="h3"
         icon={<UserPlus />}
         title="No first-timers yet"
         description="People who fill in the Connect form will show up here."
@@ -30,7 +30,7 @@ export default async function RecentFirstTimers({ session }: { session: ECCFSess
   }
 
   return (
-    <ul>
+    <ul className="divide-y divide-border/50">
       {rows.map((ft) => {
         const meta = [ft.department, ft.level && `${ft.level} level`, ft.hall].filter(Boolean).join(' · ')
         return (
@@ -45,7 +45,7 @@ export default async function RecentFirstTimers({ session }: { session: ECCFSess
             }
           >
             <p className="truncate text-sm font-medium text-foreground">{ft.fullName}</p>
-            {meta && <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</p>}
+            {meta && <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{meta}</p>}
           </ActivityItem>
         )
       })}

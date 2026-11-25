@@ -14,7 +14,18 @@ const nairaFormat = new Intl.NumberFormat('en-NG', {
 
 const countFormat = new Intl.NumberFormat('en-NG')
 
+const percentFormat = new Intl.NumberFormat('en-NG', {
+  style: 'percent',
+  maximumFractionDigits: 1,
+})
+
 const dateFormat = new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeZone: FELLOWSHIP_TIME_ZONE })
+
+const shortDateFormat = new Intl.DateTimeFormat('en-NG', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: FELLOWSHIP_TIME_ZONE,
+})
 
 const relativeFormat = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 
@@ -28,6 +39,17 @@ export function formatCount(value: number): string {
   return countFormat.format(value)
 }
 
+/** "12.4%" — expects percentage value (e.g. 12.4 -> "12.4%"). */
+export function formatPercent(value: number, maxDecimals = 1): string {
+  if (maxDecimals === 1) {
+    return percentFormat.format(value / 100)
+  }
+  return new Intl.NumberFormat('en-NG', {
+    style: 'percent',
+    maximumFractionDigits: maxDecimals,
+  }).format(value / 100)
+}
+
 /**
  * A date-only YYYY-MM-DD value is a Lagos calendar date. Anchor it at noon
  * UTC so formatting it in Lagos can never slip to a neighbouring day.
@@ -39,6 +61,11 @@ function toInstant(iso: string): Date {
 /** "8 Oct 2026" */
 export function formatDate(iso: string): string {
   return dateFormat.format(toInstant(iso))
+}
+
+/** "8 Oct" — compact Lagos calendar date without year. */
+export function formatShortDate(iso: string): string {
+  return shortDateFormat.format(toInstant(iso))
 }
 
 /** "today", "yesterday", "3 days ago", "5 weeks ago" — Lagos calendar days. */

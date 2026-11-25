@@ -1,8 +1,8 @@
 /**
- * FeedSkeleton — placeholder for the F3 intake feeds (first-timers,
+ * FeedSkeleton — placeholder for intake and pastoral feeds (first-timers,
  * welfare, prayer requests): an optional status-tab row (welfare's
  * Pending/Resolved), a search box, then one card per item with a title,
- * meta chips, a couple of text lines and a date.
+ * meta chips, summary lines, and a date.
  */
 
 import { cn } from '@/lib/utils'
@@ -33,27 +33,31 @@ export default function FeedSkeleton({
   return (
     <LoadingRegion label={label} announce={announce} className={cn('space-y-4', className)}>
       {tabs && (
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-24 shrink-0" />
-          <Skeleton className="h-10 w-24 shrink-0" />
+        <div aria-hidden="true" className="flex gap-2">
+          <Skeleton className="h-11 w-24 shrink-0 md:h-10" />
+          <Skeleton className="h-11 w-24 shrink-0 md:h-10" />
         </div>
       )}
-      {search && <Skeleton className="h-10 w-full sm:max-w-xs" />}
+      {search && (
+        <div aria-hidden="true">
+          <Skeleton className="h-11 w-full sm:max-w-xs md:h-10" />
+        </div>
+      )}
 
-      <ul className="space-y-3">
+      <ul aria-hidden="true" className="space-y-3">
         {Array.from({ length: items }, (_, i) => (
-          <li key={i} className="rounded-xl bg-card shadow-sm p-4 sm:p-5 border-0">
+          <li key={i} className="rounded-2xl border-0 bg-card p-4 shadow-sm sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <Skeleton className={cn('h-5 max-w-[60%]', TITLE_WIDTHS[i % TITLE_WIDTHS.length])} />
-              <Skeleton className="h-3 w-16 shrink-0" />
+              <Skeleton className="h-3.5 w-16 shrink-0" />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
-              <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
+              <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
+              <Skeleton className="h-6 w-16 shrink-0 rounded-full" />
             </div>
             <div className="mt-4 space-y-2">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-2/5" />
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-2/5" />
             </div>
           </li>
         ))}
