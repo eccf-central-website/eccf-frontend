@@ -41,7 +41,7 @@ import {
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { encrypt, decrypt, createBlindIndex, getCandidateBlindIndexes, createBirthdayBlindIndex, normalizePhone } from '@/lib/encryption'
 import { claimPendingExecutiveAppointmentsForWorker } from '@/app/actions/executive-suggestion-actions'
-import { extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
+import { appointmentNameMatchesWorker, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
 import { mergeExecutivePositions } from '@/lib/executive-positions'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
 import type { WorkerRole } from '@/types'
@@ -2150,18 +2150,9 @@ export async function registerWorker(
             updateLog
           }`
         )
-        const inputTokens = extractNameTokens(cleanFullName)
-        const inputKey = normalizeTokensKey(inputTokens)
         for (const cand of candidates) {
           if (!cand.fullName) continue
-          const candTokens = extractNameTokens(cand.fullName)
-          const candKey = normalizeTokensKey(candTokens)
-          if (
-            candKey === inputKey ||
-            (candTokens.length >= 2 &&
-              inputTokens.length >= 2 &&
-              (inputTokens.every((t) => candTokens.includes(t)) || candTokens.every((t) => inputTokens.includes(t))))
-          ) {
+          if (appointmentNameMatchesWorker(cand.fullName, cleanFullName)) {
             placeholderMatch = cand
             break
           }

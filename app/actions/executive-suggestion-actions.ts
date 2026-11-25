@@ -6,36 +6,15 @@ import { revalidatePath } from 'next/cache'
 import { sanityPrivateClient, sanityWriteClient, patchPrivateDocument } from '@/lib/sanity'
 import { getSession } from '@/lib/dashboard/auth'
 import { sendExecutiveAppointmentEmail } from '@/lib/email/executive-appointment'
-import { cleanHonorifics, extractNameTokens, normalizeTokensKey } from '@/lib/executive-matching'
+import {
+  appointmentNameMatchesWorker,
+  cleanHonorifics,
+  extractNameTokens,
+  normalizeTokensKey,
+} from '@/lib/executive-matching'
 import { executivePositionSignature, mergeExecutivePositions } from '@/lib/executive-positions'
 import { getLeaderPostTitle } from '@/lib/dashboard/rbac'
 
-/**
- * Determine if an appointment name matches a worker's full name when the
- * appointment was recorded with fewer name parts (e.g. "Elisha Airohi" vs
- * "Elisha Osemudiamen Airohi").
- *
- * Exact normalized-key match is tried first by the caller. This fallback
- * requires every appointment token to be present in the worker's name tokens,
- * and the first and last tokens to match positionally — so a same-first-name
- * registrant cannot hijack a reserved office by providing just a first name.
- */
-function appointmentNameMatchesWorker(appName: string, workerName: string): boolean {
-  const appTokens = extractNameTokens(appName)
-  const workerTokens = extractNameTokens(workerName)
-
-  if (appTokens.length === 0 || workerTokens.length === 0) return false
-
-  // All appointment tokens must be found in the worker's name tokens.
-  const allPresent = appTokens.every((t) => workerTokens.includes(t))
-
-  // First and last names must line up positionally.
-  const firstMatches = appTokens[0] === workerTokens[0]
-  const lastMatches =
-    appTokens[appTokens.length - 1] === workerTokens[workerTokens.length - 1]
-
-  return allPresent && firstMatches && lastMatches
-}
 
 export interface CsvImportResult {
   ok: boolean
@@ -376,13 +355,16 @@ async function verifyAuth() {
   }
 
   const canManageExecutives = Boolean(
-    session.access?.canApproveExecutives ||
+    session.role === 'admin' ||
+      session.access?.isPresident ||
+      session.access?.isCSGB ||
+      session.access?.canApproveExecutives ||
       session.access?.isVP ||
       session.access?.isChaplain
   )
 
   if (!canManageExecutives) {
-    return { ok: false as const, error: 'You do not have permission to import executive positions.' }
+    return { ok: false as const, error: 'You do not have permission to manage executive positions.' }
   }
 
   return { ok: true as const, session }
@@ -575,12 +557,11 @@ export async function previewExecutiveSpreadsheet(
             targetWorker = potentialWorker
           }
 
-          // 4. Strict 2+ token subset match (all input tokens must be in worker tokens AND length >= 2)
+          // 4. Strict 2+ token subset match (robust against naming order and native name inclusion)
           if (!targetWorker) {
             for (const item of workerTokenList) {
               if (alreadyMatchedWorkerIds.has(item.worker._id)) continue
-              const matchesAll = inputTokens.every((tok) => item.tokens.includes(tok))
-              if (matchesAll && inputTokens.length >= 2 && item.tokens.length >= 2) {
+              if (item.worker.fullName && appointmentNameMatchesWorker(candidateName, item.worker.fullName)) {
                 targetWorker = item.worker
                 break
               }
@@ -1507,23 +1488,22 @@ export async function claimPendingExecutiveAppointmentsForWorker(
       }
 
       // Name-only reservations: exact normalized-key match first, then fall back
-      // to a first+last-name match so appointments recorded with only two names
-      // (e.g. "Elisha Airohi") still match workers with fuller names
-      // (e.g. "Elisha Osemudiamen Airohi").
-      if (app.normalizedName) {
-        if (app.normalizedName === normalizedKey) {
-          matchedAppointments.push(app)
-          continue
-        }
+      // to robust subset token match so appointments recorded with fewer or rearranged
+      // name parts (e.g. "Timothy Igbinovia" vs "Efosa Timothy Igbinovia", or
+      // "Gift Bello" vs "Bello Omonigho Gift") match workers accurately.
+      if (app.normalizedName && app.normalizedName === normalizedKey) {
+        matchedAppointments.push(app)
+        continue
       }
 
-      if (app.fullName) {
-        const appKey = normalizeTokensKey(extractNameTokens(app.fullName))
+      const candName = app.fullName || app.normalizedName || ''
+      if (candName) {
+        const appKey = normalizeTokensKey(extractNameTokens(candName))
         if (appKey === normalizedKey) {
           matchedAppointments.push(app)
           continue
         }
-        if (appointmentNameMatchesWorker(app.fullName, fullName)) {
+        if (appointmentNameMatchesWorker(candName, fullName)) {
           matchedAppointments.push(app)
           continue
         }
@@ -1579,17 +1559,20 @@ export async function claimPendingExecutiveAppointmentsForWorker(
         ...(app.decidedByRole ? { decidedByRole: app.decidedByRole } : {}),
       }
 
-      if (app.kind === 'csgb') {
+      if (app.kind === 'csgb' || app.csgbRole?._ref || (!app.hall && !app.teamName && app.office)) {
+        pos.kind = 'csgb'
         pos.office = app.office || 'CSGB Executive'
         if (app.csgbRole?._ref) {
           pos.csgbRole = { _type: 'reference', _ref: app.csgbRole._ref }
         }
-      } else if (app.kind === 'hall') {
+      } else if (app.kind === 'hall' || app.hallRef?._ref || (!app.csgbRole && !app.teamName && app.hall)) {
+        pos.kind = 'hall'
         pos.hall = app.hall || 'Hall 1'
         if (app.hallRef?._ref) {
           pos.hallRef = { _type: 'reference', _ref: app.hallRef._ref }
         }
-      } else if (app.kind === 'team') {
+      } else if (app.kind === 'team' || app.teamRef?._ref || (!app.csgbRole && !app.hall && app.teamName)) {
+        pos.kind = 'team'
         pos.teamName = app.teamName || 'Ministry Team'
         if (app.teamRef?._ref) {
           pos.team = { _type: 'reference', _ref: app.teamRef._ref }
