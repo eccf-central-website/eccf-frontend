@@ -41,7 +41,7 @@ export default function InitialPageLoader() {
       <LoadingState
         fullscreen
         size="md"
-        theme="light"
+        theme="auto"
         message="Welcome to ECCF Family"
         subtext="Preparing fellowship space..."
       />

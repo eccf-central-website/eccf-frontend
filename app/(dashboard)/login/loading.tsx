@@ -4,7 +4,7 @@ export default function LoginLoading() {
   return (
     <LoadingState
       fullscreen
-      theme="dark"
+      theme="auto"
       size="md"
       message="Loading Exco Portal"
       subtext="Connecting to fellowship authentication..."
