@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { SignUp } from '@clerk/nextjs'
+import { SignUp, ClerkLoaded, ClerkLoading, useAuth } from '@clerk/nextjs'
 import LoadingState from '@/components/common/LoadingState'
 import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
 import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
@@ -46,7 +46,21 @@ function useClerkDashboardVariables() {
 }
 
 function ClerkSignUpCard() {
+  const { isLoaded } = useAuth()
   const clerkVariables = useClerkDashboardVariables()
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
+        <LoadingState
+          size="md"
+          theme="dark"
+          message="Loading Exco Portal"
+          subtext="Preparing secure fellowship authentication..."
+        />
+      </div>
+    )
+  }
 
   return (
     <main
@@ -105,8 +119,8 @@ function ClerkSignUpCard() {
 
 export default function SignUpPage() {
   return (
-    <Suspense
-      fallback={
+    <>
+      <ClerkLoading>
         <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
           <LoadingState
             size="md"
@@ -115,9 +129,23 @@ export default function SignUpPage() {
             subtext="Preparing secure fellowship authentication..."
           />
         </div>
-      }
-    >
-      <ClerkSignUpCard />
-    </Suspense>
+      </ClerkLoading>
+      <ClerkLoaded>
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
+              <LoadingState
+                size="md"
+                theme="dark"
+                message="Loading Exco Portal"
+                subtext="Preparing secure fellowship authentication..."
+              />
+            </div>
+          }
+        >
+          <ClerkSignUpCard />
+        </Suspense>
+      </ClerkLoaded>
+    </>
   )
 }

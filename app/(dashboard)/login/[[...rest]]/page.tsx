@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { SignIn } from '@clerk/nextjs'
+import { SignIn, ClerkLoaded, ClerkLoading, useAuth } from '@clerk/nextjs'
 import LoadingState from '@/components/common/LoadingState'
 import PwaPromptSuppressor from '@/components/common/PwaPromptSuppressor'
 import { useTheme } from '@/components/dashboard/theme/ThemeProvider'
@@ -48,6 +48,7 @@ function useClerkDashboardVariables() {
 }
 
 function ClerkLoginCard() {
+  const { isLoaded } = useAuth()
   const searchParams = useSearchParams()
   const isApprovalPending = searchParams?.get('denied') === 'approval_pending'
   const clerkVariables = useClerkDashboardVariables()
@@ -69,6 +70,19 @@ function ClerkLoginCard() {
     } finally {
       setActivating(false)
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
+        <LoadingState
+          size="md"
+          theme="dark"
+          message="Loading Exco Portal"
+          subtext="Connecting to fellowship authentication..."
+        />
+      </div>
+    )
   }
 
   return (
@@ -202,8 +216,8 @@ function ClerkLoginCard() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
+    <>
+      <ClerkLoading>
         <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
           <LoadingState
             size="md"
@@ -212,9 +226,23 @@ export default function LoginPage() {
             subtext="Connecting to fellowship authentication..."
           />
         </div>
-      }
-    >
-      <ClerkLoginCard />
-    </Suspense>
+      </ClerkLoading>
+      <ClerkLoaded>
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen flex-1 items-center justify-center bg-background p-8 text-foreground">
+              <LoadingState
+                size="md"
+                theme="dark"
+                message="Loading Exco Portal"
+                subtext="Connecting to fellowship authentication..."
+              />
+            </div>
+          }
+        >
+          <ClerkLoginCard />
+        </Suspense>
+      </ClerkLoaded>
+    </>
   )
 }
