@@ -221,13 +221,18 @@ export default function InstallPwaButton({
           type="button"
           onClick={handleInstallClick}
           className={cn(
-            'flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-left text-sm font-normal text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] md:min-h-10',
+            'group flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors hover:bg-accent focus:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]',
             className
           )}
           aria-label="Install ECCF Exco Portal"
         >
-          <Download className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="truncate">Install App</span>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+            <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+          </div>
+          <span className="flex-1 truncate text-[13px] text-foreground font-medium">Install App</span>
+          <span className="rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            PWA
+          </span>
         </button>
       ) : (
         <Button

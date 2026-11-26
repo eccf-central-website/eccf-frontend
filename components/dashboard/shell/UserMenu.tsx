@@ -8,12 +8,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
+  ArrowUpRight,
   Camera,
   ChevronDown,
   ExternalLink,
   Loader2,
   LogOut,
   Moon,
+  Shield,
   Sun,
   UploadCloud,
   UserRound,
@@ -214,12 +216,12 @@ export default function UserMenu({
     <>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="min-h-11 gap-2 rounded-full border-0 bg-muted/50 px-2 hover:bg-muted focus-visible:ring-2 sm:min-h-10 sm:px-3"
+          <button
+            type="button"
+            className="group flex h-9.5 items-center gap-2 rounded-full border border-border/60 bg-muted/40 pl-1.5 pr-2.5 text-left shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-border hover:bg-accent/60 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:border-primary/40 data-[state=open]:bg-accent/80"
             aria-label={`Account menu, signed in as ${displayName}`}
           >
-            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+            <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-border/80 bg-gradient-to-br from-primary to-primary/80 text-xs font-semibold text-primary-foreground shadow-2xs">
               {currentPhoto && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -231,139 +233,182 @@ export default function UserMenu({
               ) : initials ? (
                 initials
               ) : (
-                <UserRound aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <UserRound aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
               )}
             </span>
-            <span className="hidden max-w-[150px] truncate text-sm font-medium sm:inline">
+            <span className="hidden max-w-[135px] truncate text-[13px] font-medium text-foreground tracking-tight sm:inline">
               {displayName}
             </span>
-            <ChevronDown aria-hidden="true" className="hidden text-muted-foreground sm:block" />
-          </Button>
+            <ChevronDown
+              aria-hidden="true"
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 group-hover:text-foreground"
+            />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
-          <DropdownMenuLabel className="p-3 font-normal">
-            <div className="flex items-center gap-3">
-              <div className="group relative shrink-0">
-                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  {currentPhoto && !imgError ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={currentPhoto}
-                      alt={displayName}
-                      className="h-full w-full object-cover"
-                      onError={() => setImgError(true)}
-                    />
-                  ) : initials ? (
-                    initials
-                  ) : (
-                    <UserRound aria-hidden="true" className="h-5 w-5 shrink-0" />
+        <DropdownMenuContent
+          align="end"
+          sideOffset={8}
+          className="w-[320px] rounded-2xl border border-border/80 bg-popover/95 p-2 text-popover-foreground shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+        >
+          <DropdownMenuLabel className="p-0 font-normal">
+            <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-b from-muted/60 via-muted/30 to-muted/10 p-3.5 shadow-2xs">
+              {/* Subtle ambient accent glow */}
+              <div
+                className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl"
+                aria-hidden="true"
+              />
+
+              <div className="relative flex items-center gap-3">
+                <div className="group/avatar relative shrink-0">
+                  <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full ring-2 ring-primary/25 bg-gradient-to-br from-primary to-primary/80 text-sm font-semibold text-primary-foreground shadow-xs">
+                    {currentPhoto && !imgError ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={currentPhoto}
+                        alt={displayName}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                        onError={() => setImgError(true)}
+                      />
+                    ) : initials ? (
+                      initials
+                    ) : (
+                      <UserRound aria-hidden="true" className="h-5 w-5 shrink-0" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setIsDialogOpen(true)
+                    }}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 backdrop-blur-xs transition-all duration-200 group-hover/avatar:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="Change profile picture"
+                    aria-label="Change profile picture"
+                  >
+                    <Camera className="h-4 w-4 drop-shadow-md" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  {name && (
+                    <p className="truncate text-sm font-semibold text-foreground tracking-tight">
+                      {name}
+                    </p>
+                  )}
+                  {email && (
+                    <p className="truncate text-xs text-muted-foreground font-normal mt-0.5">
+                      {email}
+                    </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    setIsDialogOpen(true)
-                  }}
-                  className="absolute inset-0 flex items-center justify-center rounded-full bg-background/75 text-foreground opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  title="Change profile picture"
-                  aria-label="Change profile picture"
-                >
-                  <Camera className="h-4 w-4" aria-hidden="true" />
-                </button>
               </div>
 
-              <div className="min-w-0 flex-1 space-y-1">
-                {name && (
-                  <span className="block truncate text-sm font-semibold text-foreground">
-                    {name}
-                  </span>
-                )}
-                {email && (
-                  <span className="block truncate text-[13px] text-muted-foreground">{email}</span>
-                )}
-                <div className="pt-0.5">
-                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {/* Leadership Role / Team Badges */}
+              <div className="relative mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-2.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary shadow-2xs">
+                  <Shield className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span className="truncate max-w-[210px]">
                     {getLeaderPostTitle({ role, excoPosition, team, teams })}
                   </span>
+                </span>
+
+                {excoPosition &&
+                  displayTeam &&
+                  displayTeam.toLowerCase() !==
+                    getLeaderPostTitle({ role, excoPosition, team, teams }).toLowerCase() &&
+                  displayTeam.toLowerCase() !== 'exco' && (
+                    <span className="inline-flex items-center rounded-full border border-border/60 bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {displayTeam}
+                    </span>
+                  )}
+              </div>
+
+              {teams && teams.length > 1 && (
+                <div className="relative mt-2 flex flex-wrap gap-1">
+                  {teams.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center rounded-md border border-border/40 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    >
+                      {t}
+                    </span>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
-
-            {excoPosition && (
-              <p className="mt-2 truncate text-[13px] text-muted-foreground">
-                {displayTeam} {teams && teams.length > 1 ? 'teams' : 'team'}
-              </p>
-            )}
-
-            {teams && teams.length > 1 && (
-              <div className="flex flex-wrap gap-1.5 pt-2">
-                {teams.map((t) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center rounded-md bg-secondary/80 px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
           </DropdownMenuLabel>
 
-          <DropdownMenuSeparator />
+          <div className="space-y-0.5 pt-1.5">
+            <DropdownMenuItem
+              onSelect={() => setIsDialogOpen(true)}
+              className="group flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent focus:bg-accent data-[highlighted]:bg-accent"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary group-data-[highlighted]:bg-primary/10 group-data-[highlighted]:text-primary">
+                <Camera className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <span className="flex-1 text-[13px] text-foreground font-medium">Change profile picture</span>
+            </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onSelect={() => setIsDialogOpen(true)}
-            className="min-h-11 cursor-pointer sm:min-h-10"
-          >
-            <Camera aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-            Change profile picture
-          </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={toggleTheme}
+              className="group flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent focus:bg-accent data-[highlighted]:bg-accent"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-warning/15 group-hover:text-warning group-data-[highlighted]:bg-warning/15 group-data-[highlighted]:text-warning">
+                {isDark ? (
+                  <Sun className="h-4 w-4 text-warning" aria-hidden="true" />
+                ) : (
+                  <Moon className="h-4 w-4 text-primary" aria-hidden="true" />
+                )}
+              </div>
+              <span className="flex-1 text-[13px] text-foreground font-medium">
+                {isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+              </span>
+              <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+                {isDark ? 'Dark' : 'Light'}
+              </span>
+            </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={toggleTheme} className="min-h-11 cursor-pointer sm:min-h-10">
-            {isDark ? (
+            <InstallPwaButton
+              variant="menu"
+              onOpenGuide={(isIos) => {
+                setMenuOpen(false)
+                setInstallGuide({ open: true, isIos })
+              }}
+            />
+
+            <DropdownMenuItem
+              asChild
+              className="group flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent focus:bg-accent data-[highlighted]:bg-accent"
+            >
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary group-data-[highlighted]:bg-primary/10 group-data-[highlighted]:text-primary">
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <span className="flex-1 text-[13px] text-foreground font-medium">View public site</span>
+                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground group-data-[highlighted]:text-foreground" aria-hidden="true" />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="my-1.5 bg-border/60" />
+
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="group flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive transition-colors group-hover:bg-destructive/20 group-data-[highlighted]:bg-destructive/20">
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <span className="flex-1 text-[13px] font-medium text-destructive">Sign out</span>
+            </DropdownMenuItem>
+
+            {devTools && (
               <>
-                <Sun aria-hidden="true" className="text-warning" />
-                Switch to light theme
-              </>
-            ) : (
-              <>
-                <Moon aria-hidden="true" className="text-muted-foreground" />
-                Switch to dark theme
+                <DropdownMenuSeparator className="my-1.5 bg-border/60" />
+                {devTools}
               </>
             )}
-          </DropdownMenuItem>
-
-          <InstallPwaButton
-            variant="menu"
-            onOpenGuide={(isIos) => {
-              setMenuOpen(false)
-              setInstallGuide({ open: true, isIos })
-            }}
-          />
-
-          <DropdownMenuItem asChild className="min-h-11 cursor-pointer sm:min-h-10">
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              <ExternalLink aria-hidden="true" />
-              View public site
-              <span className="sr-only">(opens in a new tab)</span>
-            </a>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={handleSignOut}
-            className="min-h-11 cursor-pointer text-destructive focus:text-destructive sm:min-h-10"
-          >
-            <LogOut aria-hidden="true" />
-            Sign out
-          </DropdownMenuItem>
-
-          {devTools && (
-            <>
-              <DropdownMenuSeparator />
-              {devTools}
-            </>
-          )}
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
