@@ -269,17 +269,34 @@ function parsePositionDetails(
     }
   }
 
-  // Prayer Coordinator
+  // Assistant Prayer Coordinator is strictly part of the Prayer Team (operational team), NOT CSGB!
+  // CSGB has strictly 5 offices (President, VP Admin, VP Evangelism, General Secretary, Prayer Coordinator [lead]).
+  const isAssistantPrayer =
+    (combined.includes('prayer') && (combined.includes('assistant') || combined.includes('asst') || combined.includes('deputy') || combined.includes('vice'))) ||
+    ((combined.includes('prayer coordinator') || combined.includes('prayer coord')) && rank === 'assistant')
+
+  if (isAssistantPrayer) {
+    const prayerTeamDoc = teams.find((t) => t.name.toLowerCase().includes('prayer'))
+    return {
+      kind: 'team',
+      teamName: prayerTeamDoc?.name || 'Prayer Team',
+      teamRef: prayerTeamDoc?._id || 'team-prayer-team',
+      office: 'Assistant Prayer Coordinator',
+      rank: 'assistant',
+    }
+  }
+
+  // Prayer Coordinator (Lead only — strictly the 5th CSGB member)
   if (
-    combined.includes('prayer coordinator') ||
-    combined.includes('prayer coord')
+    (combined.includes('prayer coordinator') || combined.includes('prayer coord')) &&
+    rank !== 'assistant'
   ) {
     const csgbMatch = csgbRoles.find((r) => r._id === 'csgb-role-prayer-coordinator') || csgbRoles.find((r) => r.title.toLowerCase().includes('prayer coordinator'))
     return {
       kind: 'csgb',
       office: 'Prayer Coordinator',
       csgbRoleRef: csgbMatch?._id || 'csgb-role-prayer-coordinator',
-      rank,
+      rank: 'lead',
     }
   }
 
@@ -939,6 +956,17 @@ export async function commitExecutiveImport(payload: {
   for (const item of items) {
     const cleanDisplayName = item.workerDisplayName || capitalizeWords(cleanHonorifics(item.rawName))
 
+    // Enforce CSGB strictness: Assistant Prayer Coordinator is strictly Prayer Team, never CSGB
+    if (
+      (item.office?.toLowerCase().includes('prayer') || item.csgbRoleRef?.includes('prayer')) &&
+      (item.rank === 'assistant' || item.office?.toLowerCase().includes('assistant') || item.office?.toLowerCase().includes('asst'))
+    ) {
+      item.kind = 'team'
+      item.teamName = 'Prayer Team'
+      item.office = 'Assistant Prayer Coordinator'
+      item.csgbRoleRef = undefined
+    }
+
     // Build the canonical new position object
     const newPos: Record<string, unknown> = {
       _key: `csv_pos_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -1559,7 +1587,17 @@ export async function claimPendingExecutiveAppointmentsForWorker(
         ...(app.decidedByRole ? { decidedByRole: app.decidedByRole } : {}),
       }
 
-      if (app.kind === 'csgb' || app.csgbRole?._ref || (!app.hall && !app.teamName && app.office)) {
+      const isAssistantPrayerClaim =
+        Boolean(app.office?.toLowerCase().includes('prayer')) &&
+        (app.rank === 'assistant' || Boolean(app.office?.toLowerCase().includes('assistant')) || Boolean(app.office?.toLowerCase().includes('asst')))
+
+      if (isAssistantPrayerClaim) {
+        pos.kind = 'team'
+        pos.teamName = 'Prayer Team'
+        pos.office = 'Assistant Prayer Coordinator'
+        pos.rank = 'assistant'
+        pos.team = { _type: 'reference', _ref: app.teamRef?._ref || 'team-prayer-team' }
+      } else if (app.kind === 'csgb' || app.csgbRole?._ref || (!app.hall && !app.teamName && app.office)) {
         pos.kind = 'csgb'
         pos.office = app.office || 'CSGB Executive'
         if (app.csgbRole?._ref) {

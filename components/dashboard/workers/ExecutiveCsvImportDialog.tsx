@@ -259,11 +259,26 @@ export default function ExecutiveCsvImportDialog({
 
   function handleToggleRank(rowId: string) {
     setRows((prev) =>
-      prev.map((r) =>
-        r.rowId === rowId
-          ? { ...r, rank: r.rank === 'lead' ? 'assistant' : 'lead' }
-          : r
-      )
+      prev.map((r) => {
+        if (r.rowId !== rowId) return r
+        const newRank = r.rank === 'lead' ? 'assistant' : 'lead'
+        if (
+          r.kind === 'csgb' &&
+          (r.office?.toLowerCase().includes('prayer') || r.csgbRoleRef?.includes('prayer')) &&
+          newRank === 'assistant'
+        ) {
+          return {
+            ...r,
+            rank: 'assistant',
+            kind: 'team',
+            teamName: 'Prayer Team',
+            teamRef: r.teamRef || 'team-prayer-team',
+            csgbRoleRef: undefined,
+            office: 'Assistant Prayer Coordinator',
+          }
+        }
+        return { ...r, rank: newRank }
+      })
     )
   }
 

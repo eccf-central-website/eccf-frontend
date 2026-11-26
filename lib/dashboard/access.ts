@@ -294,25 +294,43 @@ export function deriveAccess(worker: RawWorkerDoc | null | undefined): WorkerAcc
     approvedPositions.some(
       (p) =>
         (p.kind === 'csgb' &&
+          p.rank !== 'assistant' &&
+          !p.office?.toLowerCase().includes('assistant') &&
+          !p.office?.toLowerCase().includes('asst') &&
           (p.office?.toLowerCase().includes('prayer') ||
             p.office?.toLowerCase().includes('coordinator') ||
             p.csgbRoleKey === 'prayer-coordinator')) ||
         (p.kind === 'team' && (p.teamKey === 'prayer' || p.teamName?.toLowerCase().includes('prayer')) && p.rank === 'lead')
     ) ||
-    (legacyIsExcoApproved && legacyExcoPosition?.toLowerCase().includes('prayer'))
+    (legacyIsExcoApproved &&
+      legacyExcoPosition?.toLowerCase().includes('prayer') &&
+      !legacyExcoPosition?.toLowerCase().includes('assistant') &&
+      !legacyExcoPosition?.toLowerCase().includes('asst'))
 
   const isCSGB =
     isPresident ||
     isVP ||
     isPrayerCoordinator ||
-    approvedPositions.some((p) => p.kind === 'csgb') ||
+    approvedPositions.some(
+      (p) =>
+        p.kind === 'csgb' &&
+        p.rank !== 'assistant' &&
+        !p.office?.toLowerCase().includes('assistant') &&
+        !p.office?.toLowerCase().includes('asst')
+    ) ||
     approvedPositions.some(
       (p) =>
         p.kind === 'team' &&
         (p.teamKey === 'prayer' || p.teamName?.toLowerCase().includes('prayer')) &&
         p.rank === 'lead'
     ) ||
-    (legacyIsExcoApproved && (legacyRole === 'admin' || legacyExcoPosition?.toLowerCase().includes('president') || legacyExcoPosition?.toLowerCase().includes('general secretary') || legacyExcoPosition?.toLowerCase().includes('prayer')))
+    (legacyIsExcoApproved &&
+      (legacyRole === 'admin' ||
+        legacyExcoPosition?.toLowerCase().includes('president') ||
+        legacyExcoPosition?.toLowerCase().includes('general secretary') ||
+        (legacyExcoPosition?.toLowerCase().includes('prayer') &&
+          !legacyExcoPosition?.toLowerCase().includes('assistant') &&
+          !legacyExcoPosition?.toLowerCase().includes('asst'))))
 
   const isFinance =
     approvedPositions.some(

@@ -822,7 +822,25 @@ export async function listExecutives(session?: ECCFSession): Promise<ExecutiveRo
   const registered: ExecutiveRow[] = (rows || [])
     .map((row) => ({
       ...row,
-      positions: (row.positions || []).filter((position) => position.status === 'approved'),
+      positions: (row.positions || [])
+        .filter((position) => position.status === 'approved')
+        .map((p) => {
+          // Assistant Prayer Coordinator is strictly Prayer Team (Ministry Teams), NOT CSGB
+          const isAsstPrayer =
+            (p.office?.toLowerCase().includes('prayer') || p.csgbRoleTitle?.toLowerCase().includes('prayer')) &&
+            (p.rank === 'assistant' || p.office?.toLowerCase().includes('assistant') || p.office?.toLowerCase().includes('asst'))
+          if (isAsstPrayer && p.kind === 'csgb') {
+            return {
+              ...p,
+              kind: 'team' as const,
+              office: 'Assistant Prayer Coordinator',
+              teamTitle: p.teamTitle || p.teamName || 'Prayer Team',
+              teamName: p.teamName || 'Prayer Team',
+              rank: 'assistant' as const,
+            }
+          }
+          return p
+        }),
       registrationStatus: 'registered' as const,
       isRegistered: true,
     }))

@@ -280,18 +280,19 @@ export function isCSGBMember(
   if (session.access?.isPrayerCoordinator) return true
   if (session.role === 'admin') return true
   const position = (session.excoPosition || '').toLowerCase()
-  const team = (session.team || '').toLowerCase()
+  const isAssistant = position.includes('assistant') || position.includes('asst')
+  if (isAssistant && position.includes('prayer')) return false
+
   const leadingTeam = (session.leadingTeam || '').toLowerCase()
-  const hasPrayerInTeams = session.teams?.some((t) => Boolean(t && typeof t === 'string' && t.toLowerCase().includes('prayer'))) ?? false
+  const isPrayerLeader =
+    (position.includes('prayer coordinator') || position.includes('prayer leader') || leadingTeam.includes('prayer')) &&
+    !isAssistant
 
   return (
     position.includes('president') ||
     position.includes('vice president') ||
     (position.includes('general secretary') && !position.includes('financial')) ||
-    position.includes('prayer') ||
-    team.includes('prayer') ||
-    leadingTeam.includes('prayer') ||
-    hasPrayerInTeams
+    isPrayerLeader
   )
 }
 
