@@ -191,10 +191,13 @@ export const MOCK_ATTENDANCE: AttendanceRow[] = Array.from({ length: 14 }, (_, i
   const meetingTitle = serviceType === 'Team Meeting' ? `${teamName} Weekly Rehearsal & Review` : undefined
   const totalCount = base + ((i * 17) % 40)
   
-  const menCount = isGeneral ? Math.round(totalCount * 0.42) : undefined
-  const womenCount = isGeneral ? Math.round(totalCount * 0.48) : undefined
+  const menCount = isGeneral ? Math.round(totalCount * 0.40) : undefined
+  const womenCount = isGeneral ? Math.round(totalCount * 0.46) : undefined
+  const staffMenCount = isGeneral ? Math.max(1, Math.round(totalCount * 0.03)) : undefined
+  const staffWomenCount = isGeneral ? Math.max(1, Math.round(totalCount * 0.03)) : undefined
+  const staffCount = isGeneral ? (staffMenCount || 0) + (staffWomenCount || 0) : undefined
   const childrenCount = isGeneral ? Math.round(totalCount * 0.05) : undefined
-  const firstTimersCount = isGeneral ? Math.max(2, totalCount - ((menCount || 0) + (womenCount || 0) + (childrenCount || 0))) : undefined
+  const firstTimersCount = isGeneral ? Math.max(2, Math.round(totalCount * 0.03)) : undefined
 
   return {
     _id: `mock-att-${String(i + 1).padStart(2, '0')}`,
@@ -206,6 +209,9 @@ export const MOCK_ATTENDANCE: AttendanceRow[] = Array.from({ length: 14 }, (_, i
     attendeeCount: serviceType === 'Team Meeting' ? totalCount : 0,
     menCount,
     womenCount,
+    staffCount,
+    staffMenCount,
+    staffWomenCount,
     childrenCount,
     firstTimersCount,
     notes: isGeneral && i % 3 === 0 ? 'Smooth service. Ushering headcount completed across all overflow wings.' : undefined,

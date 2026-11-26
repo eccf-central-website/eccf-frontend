@@ -5,11 +5,14 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   AlertTriangle,
   BarChart3,
+  Briefcase,
   Check,
   CheckCircle2,
+  GraduationCap,
   Loader2,
   Search,
   Sparkles,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react'
@@ -102,6 +105,8 @@ export default function RecordAttendanceSheet({
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [menCount, setMenCount] = useState('')
   const [womenCount, setWomenCount] = useState('')
+  const [staffMenCount, setStaffMenCount] = useState('')
+  const [staffWomenCount, setStaffWomenCount] = useState('')
   const [childrenCount, setChildrenCount] = useState('')
   const [firstTimersCount, setFirstTimersCount] = useState('')
   const [generalNotes, setGeneralNotes] = useState('')
@@ -146,11 +151,13 @@ export default function RecordAttendanceSheet({
     [todayIso, lastSundayIso, lastWednesdayIso]
   )
 
-  const breakdownSum =
-    (parseInt(menCount, 10) || 0) +
-    (parseInt(womenCount, 10) || 0) +
-    (parseInt(childrenCount, 10) || 0) +
-    (parseInt(firstTimersCount, 10) || 0)
+  const studentSum = (parseInt(menCount, 10) || 0) + (parseInt(womenCount, 10) || 0)
+  const staffSum = (parseInt(staffMenCount, 10) || 0) + (parseInt(staffWomenCount, 10) || 0)
+  const childrenSum = parseInt(childrenCount, 10) || 0
+
+  // Total headcount sum: Students + Staff + Children
+  // NOTE: First-timers are visitors already counted among the students/staff above, so they are not double-counted into total headcount.
+  const breakdownSum = studentSum + staffSum + childrenSum
 
   const applyBreakdownSum = () => {
     if (breakdownSum > 0) {
@@ -228,6 +235,8 @@ export default function RecordAttendanceSheet({
     setServiceTitle('')
     setMenCount('')
     setWomenCount('')
+    setStaffMenCount('')
+    setStaffWomenCount('')
     setChildrenCount('')
     setFirstTimersCount('')
     setGeneralNotes('')
@@ -260,10 +269,17 @@ export default function RecordAttendanceSheet({
         return
       }
 
-      const parsedMen = menCount ? parseInt(menCount, 10) : undefined
-      const parsedWomen = womenCount ? parseInt(womenCount, 10) : undefined
-      const parsedChildren = childrenCount ? parseInt(childrenCount, 10) : undefined
-      const parsedFirstTimers = firstTimersCount ? parseInt(firstTimersCount, 10) : undefined
+      const parsedMen = menCount.trim() !== '' ? parseInt(menCount, 10) : undefined
+      const parsedWomen = womenCount.trim() !== '' ? parseInt(womenCount, 10) : undefined
+      const parsedStaffMen = staffMenCount.trim() !== '' ? parseInt(staffMenCount, 10) : undefined
+      const parsedStaffWomen = staffWomenCount.trim() !== '' ? parseInt(staffWomenCount, 10) : undefined
+      const parsedStaffCount =
+        parsedStaffMen !== undefined || parsedStaffWomen !== undefined
+          ? (parsedStaffMen || 0) + (parsedStaffWomen || 0)
+          : undefined
+      const parsedChildren = childrenCount.trim() !== '' ? parseInt(childrenCount, 10) : undefined
+      // First-timers is optional: if omitted/blank, do NOT set 0; pass undefined
+      const parsedFirstTimers = firstTimersCount.trim() !== '' ? parseInt(firstTimersCount, 10) : undefined
 
       startTransition(async () => {
         const result = await recordGeneralHeadcountAction({
@@ -273,6 +289,9 @@ export default function RecordAttendanceSheet({
           totalCount: countNum,
           menCount: parsedMen,
           womenCount: parsedWomen,
+          staffCount: parsedStaffCount,
+          staffMenCount: parsedStaffMen,
+          staffWomenCount: parsedStaffWomen,
           childrenCount: parsedChildren,
           firstTimersCount: parsedFirstTimers,
           notes: generalNotes.trim() || undefined,
@@ -292,6 +311,9 @@ export default function RecordAttendanceSheet({
             attendeeCount: 0,
             menCount: parsedMen,
             womenCount: parsedWomen,
+            staffCount: parsedStaffCount,
+            staffMenCount: parsedStaffMen,
+            staffWomenCount: parsedStaffWomen,
             childrenCount: parsedChildren,
             firstTimersCount: parsedFirstTimers,
             notes: generalNotes.trim() || undefined,
@@ -600,7 +622,7 @@ export default function RecordAttendanceSheet({
             </div>
 
             {/* Optional Demographic Breakdown */}
-            <div className="rounded-[var(--radius-card)] bg-surface-raised p-4">
+            <div className="rounded-[var(--radius-card)] bg-surface-raised p-4 space-y-4">
               <button
                 type="button"
                 aria-expanded={showBreakdown}
@@ -613,75 +635,158 @@ export default function RecordAttendanceSheet({
                   <span>Demographic breakdown</span>
                 </span>
                 <span className="text-[13px] font-medium text-muted-foreground">
-                  {showBreakdown ? 'Hide' : 'Optional'}
+                  {showBreakdown ? 'Hide' : 'Optional (Students & Staff)'}
                 </span>
               </button>
 
               {showBreakdown && (
-                <div id="att-breakdown-panel" className="mt-3 space-y-3 pt-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="bc-men" className="text-[13px] text-muted-foreground">
-                        Men
-                      </Label>
-                      <Input
-                        id="bc-men"
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={menCount}
-                        onChange={(e) => setMenCount(e.target.value)}
-                        className="bg-card font-sans tabular-nums"
-                      />
+                <div id="att-breakdown-panel" className="space-y-4 pt-1">
+                  {/* Sub-section 1: University Students */}
+                  <div className="rounded-[calc(var(--radius-card)-2px)] border border-border/60 bg-card/60 p-3.5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4 text-primary" aria-hidden="true" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                          University Students
+                        </span>
+                      </div>
+                      {studentSum > 0 && (
+                        <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                          Subtotal: <strong className="text-foreground">{formatCount(studentSum)}</strong>
+                        </span>
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="bc-women" className="text-[13px] text-muted-foreground">
-                        Women
-                      </Label>
-                      <Input
-                        id="bc-women"
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={womenCount}
-                        onChange={(e) => setWomenCount(e.target.value)}
-                        className="bg-card font-sans tabular-nums"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="bc-children" className="text-[13px] text-muted-foreground">
-                        Children / teens
-                      </Label>
-                      <Input
-                        id="bc-children"
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={childrenCount}
-                        onChange={(e) => setChildrenCount(e.target.value)}
-                        className="bg-card font-sans tabular-nums"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="bc-firsttimers" className="text-[13px] text-muted-foreground">
-                        First-timers
-                      </Label>
-                      <Input
-                        id="bc-firsttimers"
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={firstTimersCount}
-                        onChange={(e) => setFirstTimersCount(e.target.value)}
-                        className="bg-card font-sans tabular-nums"
-                      />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bc-men" className="text-[13px] text-muted-foreground">
+                          Male students (Brothers)
+                        </Label>
+                        <Input
+                          id="bc-men"
+                          type="number"
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={menCount}
+                          onChange={(e) => setMenCount(e.target.value)}
+                          className="bg-card font-sans tabular-nums"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bc-women" className="text-[13px] text-muted-foreground">
+                          Female students (Sisters)
+                        </Label>
+                        <Input
+                          id="bc-women"
+                          type="number"
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={womenCount}
+                          onChange={(e) => setWomenCount(e.target.value)}
+                          className="bg-card font-sans tabular-nums"
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  {/* Sub-section 2: University Staff & Faculty */}
+                  <div className="rounded-[calc(var(--radius-card)-2px)] border border-border/60 bg-card/60 p-3.5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-secondary-foreground" aria-hidden="true" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                          University Staff & Faculty
+                        </span>
+                      </div>
+                      {staffSum > 0 && (
+                        <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                          Subtotal: <strong className="text-foreground">{formatCount(staffSum)}</strong>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bc-staff-men" className="text-[13px] text-muted-foreground">
+                          Male staff / lecturers
+                        </Label>
+                        <Input
+                          id="bc-staff-men"
+                          type="number"
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={staffMenCount}
+                          onChange={(e) => setStaffMenCount(e.target.value)}
+                          className="bg-card font-sans tabular-nums"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bc-staff-women" className="text-[13px] text-muted-foreground">
+                          Female staff / lecturers
+                        </Label>
+                        <Input
+                          id="bc-staff-women"
+                          type="number"
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={staffWomenCount}
+                          onChange={(e) => setStaffWomenCount(e.target.value)}
+                          className="bg-card font-sans tabular-nums"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sub-section 3: Children & Teens */}
+                  <div className="rounded-[calc(var(--radius-card)-2px)] border border-border/60 bg-card/60 p-3.5 space-y-2">
+                    <Label htmlFor="bc-children" className="text-[13px] font-medium text-foreground">
+                      Children & Teens <span className="font-normal text-muted-foreground">(dependents / visitors)</span>
+                    </Label>
+                    <Input
+                      id="bc-children"
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={childrenCount}
+                      onChange={(e) => setChildrenCount(e.target.value)}
+                      className="bg-card font-sans tabular-nums"
+                    />
+                  </div>
+
+                  {/* Sub-section 4: First-Timers (Optional) */}
+                  <div className="rounded-[calc(var(--radius-card)-2px)] border border-dashed border-border/80 bg-surface-raised/50 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-success" aria-hidden="true" />
+                        <Label htmlFor="bc-firsttimers" className="text-[13px] font-semibold text-foreground">
+                          First-Time Visitors
+                        </Label>
+                      </div>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        Optional
+                      </span>
+                    </div>
+                    <Input
+                      id="bc-firsttimers"
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      placeholder="Leave blank if not counted"
+                      value={firstTimersCount}
+                      onChange={(e) => setFirstTimersCount(e.target.value)}
+                      className="bg-card font-sans tabular-nums"
+                    />
+                    <p className="text-[12px] text-muted-foreground leading-normal">
+                      Leave blank if skipped (blank is unrecorded, not zero). First-timers are visitors already counted within the students or staff totals above.
+                    </p>
+                  </div>
+
+                  {/* Breakdown Sum / Apply Action */}
                   {breakdownSum > 0 && (
                     <div className="space-y-2 pt-1">
                       <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
@@ -690,6 +795,9 @@ export default function RecordAttendanceSheet({
                           <strong className="font-semibold text-foreground">
                             {formatCount(breakdownSum)}
                           </strong>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({formatCount(studentSum)} students + {formatCount(staffSum)} staff{childrenSum > 0 ? ` + ${formatCount(childrenSum)} children` : ''})
+                          </span>
                         </span>
                         <Button
                           type="button"

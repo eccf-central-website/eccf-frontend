@@ -36,6 +36,9 @@ export interface RecordGeneralHeadcountInput {
   totalCount: number
   menCount?: number
   womenCount?: number
+  staffCount?: number
+  staffMenCount?: number
+  staffWomenCount?: number
   childrenCount?: number
   firstTimersCount?: number
   notes?: string
@@ -51,6 +54,9 @@ export interface RecordAttendanceInput {
   totalCount?: number
   menCount?: number
   womenCount?: number
+  staffCount?: number
+  staffMenCount?: number
+  staffWomenCount?: number
   childrenCount?: number
   firstTimersCount?: number
   notes?: string
@@ -235,7 +241,20 @@ export async function recordGeneralHeadcountAction(
   }
 
   // 3. Validate input
-  const { date, serviceType, meetingTitle, totalCount, menCount, womenCount, childrenCount, firstTimersCount, notes } = input
+  const {
+    date,
+    serviceType,
+    meetingTitle,
+    totalCount,
+    menCount,
+    womenCount,
+    staffCount,
+    staffMenCount,
+    staffWomenCount,
+    childrenCount,
+    firstTimersCount,
+    notes,
+  } = input
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return { ok: false, error: 'Please choose a valid service date (YYYY-MM-DD).' }
   }
@@ -249,10 +268,22 @@ export async function recordGeneralHeadcountAction(
     return { ok: false, error: 'Please enter a valid headcount number greater than 0.' }
   }
 
-  const sanitizedMen = menCount !== undefined && menCount !== null ? Math.max(0, Number(menCount)) : undefined
-  const sanitizedWomen = womenCount !== undefined && womenCount !== null ? Math.max(0, Number(womenCount)) : undefined
-  const sanitizedChildren = childrenCount !== undefined && childrenCount !== null ? Math.max(0, Number(childrenCount)) : undefined
-  const sanitizedFirstTimers = firstTimersCount !== undefined && firstTimersCount !== null ? Math.max(0, Number(firstTimersCount)) : undefined
+  const sanitizedMen = menCount !== undefined && menCount !== null && !isNaN(Number(menCount)) ? Math.max(0, Number(menCount)) : undefined
+  const sanitizedWomen = womenCount !== undefined && womenCount !== null && !isNaN(Number(womenCount)) ? Math.max(0, Number(womenCount)) : undefined
+  const sanitizedStaffMen = staffMenCount !== undefined && staffMenCount !== null && !isNaN(Number(staffMenCount)) ? Math.max(0, Number(staffMenCount)) : undefined
+  const sanitizedStaffWomen = staffWomenCount !== undefined && staffWomenCount !== null && !isNaN(Number(staffWomenCount)) ? Math.max(0, Number(staffWomenCount)) : undefined
+  const computedStaffTotal =
+    staffCount !== undefined && staffCount !== null && !isNaN(Number(staffCount))
+      ? Math.max(0, Number(staffCount))
+      : (sanitizedStaffMen !== undefined || sanitizedStaffWomen !== undefined)
+        ? (sanitizedStaffMen || 0) + (sanitizedStaffWomen || 0)
+        : undefined
+  const sanitizedChildren = childrenCount !== undefined && childrenCount !== null && !isNaN(Number(childrenCount)) ? Math.max(0, Number(childrenCount)) : undefined
+  // First-timers is optional: if omitted or skipped, do not default to 0; leave undefined
+  const sanitizedFirstTimers =
+    firstTimersCount !== undefined && firstTimersCount !== null && !isNaN(Number(firstTimersCount)) && String(firstTimersCount).trim() !== ''
+      ? Math.max(0, Number(firstTimersCount))
+      : undefined
 
   // 4. Mock data path
   if (isMockEnvironment()) {
@@ -266,6 +297,9 @@ export async function recordGeneralHeadcountAction(
       attendeeCount: 0,
       menCount: sanitizedMen,
       womenCount: sanitizedWomen,
+      staffCount: computedStaffTotal,
+      staffMenCount: sanitizedStaffMen,
+      staffWomenCount: sanitizedStaffWomen,
       childrenCount: sanitizedChildren,
       firstTimersCount: sanitizedFirstTimers,
       notes: notes?.trim() || undefined,
@@ -290,6 +324,9 @@ export async function recordGeneralHeadcountAction(
       totalCount: sanitizedTotal,
       menCount: sanitizedMen,
       womenCount: sanitizedWomen,
+      staffCount: computedStaffTotal,
+      staffMenCount: sanitizedStaffMen,
+      staffWomenCount: sanitizedStaffWomen,
       childrenCount: sanitizedChildren,
       firstTimersCount: sanitizedFirstTimers,
       notes: notes?.trim() || undefined,
@@ -337,6 +374,9 @@ export async function recordAttendanceAction(
     totalCount: input.totalCount || (input.attendeeIds?.length || 0) + (input.extraCount || 0),
     menCount: input.menCount,
     womenCount: input.womenCount,
+    staffCount: input.staffCount,
+    staffMenCount: input.staffMenCount,
+    staffWomenCount: input.staffWomenCount,
     childrenCount: input.childrenCount,
     firstTimersCount: input.firstTimersCount,
     notes: input.notes,

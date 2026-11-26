@@ -51,26 +51,43 @@ function getServiceBadgeVariant(serviceType: AttendanceRow['serviceType']): Stat
 }
 
 function DemographicBreakdown({ row }: { row: AttendanceRow }) {
+  const staffTotal =
+    row.staffCount ??
+    ((row.staffMenCount !== undefined || row.staffWomenCount !== undefined)
+      ? (row.staffMenCount || 0) + (row.staffWomenCount || 0)
+      : undefined)
+
   const hasBreakdown =
     row.menCount !== undefined ||
     row.womenCount !== undefined ||
+    staffTotal !== undefined ||
     row.childrenCount !== undefined ||
-    row.firstTimersCount !== undefined
+    (row.firstTimersCount !== undefined && row.firstTimersCount !== null)
 
   if (!hasBreakdown) {
     return <span className="text-[13px] text-muted-foreground">Aggregate count</span>
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5 text-[13px] tabular-nums">
-      {row.menCount !== undefined && (
+    <div className="flex flex-wrap items-center gap-1.5 text-[13px] tabular-nums">
+      {(row.menCount !== undefined || row.womenCount !== undefined) && (
         <span className="rounded-[var(--radius-pill)] bg-surface-raised px-2 py-0.5 font-medium text-foreground">
-          Men {formatCount(row.menCount)}
+          Students:{" "}
+          {row.menCount !== undefined && row.womenCount !== undefined
+            ? `${formatCount(row.menCount)}M / ${formatCount(row.womenCount ?? 0)}F`
+            : row.menCount !== undefined
+              ? `${formatCount(row.menCount)}M`
+              : `${formatCount(row.womenCount ?? 0)}F`}
         </span>
       )}
-      {row.womenCount !== undefined && (
+      {staffTotal !== undefined && (
         <span className="rounded-[var(--radius-pill)] bg-surface-raised px-2 py-0.5 font-medium text-foreground">
-          Women {formatCount(row.womenCount)}
+          Staff: {formatCount(staffTotal)}
+          {(row.staffMenCount !== undefined || row.staffWomenCount !== undefined) && (
+            <span className="text-muted-foreground ml-1">
+              ({row.staffMenCount ?? 0}M / {row.staffWomenCount ?? 0}F)
+            </span>
+          )}
         </span>
       )}
       {row.childrenCount !== undefined && (
@@ -78,7 +95,7 @@ function DemographicBreakdown({ row }: { row: AttendanceRow }) {
           Children {formatCount(row.childrenCount)}
         </span>
       )}
-      {row.firstTimersCount !== undefined && (
+      {row.firstTimersCount !== undefined && row.firstTimersCount !== null && (
         <span className="rounded-[var(--radius-pill)] bg-success/10 px-2 py-0.5 font-medium text-success">
           First-timers {formatCount(row.firstTimersCount)}
         </span>
@@ -474,8 +491,11 @@ export default function UsheringHeadcountView({
 
                   {(row.menCount !== undefined ||
                     row.womenCount !== undefined ||
+                    row.staffCount !== undefined ||
+                    row.staffMenCount !== undefined ||
+                    row.staffWomenCount !== undefined ||
                     row.childrenCount !== undefined ||
-                    row.firstTimersCount !== undefined) && (
+                    (row.firstTimersCount !== undefined && row.firstTimersCount !== null)) && (
                     <DemographicBreakdown row={row} />
                   )}
 

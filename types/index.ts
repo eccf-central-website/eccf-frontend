@@ -245,6 +245,9 @@ export interface AttendanceLedger {
   totalCount: number
   menCount?: number
   womenCount?: number
+  staffCount?: number
+  staffMenCount?: number
+  staffWomenCount?: number
   childrenCount?: number
   firstTimersCount?: number
   notes?: string
