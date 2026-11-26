@@ -12,9 +12,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react'
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DashboardSection } from '@/lib/dashboard/rbac'
 import type { NavigationAttention } from '@/lib/dashboard/types'
@@ -57,12 +57,52 @@ export function SidebarBrand({ collapsed = false }: { collapsed?: boolean }) {
 export default function AppSidebar({ sections, defaultCollapsed, attention }: AppSidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
+  const navRef = useRef<HTMLElement>(null)
+  const [canScrollDown, setCanScrollDown] = useState(false)
+  const [canScrollUp, setCanScrollUp] = useState(false)
 
   const toggle = () => {
     const next = !collapsed
     setCollapsed(next)
     const value: SidebarState = next ? 'collapsed' : 'expanded'
     document.cookie = `${SIDEBAR_COOKIE}=${value}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`
+  }
+
+  const checkScroll = useCallback(() => {
+    const el = navRef.current
+    if (!el) return
+    const hasScrollable = el.scrollHeight > el.clientHeight + 4
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8
+    setCanScrollDown(hasScrollable && !atBottom)
+    setCanScrollUp(el.scrollTop > 8)
+  }, [])
+
+  useEffect(() => {
+    checkScroll()
+    const el = navRef.current
+    if (!el) return
+
+    window.addEventListener('resize', checkScroll, { passive: true })
+    const observer = new ResizeObserver(() => checkScroll())
+    observer.observe(el)
+
+    return () => {
+      window.removeEventListener('resize', checkScroll)
+      observer.disconnect()
+    }
+  }, [checkScroll, collapsed, sections])
+
+  useEffect(() => {
+    // If active section is off-screen, ensure it's scrolled into view
+    const activeEl = navRef.current?.querySelector('[aria-current="page"]')
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+    }
+    checkScroll()
+  }, [pathname, checkScroll])
+
+  const scrollDown = () => {
+    navRef.current?.scrollBy({ top: 140, behavior: 'smooth' })
   }
 
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose
@@ -82,13 +122,60 @@ export default function AppSidebar({ sections, defaultCollapsed, attention }: Ap
         <SidebarBrand collapsed={collapsed} />
       </div>
 
-      {/* Navigation List — grouped sections, scroll-free at 900px viewport */}
-      <nav
-        aria-label="Dashboard"
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 lg:pt-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        <NavLinks sections={sections} attention={attention} collapsed={collapsed} />
-      </nav>
+      {/* Navigation List Container with dynamic top/bottom scroll affordances */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {/* Top gradient shadow when scrolled down */}
+        <div
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute left-0 right-0 top-0 z-10 h-6 bg-gradient-to-b from-sidebar to-transparent transition-opacity duration-200',
+            canScrollUp ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+
+        <nav
+          ref={navRef}
+          onScroll={checkScroll}
+          aria-label="Dashboard"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 lg:pt-5 pb-8 [scrollbar-width:thin] [scrollbar-color:hsl(var(--sidebar-border))_transparent] hover:[scrollbar-color:hsl(var(--sidebar-ring)/0.4)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-sidebar-border hover:[&::-webkit-scrollbar-thumb]:bg-sidebar-ring/40"
+        >
+          <NavLinks sections={sections} attention={attention} collapsed={collapsed} />
+        </nav>
+
+        {/* Bottom gradient fade when more items exist below */}
+        <div
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute bottom-0 left-0 right-0 z-10 h-16 bg-gradient-to-t from-sidebar via-sidebar/85 to-transparent transition-opacity duration-200',
+            canScrollDown ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+
+        {/* Interactive "More below" cue pill */}
+        <div
+          className={cn(
+            'pointer-events-none absolute bottom-2 left-0 right-0 z-20 flex justify-center transition-all duration-200',
+            canScrollDown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+          )}
+        >
+          <button
+            type="button"
+            onClick={scrollDown}
+            className={cn(
+              'pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-sidebar-border/80 bg-sidebar-accent/95 px-2.5 py-1 text-[11px] font-semibold text-sidebar-accent-foreground shadow-md backdrop-blur-xs transition-all hover:bg-sidebar-accent hover:border-sidebar-ring/50 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+              collapsed && 'px-1.5 py-1'
+            )}
+            title="Scroll down to view Meeting Minutes & more"
+            aria-label="Scroll down to view more navigation sections"
+          >
+            <ChevronDown
+              className="h-3.5 w-3.5 animate-bounce motion-reduce:animate-none text-sidebar-ring"
+              aria-hidden="true"
+            />
+            {!collapsed && <span>More below</span>}
+          </button>
+        </div>
+      </div>
 
       {/* Sidebar Footer — Pinned Settings and Collapse trigger */}
       <div className="shrink-0 p-3 pt-2 space-y-1.5 border-t border-sidebar-border/50">
