@@ -163,6 +163,18 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
+/* Native <dialog> modal scroll containment (prevents background page scrolling) */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(9, 13, 22, 0.62);
+  backdrop-filter: blur(4px);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

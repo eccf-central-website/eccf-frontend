@@ -29,6 +29,8 @@ export const sanityClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'published',
   useCdn: false,
+  timeout: 5000,
+  maxRetries: 1,
   token: process.env.SANITY_READ_TOKEN,
 })
 
@@ -42,6 +44,8 @@ export const sanityPreviewClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
+  timeout: 8000,
+  maxRetries: 1,
   token: process.env.SANITY_READ_TOKEN,
 })
 
@@ -60,6 +64,8 @@ export const sanityWriteClient = createClient({
   dataset,
   apiVersion: '2025-02-19',
   useCdn: false,
+  timeout: 20000,
+  maxRetries: 1,
   token: process.env.SANITY_WRITE_TOKEN, // Server-side only — never prefix with NEXT_PUBLIC_
 })
 
@@ -73,6 +79,8 @@ export const sanityPrivateClient = createClient({
   apiVersion: '2025-02-19',
   perspective: 'drafts',
   useCdn: false,
+  timeout: 8000,
+  maxRetries: 1,
   token: process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN,
 })
 

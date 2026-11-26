@@ -8,17 +8,20 @@
 // Sermon Vault
 // ---------------------------------------------------------------------------
 
-/** Fetch all published sermons, newest first */
+/** Fetch all published sermons, newest first (lightweight projection for public /sermons) */
 export const SERMONS_QUERY = `
-  *[_type == "sermonVault"] | order(datePreached desc) {
+  *[_type == "sermonVault" && coalesce(isPublished, true) == true] | order(datePreached desc) {
     _id,
     title,
+    "slug": slug.current,
     preacher,
     series,
     topics,
     datePreached,
     scriptureReference,
     duration,
+    durationSeconds,
+    "isPublished": coalesce(isPublished, true),
     spotifyUrl,
     youtubeUrl,
     youtubeMusicUrl,
@@ -28,17 +31,55 @@ export const SERMONS_QUERY = `
     isAutoSynced
   }
 `
-/** Fetch latest 3 sermons for homepage */
-export const LATEST_SERMONS_QUERY = `
-  *[_type == "sermonVault"] | order(datePreached desc)[0...3] {
+
+/** Fetch all sermons (published and unpublished) with transcript & theme metadata for Media Team dashboard */
+export const ADMIN_SERMONS_QUERY = `
+  *[_type == "sermonVault"] | order(datePreached desc) {
     _id,
+    _type,
     title,
+    "slug": slug.current,
     preacher,
     series,
     topics,
     datePreached,
     scriptureReference,
     duration,
+    durationSeconds,
+    "isPublished": coalesce(isPublished, true),
+    spotifyUrl,
+    youtubeUrl,
+    youtubeMusicUrl,
+    spotifyEmbedId,
+    youtubeVideoId,
+    thumbnailUrl,
+    isAutoSynced,
+    notes,
+    "transcriptStatus": coalesce(transcriptStatus, "waiting"),
+    transcriptSource,
+    "transcriptWordCount": coalesce(transcriptWordCount, 0),
+    transcriptUpdatedAt,
+    "aiThemes": coalesce(aiThemes, [])[]{
+      _key,
+      theme,
+      weight
+    }
+  }
+`
+
+/** Fetch latest 3 published sermons for homepage */
+export const LATEST_SERMONS_QUERY = `
+  *[_type == "sermonVault" && coalesce(isPublished, true) == true] | order(datePreached desc)[0...3] {
+    _id,
+    title,
+    "slug": slug.current,
+    preacher,
+    series,
+    topics,
+    datePreached,
+    scriptureReference,
+    duration,
+    durationSeconds,
     spotifyUrl,
     youtubeUrl,
     youtubeMusicUrl,
@@ -48,24 +89,100 @@ export const LATEST_SERMONS_QUERY = `
   }
 `
 
-/** Fetch a single sermon by ID */
-export const SERMON_BY_ID_QUERY = `
-  *[_type == "sermonVault" && _id == $id][0] {
+/** Fetch a single published sermon by slug or _id */
+export const SERMON_BY_SLUG_OR_ID_QUERY = `
+  *[_type == "sermonVault" && coalesce(isPublished, true) == true && (slug.current == $slug || _id == $slug)][0] {
     _id,
     title,
+    "slug": slug.current,
     preacher,
     series,
     topics,
     datePreached,
     scriptureReference,
     duration,
+    durationSeconds,
     spotifyUrl,
     youtubeUrl,
     youtubeMusicUrl,
     spotifyEmbedId,
     youtubeVideoId,
     thumbnailUrl,
-    isAutoSynced
+    notes,
+    isAutoSynced,
+    transcriptStatus,
+    transcriptWordCount
+  }
+`
+
+/** Fetch a single sermon by ID */
+export const SERMON_BY_ID_QUERY = `
+  *[_type == "sermonVault" && _id == $id][0] {
+    _id,
+    title,
+    "slug": slug.current,
+    preacher,
+    series,
+    topics,
+    datePreached,
+    scriptureReference,
+    duration,
+    durationSeconds,
+    "isPublished": coalesce(isPublished, true),
+    spotifyUrl,
+    youtubeUrl,
+    youtubeMusicUrl,
+    spotifyEmbedId,
+    youtubeVideoId,
+    thumbnailUrl,
+    notes,
+    isAutoSynced,
+    transcriptStatus,
+    transcriptSource,
+    transcriptWordCount,
+    transcriptUpdatedAt,
+    aiThemes
+  }
+`
+
+/** Fetch ordered transcript segments for a sermon */
+export const SERMON_SEGMENTS_BY_SERMON_QUERY = `
+  *[_type == "sermonSegment" && sermonId == $sermonId] | order(segmentIndex asc) {
+    _id,
+    sermonId,
+    sermonTitle,
+    preacher,
+    series,
+    datePreached,
+    durationSeconds,
+    isPublished,
+    segmentIndex,
+    startSeconds,
+    endSeconds,
+    timestampLabel,
+    text
+  }
+`
+
+/** Public-safe AI Search configuration (never selects encrypted secrets) */
+export const PUBLIC_AI_SEARCH_CONFIG_QUERY = `
+  *[_type == "aiSearchConfig"][0] {
+    enabled,
+    showFloatingButton,
+    buttonLabel,
+    heading,
+    subtitle,
+    placeholder,
+    greeting,
+    excerptWords,
+    maxSuggestions,
+    suggestions,
+    dailyLimit,
+    hourlySearchLimit,
+    hourlyChatLimit,
+    hiddenYears,
+    dailyUsageDate,
+    dailyUsageCount
   }
 `
 

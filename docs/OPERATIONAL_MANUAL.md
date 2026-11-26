@@ -474,7 +474,13 @@ Platform behaviour:
 - The sync ingests the configured Spotify/Anchor RSS feed and YouTube playlist RSS feed.
 - Known sermons are resolved from a curated catalogue first; unknown titles can be enriched through the **YouTube Data API v3** when `YOUTUBE_API_KEY` is set.
 - The Sermon Vault and homepage also trigger the same sync at most once every 15 minutes in the background.
-- Dashboard search covers title, preacher, scripture reference, series, and topics. Filters include topic and origin (`all`, `synced`, `manual`), defaulting to a scannable desktop **table view** (with card toggle and mobile cards) plus confirmation dialogs for deletes.
+- Dashboard search covers title, preacher, scripture reference, series, and topics. Filters include topic and origin (`all`, `synced`, `manual`), defaulting to a scannable desktop **table view** (with card toggle and mobile cards), **Transcript** / **Live** status badges, and confirmation dialogs for deletes.
+
+#### Transcripts & AI Message Search (`/dashboard/sermons` → Transcripts / AI Search)
+- **Transcript Management:** Edit any sermon to toggle public visibility (**Show on public website**), fetch timestamped YouTube automatic captions, upload a manual `.vtt` or `.srt` subtitle file, or remove an existing transcript.
+- **Transcripts Tab:** Shows `Ready`, `Waiting`, and `Unavailable` KPI counts, internal AI-weighted themes (hidden from visitors), and a **"Check for captions now"** action to poll missing YouTube captions.
+- **AI Search Tab:** Configures the public AI Message Finder (`On/Off`, floating button visibility, daily global cap, per-visitor hourly rate limits, excerpt word count `0–64`, visible sermon years, public copy, and starter prompt pool) and manages the anonymous SHA-256 **Saved Searches Cache** (including stale-change indicator and one-click clear).
+- **AI Provider Key Security:** Server environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`, or `AI_API_KEY`) are recommended for maximum speed and security; an optional write-only **Encrypted Key Override** can also be saved from the AI Search tab (encrypted via AES-256-GCM into an unpublished Sanity draft `drafts.aiSearchSecret` and never exposed to browsers).
 
 ---
 

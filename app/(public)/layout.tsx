@@ -14,10 +14,13 @@ import NavigationProgressBar from "@/components/layout/NavigationProgressBar";
 import PwaPromptSuppressor from "@/components/common/PwaPromptSuppressor";
 import { draftMode, headers, cookies } from "next/headers";
 import { getSanityClient } from "@/lib/sanity";
-import { SITE_SETTINGS_QUERY } from "@/lib/queries";
+import { SITE_SETTINGS_QUERY, PUBLIC_AI_SEARCH_CONFIG_QUERY } from "@/lib/queries";
 import { isUnderMaintenance } from "@/lib/maintenance";
 import PageMaintenance from "@/components/common/PageMaintenance";
+import AiSearchFloatingModal from "@/components/sermons/AiSearchFloatingModal";
+import { mergeAiSearchConfig } from "@/lib/sermon-ai/defaults";
 import type { SiteSettingsData } from "@/components/home/HeroSection";
+import type { AiSearchConfig } from "@/types";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -37,12 +40,21 @@ export default async function PublicLayout({
     headerList.get('referer')?.includes('preview=true');
 
   const client = getSanityClient(Boolean(isPreview));
-  const settings = await client
-    .fetch<SiteSettingsData>(SITE_SETTINGS_QUERY)
-    .catch((err) => {
-      console.error('[PublicLayout] Failed to fetch settings for footer:', err);
-      return null;
-    });
+  const [settings, rawAiConfig] = await Promise.all([
+    client
+      .fetch<SiteSettingsData>(SITE_SETTINGS_QUERY)
+      .catch((err) => {
+        console.error('[PublicLayout] Failed to fetch settings for footer:', err);
+        return null;
+      }),
+    client
+      .fetch<Partial<AiSearchConfig> | null>(PUBLIC_AI_SEARCH_CONFIG_QUERY)
+      .catch((err) => {
+        console.error('[PublicLayout] Failed to fetch AI search config:', err);
+        return null;
+      }),
+  ]);
+  const aiConfig = mergeAiSearchConfig(rawAiConfig);
 
   // Per-page maintenance switches from Sanity (Site Settings → Maintenance Mode).
   // Preview / draft mode always bypasses them so editors can keep working.
@@ -77,6 +89,9 @@ export default async function PublicLayout({
       <Navbar />
       <main className="public-site flex-1 w-full max-w-full overflow-x-clip">{children}</main>
       <Footer settings={settings} />
+      {aiConfig.enabled && aiConfig.showFloatingButton && (
+        <AiSearchFloatingModal aiConfig={aiConfig} />
+      )}
       <TheLauncher />
       <ScrollToTop />
       <Toaster position="top-center" richColors closeButton />

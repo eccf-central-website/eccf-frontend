@@ -1,8 +1,20 @@
 import { revalidatePath } from 'next/cache'
+import { lagosDaysBetween } from '@/lib/dashboard/dates'
 import { sanityWriteClient } from '@/lib/sanity'
+import { DEFAULT_AI_SEARCH_CONFIG } from '@/lib/sermon-ai/defaults'
+import { invalidatePublicAiConfigCache } from '@/lib/sermon-ai/finder'
+import { extractSermonThemes } from '@/lib/sermon-ai/provider'
+import { fetchYoutubeCaptionsForVideo } from '@/lib/sermon-ai/vtt'
+import { parseDurationToSeconds, slugifySermonTitle } from '@/lib/sermonUtils'
+import type { AiProviderPreference, SermonThemeWeight } from '@/types'
 
 export const DEFAULT_SPOTIFY_RSS_URL = 'https://anchor.fm/s/f24b9b94/podcast/rss'
 export const DEFAULT_YOUTUBE_RSS_URL = 'https://www.youtube.com/feeds/videos.xml?playlist_id=PLBI5gIAk9TVM'
+
+const MAX_AUTO_CAPTIONS_PER_SYNC = 2
+const AUTO_CAPTION_RECENT_DAYS = 10
+const AUTO_CAPTION_TIMEOUT_MS = 10_000
+const SANITY_TX_BATCH_SIZE = 50
 
 // Curated reference catalogue of confirmed ECCF sermon videos for instant high-accuracy resolution
 const KNOWN_YOUTUBE_SERMONS: Array<{ title: string; youtubeVideoId: string; preacher?: string; series?: string }> = [
@@ -82,17 +94,43 @@ export interface FeedItem {
   author: string
   thumbnailUrl: string
   videoId?: string
+  description?: string
 }
 
 export function decodeHtmlEntities(str: string): string {
   if (!str) return ''
   return str
+    .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, dec) => {
+      const code = Number(dec)
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : ''
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const code = parseInt(hex, 16)
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : ''
+    })
+}
+
+function cleanFeedDescription(raw?: string): string | undefined {
+  if (!raw) return undefined
+  const pass1 = decodeHtmlEntities(raw)
+  const decoded = pass1.includes('&') ? decodeHtmlEntities(pass1) : pass1
+  const stripped = decoded
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!stripped) return undefined
+  if (stripped.length <= 800) return stripped
+  return `${stripped.slice(0, 797).trimEnd()}...`
 }
 
 export function normalizeTitle(t: string): string {
@@ -175,9 +213,18 @@ export function parseFeedXml(xml: string): FeedItem[] {
     const pubDateMatch = match.match(/<pubDate>(.*?)<\/pubDate>/i)
     const authorMatch = match.match(/<itunes:author>(.*?)<\/itunes:author>/i)
     const imageMatch = match.match(/<itunes:image[^>]*href=["'](.*?)["']/i)
+    const itunesSummaryMatch = match.match(
+      /<itunes:summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/itunes:summary>/i
+    )
+    const descriptionMatch = match.match(
+      /<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i
+    )
 
     const rawTitle = titleMatch ? titleMatch[1].trim() : ''
     const title = decodeHtmlEntities(rawTitle)
+    const description =
+      cleanFeedDescription(itunesSummaryMatch?.[1]) ||
+      cleanFeedDescription(descriptionMatch?.[1])
 
     if (title) {
       items.push({
@@ -188,6 +235,7 @@ export function parseFeedXml(xml: string): FeedItem[] {
         pubDate: pubDateMatch ? pubDateMatch[1].trim() : '',
         author: authorMatch ? decodeHtmlEntities(authorMatch[1].trim()) : '',
         thumbnailUrl: imageMatch ? imageMatch[1].trim() : '',
+        ...(description ? { description } : {}),
       })
     }
   }
@@ -274,22 +322,226 @@ export async function searchYouTubeForSermon(
 interface SanitySermonDoc {
   _id: string
   title: string
+  slug?: string
   preacher?: string
   series?: string
+  topics?: string[]
   datePreached?: string
+  scriptureReference?: string
+  duration?: string
+  durationSeconds?: number
+  isPublished?: boolean
   spotifyUrl?: string
   spotifyEmbedId?: string
   youtubeUrl?: string
   youtubeVideoId?: string
   youtubeMusicUrl?: string
   thumbnailUrl?: string
+  notes?: string
   isAutoSynced?: boolean
+  transcriptStatus?: string
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(err)
+      }
+    )
+  })
+}
+
+function isWithinRecentDays(datePreached?: string, maxDays = AUTO_CAPTION_RECENT_DAYS): boolean {
+  if (!datePreached || !/^\d{4}-\d{2}-\d{2}$/.test(datePreached)) return false
+  const days = lagosDaysBetween(datePreached)
+  return Number.isFinite(days) && days >= -1 && days <= maxDays
+}
+
+function buildSanityThemes(themes: SermonThemeWeight[]): SermonThemeWeight[] {
+  return themes.map((item, idx) => {
+    const slugKey = item.theme
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .slice(0, 16)
+    return {
+      _key: `theme-${idx}-${slugKey || 'item'}`,
+      theme: item.theme,
+      weight: item.weight,
+    }
+  })
+}
+
+async function getConfiguredProviderPreference(): Promise<AiProviderPreference> {
+  try {
+    const pref = await sanityWriteClient.fetch<string | null>(
+      `coalesce(*[_type == "aiSearchConfig" && _id == "aiSearchConfig"][0].providerPreference, *[_type == "aiSearchConfig"][0].providerPreference)`
+    )
+    if (pref === 'gemini' || pref === 'openai' || pref === 'auto') {
+      return pref
+    }
+  } catch {
+    // Fallback to auto
+  }
+  return 'auto'
+}
+
+async function enrichRecentSermonCaptions(
+  sermon: SanitySermonDoc,
+  preferred: AiProviderPreference
+): Promise<'enriched' | 'unavailable'> {
+  const videoId = sermon.youtubeVideoId || extractYoutubeId(sermon.youtubeUrl || '')
+  if (!videoId) return 'unavailable'
+
+  const captionRes = await fetchYoutubeCaptionsForVideo(videoId)
+  if (!captionRes.ok) {
+    if (sermon.transcriptStatus !== 'unavailable') {
+      await sanityWriteClient
+        .patch(sermon._id)
+        .set({ transcriptStatus: 'unavailable' })
+        .commit()
+    }
+    return 'unavailable'
+  }
+
+  const cleanId = sermon._id.replace(/^drafts\./, '').trim()
+  const isDraft = sermon._id.startsWith('drafts.')
+  const idPrefix = cleanId.replace(/[^a-zA-Z0-9_-]/g, '_')
+  const durationSeconds = sermon.durationSeconds ?? parseDurationToSeconds(sermon.duration)
+
+  // Clear existing segments before writing updated ones
+  const existingSegIds = await sanityWriteClient.fetch<string[]>(
+    `*[_type == "sermonSegment" && (sermonId == $cleanId || sermonId == $rawId || sermon._ref == $cleanId || sermon._ref == $rawId)]._id`,
+    { cleanId, rawId: sermon._id }
+  )
+  if (Array.isArray(existingSegIds) && existingSegIds.length > 0) {
+    for (let i = 0; i < existingSegIds.length; i += SANITY_TX_BATCH_SIZE) {
+      const batch = existingSegIds.slice(i, i + SANITY_TX_BATCH_SIZE)
+      const tx = sanityWriteClient.transaction()
+      for (const segId of batch) {
+        tx.delete(segId)
+      }
+      await tx.commit()
+    }
+  }
+
+  // Write segment documents in batches
+  for (let i = 0; i < captionRes.parsed.chunks.length; i += SANITY_TX_BATCH_SIZE) {
+    const batch = captionRes.parsed.chunks.slice(i, i + SANITY_TX_BATCH_SIZE)
+    const tx = sanityWriteClient.transaction()
+    for (const chunk of batch) {
+      tx.createOrReplace({
+        _id: `sermonSegment-${idPrefix}-${String(chunk.segmentIndex).padStart(4, '0')}`,
+        _type: 'sermonSegment',
+        sermon: {
+          _type: 'reference',
+          _ref: cleanId,
+          ...(isDraft ? { _weak: true } : {}),
+        },
+        sermonId: cleanId,
+        sermonTitle: sermon.title,
+        ...(sermon.preacher ? { preacher: sermon.preacher } : {}),
+        ...(sermon.series ? { series: sermon.series } : {}),
+        ...(sermon.datePreached ? { datePreached: sermon.datePreached } : {}),
+        ...(durationSeconds !== undefined ? { durationSeconds } : {}),
+        isPublished: sermon.isPublished !== false,
+        segmentIndex: chunk.segmentIndex,
+        startSeconds: chunk.startSeconds,
+        endSeconds: chunk.endSeconds,
+        timestampLabel: chunk.timestampLabel,
+        text: chunk.text,
+      })
+    }
+    await tx.commit()
+  }
+
+  const extracted = await extractSermonThemes(
+    {
+      title: sermon.title,
+      preacher: sermon.preacher,
+      notes: sermon.notes,
+      transcriptExcerpt: captionRes.parsed.fullTextPreview,
+    },
+    preferred
+  )
+  const aiThemes = buildSanityThemes(extracted.themes)
+
+  const patchSet: Record<string, unknown> = {
+    transcriptStatus: 'ready',
+    transcriptSource: 'youtube_captions',
+    transcriptWordCount: captionRes.parsed.wordCount,
+    transcriptUpdatedAt: new Date().toISOString(),
+    aiThemes,
+  }
+
+  if (
+    extracted.topics &&
+    extracted.topics.length > 0 &&
+    (!sermon.topics ||
+      sermon.topics.length === 0 ||
+      sermon.topics.every((t) => {
+        const lower = t.trim().toLowerCase()
+        return lower === 'faith' || lower === 'sermon' || lower === ''
+      }))
+  ) {
+    patchSet.topics = extracted.topics
+  }
+
+  if (
+    extracted.scriptureReference &&
+    (!sermon.scriptureReference || sermon.scriptureReference.trim() === 'Scripture Reference')
+  ) {
+    patchSet.scriptureReference = extracted.scriptureReference
+  }
+
+  await sanityWriteClient.patch(sermon._id).set(patchSet).commit()
+  sermon.transcriptStatus = 'ready'
+  return 'enriched'
+}
+
+async function bumpAiSearchContentChanges() {
+  try {
+    const existingId = await sanityWriteClient.fetch<string | null>(
+      `coalesce(*[_type == "aiSearchConfig" && _id == "aiSearchConfig"][0]._id, *[_type == "aiSearchConfig"][0]._id)`
+    )
+    const configId = existingId || 'aiSearchConfig'
+
+    if (!existingId) {
+      await sanityWriteClient.createIfNotExists({
+        ...DEFAULT_AI_SEARCH_CONFIG,
+        _id: configId,
+        _type: 'aiSearchConfig',
+        contentChangesSinceOldestCache: 0,
+      })
+    }
+
+    await sanityWriteClient
+      .patch(configId)
+      .setIfMissing({ contentChangesSinceOldestCache: 0 })
+      .inc({ contentChangesSinceOldestCache: 1 })
+      .set({ lastContentUpdatedAt: new Date().toISOString() })
+      .commit()
+  } catch (err) {
+    console.warn('[runSermonSync] Failed to bump aiSearchConfig change counter:', err)
+  } finally {
+    invalidatePublicAiConfigCache()
+  }
 }
 
 /**
  * Main Sermon Sync Engine.
- * Ingests Spotify for Podcasters & YouTube feeds, and guarantees that every sermon
- * receives its YouTube video ID and high-resolution thumbnail automatically.
+ * Ingests Spotify for Podcasters & YouTube feeds, guarantees that every sermon
+ * receives its YouTube video ID and high-resolution thumbnail automatically,
+ * and enriches up to 2 recent sermons with YouTube captions & AI themes.
  */
 export async function runSermonSync() {
   const spotifyUrl = process.env.SPOTIFY_RSS_URL || DEFAULT_SPOTIFY_RSS_URL
@@ -299,6 +551,7 @@ export async function runSermonSync() {
     spotify: { itemsFetched: 0, created: 0, updated: 0, skipped: 0 },
     youtube: { itemsFetched: 0, created: 0, updated: 0, skipped: 0 },
     resolvedFromYouTube: 0,
+    captionsEnriched: 0,
   }
 
   // Fetch all existing sermons from Sanity to allow fast in-memory normalized title matching
@@ -306,16 +559,24 @@ export async function runSermonSync() {
     `*[_type == "sermonVault"]{
       _id,
       title,
+      "slug": slug.current,
       preacher,
       series,
+      topics,
       datePreached,
+      scriptureReference,
+      duration,
+      durationSeconds,
+      "isPublished": coalesce(isPublished, true),
       spotifyUrl,
       spotifyEmbedId,
       youtubeUrl,
       youtubeVideoId,
       youtubeMusicUrl,
       thumbnailUrl,
-      isAutoSynced
+      notes,
+      isAutoSynced,
+      transcriptStatus
     }`
   )
 
@@ -346,34 +607,55 @@ export async function runSermonSync() {
           )
 
           if (!existing) {
+            const slugCurrent = slugifySermonTitle(item.title)
+            const datePreached = item.pubDate
+              ? new Date(item.pubDate).toISOString().split('T')[0]
+              : new Date().toISOString().split('T')[0]
             const created = await sanityWriteClient.create({
               _type: 'sermonVault',
               title: item.title,
+              slug: { _type: 'slug', current: slugCurrent },
               preacher: item.author || 'ECCF Media',
               series: 'Sermon Series',
               topics: ['Faith', 'Sermon'],
-              datePreached: item.pubDate
-                ? new Date(item.pubDate).toISOString().split('T')[0]
-                : new Date().toISOString().split('T')[0],
+              datePreached,
               scriptureReference: 'Scripture Reference',
+              isPublished: true,
               youtubeUrl: ytUrl,
               youtubeVideoId: videoId,
               youtubeMusicUrl: ytMusicUrl,
               thumbnailUrl: ytThumb,
               isAutoSynced: true,
+              transcriptStatus: 'waiting',
+              transcriptWordCount: 0,
+              ...(item.description ? { notes: item.description } : {}),
             })
-            existingSermons.push(created as unknown as SanitySermonDoc)
+            existingSermons.push({
+              ...(created as unknown as SanitySermonDoc),
+              slug: slugCurrent,
+              datePreached,
+              isPublished: true,
+              transcriptStatus: 'waiting',
+            })
             results.youtube.created++
           } else if (existing.isAutoSynced !== false) {
-            await sanityWriteClient
-              .patch(existing._id)
-              .set({
-                youtubeUrl: ytUrl,
-                youtubeVideoId: videoId,
-                youtubeMusicUrl: ytMusicUrl,
-                thumbnailUrl: existing.thumbnailUrl || ytThumb,
-              })
-              .commit()
+            const patchObj: Record<string, unknown> = {
+              youtubeUrl: ytUrl,
+              youtubeVideoId: videoId,
+              youtubeMusicUrl: ytMusicUrl,
+              thumbnailUrl: existing.thumbnailUrl || ytThumb,
+            }
+            if (!existing.slug) {
+              const slugCurrent = slugifySermonTitle(item.title, existing._id)
+              patchObj.slug = { _type: 'slug', current: slugCurrent }
+              existing.slug = slugCurrent
+            }
+            if (!existing.notes && item.description) {
+              patchObj.notes = item.description
+              existing.notes = item.description
+            }
+
+            await sanityWriteClient.patch(existing._id).set(patchObj).commit()
             existing.youtubeUrl = ytUrl
             existing.youtubeVideoId = videoId
             existing.youtubeMusicUrl = ytMusicUrl
@@ -434,16 +716,20 @@ export async function runSermonSync() {
             : item.thumbnailUrl || undefined
 
           if (!existing) {
+            const slugCurrent = slugifySermonTitle(item.title)
+            const datePreached = item.pubDate
+              ? new Date(item.pubDate).toISOString().split('T')[0]
+              : new Date().toISOString().split('T')[0]
             const created = await sanityWriteClient.create({
               _type: 'sermonVault',
               title: item.title,
+              slug: { _type: 'slug', current: slugCurrent },
               preacher: item.author || 'ECCF Media',
               series: 'Sermon Series',
               topics: ['Faith', 'Sermon'],
-              datePreached: item.pubDate
-                ? new Date(item.pubDate).toISOString().split('T')[0]
-                : new Date().toISOString().split('T')[0],
+              datePreached,
               scriptureReference: 'Scripture Reference',
+              isPublished: true,
               spotifyUrl: item.link,
               spotifyEmbedId: spotifyEmbedId || undefined,
               youtubeUrl: ytUrl,
@@ -451,8 +737,17 @@ export async function runSermonSync() {
               youtubeMusicUrl: ytMusicUrl,
               thumbnailUrl: finalThumb,
               isAutoSynced: true,
+              transcriptStatus: 'waiting',
+              transcriptWordCount: 0,
+              ...(item.description ? { notes: item.description } : {}),
             })
-            existingSermons.push(created as unknown as SanitySermonDoc)
+            existingSermons.push({
+              ...(created as unknown as SanitySermonDoc),
+              slug: slugCurrent,
+              datePreached,
+              isPublished: true,
+              transcriptStatus: 'waiting',
+            })
             results.spotify.created++
           } else if (existing.isAutoSynced !== false) {
             const patchObj: Record<string, unknown> = {
@@ -460,17 +755,33 @@ export async function runSermonSync() {
               ...(spotifyEmbedId ? { spotifyEmbedId } : {}),
             }
 
+            if (!existing.slug) {
+              const slugCurrent = slugifySermonTitle(item.title, existing._id)
+              patchObj.slug = { _type: 'slug', current: slugCurrent }
+              existing.slug = slugCurrent
+            }
+
+            if (!existing.notes && item.description) {
+              patchObj.notes = item.description
+              existing.notes = item.description
+            }
+
             if (ytVideoId && !existing.youtubeVideoId) {
               patchObj.youtubeVideoId = ytVideoId
               patchObj.youtubeUrl = ytUrl
               patchObj.youtubeMusicUrl = ytMusicUrl
+              existing.youtubeVideoId = ytVideoId
+              existing.youtubeUrl = ytUrl
+              existing.youtubeMusicUrl = ytMusicUrl
             }
 
             if (!existing.thumbnailUrl && finalThumb) {
               patchObj.thumbnailUrl = finalThumb
+              existing.thumbnailUrl = finalThumb
             } else if (ytVideoId && existing.thumbnailUrl?.includes('cloudfront.net')) {
               // Upgrade Spotify low-res podcast image to official YouTube video thumbnail
               patchObj.thumbnailUrl = `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg`
+              existing.thumbnailUrl = patchObj.thumbnailUrl as string
             }
 
             await sanityWriteClient.patch(existing._id).set(patchObj).commit()
@@ -493,18 +804,67 @@ export async function runSermonSync() {
       const foundId = await searchYouTubeForSermon(s.title, s.preacher)
       if (foundId) {
         const ytThumb = `https://img.youtube.com/vi/${foundId}/hqdefault.jpg`
+        const ytWatch = `https://www.youtube.com/watch?v=${foundId}`
+        const ytMusic = `https://music.youtube.com/watch?v=${foundId}`
         await sanityWriteClient
           .patch(s._id)
           .set({
             youtubeVideoId: foundId,
-            youtubeUrl: `https://www.youtube.com/watch?v=${foundId}`,
-            youtubeMusicUrl: `https://music.youtube.com/watch?v=${foundId}`,
+            youtubeUrl: ytWatch,
+            youtubeMusicUrl: ytMusic,
             thumbnailUrl: ytThumb,
           })
           .commit()
+        s.youtubeVideoId = foundId
+        s.youtubeUrl = ytWatch
+        s.youtubeMusicUrl = ytMusic
+        s.thumbnailUrl = ytThumb
         results.resolvedFromYouTube++
       }
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // 4. Bounded Caption & AI Theme Enrichment (max 2 recent sermons <= 10 days old)
+  // -------------------------------------------------------------------------
+  const captionCandidates = existingSermons
+    .filter(
+      (s) =>
+        Boolean(s.youtubeVideoId || extractYoutubeId(s.youtubeUrl || '')) &&
+        s.transcriptStatus !== 'ready' &&
+        isWithinRecentDays(s.datePreached, AUTO_CAPTION_RECENT_DAYS)
+    )
+    .sort((a, b) => (b.datePreached || '').localeCompare(a.datePreached || ''))
+    .slice(0, MAX_AUTO_CAPTIONS_PER_SYNC)
+
+  if (captionCandidates.length > 0) {
+    const preferred = await getConfiguredProviderPreference()
+    for (const candidate of captionCandidates) {
+      try {
+        const outcome = await withTimeout(
+          enrichRecentSermonCaptions(candidate, preferred),
+          AUTO_CAPTION_TIMEOUT_MS,
+          `caption-enrich:${candidate._id}`
+        )
+        if (outcome === 'enriched') {
+          results.captionsEnriched++
+        }
+      } catch (err) {
+        console.warn(`[runSermonSync] Caption enrichment skipped/timed out for ${candidate._id}:`, err)
+      }
+    }
+  }
+
+  const hasContentMutation =
+    results.youtube.created > 0 ||
+    results.youtube.updated > 0 ||
+    results.spotify.created > 0 ||
+    results.spotify.updated > 0 ||
+    results.resolvedFromYouTube > 0 ||
+    results.captionsEnriched > 0
+
+  if (hasContentMutation) {
+    await bumpAiSearchContentChanges()
   }
 
   // Revalidate public pages
@@ -512,6 +872,7 @@ export async function runSermonSync() {
     revalidatePath('/')
     revalidatePath('/sermons')
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/sermons')
   } catch {
     // Revalidation may fail if called outside request context; safe to ignore
   }

@@ -333,16 +333,28 @@ export interface WelfareLedger {
 // Sermon Vault
 // ---------------------------------------------------------------------------
 
+export interface SermonThemeWeight {
+  _key?: string
+  theme: string
+  weight: number
+}
+
+export type SermonTranscriptStatus = 'ready' | 'waiting' | 'unavailable'
+export type SermonTranscriptSource = 'youtube_captions' | 'uploaded_vtt' | 'manual'
+
 export interface SermonVault {
   _id: string
   _type: 'sermonVault'
   title: string
+  slug?: string
   preacher: string
   series?: string
   topics?: string[]
   datePreached: string // ISO date YYYY-MM-DD
   scriptureReference: string
   duration?: string
+  durationSeconds?: number
+  isPublished?: boolean
   spotifyUrl?: string
   youtubeUrl?: string
   youtubeMusicUrl?: string
@@ -351,6 +363,122 @@ export interface SermonVault {
   thumbnailUrl?: string
   isAutoSynced?: boolean
   notes?: string
+  transcriptStatus?: SermonTranscriptStatus
+  transcriptSource?: SermonTranscriptSource
+  transcriptWordCount?: number
+  transcriptUpdatedAt?: string
+  aiThemes?: SermonThemeWeight[]
+}
+
+export interface SermonSegment {
+  _id: string
+  _type?: 'sermonSegment'
+  sermonId: string
+  sermonTitle: string
+  preacher?: string
+  series?: string
+  datePreached?: string
+  durationSeconds?: number
+  isPublished?: boolean
+  segmentIndex: number
+  startSeconds: number
+  endSeconds?: number
+  timestampLabel: string
+  text: string
+}
+
+export type AiProviderPreference = 'auto' | 'gemini' | 'openai'
+
+export interface AiSearchConfig {
+  _id?: string
+  enabled: boolean
+  showFloatingButton: boolean
+  buttonLabel: string
+  heading: string
+  subtitle: string
+  placeholder: string
+  greeting: string
+  excerptWords: number
+  maxSuggestions: number
+  suggestions: string[]
+  dailyLimit: number
+  hourlySearchLimit: number
+  hourlyChatLimit: number
+  hiddenYears: number[]
+  providerPreference: AiProviderPreference
+  dailyUsageDate?: string
+  dailyUsageCount?: number
+  lastContentUpdatedAt?: string
+  contentChangesSinceOldestCache?: number
+}
+
+export interface AiSearchSecretStatus {
+  hasEnvGemini: boolean
+  hasEnvOpenAI: boolean
+  hasDashboardOverride: boolean
+  overrideProvider?: 'gemini' | 'openai'
+  maskedOverrideTail?: string
+  overrideUpdatedAt?: string
+  activeProvider: 'gemini' | 'openai' | 'none'
+  activeSource: 'env' | 'dashboard_override' | 'none'
+}
+
+export interface AiSearchCacheStats {
+  totalEntries: number
+  totalReuses: number
+  oldestSavedAt?: string
+  staleChangeCount: number
+}
+
+export interface AiSearchSermonResult {
+  id: string
+  slug: string
+  title: string
+  preacher: string
+  series?: string
+  datePreached?: string
+  scriptureReference?: string
+  url: string
+  thumb: string | null
+  moment: string
+  startSeconds: number
+  length?: string
+  durationSeconds?: number
+  excerpt?: string
+  youtubeVideoId?: string | null
+  hasAudio: boolean
+}
+
+export interface AiSearchFinderRequest {
+  query: string
+  mode?: 'page' | 'modal'
+  preacher?: string
+  maxDurationSeconds?: number
+  excludeIds?: string[]
+  limit?: number
+}
+
+export type AiSearchResultKind =
+  | 'results'
+  | 'empty'
+  | 'off_topic'
+  | 'crisis'
+  | 'disabled'
+  | 'rate_limited'
+
+export interface AiSearchFinderResponse {
+  kind: AiSearchResultKind
+  cached?: boolean
+  sermons: AiSearchSermonResult[]
+  preachers: string[]
+  message?: string
+  contact?: {
+    phone?: string
+    email?: string
+    emergencyNumber: string
+  }
+  suggestions?: string[]
+  fallbackToKeyword?: boolean
 }
 
 // ---------------------------------------------------------------------------

@@ -2,8 +2,9 @@
  * LatestSermonsSection — Client Component
  *
  * Implements Section 2.7 of SDD & ADR-002 guidelines.
- * Displays the latest inspired teachings fetched dynamically from Sanity Studio sermonVault.
- * Provides direct deep links for video/audio streaming on YouTube, Spotify, and YouTube Music.
+ * Displays the latest inspired teachings fetched dynamically from Sanity Studio sermonVault,
+ * links cards to dedicated /sermons/[slug] playback pages, and renders the inline
+ * AI Message Finder card below when enabled.
  */
 
 'use client'
@@ -14,19 +15,38 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Clock, Radio, Disc3, Play } from 'lucide-react'
 import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/PlatformIcons'
 import { SermonItem } from '@/components/sermons/SermonsFeed'
-import { getYoutubeVideoId, getSpotifyEmbedUrl, getSermonThumbnailUrl } from '@/lib/sermonUtils'
+import AiSearchInlineCard from '@/components/sermons/AiSearchInlineCard'
+import {
+  getSermonDetailPath,
+  getSermonThumbnailUrl,
+  getYoutubeVideoId,
+} from '@/lib/sermonUtils'
+import { mergeAiSearchConfig } from '@/lib/sermon-ai/defaults'
+import type { AiSearchConfig } from '@/types'
 
 interface Props {
   sermons?: SermonItem[] | null
+  aiConfig?: Partial<AiSearchConfig> | null
 }
 
-export default function LatestSermonsSection({ sermons }: Props) {
-  const safeSermons = sermons || []
+function getSermonYear(datePreached?: string): number | null {
+  if (!datePreached) return null
+  const match = datePreached.match(/^(\d{4})/)
+  return match ? Number(match[1]) : null
+}
+
+export default function LatestSermonsSection({ sermons, aiConfig }: Props) {
+  const config = mergeAiSearchConfig(aiConfig)
+  const hiddenYears = new Set(config.hiddenYears || [])
+  const safeSermons = (sermons || []).filter((sermon) => {
+    if (hiddenYears.size === 0) return true
+    const year = getSermonYear(sermon.datePreached)
+    return year === null || !hiddenYears.has(year)
+  })
 
   return (
     <section className="py-16 sm:py-24 bg-white border-t border-stone-100">
       <div className="w-full px-6 sm:px-10 md:px-14 lg:px-14 xl:px-20 2xl:px-28">
-        
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-14 gap-4 text-left items-start sm:items-end">
           <div>
@@ -42,15 +62,17 @@ export default function LatestSermonsSection({ sermons }: Props) {
             className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
           >
             <span>Explore All Sermons</span>
-            <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
           </Link>
         </div>
 
         {/* Empty State when no sermons uploaded yet */}
         {safeSermons.length === 0 && (
           <div className="rounded-[28px] bg-[#fafaf9] border border-stone-200/80 p-8 sm:p-14 text-center flex flex-col items-center justify-center space-y-4">
-            <Disc3 className="h-12 w-12 shrink-0 text-slate-300 animate-pulse" />
-            <p className="font-serif font-bold text-xl sm:text-2xl text-slate-900">Audio &amp; Video Podcasts Coming Soon</p>
+            <Disc3 className="h-12 w-12 shrink-0 text-slate-300 animate-pulse" aria-hidden="true" />
+            <p className="font-serif font-bold text-xl sm:text-2xl text-slate-900">
+              Audio &amp; Video Podcasts Coming Soon
+            </p>
             <p className="text-sm sm:text-base text-slate-600 max-w-lg leading-relaxed">
               Recordings from our Sunday, Word, and Academic Challenge services are being processed. Check the full vault for updates.
             </p>
@@ -59,7 +81,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
               className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-950 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 hover:bg-slate-800 transition-all shadow-md"
             >
               <span>Go to Sermon Vault</span>
-              <ArrowRight className="h-4 w-4 shrink-0" />
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </Link>
           </div>
         )}
@@ -70,8 +92,10 @@ export default function LatestSermonsSection({ sermons }: Props) {
             {safeSermons.map((sermon, idx) => {
               const youtubeId = getYoutubeVideoId(sermon)
               const thumbnailUrl = getSermonThumbnailUrl(sermon)
-              const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
-              const hasPlayableMedia = Boolean(youtubeId || spotifyEmbedUrl || sermon.youtubeUrl || sermon.spotifyUrl)
+              const detailHref = sermon._id
+                ? getSermonDetailPath(sermon)
+                : sermon.youtubeUrl || sermon.spotifyUrl || '/sermons'
+              const isExternalFallback = !sermon._id && Boolean(sermon.youtubeUrl || sermon.spotifyUrl)
 
               return (
                 <motion.div
@@ -103,7 +127,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
 
                       {sermon.duration && (
                         <div className="absolute top-3.5 right-3.5 z-10 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 flex items-center gap-1.5 shadow-sm">
-                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                           <span>{sermon.duration}</span>
                         </div>
                       )}
@@ -114,59 +138,85 @@ export default function LatestSermonsSection({ sermons }: Props) {
                         </div>
                       )}
 
-                      {/* Play Button Trigger */}
-                      {hasPlayableMedia ? (
+                      {/* Play Button Trigger -> Sermon Detail Player */}
+                      {isExternalFallback ? (
                         <a
-                          href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
+                          href={detailHref}
                           target="_blank"
                           rel="noopener noreferrer"
+                          aria-label={`Play ${sermon.title} (opens in a new tab)`}
+                          className={`relative z-10 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-white shadow-xl group-hover:scale-110 transition-all cursor-pointer ${
+                            youtubeId
+                              ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30'
+                              : 'bg-[#0077cc] hover:bg-[#0065b0] shadow-sky-500/30'
+                          }`}
+                        >
+                          <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <Link
+                          href={detailHref}
                           aria-label={`Play ${sermon.title}`}
                           className={`relative z-10 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-white shadow-xl group-hover:scale-110 transition-all cursor-pointer ${
                             youtubeId
                               ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30'
-                              : 'bg-[#0095ff] hover:bg-sky-500 shadow-sky-500/30'
+                              : 'bg-[#0077cc] hover:bg-[#0065b0] shadow-sky-500/30'
                           }`}
                         >
-                          <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" />
-                        </a>
-                      ) : (
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#0077cc] shadow-sm">
-                          <Radio className="h-5 w-5 shrink-0 text-[#0077cc]" />
-                        </div>
+                          {youtubeId || sermon.spotifyUrl ? (
+                            <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" aria-hidden="true" />
+                          ) : (
+                            <Radio className="h-5 w-5 shrink-0 text-white" aria-hidden="true" />
+                          )}
+                        </Link>
                       )}
                     </div>
 
                     <div className="p-6 sm:p-7">
-                      <a
-                        href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block font-serif font-bold text-lg sm:text-xl text-slate-950 group-hover:text-[#0077cc] transition-colors leading-snug ${
-                          hasPlayableMedia ? 'cursor-pointer' : ''
-                        }`}
-                      >
-                        {sermon.title}
-                      </a>
-                      <p className="text-sm font-semibold text-slate-600 mt-2">
+                      {isExternalFallback ? (
+                        <a
+                          href={detailHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block font-serif font-bold text-lg sm:text-xl text-slate-950 group-hover:text-[#0077cc] transition-colors leading-snug cursor-pointer"
+                        >
+                          {sermon.title}
+                        </a>
+                      ) : (
+                        <Link
+                          href={detailHref}
+                          className="block font-serif font-bold text-lg sm:text-xl text-slate-950 group-hover:text-[#0077cc] transition-colors leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] rounded-sm"
+                        >
+                          {sermon.title}
+                        </Link>
+                      )}
+
+                      <span className="block text-sm font-semibold text-slate-600 mt-2">
                         {sermon.preacher} {sermon.datePreached && `• ${sermon.datePreached}`}
-                      </p>
+                      </span>
                     </div>
                   </div>
 
                   {/* Clean Platform Buttons & Quick Play */}
                   <div className="px-6 pb-6 pt-3 flex items-center justify-between border-t border-slate-100">
-                    {hasPlayableMedia ? (
+                    {isExternalFallback ? (
                       <a
-                        href={sermon.youtubeUrl || sermon.spotifyUrl || '#'}
+                        href={detailHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0077cc] hover:text-sky-800 transition-colors"
                       >
-                        <Play className="h-3.5 w-3.5 shrink-0 fill-current" />
+                        <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
                         <span>{youtubeId ? 'Watch Video' : 'Listen Now'}</span>
                       </a>
                     ) : (
-                      <span className="text-xs font-semibold text-slate-400">Stream on:</span>
+                      <Link
+                        href={detailHref}
+                        className="inline-flex min-h-[36px] items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0077cc] hover:text-sky-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] rounded-sm"
+                      >
+                        <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
+                        <span>{youtubeId ? 'Watch Video' : 'Listen Now'}</span>
+                      </Link>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -176,7 +226,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Listen on Spotify"
-                          aria-label="Listen on Spotify"
+                          aria-label={`Listen to ${sermon.title} on Spotify (opens in a new tab)`}
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
                           <SpotifyIcon className="h-4 w-4 shrink-0" />
@@ -189,7 +239,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Listen on YouTube Music"
-                          aria-label="Listen on YouTube Music"
+                          aria-label={`Listen to ${sermon.title} on YouTube Music (opens in a new tab)`}
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
                           <YouTubeMusicIcon className="h-4 w-4 shrink-0" />
@@ -202,7 +252,7 @@ export default function LatestSermonsSection({ sermons }: Props) {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Watch on YouTube"
-                          aria-label="Watch on YouTube"
+                          aria-label={`Watch ${sermon.title} on YouTube (opens in a new tab)`}
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm border border-stone-200/60"
                         >
                           <YouTubeIcon className="h-4 w-4 shrink-0" />
@@ -216,6 +266,15 @@ export default function LatestSermonsSection({ sermons }: Props) {
           </div>
         )}
 
+        {/* Inline AI Message Finder Card below latest sermons */}
+        {config.enabled !== false && (
+          <AiSearchInlineCard
+            aiConfig={config}
+            showSuggestions={false}
+            headingAs="h3"
+            className="mt-10 sm:mt-14"
+          />
+        )}
       </div>
     </section>
   )

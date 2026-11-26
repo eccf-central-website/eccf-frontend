@@ -16,7 +16,9 @@ import {
   GALLERY_QUERY,
   LATEST_SERMONS_QUERY,
   HOMEPAGE_PILLARS_QUERY,
+  PUBLIC_AI_SEARCH_CONFIG_QUERY,
 } from '@/lib/queries'
+import type { AiSearchConfig } from '@/types'
 import HeroSection, { SiteSettingsData } from '@/components/home/HeroSection'
 import WhoWeAreSection, { AboutPillarsData } from '@/components/home/WhoWeAreSection'
 import ServiceScheduleConsole, { ServiceItem } from '@/components/home/ServiceScheduleConsole'
@@ -49,7 +51,7 @@ export default async function Home({
   const client = getSanityClient(isPreview)
 
   // Concurrently fetch live data from Sanity on the server
-  const [settings, services, rawGallery, latestSermons, aboutPillars] = await Promise.all([
+  const [settings, services, rawGallery, latestSermons, aboutPillars, aiConfig] = await Promise.all([
     client.fetch<SiteSettingsData>(SITE_SETTINGS_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch siteSettings:', err)
       return null
@@ -68,6 +70,10 @@ export default async function Home({
     }),
     client.fetch<AboutPillarsData>(HOMEPAGE_PILLARS_QUERY).catch((err) => {
       console.error('[Home] Failed to fetch about pillars for WhoWeAre:', err)
+      return null
+    }),
+    client.fetch<Partial<AiSearchConfig> | null>(PUBLIC_AI_SEARCH_CONFIG_QUERY).catch((err) => {
+      console.error('[Home] Failed to fetch aiSearchConfig:', err)
       return null
     }),
   ])
@@ -119,7 +125,7 @@ export default async function Home({
       <ServiceScheduleConsole services={services || []} />
 
       {/* 4. Sermon Vault & Podcasts Section (Latest Messages) */}
-      <LatestSermonsSection sermons={latestSermons || []} />
+      <LatestSermonsSection sermons={latestSermons || []} aiConfig={aiConfig} />
 
       {/* 5. Fellowship Life & Moments Section */}
       <FellowshipMomentsSection gallery={gallery || []} />

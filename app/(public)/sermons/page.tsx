@@ -1,44 +1,75 @@
 /**
  * Sermon Vault Page — /sermons
  *
- * React Server Component — fetches live sermons from Sanity Studio.
- * Zero hardcoded fallback data. Supports podcast links, topic filtering, and search.
+ * React Server Component — fetches live sermons and AI Search config from Sanity Studio.
+ * Zero hardcoded fallback data. Supports AI Message Finder (?ai=1&q=...), exact keyword
+ * search (?q=...&exact=1), topic filtering, and podcast/video detail playback.
  */
 
+import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import { getSanityClient } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
-import { SERMONS_QUERY } from '@/lib/queries'
+import { PUBLIC_AI_SEARCH_CONFIG_QUERY, SERMONS_QUERY } from '@/lib/queries'
 import SermonsFeed, { SermonItem } from '@/components/sermons/SermonsFeed'
 import { triggerBackgroundSyncIfNeeded } from '@/lib/sermonSync'
+import { mergeAiSearchConfig } from '@/lib/sermon-ai/defaults'
+import type { AiSearchConfig } from '@/types'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+export const metadata: Metadata = {
+  title: 'Sermon Vault & Podcasts | ECCF Family',
+  description:
+    'Listen, watch, and search inspired sermons preached live at Edo State University Christian Campus Fellowship (ECCF).',
+}
+
+function getParam(value?: string | string[]): string {
+  if (Array.isArray(value)) return value[0] || ''
+  return value || ''
+}
+
 export default async function SermonsPage({
   searchParams,
 }: {
-  searchParams?: { preview?: string }
+  searchParams?: {
+    preview?: string
+    q?: string | string[]
+    ai?: string | string[]
+    exact?: string | string[]
+  }
 }) {
   const isPreview = draftMode().isEnabled || searchParams?.preview === 'true'
   triggerBackgroundSyncIfNeeded()
   const client = getSanityClient(isPreview)
-  let sermons: SermonItem[] = []
 
-  try {
-    const raw = await client.fetch<SermonItem[]>(SERMONS_QUERY)
-    if (raw && raw.length > 0) {
-      sermons = raw
-    }
-  } catch (err) {
-    console.error('[SermonsPage] Failed to fetch live sermons:', err)
-  }
+  const [rawSermons, rawAiConfig] = await Promise.all([
+    client.fetch<SermonItem[]>(SERMONS_QUERY).catch((err) => {
+      console.error('[SermonsPage] Failed to fetch live sermons:', err)
+      return [] as SermonItem[]
+    }),
+    client.fetch<Partial<AiSearchConfig> | null>(PUBLIC_AI_SEARCH_CONFIG_QUERY).catch((err) => {
+      console.error('[SermonsPage] Failed to fetch AI search config:', err)
+      return null
+    }),
+  ])
+
+  const sermons = Array.isArray(rawSermons) ? rawSermons : []
+  const aiConfig = mergeAiSearchConfig(rawAiConfig)
+
+  const initialQuery = getParam(searchParams?.q).trim()
+  const exactParam = getParam(searchParams?.exact).toLowerCase()
+  const aiParam = getParam(searchParams?.ai).toLowerCase()
+
+  const initialExactMode = exactParam === '1' || exactParam === 'true'
+  const initialAiMode = !initialExactMode && (aiParam === '1' || aiParam === 'true')
 
   return (
     <div className="min-h-screen bg-[#fafaf9] pt-28 sm:pt-32 md:pt-36 pb-20 sm:pb-28">
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#0077cc] font-mono block mb-3">
             ECCF SERMON VAULT &amp; PODCASTS
           </span>
@@ -50,10 +81,16 @@ export default async function SermonsPage({
           </p>
         </div>
 
-        <SermonsFeed sermons={sermons} />
+        <SermonsFeed
+          sermons={sermons}
+          aiConfig={aiConfig}
+          initialQuery={initialQuery}
+          initialAiMode={initialAiMode}
+          initialExactMode={initialExactMode}
+        />
       </div>
 
       {isPreview && <PreviewBanner exitUrl="/api/exit-preview?slug=/sermons" />}
     </div>
   )
-}
+}
