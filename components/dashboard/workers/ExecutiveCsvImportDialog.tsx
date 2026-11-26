@@ -3,14 +3,17 @@
 /**
  * ExecutiveCsvImportDialog — 3-step bulk-import for executive positions from CSV/XLSX.
  *
- * Step 1: Upload spreadsheet and select options (e.g. reserve roles for unregistered EXCOs).
+ * Designed as a right-side panel (RecordSheet) consistent with dashboard side sheets
+ * (RecordAttendanceSheet, MeetingMinuteEditorSheet, Worker Details).
+ *
+ * Step 1: Upload spreadsheet, configure options, access template & sync utilities.
  * Step 2: Interactive Mapping & Preview table:
  *         - Review every single row before anything is saved to the database.
  *         - View matched registered workers vs. reserved appointments for unregistered leaders.
  *         - Review mapped CSGB offices, halls, and ministry teams.
  *         - Toggle rank (Lead vs Assistant) or select/unselect specific rows.
- * Step 3: Confirmation and summary report. The workforce roster refreshes only
- *         when the user clicks "Done" or closes the modal.
+ * Step 3: Confirmation and summary report. The workforce roster refreshes when
+ *         the user clicks "Done" or closes the side sheet.
  */
 
 import * as React from 'react'
@@ -19,6 +22,7 @@ import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Check,
   CheckCircle2,
   Download,
@@ -28,7 +32,6 @@ import {
   Mail,
   RotateCcw,
   Search,
-  Sparkles,
   TriangleAlert,
   Upload,
   UserCheck,
@@ -38,14 +41,7 @@ import { Button, type ButtonProps } from '@/components/dashboard/ui/button'
 import { Checkbox } from '@/components/dashboard/ui/checkbox'
 import { Input } from '@/components/dashboard/ui/input'
 import { StatusBadge } from '@/components/dashboard/ui/status-badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/dashboard/ui/dialog'
+import { RecordSheet } from '@/components/dashboard/ui/record-sheet'
 import {
   previewExecutiveSpreadsheet,
   commitExecutiveImport,
@@ -319,9 +315,10 @@ export default function ExecutiveCsvImportDialog({
         setCommitResult(res)
         setStep('result')
         if (res.imported > 0) {
-          const reserved = res.unregisteredCount > 0
-            ? ` (${res.unregisteredCount} reserved for unregistered leader${res.unregisteredCount === 1 ? '' : 's'})`
-            : ''
+          const reserved =
+            res.unregisteredCount > 0
+              ? ` (${res.unregisteredCount} reserved for unregistered leader${res.unregisteredCount === 1 ? '' : 's'})`
+              : ''
           toastSuccess(
             `Successfully imported ${res.imported} position${res.imported === 1 ? '' : 's'}${reserved}!`
           )
@@ -365,8 +362,51 @@ export default function ExecutiveCsvImportDialog({
   const newWorkerCount = useMemo(() => rows.filter((r) => r.isNewWorker).length, [rows])
   const warningCount = useMemo(() => rows.filter((r) => r.status === 'warning').length, [rows])
 
+  // Sheet configuration depending on active step
+  const sheetTitle =
+    step === 'upload'
+      ? 'Bulk-Import Leadership Positions'
+      : step === 'preview'
+        ? 'Review & Map Positions'
+        : 'Import Finished'
+
+  const sheetDescription =
+    step === 'upload'
+      ? 'Upload your executive or unit leadership spreadsheet to preview, map, and import appointments into the fellowship roster.'
+      : step === 'preview'
+        ? `Review detected workers and assigned leadership roles (${rows.length} total rows) before saving.`
+        : 'Leadership positions have been processed. Closing this panel refreshes the leadership roster.'
+
+  const sheetHeaderExtra =
+    step === 'upload' ? (
+      <StatusBadge variant="info" icon={<FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />}>
+        Roster Import
+      </StatusBadge>
+    ) : step === 'preview' ? (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <StatusBadge variant="success" icon={<UserCheck className="h-3.5 w-3.5" aria-hidden="true" />}>
+          <span className="tabular-nums">{matchedCount} Registered</span>
+        </StatusBadge>
+        <StatusBadge variant="info" icon={<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />}>
+          <span className="tabular-nums">{newWorkerCount} Unregistered</span>
+        </StatusBadge>
+        {warningCount > 0 && (
+          <StatusBadge variant="warning" icon={<TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />}>
+            <span className="tabular-nums">{warningCount} Warnings</span>
+          </StatusBadge>
+        )}
+      </div>
+    ) : (
+      <StatusBadge
+        variant={commitResult?.imported ? 'success' : 'destructive'}
+        icon={<CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
+      >
+        Import Complete
+      </StatusBadge>
+    )
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <>
       <Button
         type="button"
         variant={variant}
@@ -380,31 +420,123 @@ export default function ExecutiveCsvImportDialog({
         <span>{buttonLabel}</span>
       </Button>
 
-      <DialogContent
+      <RecordSheet
+        open={open}
+        onOpenChange={handleOpenChange}
+        side="right"
+        title={sheetTitle}
+        description={sheetDescription}
+        headerExtra={sheetHeaderExtra}
         className={cn(
-          'overflow-hidden border-border bg-card p-0 transition-all duration-200',
+          'transition-all duration-200',
           step === 'preview'
-            ? 'max-w-5xl w-[95vw] max-h-[92vh] flex flex-col'
-            : step === 'result'
-              ? 'sm:max-w-xl max-h-[90vh] flex flex-col'
-              : 'sm:max-w-lg max-h-[90vh] flex flex-col'
+            ? 'sm:max-w-4xl lg:max-w-5xl'
+            : 'sm:max-w-xl'
         )}
+        bodyClassName={step === 'preview' ? 'p-0 flex flex-col overflow-hidden' : 'p-5 sm:p-6 space-y-4'}
+        footer={
+          step === 'upload' ? (
+            <div className="flex w-full items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={isAnalyzing}
+                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={!file || isAnalyzing}
+                className="min-h-11 md:min-h-10 px-5 font-semibold text-sm gap-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                    <span>Analyzing Sheet…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Preview &amp; Map Rows</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : step === 'preview' ? (
+            <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep('upload')}
+                disabled={isCommitting}
+                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Back to Upload</span>
+              </Button>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto justify-end">
+                <span className="text-[13px] text-muted-foreground tabular-nums">
+                  <span className="font-semibold text-foreground">{selectedCount}</span> of {rows.length} rows selected
+                </span>
+
+                <Button
+                  type="button"
+                  onClick={handleCommit}
+                  disabled={selectedCount === 0 || isCommitting}
+                  className="min-h-11 md:min-h-10 px-5 font-semibold text-sm w-full sm:w-auto gap-2"
+                >
+                  {isCommitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                      <span>Importing {selectedCount} Positions…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>Confirm &amp; Import ({selectedCount})</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetDialog}
+                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm"
+              >
+                <RotateCcw className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Import Another File</span>
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  if (commitResult && commitResult.imported > 0) {
+                    router.refresh()
+                  }
+                }}
+                className="min-h-11 md:min-h-10 px-6 font-semibold text-sm"
+              >
+                Done
+              </Button>
+            </div>
+          )
+        }
       >
         {/* =================================================================== */}
         {/* STEP 1: UPLOAD                                                      */}
         {/* =================================================================== */}
         {step === 'upload' && (
-          <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg min-w-0">
-                <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                <span className="truncate">Bulk-Import Leadership Positions</span>
-              </DialogTitle>
-              <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed [text-wrap:pretty]">
-                Upload your executive or unit leadership spreadsheet. In the next step, you will be able to preview and modify all name &amp; position mappings before anything is imported.
-              </DialogDescription>
-            </DialogHeader>
-
+          <>
             <input
               id={fileInputId}
               ref={inputRef}
@@ -416,6 +548,7 @@ export default function ExecutiveCsvImportDialog({
               disabled={isAnalyzing}
             />
 
+            {/* Drop Zone */}
             <div
               role="button"
               tabIndex={0}
@@ -487,7 +620,7 @@ export default function ExecutiveCsvImportDialog({
               </div>
             </label>
 
-            {/* Column hints */}
+            {/* Supported columns */}
             <div className="rounded-xl bg-surface-raised p-3.5 space-y-2 w-full min-w-0 overflow-hidden">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Supported columns (flexible &amp; auto-detected)
@@ -495,8 +628,8 @@ export default function ExecutiveCsvImportDialog({
               <div className="flex flex-wrap gap-1.5">
                 {[
                   'Full Name (any word order)',
-                  'Email (recommended — links the role to the right person)',
-                  'Position / Office / Role (auto-maps CSGB, Hall, Ministry Team)',
+                  'Email (recommended — links role directly)',
+                  'Position / Office / Role (auto-maps CSGB, Hall, Team)',
                   'Rank (lead · assistant, optional)',
                   'Hall (optional)',
                 ].map((col) => (
@@ -510,35 +643,40 @@ export default function ExecutiveCsvImportDialog({
               </div>
             </div>
 
-            {error && (
-              <p className="text-[13px] text-destructive font-semibold break-words" role="alert">
-                {error}
+            {/* Template & Sync Utilities Card */}
+            <div className="rounded-xl border border-border/60 bg-surface-raised p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Roster Utilities &amp; Template
+                </p>
+              </div>
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                Need a pre-formatted template, or want to link already registered workers to existing reserved appointments?
               </p>
-            )}
-
-            <DialogFooter className="gap-2 pt-2 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center sm:space-x-0">
-              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
+                  size="sm"
                   onClick={downloadTemplate}
                   disabled={downloading}
-                  className="min-h-11 md:min-h-10 text-[13px] font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                  className="min-h-10 text-[13px] font-semibold text-foreground hover:bg-card"
                 >
                   {downloading ? (
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                   ) : (
                     <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
                   )}
-                  <span>Template</span>
+                  <span>Download Template CSV</span>
                 </Button>
 
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={handleReconcile}
                   disabled={isReconciling}
-                  className="min-h-11 md:min-h-10 text-[13px] font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
+                  className="min-h-10 text-[13px] font-semibold text-foreground hover:bg-card"
                 >
                   {isReconciling ? (
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
@@ -548,76 +686,24 @@ export default function ExecutiveCsvImportDialog({
                   <span>Sync Exco Registrations</span>
                 </Button>
               </div>
+            </div>
 
-              <Button
-                type="button"
-                onClick={handleAnalyze}
-                disabled={!file || isAnalyzing}
-                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                    <span>Analyzing Sheet…</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>Preview &amp; Map Rows</span>
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </div>
+            {error && (
+              <p className="text-[13px] text-destructive font-semibold break-words" role="alert">
+                {error}
+              </p>
+            )}
+          </>
         )}
 
         {/* =================================================================== */}
         {/* STEP 2: PREVIEW & INTERACTIVE MAPPING                               */}
         {/* =================================================================== */}
         {step === 'preview' && (
-          <div className="flex flex-col h-full max-h-[92vh] min-h-0">
-            {/* Header with summary chips */}
-            <div className="p-4 sm:p-5 border-b border-border/50 bg-card shrink-0 space-y-3 pr-12">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div>
-                  <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg">
-                    <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                    <span>Review &amp; Map Positions</span>
-                    <span className="text-[13px] font-normal text-muted-foreground tabular-nums">
-                      ({rows.length} total rows)
-                    </span>
-                  </DialogTitle>
-                  <DialogDescription className="text-[13px] text-muted-foreground mt-0.5">
-                    Review and verify all detected workers and roles before importing into the database.
-                  </DialogDescription>
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <StatusBadge
-                    variant="success"
-                    icon={<UserCheck className="h-3.5 w-3.5" aria-hidden="true" />}
-                  >
-                    <span className="tabular-nums">{matchedCount} Registered</span>
-                  </StatusBadge>
-                  <StatusBadge
-                    variant="info"
-                    icon={<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />}
-                  >
-                    <span className="tabular-nums">{newWorkerCount} Unregistered</span>
-                  </StatusBadge>
-                  {warningCount > 0 && (
-                    <StatusBadge
-                      variant="warning"
-                      icon={<TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />}
-                    >
-                      <span className="tabular-nums">{warningCount} Warnings</span>
-                    </StatusBadge>
-                  )}
-                </div>
-              </div>
-
-              {/* Toolbar: Search & Filter Tabs */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+          <div className="flex flex-col h-full min-h-0">
+            {/* Toolbar: Search & Filter Tabs */}
+            <div className="p-4 sm:p-5 border-b border-border/50 bg-card shrink-0 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div
                   role="tablist"
                   aria-label="Filter spreadsheet rows"
@@ -640,7 +726,7 @@ export default function ExecutiveCsvImportDialog({
                         aria-selected={isActive}
                         onClick={() => setFilterTab(tab.id)}
                         className={cn(
-                          'min-h-11 md:min-h-10 px-3 rounded-lg font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'min-h-10 px-3 rounded-lg font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isActive
                             ? 'bg-card text-foreground font-semibold shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -667,7 +753,7 @@ export default function ExecutiveCsvImportDialog({
                       placeholder="Search name, role, hall…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 min-h-11 md:min-h-10 text-sm"
+                      className="pl-9 min-h-10 text-sm"
                     />
                   </div>
 
@@ -675,7 +761,7 @@ export default function ExecutiveCsvImportDialog({
                     type="button"
                     variant="outline"
                     onClick={() => handleToggleAll(filteredRows)}
-                    className="min-h-11 md:min-h-10 px-3 text-[13px] font-semibold whitespace-nowrap"
+                    className="min-h-10 px-3 text-[13px] font-semibold whitespace-nowrap"
                   >
                     {filteredRows.length > 0 && filteredRows.every((r) => r.selected)
                       ? 'Deselect All'
@@ -809,7 +895,7 @@ export default function ExecutiveCsvImportDialog({
                               onClick={() => handleToggleRank(row.rowId)}
                               aria-label={`Toggle rank for ${row.rawName}, currently ${row.rank === 'lead' ? 'Lead' : 'Assistant'}`}
                               className={cn(
-                                'min-h-11 md:min-h-10 px-3 rounded-[var(--radius-control)] text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'min-h-10 px-3 rounded-[var(--radius-control)] text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 row.rank === 'lead'
                                   ? 'bg-primary/10 text-accent-foreground dark:text-primary'
                                   : 'bg-surface-raised text-muted-foreground hover:text-foreground'
@@ -841,45 +927,6 @@ export default function ExecutiveCsvImportDialog({
                 </tbody>
               </table>
             </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border/50 bg-card shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setStep('upload')}
-                disabled={isCommitting}
-                className="min-h-11 md:min-h-10 text-sm font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
-              >
-                <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Back to Upload</span>
-              </Button>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto justify-end">
-                <span className="text-[13px] text-muted-foreground tabular-nums">
-                  <span className="font-semibold text-foreground">{selectedCount}</span> of {rows.length} rows selected
-                </span>
-
-                <Button
-                  type="button"
-                  onClick={handleCommit}
-                  disabled={selectedCount === 0 || isCommitting}
-                  className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
-                >
-                  {isCommitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                      <span>Importing {selectedCount} Positions…</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span>Confirm &amp; Import ({selectedCount})</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
           </div>
         )}
 
@@ -887,17 +934,7 @@ export default function ExecutiveCsvImportDialog({
         {/* STEP 3: RESULT REPORT                                               */}
         {/* =================================================================== */}
         {step === 'result' && commitResult && (
-          <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-sans font-semibold tracking-tight text-foreground flex items-center gap-2 text-lg">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
-                <span>Import Finished</span>
-              </DialogTitle>
-              <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed">
-                Positions have been saved. When you close this dialog, the workforce table will refresh.
-              </DialogDescription>
-            </DialogHeader>
-
+          <div className="space-y-4">
             {commitResult.imported > 0 ? (
               <div className="flex items-start gap-3 rounded-2xl bg-success/10 p-4">
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-success mt-0.5" aria-hidden="true" />
@@ -977,34 +1014,9 @@ export default function ExecutiveCsvImportDialog({
                 </ul>
               </div>
             )}
-
-            <DialogFooter className="gap-2 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-0">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={resetDialog}
-                className="min-h-11 md:min-h-10 text-sm font-semibold text-muted-foreground hover:text-foreground w-full sm:w-auto"
-              >
-                <RotateCcw className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Import Another File</span>
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  if (commitResult.imported > 0) {
-                    router.refresh()
-                  }
-                }}
-                className="min-h-11 md:min-h-10 px-4 font-semibold text-sm w-full sm:w-auto"
-              >
-                Done
-              </Button>
-            </DialogFooter>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </RecordSheet>
+    </>
   )
 }

@@ -96,6 +96,13 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${belleza.variable} ${workSans.variable} ${geistSans.variable} ${geistMono.variable}`}
       >
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var p=window.location.pathname||'';var t=localStorage.getItem('eccf_dashboard_theme');if(t==='dark'||(t!=='light'&&(p.indexOf('/dashboard')===0||p.indexOf('/login')===0||p.indexOf('/sign-up')===0))){document.documentElement.classList.add('dark')}else if(t==='light'&&p.indexOf('/dashboard')!==0){document.documentElement.classList.remove('dark')}}catch(e){}})()`,
+            }}
+          />
+        </head>
         <body
           className="antialiased bg-[#fafaf9] text-slate-800 flex min-h-screen flex-col font-sans"
         >

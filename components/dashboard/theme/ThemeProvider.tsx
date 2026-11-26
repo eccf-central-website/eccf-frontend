@@ -37,9 +37,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (stored === 'light') {
         setThemeState('light')
         document.documentElement.classList.remove('dark')
+        try {
+          document.cookie = `${THEME_STORAGE_KEY}=light; path=/; max-age=31536000; SameSite=Lax`
+        } catch {}
       } else {
         setThemeState('dark')
         document.documentElement.classList.add('dark')
+        try {
+          document.cookie = `${THEME_STORAGE_KEY}=dark; path=/; max-age=31536000; SameSite=Lax`
+        } catch {}
       }
     } catch {
       // localStorage unavailable or restricted — fall back to dark
@@ -56,6 +62,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(newTheme)
     try {
       localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+      document.cookie = `${THEME_STORAGE_KEY}=${newTheme}; path=/; max-age=31536000; SameSite=Lax`
     } catch {}
 
     if (newTheme === 'dark') {
