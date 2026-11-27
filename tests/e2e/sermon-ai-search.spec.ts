@@ -33,6 +33,10 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
 
+    // Homepage / public navbar shows "Updates" tab pointing to /announcements
+    const updatesNavLink = page.locator('header nav ul.hidden a[href="/announcements"]')
+    await expect(updatesNavLink).toHaveText('Updates')
+
     await expect(
       page.getByRole('heading', { name: /Listen & Watch Inspired Teachings/i, level: 1 })
     ).toBeVisible({ timeout: 30_000 })

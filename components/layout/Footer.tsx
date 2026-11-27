@@ -64,7 +64,7 @@ export const DEFAULT_FOOTER_NAV_COLUMNS: FooterNavColumn[] = [
       { label: 'Plan a Visit', url: '/#visit' },
       { label: 'Prayer Request', url: '/connect?tab=prayer' },
       { label: 'Give', url: '/give' },
-      { label: 'Announcements', url: '/announcements' },
+      { label: 'Updates', url: '/announcements' },
     ],
   },
 ]

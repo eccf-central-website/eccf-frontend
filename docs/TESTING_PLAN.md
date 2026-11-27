@@ -20,9 +20,8 @@
 ### 1.1 Global Layout, Header & Navigation
 - [ ] **Desktop Navigation Bar**
   - [ ] Logo displays clearly and routes back to `/` when clicked.
-  - [ ] All primary links (`Home`, `About`, `Sermons`, `Announcements`, `Connect`, `Give`) route to their respective pages.
-  - [ ] Active route indicator correctly highlights the current page.
-  - [ ] Exco Portal / Portal Login icon or link correctly routes to `/login` (and legacy `/dashboard/login` redirects to `/login`).
+  - [ ] Primary links (`Sermons`, `Giving`, `About`, `Updates`, `Connect`, plus primary CTA `Plan a Visit`) display cleanly and route to `/sermons`, `/#giving`, `/about`, `/announcements`, `/connect`, and `/#visit`.
+  - [ ] Active route indicator correctly highlights the current page (including `Updates` when on `/announcements`).
   - [ ] Worker registration link (`/register`) is **not** present in the public header menu (per security mandate).
 - [ ] **Mobile Navigation Drawer**
   - [ ] Hamburger menu button toggles drawer smoothly with animation.
@@ -65,15 +64,20 @@
 
 ---
 
-### 1.4 Sermons Vault (`/sermons`)
-- [ ] **Search & Filtering**
-  - [ ] Search input filters sermons in real-time by title, preacher, or scripture passage.
-  - [ ] Topic / Series dropdown accurately narrows sermon list.
-  - [ ] Empty state message renders when no sermons match filter criteria.
-- [ ] **Audio & Media Playback**
-  - [ ] Audio player controls (Play, Pause, Progress Seek, Volume) function without audio distortion.
-  - [ ] Stream links resolve correctly from Cloud Storage / Google Drive.
-  - [ ] Preacher name, date preached, and sermon notes link (if available) render accurately.
+### 1.4 Sermons Vault (`/sermons`) & Sermon Detail (`/sermons/[slug]`)
+- [ ] **Hero Copy & Layout**
+  - [ ] Short hero subtitle renders directly below *"Listen & Watch Inspired Teachings"*, and changes saved in Sanity Studio (`Homepage & Site Settings → Sermons Page`) appear on refresh.
+- [ ] **AI Message Finder (Inline & Floating `<dialog>` Modal)**
+  - [ ] Typing into the inline search input does **not** reshuffle the starter prompt chips or alter card height.
+  - [ ] Submitting a spiritual/life query returns matched sermons with transcript excerpts and non-`0:00` timestamps when transcript segments exist (or `Play full message` / `Play message` when `startSeconds === 0`).
+  - [ ] Crisis queries trigger the care & support banner (`Emergency: 112`, ECCF contact links).
+  - [ ] Clicking **Browse all sermons** returns to exact-word catalog search; scrolling past the inline card reveals the floating **AI Search** button, and pressing `Esc` closes the `<dialog>` modal.
+- [ ] **Catalog Search & Paginated Topic Filtering**
+  - [ ] Search input filters sermons by title, preacher, series, topic, or scripture reference.
+  - [ ] Duplicate topic casings (e.g. `Academics` and `academics`) collapse into a single pill, and the toolbar shows `All` plus at most 5 topics per page (max 6 topic pills at once) with `< 1/N >` pagination controls when more than 5 topics exist.
+- [ ] **Media Playback & Deep Links**
+  - [ ] Clicking an AI suggestion opens `/sermons/[slug]?t=<seconds>&autoplay=1`, passing `start=<seconds>` and `autoplay=1` to the YouTube `youtube-nocookie.com` embed.
+  - [ ] Spotify episodes hosted on `creators.spotify.com` / `podcasters.spotify.com` / `anchor.fm` render via `creators.spotify.com/pod/profile/<show>/embed/episodes/<slug>`, while standard 22-char `open.spotify.com` IDs render via `open.spotify.com/embed/episode/<id>` (never *Page not available*).
 
 ---
 
@@ -199,6 +203,7 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 ### 4.1 CSGB Admin Testing
 - [ ] Admin navigation sidebar displays all permitted modules (plus pinned Settings for President/VP Admin/authorized approvers).
 - [ ] Directly accessing any `/dashboard/*` route succeeds with status 200.
+- [ ] Strictly 5 board positions (`President`, two `Vice Presidents`, `General Secretary`, `Prayer Coordinator`) carry CSGB scope; **Assistant Prayer Coordinator** or assistant CSGB roles are scoped to Prayer Team rather than full CSGB access.
 - [ ] Full create, update, and resolve permissions active.
 
 ### 4.2 Outreach Team Leader Testing
@@ -245,10 +250,11 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
   - [ ] Follow-up status / toggle persists updates to Sanity.
 
 ### 5.3 Attendance Ledger (`/dashboard/attendance`)
-- [ ] **Record Intake**
-  - [ ] "Record Attendance" modal collects: Service Date, Service Type (Sunday Service, Midweek, Workers Meeting), Total Count, Males, Females, Children, and First Timers.
-  - [ ] Validation ensures sum of breakdowns aligns with total count or warns on mismatch.
-  - [ ] Successful submission creates `attendanceLedger` document in Sanity and updates recent attendance metrics.
+- [ ] **Record Intake (`RecordAttendanceSheet`)**
+  - [ ] General Headcount collects Service Date (Lagos quick chips), Service Type, optional Meeting/Programme Title, and Total Count (`+10`/`+50`/`+100` helpers).
+  - [ ] Detailed breakdown records Students (`menCount` / `womenCount`), **University Staff** (`staffCount` / `staffMenCount` / `staffWomenCount`), Children, and optional **First-Timers** count (`firstTimersCount`, not added to total headcount).
+  - [ ] Team Rosters view logs team attendees + guest count for scoped teams.
+  - [ ] Successful submission creates an `attendanceLedger` draft document in Sanity with `loggedByName` and refreshes recent attendance metrics.
 
 ### 5.4 Finance Ledger (`/dashboard/finance`)
 - [ ] **Transaction Entry**
@@ -276,6 +282,13 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
   - [ ] Page displays `EXCO Read-Only` badge and hides `"New minute"`, `"CSGB Drafts"` tab, edit/post/pin/archive/delete controls, and internal draft records.
   - [ ] Only non-archived minutes with `isPostedToExcos: true` appear in UI and server responses; clicking **Open** opens the read-only detail sheet with Markdown copy & Print.
   - [ ] Calling any mutation action (`createMeetingMinute`, `updateMeetingMinute`, `deleteMeetingMinute`, etc.) as a non-CSGB EXCO fails with an authorization error.
+
+### 5.8 Sermons, Transcripts & AI Search Desk (`/dashboard/sermons`)
+- [ ] Media Team users see **Sermons**, **Transcripts**, and **AI Search** tabs; non-Media admins without a Media position are denied access.
+- [ ] Unavailable sermon captions display a disabled CC icon badge (`CaptionsOff`) with accessible screen-reader text instead of raw placeholder text.
+- [ ] **Transcripts** tab lists `Ready`, `Waiting`, and `Unavailable` KPI counts and **Check for captions now** indexes YouTube captions into `sermonSegment` documents.
+- [ ] **AI Search** tab manages public prompts/limits, **Encrypted Key Override** (write-only `password` input stored in `drafts.aiSearchSecret`), and **Saved Searches Cache** clearing.
+- [ ] Automated suite `npx playwright test tests/e2e/sermon-ai-search.spec.ts --workers=1` passes on mobile (`390x844`) and desktop (`1440x900`) viewports without horizontal overflow.
 
 ---
 

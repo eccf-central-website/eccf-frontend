@@ -1,6 +1,8 @@
 # Operational data privacy boundary
 
-Operational records stay in the existing Sanity dataset to avoid a paid dataset. The application stores new worker, attendance, finance, first-timer, welfare, prayer, and subscriber records as unpublished drafts. Server reads use the authenticated `drafts` perspective; public pages use the unauthenticated `published` perspective. The Studio removes the ordinary Publish action for these document types.
+> **Status note (Nov 2026):** The Sanity `production` dataset (`ynnot4j0`) now operates in **private** dataset access mode — unauthenticated queries return nothing even for published content, and all reads use `SANITY_READ_TOKEN` server-side (`lib/sanity.ts`, `useCdn: false`). Operational documents remain stored exclusively as unpublished drafts (`drafts.*`) and are never exposed through public routes.
+
+Operational records stay in the existing Sanity dataset to avoid a paid dataset. The application stores new worker, attendance, finance, first-timer, welfare, prayer, and subscriber records as unpublished drafts. Server reads use the authenticated `drafts` perspective; public pages use the `published` perspective via `SANITY_READ_TOKEN`. Sanity Studio removes the ordinary Publish action for protected draft types (`worker`, `aiSearchSecret`, etc.).
 
 ## Rollout
 

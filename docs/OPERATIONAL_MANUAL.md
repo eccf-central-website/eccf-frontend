@@ -3,9 +3,9 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 25 November 2026 against the Dashboard Modernization & Meeting Minutes release (`eccf-frontend` + `eccf-backend`).
+**Last verified:** 27 November 2026 against `eccf-frontend` (`4dc6cdb` + `Updates` homepage navigation label) and `eccf-backend` (`646a843`).
 
-> **Revision 2.0.** This edition replaces Version 1.0 and was checked line-by-line against the current frontend and Sanity schemas. Major corrections include: Clerk-only status tracking and sign-up, signed-in Clerk profile refresh, the 8-step worker intake with no executive application, multi-team memberships and position approvals, the CSGB executive console, manual announcement broadcasts, bank-transfer-only giving, role-scoped welfare contact visibility, dashboard-only PWA installation, the current six QA suites (61 tests), and the three-tab Connect hub. Where code and prose disagree, the code is the source of truth.
+> **Revision 2.1.** Checked line-by-line against the latest codebase and Sanity schemas. Additions and corrections over Revision 2.0 include: Message AI Search (`/api/sermons/finder`), YouTube Innertube Android/iOS caption indexing and the disabled `CaptionsOff` CC badge, Spotify for Creators embeds + YouTube `?t=<seconds>&autoplay=1` playback, Sanity-editable `/sermons` hero copy (`siteSettings.sermonsPage*`), case-insensitive paginated Sermon topic pills, the **Updates** homepage navigation label (`/announcements`), University Staff & optional First-Timers attendance demographics, strict 5-member CSGB board access rules (Assistant Prayer Coordinator scoped to Prayer Team), leadership CSV `RecordSheet` import drawer, and Clerk/loader theme & navigation polish. Where code and prose disagree, the code is the source of truth.
 
 ---
 
@@ -94,9 +94,9 @@ The homepage is server-rendered from live Sanity content and currently renders t
 > The homepage no longer displays a **Next Service status pill** or a **Latest Announcements ticker**. Announcements live on `/announcements`, and the hero's visible pill is driven by the `heroTopPill` field. The legacy `liveStatusText` field still exists in the schema/query but is not rendered by the current frontend.
 
 The global public chrome adds:
-- **Navbar links:** Sermons, Giving (`/#giving`), About, Announcements, Connect.
+- **Navbar links:** Sermons (`/sermons`), Giving (`/#giving`), About (`/about`), **Updates** (`/announcements`), Connect (`/connect`), plus the **Plan a Visit** CTA (`/#visit`).
 - **The Launcher:** a floating bottom-right "next steps" card with an inline Connect Card plus configurable quick links. Default actions include Join A Team / Registrations (worker intake), Weekly Podcasts & Messages (`/sermons`), and Give Online (`/give`). The quick links are editable in Sanity under **Launcher Quick Links**.
-- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns, copyright, legal links (**Privacy & Data Care** and **Terms of Use**), and social links.
+- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns (default Connect column uses **Updates** → `/announcements`), copyright, legal links (**Privacy & Data Care** and **Terms of Use**), and social links.
 
 ### 1.2 About Page (`/about`)
 - **Mission & Vision:** The fellowship's spiritual mandate for Edo State University.
@@ -110,13 +110,16 @@ The global public chrome adds:
 > [!NOTE]
 > There is no separate "resident pastor" tier. Hall Pastor cards deliberately omit personal hall/room labels so student residence information is not exposed publicly.
 
-### 1.3 Sermon Vault (`/sermons`)
-- **Multi-Platform Player:** Watch on YouTube or listen on Spotify / YouTube Music. Each message card exposes only the platforms that have been configured.
-- **Search & Filters:** Search by **title, preacher, or series**; filter by topic tags derived from the live sermon catalogue.
-- **No Public Download Button:** The site links out to the streaming platforms. It does not host an MP3 download control or a public sermon-notes reader.
-- **Automatic Enrichment:** Visiting the homepage or Sermon Vault triggers a throttled background sync at most once every 15 minutes. The sync ingests the Spotify and YouTube RSS feeds and can enrich sermons with YouTube Data API v3 metadata when `YOUTUBE_API_KEY` is configured.
+### 1.3 Sermon Vault (`/sermons`) & Message Detail (`/sermons/[slug]`)
+- **Editable Hero Copy:** The eyebrow, headline (*"Listen & Watch Inspired Teachings"*), and short subtitle directly beneath it can be customised in Sanity Studio under **Homepage & Site Settings → Sermons Page** (`sermonsPageBadge`, `sermonsPageHeadline`, `sermonsPageSubtitle`), falling back to concise defaults when unset.
+- **AI Message Finder (Inline & Floating `<dialog>` Modal):** Students describe a situation or question in plain English via the dark inline AI card (also triggered from the homepage or bottom-left floating button once scrolled past). Suggested prompt chips remain stable while typing; crisis queries route immediately to the emergency & ECCF pastoral support banner (`112`, ECCF phone/email). Repeated searches reuse Sanity's anonymous SHA-256 response cache (keyed by `lastContentUpdatedAt` so transcript updates invalidate stale hits).
+- **Timestamp Deep Links & Autoplay:** Clicking an AI-suggested message opens `/sermons/[slug]?t=<seconds>&autoplay=1`, queuing the embedded `youtube-nocookie.com` video player at `start=<seconds>` with `autoplay=1` (subject to browser autoplay policies). Fallback matches without indexed transcript timestamps display `Play full message` / `Play message`.
+- **Multi-Platform Player:** Watch on YouTube or listen on Spotify / YouTube Music. Spotify links handle both standard `open.spotify.com` 22-character episode IDs (`open.spotify.com/embed/episode/<id>`) and Spotify for Creators / Anchor links (`creators.spotify.com/pod/profile/<show>/embed/episodes/<slug>`).
+- **Search & Paginated Topic Filters:** Search by **title, preacher, series, topic, or scripture reference**; topic pills deduplicate case variants (e.g. `Academics` and `academics` collapse into one frequency-sorted pill) and paginate at **`All` + up to 5 topics per page** (max 6 pills visible at once) with `< 1/N >` controls when more than 5 topics exist.
+- **Automatic Enrichment:** Visiting the homepage or Sermon Vault triggers a throttled background sync at most once every 15 minutes. The sync ingests Spotify/Creators and YouTube RSS feeds and enriches captions/themes when AI provider keys are configured.
 
-### 1.4 Sunday Announcements Hub (`/announcements`)
+### 1.4 Updates / Sunday Announcements Hub (`/announcements`)
+> Linked as **Updates** in the homepage/public navbar and footer fallback directory.
 - **Category Filters:**
   - `WEEKLY SERVICES`
   - `ACADEMIC & EXAMS`
@@ -224,7 +227,7 @@ The status tracker is now **privacy-protected by Clerk**. There is no phone-numb
 > If no executive positions exist, the status page explains that executive positions are appointed by the Fellowship President and directs the worker to the President or Technical Administrator. It no longer links to `/register` as an application path.
 
 ### 2.3 Worker & Leader Sign-In (`/login` and `/sign-up`)
-1. Navigate to `/login`.
+1. Navigate to `/login` (both `/login` and `/sign-up` display a themed `LoadingState` overlay until the Clerk authentication widget finishes mounting).
 2. Sign in through Clerk using **Google OAuth** or an **emailed verification code**. Passwords are not used.
 3. First-time Exco members who do not yet have a Clerk account use `/sign-up`.
 4. **Previously registered but cannot sign in?** Use the **"Activate Login"** form below the Clerk card. Enter the email address on your worker profile. The system finds the worker, creates or links the Clerk user, stores `clerkUserId` on the profile, and asks you to sign in with that same email.
@@ -243,10 +246,10 @@ Routing notes:
 
 ## Chapter 3: President & Christian Student Governing Board (CSGB)
 
-The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form.
+The President and CSGB executives hold central oversight over fellowship operations, student governance, and executive appointments. Access is derived from **approved positions**, not from job titles typed into a form, and strictly **5 offices** compose CSGB (`President`, two `Vice Presidents`, `General Secretary`, and `Prayer Coordinator` — assistant roles such as *Assistant Prayer Coordinator* are excluded from `isCSGB` and remain scoped to their team).
 
 ### 3.1 Overview Dashboard (`/dashboard`)
-The overview opens as a calm, attention-first **Executive Cockpit**: a date-only eyebrow (full weekday, day, month, year), then one greeting heading — **"Good morning, {firstName}"** finished in quiet muted text by the leader's **official appointed post** (for example " — President" or " — Hall Pastor (Hall 1)"; admins without a specific office show "CSGB Executive"). The greeting is the page title; serving teams appear in the profile menu and workforce directory, not in the heading. The heading is accompanied by a single RBAC-aware primary header CTA — **Record attendance** (falling back to **Open finance**, **View first-timers**, or **Review workers** when a role lacks attendance access).
+The overview opens as a calm, attention-first **Executive Cockpit**: a date-only eyebrow (full weekday, day, month, year), then one greeting heading — **"Good morning, {firstName}"** finished in quiet muted text by the leader's **official appointed post** (for example " — President" or " — Hall Pastor (Hall 1)"; admins without a specific office show "CSGB Executive"). The top-bar `UserMenu` displays the leader's profile card, dark/light `ThemeToggle`, and PWA `Install App` entry, while `AppSidebar` and `MobileNav` display smooth scroll overflow indicators. The heading is accompanied by a single RBAC-aware primary header CTA — **Record attendance** (falling back to **Open finance**, **View first-timers**, or **Review workers** when a role lacks attendance access).
 
 **"Do this now" Attention Queue** (first content block, streamed live):
 - A **role-scoped urgency queue** of the items that need someone today:
@@ -280,10 +283,10 @@ The overview opens as a calm, attention-first **Executive Cockpit**: a date-only
 #### Managing appointments & deletions (President, Vice President, Chaplain, or admin role)
 - **Reviewing pending applications:** Pending positions in **Awaiting Your Decision** open in a slide-over **Review** sheet with an explicit confirmation modal detailing the permission effect before approving or declining.
 - **Deleting a role:** Every role row carries a **Delete** (`Trash2`) button with a confirmation dialog (`deleteExecutivePosition`). Confirming removes the position from the worker profile **and deletes any linked `executiveAppointment` reservation/claimed docs in the same Sanity transaction** so the role cannot auto-claim on future registration or reconciliation. There is no UI Relieve workflow; verified worker offboarding remains in `/dashboard/settings`.
-- **Import Leadership Roster** — a bulk appointment pipeline from CSV/XLSX:
+- **Import Leadership Roster** — a bulk appointment pipeline from CSV/XLSX hosted inside a slide-over `RecordSheet` drawer:
   1. Upload the spreadsheet. The option **"Include unregistered EXCOs"** (ticked by default) controls what happens to names that match no registered worker: **reserve** the appointment for them rather than skipping.
-  2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. **unregistered leaders awaiting registration**, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows. The dialog remains open so you can inspect every mapped row and summary count after saving.
-  3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers (exact email first, then normalised name tokens with honorifics cleaned). Matched rows write the leadership position immediately; unmatched rows are held as **reservations** — no placeholder worker profile is created.
+  2. Review the interactive **mapping & preview** table before anything saves: matched registered workers vs. **unregistered leaders awaiting registration**, mapped CSGB offices (from the dynamic Sanity `csgbRole` list), halls, and ministry teams; toggle **Lead vs Assistant** rank or deselect specific rows. The drawer remains open so you can inspect every mapped row and summary count after saving.
+  3. Confirm the import. **Smart name matching** ties spreadsheet rows to existing workers (exact email first, then normalised Nigerian-name tokens accounting for middle-name ordering and honorifics). Matched rows write the leadership position immediately; unmatched rows are held as **reservations** — no placeholder worker profile is created.
   4. The result view reports imported, reserved, and guidance-email counts (avoiding duplicate emails if guidance was already sent).
 - Re-running an import **updates existing appointments instead of duplicating them** (signature-based smart-merge via `lib/executive-positions.ts`). Deep authorisations (`canApproveExecutives`) come from the CSGB Role document.
 - **Guidance email** — every appointed leader receives the official **"Your Executive Appointment"** email once (`guidanceEmailSentAt` guard).
@@ -365,6 +368,7 @@ The Meeting Minutes console supports structured recording, folder organization, 
    - **Giving Accounts:** Bank name, account name, 10-digit account number, and transfer instructions.
    - **Website Footer:** Newsletter heading and description, brand title/subtitle, mission statement, logo, meeting venue, active ministry, copyright, and footer navigation columns.
    - **Social Channels:** Fellowship email, YouTube, Instagram, Facebook, TikTok, Telegram, X/Twitter, and WhatsApp URLs.
+   - **Sermons Page:** `Sermons Page Eyebrow` (`sermonsPageBadge`), `Sermons Page Headline` (`sermonsPageHeadline`), and `Sermons Page Subtitle` (`sermonsPageSubtitle`, the short summary displayed directly beneath *"Listen & Watch Inspired Teachings"* on `/sermons`).
    - **Maintenance Mode:**
      - `Put Pages Under Maintenance` (`maintenancePages`) — checklist of public routes (`/`, `/about`, `/sermons`, `/announcements`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`). Ticking any route displays a dedicated full-screen maintenance notice to visitors instead of the normal page content and navigation. Sanity live web preview and draft mode bypass maintenance automatically so editors can work on closed pages without interruption.
      - `Maintenance Headline` (`maintenanceHeadline`) — primary heading on paused pages (default: *"We will be right back."*).
@@ -458,28 +462,28 @@ Access is restricted to **Media leaders**. The check accepts an approved positio
    - **Date Preached**
    - **Primary Scripture Reference**
    - **Sermon Series** and **Topical Tags**
-   - **Media URL** (direct audio, optional)
    - **Duration**
-   - **Spotify Episode URL**
+   - **Spotify Episode URL** (supports both `open.spotify.com/episode/<22-char-id>` and `creators.spotify.com` / `podcasters.spotify.com` / `anchor.fm` links)
    - **YouTube Video URL**
    - **Notes**
+   - **Show on public website** visibility toggle
 4. Select **"Save Changes"**.
 
 Platform behaviour:
-- There is **no separate YouTube Music input** in the sermon form. When a YouTube video is present, the public card derives the YouTube Music link from the video ID.
+- There is **no separate YouTube Music input** or legacy `Media URL` field in the sermon form. When a YouTube video is present, the public card derives the YouTube Music link from the video ID.
 - The public player shows Spotify and YouTube Music links only when the corresponding URLs exist.
 
 #### Syncing External Feeds
 - The toolbar button is **"Sync Feeds (RSS)"** (while running: *"Syncing Feeds..."*).
-- The sync ingests the configured Spotify/Anchor RSS feed and YouTube playlist RSS feed.
+- The sync ingests the configured Spotify/Anchor RSS feed and YouTube playlist RSS feed, fetches YouTube Innertube Android/iOS caption tracks (`srv1`/`vtt`/`srv3`), and writes chunked `sermonSegment` records.
 - Known sermons are resolved from a curated catalogue first; unknown titles can be enriched through the **YouTube Data API v3** when `YOUTUBE_API_KEY` is set.
 - The Sermon Vault and homepage also trigger the same sync at most once every 15 minutes in the background.
-- Dashboard search covers title, preacher, scripture reference, series, and topics. Filters include topic and origin (`all`, `synced`, `manual`), defaulting to a scannable desktop **table view** (with card toggle and mobile cards), **Transcript** / **Live** status badges, and confirmation dialogs for deletes.
+- Dashboard search covers title, preacher, scripture reference, series, and topics. Filters include topic and origin (`all`, `synced`, `manual`), defaulting to a scannable desktop **table view** (with card toggle and mobile cards), **Ready / Waiting** pills plus a disabled **CC icon** (`CaptionsOff`) badge when captions are unavailable, and confirmation dialogs for deletes.
 
 #### Transcripts & AI Message Search (`/dashboard/sermons` → Transcripts / AI Search)
-- **Transcript Management:** Edit any sermon to toggle public visibility (**Show on public website**), fetch timestamped YouTube automatic captions, upload a manual `.vtt` or `.srt` subtitle file, or remove an existing transcript.
-- **Transcripts Tab:** Shows `Ready`, `Waiting`, and `Unavailable` KPI counts, internal AI-weighted themes (hidden from visitors), and a **"Check for captions now"** action to poll missing YouTube captions.
-- **AI Search Tab:** Configures the public AI Message Finder (`On/Off`, floating button visibility, daily global cap, per-visitor hourly rate limits, excerpt word count `0–64`, visible sermon years, public copy, and starter prompt pool) and manages the anonymous SHA-256 **Saved Searches Cache** (including stale-change indicator and one-click clear).
+- **Transcript Management:** Edit any sermon to toggle public visibility (**Show on public website**), fetch timestamped YouTube automatic captions (via YouTube Innertube Android/iOS clients), upload a manual `.vtt` or `.srt` subtitle file, or remove an existing transcript.
+- **Transcripts Tab:** Shows `Ready`, `Waiting`, and disabled CC badge counts, internal AI-weighted themes (hidden from visitors), and a **"Check for captions now"** action to poll missing YouTube captions.
+- **AI Search Tab:** Configures the public AI Message Finder (`On/Off`, floating button visibility, daily global cap, per-visitor hourly rate limits, excerpt word count `0–64`, visible sermon years, public copy, and starter prompt pool) and manages the anonymous SHA-256 **Saved Searches Cache** (keyed by content version / `lastContentUpdatedAt`, with stale-change indicator and one-click clear).
 - **AI Provider Key Security:** Server environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`, or `AI_API_KEY`) are recommended for maximum speed and security; an optional write-only **Encrypted Key Override** can also be saved from the AI Search tab (encrypted via AES-256-GCM into an unpublished Sanity draft `drafts.aiSearchSecret` and never exposed to browsers).
 
 ---
@@ -540,14 +544,14 @@ When a fresher or new student submits the Connect card or First Timer form and i
 1. Open `/dashboard/first-timers`.
 2. The console is scoped to your hall; the header and filter badge confirm the scope.
 3. Review the visitor's name, phone number, hall/room, department, level, and visit date.
-4. Use the follow-up actions:
+4. Use the follow-up actions in the table or detail sheet:
    - **Copy phone number** for a call or SMS.
    - **WhatsApp** to open a pre-filled greeting that introduces you as the hall representative and invites the visitor to fellowship.
-   - **View details** for the full record.
+   - **Open / Follow-up toggle** to view full details and log contact status, date/time, leader attribution, and follow-up remarks (`followedUp*`).
 5. Coordinate with the Outreach team for campus-wide follow-up.
 
 > [!NOTE]
-> The current console does **not** provide a free-text follow-up notes field or an assignment workflow. Record keeping beyond the initial contact happens outside the dashboard (e.g., team records or a supervised follow-up log).
+> Deeper CRM-style pair/pipeline assignments remain outside the dashboard; the portal records contact status, leader attribution, timestamp, and remarks per visitor.
 
 ### 6.3 Attendance & Section Limits
 - **Attendance (`/dashboard/attendance`):** Hall Reps can open the Attendance section and use the team-roster view. The **General Headcount** console is limited to admins and Ushering team members; Hall Reps cannot record general service headcounts unless they also hold an Ushering position.
@@ -719,11 +723,16 @@ The **General Headcount** console is available to admins and members of the Ushe
    - **Service Type** — `Sunday Service`, `Wednesday Bible Study`, `Academic Service`, or `Special Programme`.
    - **Service Theme / Special Programme Title** (optional), e.g. *Communion Service* or *Freshers Welcome Service*.
    - **Total Headcount Counted** — the direct count from the ushers' tally sheets. Use the **+10**, **+50**, and **+100** controls for quick adjustments.
-4. Optionally open **Detailed Demographic Breakdown** and enter Men, Women, Children, and First-Timers. This breakdown does **not** change the total automatically. If it is complete, select **"Set Total (n)"** to copy the breakdown sum into the total field.
+4. Optionally open **Detailed Demographic Breakdown** and enter:
+   - **Students:** Men (`menCount`) and Women (`womenCount`)
+   - **University Staff & Faculty:** Male Staff (`staffMenCount`) and Female Staff (`staffWomenCount`), summarized as `staffCount`
+   - **Children** (`childrenCount`)
+   - **First-Timers** (`firstTimersCount`, optional visitor tally tracked separately — does not add to `totalCount`)
+   This breakdown does **not** overwrite the total automatically. When complete, select **"Set Total (n)"** to copy the demographic sum into `totalCount`.
 5. Add **Ushering Notes / Special Observations** for special factors (e.g., *"Service held during examination week; heavy rain"*), then save attendance.
 
 > [!IMPORTANT]
-> The old manual claimed the system summed Men + Women + Children in real time. It does not. The usher enters the total directly; the breakdown is an optional cross-check with a manual **Set Total** helper. First-Timers are included in the breakdown sum.
+> The usher enters the aggregate total directly; the breakdown (Students + University Staff + Children) is an optional cross-check with a manual **Set Total** helper, while First-Timers are logged alongside it without inflating `totalCount`.
 
 ### 11.2 Where the Numbers Appear
 - The attendance console shows services counted, average Sunday attendance, peak attendance, and the latest service.
@@ -765,7 +774,10 @@ Maintain these in Vercel (frontend) and the Sanity project. Never expose server-
 | `GOOGLE_APPS_SCRIPT_WEBHOOK_SECRET` | Frontend (server) | Shared HMAC secret for the Apps Script bridge |
 | `SPOTIFY_RSS_URL` | Frontend (server) | Spotify/Anchor podcast RSS source |
 | `YOUTUBE_RSS_URL` | Frontend (server) | YouTube playlist RSS source |
-| `YOUTUBE_API_KEY` | Frontend (server) | Optional YouTube Data API v3 key for sermon enrichment; read by `lib/sermonSync.ts` but not listed in the sample `.env.example` |
+| `YOUTUBE_API_KEY` | Frontend (server) | Optional YouTube Data API v3 key for sermon enrichment; read by `lib/sermonSync.ts` |
+| `GEMINI_API_KEY` | Frontend (server) | Optional Google Gemini key for Sermon AI Message Finder reranking & theme extraction |
+| `OPENAI_API_KEY` | Frontend (server) | Optional OpenAI key for Sermon AI Message Finder reranking & theme extraction |
+| `AI_API_KEY` | Frontend (server) | Optional shared AI provider fallback key |
 | `RESEND_API_KEY` | Frontend (server) | Transactional email and announcement broadcasts |
 | `RESEND_FROM_EMAIL` | Frontend (server) | Canonical sender for every Resend flow (worker verification, worker email, announcements, subscriber welcome, intake notifications). Must use an active, verified custom domain in Resend (e.g. `contact@eccffamily.org`). The fallback `onboarding@resend.dev` only delivers to the Resend account owner and will return a 403 validation error for public recipients |
 | `EMAIL_FROM` | Frontend (server) | Accepted alias for `RESEND_FROM_EMAIL`; use one or the other |
@@ -900,7 +912,7 @@ Roles are `admin`, `team_lead`, `finance`, and `hall_rep`. Position flags refine
 
 Notes:
 - **Only executives get a dashboard session.** `getSession()` returns nothing for workers without an approved position, so a sign-in without one bounces to `/login?denied=approval_pending`.
-- **CSGB membership** includes the President, Vice Presidents, the General Secretary, the Prayer Coordinator, and Prayer Team leads; the Chaplain is treated as CSGB-level for the pastoral feeds. CSGB **offices are dynamic `csgbRole` documents** in Sanity; the President's authority comes from `canApproveExecutives` on the office, and a stored `canApproveExecutives` remains a fallback when no approved positions exist.
+- **CSGB membership** is strictly limited to the **5 CSGB board offices** (President, VP Admin, VP Evangelism, General Secretary, and Prayer Coordinator), plus full Prayer Team leads and admin-role accounts; the Chaplain is treated as CSGB-level for executive oversight, welfare, prayer, announcements, and minutes. **Assistant roles (`Assistant Prayer Coordinator`, assistant CSGB offices) do not carry CSGB authority** and are scoped strictly to their team (e.g. Prayer Team). CSGB offices are dynamic `csgbRole` documents in Sanity; the President's authority comes from `canApproveExecutives` on the office.
 - **Finance is now role-scoped**: the `admin` and `finance` roles (plus legacy financial positions) reach the ledger. Being a CSGB flag alone no longer grants finance; President/VP retain it through the admin role, and other CSGB Admins keep it as admins.
 - **Welfare is strictly team-scoped**: the Welfare & Medical team (member, lead, or position text), the CSGB, and the Chaplain. Section access and requester-phone visibility are the same set now.
 - **Prayer is strict as well**: `isPrayerTeamAdmin` (CSGB, admin role, Chaplain, Prayer Coordinator, prayer-team leads). Everyone else — including hall reps and outreach leads — is outside.
@@ -916,8 +928,9 @@ Notes:
 ### Public Routes
 - `/` — Homepage (Hero, Who We Are, Service Schedule, Latest Sermons, Gallery, Giving, Social, Plan a Visit)
 - `/about` — About ECCF (Mission, Story, Milestones, Pillars, Leadership, Teams, with team meeting chips)
-- `/sermons` — Sermon Vault (Multi-platform player, search, topics)
-- `/announcements` — Sunday Announcements Hub (Category filters, search, email subscribe)
+- `/sermons` — Sermon Vault & AI Message Finder (Inline/modal search, paginated topic filters, YouTube autoplay + Creators Spotify embeds)
+- `/sermons/[slug]` — Dedicated Sermon Player & Timestamp Deep Link (`?t=<seconds>&autoplay=1`)
+- `/announcements` — Updates / Sunday Announcements Hub (Category filters, search, email subscribe; linked as **Updates** in the homepage/public navbar)
 - `/announcements/preview` — Internal announcement preview
 - `/connect` — Connect Hub (First Timer, Welfare, Prayer)
 - `/give` — Giving & Stewardship (Bank transfer details only)
@@ -944,7 +957,7 @@ Any other public URL redirects to the homepage instead of a raw 404.
 - `/dashboard/prayer-requests` — Intercessory Prayer Petitions Feed
 - `/dashboard/announcements` — Sunday Announcements & Broadcast Engine
 - `/dashboard/minutes` — Meeting Minutes & Secretariat Archive (CSGB Read & Write; EXCO Read-Only when posted)
-- `/dashboard/sermons` — Sermon Management & RSS Sync
+- `/dashboard/sermons` — Sermon Management, Transcripts (`CaptionsOff` status badges, Innertube sync, VTT/SRT upload), AI Search Settings & Cache, and RSS Sync
 - `/dashboard/settings` — Settings & Admin Tools (CSV roster import, verified offboarding, directory sync)
 - `/dashboard/dev/ui-states` — Development-only UI state gallery
 
