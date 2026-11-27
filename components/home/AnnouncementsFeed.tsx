@@ -112,7 +112,7 @@ export default function AnnouncementsFeed({ announcements }: Props) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search announcements..."
+            placeholder="Search updates..."
             className="w-full rounded-xl border border-stone-200 bg-[#fafaf9] pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#0077cc]/30 focus:border-[#0077cc] focus:outline-none transition-all"
           />
         </div>
@@ -145,8 +145,8 @@ export default function AnnouncementsFeed({ announcements }: Props) {
           <Megaphone className="h-12 w-12 shrink-0 text-slate-300" />
           <p className="font-serif text-xl sm:text-2xl text-slate-800 tracking-tight">
             {searchQuery || selectedCategory !== 'All'
-              ? 'No announcements match your filter'
-              : 'No announcements published yet'}
+              ? 'No updates match your filter'
+              : 'No updates published yet'}
           </p>
           <p className="text-sm text-slate-500 max-w-md">
             {searchQuery || selectedCategory !== 'All'

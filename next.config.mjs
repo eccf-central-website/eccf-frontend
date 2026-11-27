@@ -37,7 +37,16 @@ const nextConfig = {
         destination: '/login',
         permanent: true,
       },
-      
+      {
+        source: '/announcements',
+        destination: '/updates',
+        permanent: true,
+      },
+      {
+        source: '/announcements/:path*',
+        destination: '/updates/:path*',
+        permanent: true,
+      },
     ]
   },
 };

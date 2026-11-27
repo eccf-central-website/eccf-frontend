@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         formattedDate || doc.time || doc.location ? emailDetails(detailRows) : '',
         contentHtml,
         emailButton({
-          href: `${appUrl}/announcements`,
+          href: `${appUrl}/updates`,
           label: 'Read this bulletin online',
           siteUrl: appUrl,
         }),

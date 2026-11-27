@@ -144,7 +144,7 @@ How to test:
 How to test:
 1. Look at the bottom-right corner of the screen on any page.
 2. Click or tap the floating blue circular button.
-3. Confirm a menu opens with 5 quick shortcuts: Listen to Sermons, Plan a Visit, Give, Announcements, and Leader Portal.
+3. Confirm a menu opens with 5 quick shortcuts: Listen to Sermons, Plan a Visit, Give, Updates, and Leader Portal.
 4. Tap any shortcut to verify it takes you right to that section.`,
     tag: 'UI',
   },
@@ -204,7 +204,7 @@ How to test:
     description: `Church bulletins and urgent notices should be sorted with important announcements pinned to the top.
 
 How to test:
-1. Go to the Announcements page (/announcements).
+1. Go to the Updates page (/updates).
 2. Verify that pinned announcements with a pin badge appear at the very top.
 3. Check that category tags (Weekly Services, Bible Study, Exams, etc.), event dates, and venues show clearly.`,
     tag: 'UI',
@@ -213,12 +213,12 @@ How to test:
     id: 'pub-ann-2',
     suiteId: 1,
     suiteName: '1. Public Website & Media',
-    section: 'Announcements',
+    section: 'Updates',
     title: 'Subscribe for Sunday Bulletins by Email',
     description: `Students and visitors can enter their email to receive bulletins and event updates.
 
 How to test:
-1. Scroll to the subscription box on the Announcements page or in the footer.
+1. Scroll to the subscription box on the Updates page or in the footer.
 2. Enter an invalid email (like "test@") and click Subscribe — confirm a warning asks for a valid email.
 3. Enter a valid email and submit — confirm you see a green success message thanking you for subscribing.
 4. Try submitting the exact same email again — confirm it politely tells you that you are already subscribed.`,

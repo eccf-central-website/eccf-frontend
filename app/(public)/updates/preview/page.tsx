@@ -1,5 +1,5 @@
 /**
- * Announcements Live Preview — /announcements/preview
+ * Updates Live Preview — /updates/preview
  *
  * Dedicated live preview endpoint for Sanity Studio iframe pane.
  * Fetches draft or published documents in real-time so editors can
@@ -62,7 +62,7 @@ function parseDate(dateStr?: string) {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function AnnouncementPreviewPage({
+export default async function UpdatesPreviewPage({
   searchParams,
 }: {
   searchParams: { id?: string; mode?: string; preview?: string }
@@ -115,11 +115,11 @@ export default async function AnnouncementPreviewPage({
               : 'Select an announcement document in Sanity Studio to see live rendering here.'}
           </p>
           <Link
-            href="/announcements"
+            href="/updates"
             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0077cc] hover:underline"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" />
-            <span>Go to Public Announcements</span>
+            <span>Go to Public Updates</span>
           </Link>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default async function AnnouncementPreviewPage({
 
   const previewItem: AnnouncementItem = {
     _id: doc._id,
-    title: doc.title || 'Untitled Announcement',
+    title: doc.title || 'Untitled Update',
     category: (doc.category || 'GENERAL').toUpperCase(),
     isPinned: Boolean(doc.isPinned),
     day: eventDateObj.day,
@@ -178,7 +178,7 @@ export default async function AnnouncementPreviewPage({
               </span>
             )}
             <Link
-              href="/announcements"
+              href="/updates"
               target="_blank"
               className="text-slate-300 hover:text-white transition-colors flex items-center gap-1 ml-2 font-medium"
             >

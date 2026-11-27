@@ -33,8 +33,8 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
 
-    // Homepage / public navbar shows "Updates" tab pointing to /announcements
-    const updatesNavLink = page.locator('header nav ul.hidden a[href="/announcements"]')
+    // Homepage / public navbar shows "Updates" tab pointing to /updates
+    const updatesNavLink = page.locator('header nav ul.hidden a[href="/updates"]')
     await expect(updatesNavLink).toHaveText('Updates')
 
     await expect(
@@ -96,6 +96,13 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     await expect(dialog.getByRole('button', { name: /Close/i })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
+
+    // Legacy /announcements URL permanently redirects to /updates
+    await page.goto('/announcements', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await expect(page).toHaveURL(/\/updates$/)
+    await expect(
+      page.getByRole('heading', { name: /Fellowship Updates/i, level: 1 })
+    ).toBeVisible({ timeout: 20_000 })
   })
 
   test('Dashboard /dashboard/sermons shows Sermons, Transcripts, and AI Search tabs with encrypted key controls', async ({

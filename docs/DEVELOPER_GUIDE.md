@@ -42,7 +42,7 @@ Three Tailwind configs exist: `tailwind.config.ts` (public site palette), `tailw
 eccf-frontend/
 ├─ middleware.ts                     # Clerk guard, legacy-route redirects, x-pathname/x-preview-mode headers
 ├─ app/
-│  ├─ (public)/                      # /, /about, /sermons, /sermons/[slug], /announcements (nav: "Updates"),
+│  ├─ (public)/                      # /, /about, /sermons, /sermons/[slug], /updates (308 redirect from /announcements),
 │  │                                 # /connect, /give, /privacy, /terms, /register  (layout forces dynamic + maintenance)
 │  ├─ (dashboard)/
 │  │  ├─ dashboard/…                 # Role-scoped Exco sections (see §7)
@@ -90,7 +90,7 @@ Route-group subtlety: route groups don't affect URLs. `/login` is served by `app
 1. **`middleware.ts`** runs first for every request:
    - `clerkMiddleware` protects `/dashboard(.*)` (`auth().protect()`), skipped when `DASHBOARD_MOCK_AUTH=1` **and not production**.
    - Sets `x-pathname` on proxied headers so server components can evaluate **maintenance mode** without a client hop; sets `x-preview-mode` when `?preview=true` or preview cookies exist.
-   - Legacy redirects: `/dashboard/login` → `/login` (preserving `callbackUrl`), `/dashboard/sign-up` → `/register`.
+   - Legacy redirects: `/dashboard/login` → `/login` (preserving `callbackUrl`), `/dashboard/sign-up` → `/register`, `/announcements` → `/updates` (plus `/announcements/*` → `/updates/*`, permanent redirects in `next.config.mjs`).
 2. **`app/(public)/layout.tsx`** (`force-dynamic`): picks `getSanityClient(preview)`; when preview/draft is active it renders the draft content with a preview banner; otherwise it checks `isUnderMaintenance(pathname, settings.maintenancePages)` (Sanity **Site Settings → Maintenance Mode**, nested routes included) and renders `PageMaintenance` (noindex) instead of the page. PWA prompts are suppressed on public pages — installs happen only inside the dashboard.
 3. Pages are **server-rendered per request** (`useCdn: false`, dynamic rendering); Sanity Studio edits appear on next load without a deploy. Keep new pages consistent with this (no `force-static`).
 
@@ -228,7 +228,7 @@ Secret-handling and operational data privacy guidance lives in `docs/operational
 - **Backend schema alignment (`8cd342f` → `646a843`):** Committed `executiveAppointment` schema fields (`registrationStatus`, `claimedBy`/`claimedAt`, `importedBy*`/`decidedBy*`/`decidedAt` string audit fields, `invitationEmailSentAt`, `guidanceEmailSentAt`), `worker` updates (`isExcoApproved`, position `submittedAt`/`teamName`, string `decidedBy*` audit fields), `meetingMinute`, `attendanceLedger` staff fields (`staffCount`, `staffMenCount`, `staffWomenCount`), `sermonVault` transcript/AI metadata + `sermonSegment` + `aiSearchConfig`/`aiSearchSecret`/`aiSearchCache`, and `siteSettings` **Sermons Page** hero copy (`sermonsPageBadge`, `sermonsPageHeadline`, `sermonsPageSubtitle`).
 - **Executive role deletion & matching (`8e5fd8a`, `fd3c561`, `d8461e3`, `7930af9`, `5e2ffd6`):** Replaced the old Relieve workflow with `deleteExecutivePosition` (`relieveExecutivePosition` kept as `@deprecated`), added Nigerian naming-order appointment matching + `RecordSheet` import drawer (`c95ea4c`), and enforced the strictly 5-member CSGB boundary (`Assistant Prayer Coordinator` routed to Prayer Team).
 - **Dashboard UX, Staff Attendance & Loader Polish (`540cb18`, `22075d0`, `25e8d95`, `3a9de59`, `fae343a`):** Added University Staff & optional First-Timers breakdown to Attendance, redesigned `UserMenu`, added overflow scroll cues in `AppSidebar`/`MobileNav`, covered Clerk `/login`/`/sign-up` mounts with `LoadingState`, and supported dynamic dark-theme intro loading.
-- **Sermon AI Message Search, Transcript Indexing & Media Playback (`cd9ebcb` → `4dc6cdb`):** Added semantic + keyword transcript search (`/api/sermons/finder`, `/sermons/[slug]?t=...&autoplay=1`), YouTube Innertube Android/iOS caption ingestion (`srv1`/`vtt`/`srv3`), disabled `CaptionsOff` CC icon badge for unavailable captions, Spotify for Creators embed resolution (`creators.spotify.com/pod/profile/<show>/embed/episodes/<slug>`), case-insensitive paginated sermon topic pills (max 5 tags + `All` per page), Studio-editable `/sermons` hero copy, and renamed public homepage navigation tab **Announcements → Updates** (keeping route `/announcements`).
+- **Sermon AI Message Search, Transcript Indexing & Media Playback (`cd9ebcb` → current):** Added semantic + keyword transcript search (`/api/sermons/finder`, `/sermons/[slug]?t=...&autoplay=1`), YouTube Innertube Android/iOS caption ingestion (`srv1`/`vtt`/`srv3`), disabled `CaptionsOff` CC icon badge for unavailable captions, Spotify for Creators embed resolution (`creators.spotify.com/pod/profile/<show>/embed/episodes/<slug>`), case-insensitive paginated sermon topic pills (max 5 tags + `All` per page), Studio-editable `/sermons` hero copy, moved public announcements to **`/updates`** (`/updates/preview`) with permanent `308` redirects from `/announcements`, and renamed homepage navigation links to **Updates**.
 
 **Low-priority compatibility exports retained:**
 - `app/actions/executive-actions.ts` retains `relieveExecutivePosition` (`@deprecated` wrapper delegating to `deleteExecutivePosition`) and `updateExecutiveRank` for backward compatibility.

@@ -20,8 +20,8 @@
 ### 1.1 Global Layout, Header & Navigation
 - [ ] **Desktop Navigation Bar**
   - [ ] Logo displays clearly and routes back to `/` when clicked.
-  - [ ] Primary links (`Sermons`, `Giving`, `About`, `Updates`, `Connect`, plus primary CTA `Plan a Visit`) display cleanly and route to `/sermons`, `/#giving`, `/about`, `/announcements`, `/connect`, and `/#visit`.
-  - [ ] Active route indicator correctly highlights the current page (including `Updates` when on `/announcements`).
+  - [ ] Primary links (`Sermons`, `Giving`, `About`, `Updates`, `Connect`, plus primary CTA `Plan a Visit`) display cleanly and route to `/sermons`, `/#giving`, `/about`, `/updates`, `/connect`, and `/#visit` (`/announcements` permanently redirects to `/updates`).
+  - [ ] Active route indicator correctly highlights the current page (including `Updates` when on `/updates`).
   - [ ] Worker registration link (`/register`) is **not** present in the public header menu (per security mandate).
 - [ ] **Mobile Navigation Drawer**
   - [ ] Hamburger menu button toggles drawer smoothly with animation.
@@ -81,12 +81,11 @@
 
 ---
 
-### 1.5 Announcements Hub (`/announcements`)
-- [ ] **Listing & Detail**
-  - [ ] Pinned announcements appear prominently at the top.
-  - [ ] Published announcements list displays event dates and publication dates properly.
-  - [ ] Draft / unpublished announcements do **not** appear on the public page.
-  - [ ] Individual announcement detail page (`/announcements/[slug]`) loads rich text content, dates, and media.
+### 1.5 Updates Hub (`/updates`, legacy `/announcements`)
+- [ ] **Listing & Redirects**
+  - [ ] Pinned updates appear prominently at the top.
+  - [ ] Published updates list displays event dates and publication dates properly; `/announcements` redirects permanently (`308`) to `/updates`.
+  - [ ] Draft / unpublished announcements do **not** appear on `/updates`.
 - [ ] **Newsletter Subscription Form**
   - [ ] Email input validates RFC-5322 format.
   - [ ] Submitting valid email writes subscriber to Sanity with `isSubscribed: true`.
@@ -270,7 +269,7 @@ Verify each role logs in and sees **only** their permitted sections in navigatio
 - [ ] **Creation & Publishing**
   - [ ] Admin creates announcement with Title, Event Date, Body, and Pin toggle.
   - [ ] Publishing triggers optional email broadcast to verified subscribers via Resend API (`<ConfirmDialog>` naming title and active subscriber count).
-  - [ ] Announcement updates live on the public `/announcements` page immediately via Next.js on-demand ISR revalidation.
+  - [ ] Announcement updates live on the public `/updates` page immediately via Next.js on-demand ISR revalidation.
 
 ### 5.7 Meeting Minutes & Secretariat Archive (`/dashboard/minutes`)
 - [ ] **CSGB Read & Write Workflow (`admin` / CSGB member)**

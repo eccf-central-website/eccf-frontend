@@ -12,6 +12,15 @@ export function normalisePath(pathname: string): string {
   return clean === '' ? '/' : clean
 }
 
+/** Normalise a pathname and map legacy aliases cleanly to canonical routes. */
+function normaliseRoute(pathname: string): string {
+  const normalised = normalisePath(pathname)
+  if (normalised === '/announcements' || normalised.startsWith('/announcements/')) {
+    return `/updates${normalised.slice('/announcements'.length)}`
+  }
+  return normalised
+}
+
 /**
  * True when `pathname` sits on (or under) one of the pages marked for
  * maintenance in Sanity.
@@ -19,10 +28,10 @@ export function normalisePath(pathname: string): string {
 export function isUnderMaintenance(pathname: string, pages?: string[] | null): boolean {
   if (!pathname || !Array.isArray(pages) || pages.length === 0) return false
 
-  const current = normalisePath(pathname)
+  const current = normaliseRoute(pathname)
 
   return pages.some((page) => {
-    const route = normalisePath(page)
+    const route = normaliseRoute(page)
     if (route === '/') return current === '/'
     return current === route || current.startsWith(`${route}/`)
   })

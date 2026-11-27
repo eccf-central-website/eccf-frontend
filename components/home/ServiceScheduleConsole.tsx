@@ -276,7 +276,7 @@ export default function ServiceScheduleConsole({ services }: Props) {
                   {/* Interactive Action Links */}
                   <div className="pt-1 sm:pt-4 w-full flex flex-wrap items-center gap-x-5 gap-y-3 sm:gap-6">
                     <Link
-                      href="/announcements"
+                      href="/updates"
                       className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#0077cc] hover:text-sky-800 transition-colors group"
                     >
                       <span>View Campus Bulletins</span>

@@ -99,7 +99,7 @@ export async function broadcastAnnouncementManually(announcementId: string): Pro
         formattedDate || doc.time || doc.location ? emailDetails(detailRows) : '',
         contentHtml,
         emailButton({
-          href: `${siteUrl}/announcements`,
+          href: `${siteUrl}/updates`,
           label: 'Read this bulletin online',
           siteUrl,
         }),

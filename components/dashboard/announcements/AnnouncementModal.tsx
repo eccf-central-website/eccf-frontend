@@ -466,7 +466,7 @@ export default function AnnouncementModal({
                   </span>
                   <span className="block text-[13px] text-muted-foreground">
                     {isPublished
-                      ? 'Visible to public fellowship visitors at /announcements'
+                      ? 'Visible to public fellowship visitors at /updates'
                       : 'Saved privately in dashboard — invisible to public until published'}
                   </span>
                 </div>

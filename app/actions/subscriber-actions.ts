@@ -99,7 +99,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
             'Whenever a new announcement is posted by our executive team, a notification will arrive in this inbox so you never miss what God is doing on campus.'
           ),
           emailButton({
-            href: `${siteUrl}/announcements`,
+            href: `${siteUrl}/updates`,
             label: 'Read the latest bulletins',
             siteUrl,
           }),
@@ -113,7 +113,7 @@ export async function subscribeToAnnouncements(formData: FormData): Promise<{
             { muted: true, small: true, last: true }
           ),
         ].join(''),
-        footerNote: `You received this email because ${escapeHtml(email)} was subscribed to fellowship updates at ${siteUrl.replace(/^https?:\/\//, '')}/announcements.`,
+        footerNote: `You received this email because ${escapeHtml(email)} was subscribed to fellowship updates at ${siteUrl.replace(/^https?:\/\//, '')}/updates.`,
       })
 
       try {

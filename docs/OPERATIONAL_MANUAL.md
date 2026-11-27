@@ -3,9 +3,9 @@
 *Edo State University Iyamho (ESUI)*  
 *Version 2.0 — Comprehensive Guide for Leaders, Workers, Media Stewards, and Fellowship Members*
 
-**Last verified:** 27 November 2026 against `eccf-frontend` (`4dc6cdb` + `Updates` homepage navigation label) and `eccf-backend` (`646a843`).
+**Last verified:** 27 November 2026 against `eccf-frontend` and `eccf-backend` (including `/updates` canonical route migration + permanent `/announcements` redirects).
 
-> **Revision 2.1.** Checked line-by-line against the latest codebase and Sanity schemas. Additions and corrections over Revision 2.0 include: Message AI Search (`/api/sermons/finder`), YouTube Innertube Android/iOS caption indexing and the disabled `CaptionsOff` CC badge, Spotify for Creators embeds + YouTube `?t=<seconds>&autoplay=1` playback, Sanity-editable `/sermons` hero copy (`siteSettings.sermonsPage*`), case-insensitive paginated Sermon topic pills, the **Updates** homepage navigation label (`/announcements`), University Staff & optional First-Timers attendance demographics, strict 5-member CSGB board access rules (Assistant Prayer Coordinator scoped to Prayer Team), leadership CSV `RecordSheet` import drawer, and Clerk/loader theme & navigation polish. Where code and prose disagree, the code is the source of truth.
+> **Revision 2.1.** Checked line-by-line against the latest codebase and Sanity schemas. Additions and corrections over Revision 2.0 include: Message AI Search (`/api/sermons/finder`), YouTube Innertube Android/iOS caption indexing and the disabled `CaptionsOff` CC badge, Spotify for Creators embeds + YouTube `?t=<seconds>&autoplay=1` playback, Sanity-editable `/sermons` hero copy (`siteSettings.sermonsPage*`), case-insensitive paginated Sermon topic pills, the **Updates** homepage tab and `/updates` public route (`/updates/preview`, with permanent `/announcements` → `/updates` redirects), University Staff & optional First-Timers attendance demographics, strict 5-member CSGB board access rules (Assistant Prayer Coordinator scoped to Prayer Team), leadership CSV `RecordSheet` import drawer, and Clerk/loader theme & navigation polish. Where code and prose disagree, the code is the source of truth.
 
 ---
 
@@ -91,12 +91,12 @@ The homepage is server-rendered from live Sanity content and currently renders t
 8. **Plan a Visit:** Visit contact, WhatsApp link, and location guidance.
 
 > [!IMPORTANT]
-> The homepage no longer displays a **Next Service status pill** or a **Latest Announcements ticker**. Announcements live on `/announcements`, and the hero's visible pill is driven by the `heroTopPill` field. The legacy `liveStatusText` field still exists in the schema/query but is not rendered by the current frontend.
+> The homepage no longer displays a **Next Service status pill** or a **Latest Announcements ticker**. Updates live on `/updates`, and the hero's visible pill is driven by the `heroTopPill` field. The legacy `liveStatusText` field still exists in the schema/query but is not rendered by the current frontend.
 
 The global public chrome adds:
-- **Navbar links:** Sermons (`/sermons`), Giving (`/#giving`), About (`/about`), **Updates** (`/announcements`), Connect (`/connect`), plus the **Plan a Visit** CTA (`/#visit`).
+- **Navbar links:** Sermons (`/sermons`), Giving (`/#giving`), About (`/about`), **Updates** (`/updates`), Connect (`/connect`), plus the **Plan a Visit** CTA (`/#visit`).
 - **The Launcher:** a floating bottom-right "next steps" card with an inline Connect Card plus configurable quick links. Default actions include Join A Team / Registrations (worker intake), Weekly Podcasts & Messages (`/sermons`), and Give Online (`/give`). The quick links are editable in Sanity under **Launcher Quick Links**.
-- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns (default Connect column uses **Updates** → `/announcements`), copyright, legal links (**Privacy & Data Care** and **Terms of Use**), and social links.
+- **Footer:** newsletter prompt, brand text, mission statement, meeting venue, active ministry, navigation columns (default Connect column uses **Updates** → `/updates`), copyright, legal links (**Privacy & Data Care** and **Terms of Use**), and social links.
 
 ### 1.2 About Page (`/about`)
 - **Mission & Vision:** The fellowship's spiritual mandate for Edo State University.
@@ -118,8 +118,8 @@ The global public chrome adds:
 - **Search & Paginated Topic Filters:** Search by **title, preacher, series, topic, or scripture reference**; topic pills deduplicate case variants (e.g. `Academics` and `academics` collapse into one frequency-sorted pill) and paginate at **`All` + up to 5 topics per page** (max 6 pills visible at once) with `< 1/N >` controls when more than 5 topics exist.
 - **Automatic Enrichment:** Visiting the homepage or Sermon Vault triggers a throttled background sync at most once every 15 minutes. The sync ingests Spotify/Creators and YouTube RSS feeds and enriches captions/themes when AI provider keys are configured.
 
-### 1.4 Updates / Sunday Announcements Hub (`/announcements`)
-> Linked as **Updates** in the homepage/public navbar and footer fallback directory.
+### 1.4 Updates / Sunday Announcements Hub (`/updates`)
+> Linked as **Updates** across the homepage navbar, Launcher, and footer; legacy links to `/announcements` redirect permanently (`308`) to `/updates`.
 - **Category Filters:**
   - `WEEKLY SERVICES`
   - `ACADEMIC & EXAMS`
@@ -131,7 +131,7 @@ The global public chrome adds:
 - **Subscribe to Broadcasts:** The subscription card collects an optional name and a required email address, protected by Turnstile. Subscribers receive manual broadcasts sent from the dashboard; subscribing does not automatically publish anything.
 - **Automated Welcome Email:** Upon completing subscription, an automated welcome email is dispatched to the subscriber's inbox via Resend (`Welcome to Fellowship Updates!`) detailing the weekly service schedule, timings, and campus venue (NLT 5, Faculty of Law, ESUI).
 - **Domain Verification Requirement:** Transactional delivery requires `RESEND_FROM_EMAIL` (or `EMAIL_FROM`) to be configured with an address on an active, verified custom domain (e.g., `contact@eccffamily.org` on `eccffamily.org` with DKIM and SPF configured). The development default `onboarding@resend.dev` will fail with a 403 `validation_error` when delivering to regular student or visitor email addresses.
-- **Preview Mode:** `/announcements/preview` is an internal preview surface. It is not part of the public navigation.
+- **Preview Mode:** `/updates/preview` is an internal preview surface (`/announcements/preview` redirects there automatically). It is not part of the public navigation.
 
 ### 1.5 Connect Hub (`/connect`)
 The Connect Hub has exactly **three** tabs:
@@ -158,7 +158,7 @@ The PWA is intentionally an **Exco dashboard application**, not a public-site ap
 - **No Offline Data Cache:** The project does not register a service worker. The installed app opens in a standalone window but still requires network access and a valid Clerk session for dashboard data.
 
 ### 1.8 Page Maintenance Mode
-Any public route (`/`, `/about`, `/sermons`, `/announcements`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`) can be placed under maintenance directly from Sanity Studio (**Homepage & Site Settings → Maintenance Mode**).
+Any public route (`/`, `/about`, `/sermons`, `/updates`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`) can be placed under maintenance directly from Sanity Studio (**Homepage & Site Settings → Maintenance Mode**).
 
 - **Visitor Experience:** When a page is under maintenance, visitors see a dedicated chrome-free full-screen banner (`PageMaintenance`) with the ECCF crest, the configured maintenance headline (default: *"We will be right back."*), explanation message, and optional timeframe badge (`maintenanceEta`).
 - **Path Nesting:** Ticking a parent path covers all nested sub-routes (e.g. ticking `/sermons` closes `/sermons` and all nested sermon routes; ticking `/` closes only the root homepage).
@@ -370,7 +370,7 @@ The Meeting Minutes console supports structured recording, folder organization, 
    - **Social Channels:** Fellowship email, YouTube, Instagram, Facebook, TikTok, Telegram, X/Twitter, and WhatsApp URLs.
    - **Sermons Page:** `Sermons Page Eyebrow` (`sermonsPageBadge`), `Sermons Page Headline` (`sermonsPageHeadline`), and `Sermons Page Subtitle` (`sermonsPageSubtitle`, the short summary displayed directly beneath *"Listen & Watch Inspired Teachings"* on `/sermons`).
    - **Maintenance Mode:**
-     - `Put Pages Under Maintenance` (`maintenancePages`) — checklist of public routes (`/`, `/about`, `/sermons`, `/announcements`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`). Ticking any route displays a dedicated full-screen maintenance notice to visitors instead of the normal page content and navigation. Sanity live web preview and draft mode bypass maintenance automatically so editors can work on closed pages without interruption.
+     - `Put Pages Under Maintenance` (`maintenancePages`) — checklist of public routes (`/`, `/about`, `/sermons`, `/updates`, `/connect`, `/give`, `/register`, `/privacy`, `/terms`). Ticking any route displays a dedicated full-screen maintenance notice to visitors instead of the normal page content and navigation. Sanity live web preview and draft mode bypass maintenance automatically so editors can work on closed pages without interruption.
      - `Maintenance Headline` (`maintenanceHeadline`) — primary heading on paused pages (default: *"We will be right back."*).
      - `Maintenance Message` (`maintenanceMessage`) — visitor guidance text beneath the headline.
      - `Expected Back` (`maintenanceEta`) — optional timeframe badge (e.g. *"Back before Sunday service"*). Leave blank to omit.
@@ -877,7 +877,7 @@ Production frontend hosting is Vercel; the Studio is hosted at `https://eccf-bac
 - **Preview bridge:** `/api/preview` enables Draft Mode; `/api/exit-preview` disables it.
 - **Dashboard preview:** the middleware forwards `x-preview-mode` for preview requests.
 - **UI states gallery:** `/dashboard/dev/ui-states` is development-only and returns 404 outside the mock-auth development environment.
-- **Announcement preview:** `/announcements/preview` is an internal preview route.
+- **Announcement preview:** `/updates/preview` is an internal preview route.
 
 ---
 
@@ -930,8 +930,8 @@ Notes:
 - `/about` — About ECCF (Mission, Story, Milestones, Pillars, Leadership, Teams, with team meeting chips)
 - `/sermons` — Sermon Vault & AI Message Finder (Inline/modal search, paginated topic filters, YouTube autoplay + Creators Spotify embeds)
 - `/sermons/[slug]` — Dedicated Sermon Player & Timestamp Deep Link (`?t=<seconds>&autoplay=1`)
-- `/announcements` — Updates / Sunday Announcements Hub (Category filters, search, email subscribe; linked as **Updates** in the homepage/public navbar)
-- `/announcements/preview` — Internal announcement preview
+- `/updates` — Fellowship Updates / Sunday Bulletins Hub (Category filters, search, email subscribe; `/announcements` redirects here permanently)
+- `/updates/preview` — Internal Studio live preview (`/announcements/preview` redirects here)
 - `/connect` — Connect Hub (First Timer, Welfare, Prayer)
 - `/give` — Giving & Stewardship (Bank transfer details only)
 - `/privacy` — Operational Privacy & Data Protection Policy
@@ -1001,7 +1001,7 @@ The site is server-rendered on each request, so the change appears on the next l
 **A:** QA is not Clerk-authenticated, and PINs are stored only as hashes, so a forgotten PIN cannot be recovered. The QA Lead reset clears test progress, not tester registrations. Register under a slightly different display name (for example, add your surname initial) with a new 4-digit PIN, or ask the technical administrator to remove the old tester record in Sanity. Tester tokens live in `localStorage`; clearing site data signs you out but does not recover the PIN.
 
 ### Q10: Why are announcements not appearing on the homepage?
-**A:** By design. The current homepage has no announcements ticker. Publish the notice and it appears on `/announcements`; use the per-card **Broadcast** action to email subscribers.
+**A:** By design. The current homepage has no announcements ticker. Publish the notice and it appears on `/updates`; use the per-card **Broadcast** action to email subscribers.
 
 ### Q11: Why does a public page show a **"We will be right back"** notice?
 **A:** A technical administrator placed that route under maintenance in Sanity. Open **Site Settings → Maintenance Mode**, where **Put Pages Under Maintenance** ticks public routes (a ticked route also covers everything nested beneath it), and **Maintenance Headline / Message / Expected Back** supply the notice text, guidance, and optional timeframe badge. The notice page is marked `noindex` for search engines, the Exco Dashboard is never affected, and Sanity's live web preview bypasses it so editors can keep working. Untick the route and select **Publish** to restore the page on the next request.

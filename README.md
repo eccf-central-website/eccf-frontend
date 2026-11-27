@@ -44,7 +44,7 @@ npx playwright test tests/e2e/sermon-ai-search.spec.ts --workers=1
 ```text
 eccf-frontend/
 ├── app/
-│   ├── (public)/            # /, /about, /sermons, /sermons/[slug], /announcements (nav: Updates), /connect, /give, /register, /privacy, /terms
+│   ├── (public)/            # /, /about, /sermons, /sermons/[slug], /updates (redirect from /announcements), /connect, /give, /register, /privacy, /terms
 │   ├── (dashboard)/         # /dashboard/* (overview, executives, workers, attendance, finance, first-timers, welfare, prayer-requests, announcements, minutes, sermons, settings), /login, /sign-up
 │   ├── qa/                  # Public 4-digit-PIN QA checklist portal
 │   ├── actions/             # All Server Actions — the sole mutation boundary

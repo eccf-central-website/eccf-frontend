@@ -7,7 +7,7 @@
  * - Update
  * - Delete (with cleanup)
  * - Toggle Pin status
- * - Automatic revalidation of `/dashboard/announcements`, `/announcements`, and `/`
+ * - Automatic revalidation of `/dashboard/announcements`, `/updates`, and `/`
  */
 
 'use server'
@@ -89,7 +89,7 @@ export async function createAnnouncement(
 
     revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
-    revalidatePath('/announcements')
+    revalidatePath('/updates')
     revalidatePath('/')
 
     return { ok: true, data: created as unknown as Announcement }
@@ -149,7 +149,7 @@ export async function updateAnnouncement(
 
     revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
-    revalidatePath('/announcements')
+    revalidatePath('/updates')
     revalidatePath('/')
 
     return { ok: true }
@@ -194,7 +194,7 @@ export async function deleteAnnouncement(
 
     revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
-    revalidatePath('/announcements')
+    revalidatePath('/updates')
     revalidatePath('/')
 
     return { ok: true }
@@ -237,7 +237,7 @@ export async function togglePinAnnouncement(
 
     revalidatePath('/dashboard', 'layout')
     revalidatePath('/dashboard/announcements')
-    revalidatePath('/announcements')
+    revalidatePath('/updates')
     revalidatePath('/')
 
     return { ok: true, isPinned: nextPin }

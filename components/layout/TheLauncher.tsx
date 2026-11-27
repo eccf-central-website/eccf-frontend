@@ -252,7 +252,7 @@ export default function TheLauncher() {
 
                     {/* 3. REGISTRATIONS & EVENTS */}
                     <Link
-                      href="/announcements"
+                      href="/updates"
                       onClick={() => setIsOpen(false)}
                       className={`w-full rounded-2xl bg-[#233138] hover:bg-[#2b3c45] border border-white/10 text-center font-bold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-md block ${
                         isExpanded ? 'py-5 px-8 text-xl sm:text-2xl' : 'py-4 px-6 text-base sm:text-lg'
