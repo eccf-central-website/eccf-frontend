@@ -440,6 +440,18 @@ export const SITE_SETTINGS_QUERY = `
     maintenancePages,
     maintenanceHeadline,
     maintenanceMessage,
-    maintenanceEta
+    maintenanceEta,
+    sermonsPageBadge,
+    sermonsPageHeadline,
+    sermonsPageSubtitle
+  }
+`
+
+/** Fetch editable hero copy for the public /sermons page */
+export const SERMONS_PAGE_SETTINGS_QUERY = `
+  *[_type == "siteSettings"][0] {
+    sermonsPageBadge,
+    sermonsPageHeadline,
+    sermonsPageSubtitle
   }
 `

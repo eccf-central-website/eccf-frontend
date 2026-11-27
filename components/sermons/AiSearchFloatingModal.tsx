@@ -36,7 +36,11 @@ import type {
   AiSearchFinderResponse,
 } from '@/types'
 import { mergeAiSearchConfig, pickRandomSuggestions } from '@/lib/sermon-ai/defaults'
-import { formatTimestamp, isOptimizableSermonImageUrl } from '@/lib/sermonUtils'
+import {
+  formatTimestamp,
+  isOptimizableSermonImageUrl,
+  withSermonAutoplay,
+} from '@/lib/sermonUtils'
 
 interface ChatTurn {
   id: string
@@ -538,8 +542,10 @@ export default function AiSearchFloatingModal({ aiConfig }: AiSearchFloatingModa
 
                       <div className="space-y-2.5">
                         {response.sermons.slice(0, 5).map((sermon) => {
+                          const startSeconds = Math.max(0, Math.floor(sermon.startSeconds || 0))
                           const momentLabel =
-                            sermon.moment || formatTimestamp(sermon.startSeconds || 0)
+                            sermon.moment || formatTimestamp(startSeconds)
+                          const playHref = withSermonAutoplay(sermon.url)
 
                           return (
                             <article
@@ -567,7 +573,7 @@ export default function AiSearchFloatingModal({ aiConfig }: AiSearchFloatingModa
 
                                 <div className="min-w-0 flex-1">
                                   <Link
-                                    href={sermon.url}
+                                    href={playHref}
                                     onClick={closeModal}
                                     className="block font-serif text-base font-bold text-slate-950 hover:text-[#0077cc] transition-colors leading-snug line-clamp-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] rounded-sm"
                                   >
@@ -597,12 +603,14 @@ export default function AiSearchFloatingModal({ aiConfig }: AiSearchFloatingModa
 
                               <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between gap-2">
                                 <Link
-                                  href={sermon.url}
+                                  href={playHref}
                                   onClick={closeModal}
                                   className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[#0077cc] hover:bg-[#0065b0] px-3.5 py-1.5 text-xs font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] focus-visible:ring-offset-1"
                                 >
                                   <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
-                                  <span>From {momentLabel}</span>
+                                  <span>
+                                    {startSeconds > 0 ? `From ${momentLabel}` : 'Play message'}
+                                  </span>
                                 </Link>
 
                                 {sermon.series && (

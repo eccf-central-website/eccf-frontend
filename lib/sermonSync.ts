@@ -5,7 +5,11 @@ import { DEFAULT_AI_SEARCH_CONFIG } from '@/lib/sermon-ai/defaults'
 import { invalidatePublicAiConfigCache } from '@/lib/sermon-ai/finder'
 import { extractSermonThemes } from '@/lib/sermon-ai/provider'
 import { fetchYoutubeCaptionsForVideo } from '@/lib/sermon-ai/vtt'
-import { parseDurationToSeconds, slugifySermonTitle } from '@/lib/sermonUtils'
+import {
+  extractSpotifyEpisodeId,
+  parseDurationToSeconds,
+  slugifySermonTitle,
+} from '@/lib/sermonUtils'
 import type { AiProviderPreference, SermonThemeWeight } from '@/types'
 
 export const DEFAULT_SPOTIFY_RSS_URL = 'https://anchor.fm/s/f24b9b94/podcast/rss'
@@ -245,8 +249,7 @@ export function parseFeedXml(xml: string): FeedItem[] {
 
 export function extractSpotifyId(urlStr: string): string | null {
   if (!urlStr) return null
-  const match = urlStr.match(/episodes?\/([a-zA-Z0-9_-]+)/)
-  return match ? match[1] : null
+  return extractSpotifyEpisodeId(urlStr) ?? null
 }
 
 export function extractYoutubeId(urlStr: string): string | null {
@@ -685,9 +688,10 @@ export async function runSermonSync() {
         for (const item of items) {
           const spotifyEmbedId = extractSpotifyId(item.link || item.guid)
 
-          // Match by spotifyEmbedId or title
+          // Match by spotifyUrl, spotifyEmbedId, or title
           const existing = existingSermons.find(
             (s) =>
+              (item.link && s.spotifyUrl === item.link) ||
               (spotifyEmbedId && s.spotifyEmbedId === spotifyEmbedId) ||
               titlesMatch(s.title, item.title)
           )

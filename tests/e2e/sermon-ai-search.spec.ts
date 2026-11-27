@@ -65,6 +65,21 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
       page.getByPlaceholder(/Search by title, preacher, series, topic, or scripture/i)
     ).toBeVisible()
 
+    // Topic tag filter strip shows at most 6 pills (All + 5 per page) and paginates when > 5 topics exist
+    const topicToolbar = page.getByRole('group', { name: /Filter sermons by topic/i })
+    if (await topicToolbar.isVisible().catch(() => false)) {
+      const topicButtons = topicToolbar.locator('button[aria-pressed]')
+      expect(await topicButtons.count()).toBeLessThanOrEqual(6)
+
+      const nextTagPage = topicToolbar.getByRole('button', { name: 'Next topic tags' })
+      if (await nextTagPage.isVisible().catch(() => false)) {
+        const page1Labels = await topicButtons.allTextContents()
+        await nextTagPage.click()
+        const page2Labels = await topicButtons.allTextContents()
+        expect(page2Labels).not.toEqual(page1Labels)
+      }
+    }
+
     // Scroll down so inline card exits viewport and floating AI Search button appears
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     const fab = page.getByRole('button', { name: /AI Search/i })
@@ -98,8 +113,11 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     await expect(transcriptsTab).toBeVisible()
     await expect(aiSearchTab).toBeVisible()
 
-    // Switch to Transcripts tab
-    await transcriptsTab.click()
+    // Switch to Transcripts tab (wait for React client hydration before tab switch settles)
+    await expect(async () => {
+      await transcriptsTab.click()
+      await expect(transcriptsTab).toHaveAttribute('aria-selected', 'true', { timeout: 1000 })
+    }).toPass({ timeout: 15_000 })
     await expect(
       page.getByRole('heading', { name: /Captions & AI Theme Indexing/i })
     ).toBeVisible()
@@ -109,6 +127,7 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
 
     // Switch to AI Search tab and verify write-only encrypted key override controls
     await aiSearchTab.click()
+    await expect(aiSearchTab).toHaveAttribute('aria-selected', 'true')
     await expect(
       page.getByRole('heading', { name: /AI Provider & API Key Security/i })
     ).toBeVisible()

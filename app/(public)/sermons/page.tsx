@@ -10,7 +10,11 @@ import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import { getSanityClient } from '@/lib/sanity'
 import PreviewBanner from '@/components/common/PreviewBanner'
-import { PUBLIC_AI_SEARCH_CONFIG_QUERY, SERMONS_QUERY } from '@/lib/queries'
+import {
+  PUBLIC_AI_SEARCH_CONFIG_QUERY,
+  SERMONS_PAGE_SETTINGS_QUERY,
+  SERMONS_QUERY,
+} from '@/lib/queries'
 import SermonsFeed, { SermonItem } from '@/components/sermons/SermonsFeed'
 import { triggerBackgroundSyncIfNeeded } from '@/lib/sermonSync'
 import { mergeAiSearchConfig, pickRandomSuggestions } from '@/lib/sermon-ai/defaults'
@@ -44,7 +48,7 @@ export default async function SermonsPage({
   triggerBackgroundSyncIfNeeded()
   const client = getSanityClient(isPreview)
 
-  const [rawSermons, rawAiConfig] = await Promise.all([
+  const [rawSermons, rawAiConfig, rawSermonsHero] = await Promise.all([
     client.fetch<SermonItem[]>(SERMONS_QUERY).catch((err) => {
       console.error('[SermonsPage] Failed to fetch live sermons:', err)
       return [] as SermonItem[]
@@ -53,7 +57,21 @@ export default async function SermonsPage({
       console.error('[SermonsPage] Failed to fetch AI search config:', err)
       return null
     }),
+    client
+      .fetch<{
+        sermonsPageBadge?: string | null
+        sermonsPageHeadline?: string | null
+        sermonsPageSubtitle?: string | null
+      } | null>(SERMONS_PAGE_SETTINGS_QUERY)
+      .catch(() => null),
   ])
+
+  const heroBadge = rawSermonsHero?.sermonsPageBadge?.trim() || 'ECCF SERMON VAULT & PODCASTS'
+  const heroHeadline =
+    rawSermonsHero?.sermonsPageHeadline?.trim() || 'Listen & Watch Inspired Teachings'
+  const heroSubtitle =
+    rawSermonsHero?.sermonsPageSubtitle?.trim() ||
+    'Stream audio and video sermons preached live at Edo State University.'
 
   const sermons = Array.isArray(rawSermons) ? rawSermons : []
   const aiConfig = mergeAiSearchConfig(rawAiConfig)
@@ -72,13 +90,13 @@ export default async function SermonsPage({
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#0077cc] font-mono block mb-3">
-            ECCF SERMON VAULT &amp; PODCASTS
+            {heroBadge}
           </span>
           <h1 className="font-serif font-bold text-3xl sm:text-5xl lg:text-6xl text-slate-950 tracking-tight leading-tight">
-            Listen &amp; Watch Inspired Teachings
+            {heroHeadline}
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-700 font-normal leading-relaxed">
-            Equipping your heart and mind with life-transforming scriptures preached live at Edo State University. Stream audio on Spotify or YouTube Music, or watch on YouTube.
+            {heroSubtitle}
           </p>
         </div>
 

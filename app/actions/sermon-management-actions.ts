@@ -7,6 +7,7 @@ import { isMediaLeader, requirePermission } from '@/lib/dashboard/rbac'
 import { DEFAULT_AI_SEARCH_CONFIG } from '@/lib/sermon-ai/defaults'
 import { invalidatePublicAiConfigCache } from '@/lib/sermon-ai/finder'
 import {
+  extractSpotifyEpisodeId,
   getYoutubeVideoId,
   parseDurationToSeconds,
   slugifySermonTitle,
@@ -41,12 +42,6 @@ interface ExistingSermonMeta {
   duration?: string
   durationSeconds?: number
   isPublished?: boolean
-}
-
-function extractSpotifyEpisodeId(url?: string): string | undefined {
-  if (!url) return undefined
-  const match = url.match(/episode\/([a-zA-Z0-9]+)/)
-  return match ? match[1] : undefined
 }
 
 function isMockMode(): boolean {
@@ -393,7 +388,11 @@ export async function updateSermon(
       if (input.spotifyUrl.trim()) {
         setObj.spotifyUrl = input.spotifyUrl.trim()
         const epId = extractSpotifyEpisodeId(input.spotifyUrl.trim())
-        if (epId) setObj.spotifyEmbedId = epId
+        if (epId) {
+          setObj.spotifyEmbedId = epId
+        } else {
+          unsetArr.push('spotifyEmbedId')
+        }
       } else {
         unsetArr.push('spotifyUrl', 'spotifyEmbedId')
       }

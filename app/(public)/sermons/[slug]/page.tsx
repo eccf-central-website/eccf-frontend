@@ -52,6 +52,7 @@ interface PageProps {
   params: { slug: string }
   searchParams?: {
     t?: string | string[]
+    autoplay?: string | string[]
     preview?: string
   }
 }
@@ -130,14 +131,19 @@ export default async function SermonDetailPage({ params, searchParams }: PagePro
   }
 
   const startSeconds = parseStartSeconds(searchParams?.t)
+  const rawAutoplay = Array.isArray(searchParams?.autoplay)
+    ? searchParams?.autoplay[0]
+    : searchParams?.autoplay
+  const shouldAutoplay =
+    startSeconds > 0 || rawAutoplay === '1' || rawAutoplay === 'true'
   const timestampLabel = startSeconds > 0 ? formatTimestamp(startSeconds) : null
 
-  const youtubeEmbedUrl = getYoutubeEmbedUrl(sermon, startSeconds)
+  const youtubeEmbedUrl = getYoutubeEmbedUrl(sermon, startSeconds, shouldAutoplay)
   const spotifyEmbedUrl = getSpotifyEmbedUrl(sermon)
   const thumbnailUrl = getSermonThumbnailUrl(sermon)
 
   const detailPath = getSermonDetailPath(sermon, startSeconds)
-  const beginningPath = getSermonDetailPath(sermon)
+  const beginningPath = getSermonDetailPath(sermon, 0, true)
 
   // Construct canonical share URL on server so Copy Link & WhatsApp stay hydration-safe
   const headerList = headers()
@@ -392,7 +398,7 @@ export default async function SermonDetailPage({ params, searchParams }: PagePro
                 title={`Spotify audio player for ${sermon.title}`}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
-                className="w-full h-[152px] rounded-2xl border-0"
+                className="w-full h-[168px] sm:h-[152px] rounded-2xl border-0"
               />
             </div>
           )}

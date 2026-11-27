@@ -16,6 +16,8 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Disc3,
   Filter,
@@ -33,12 +35,14 @@ import { SpotifyIcon, YouTubeMusicIcon, YouTubeIcon } from '@/components/ui/Plat
 import AiSearchInlineCard from '@/components/sermons/AiSearchInlineCard'
 import {
   SermonPlayerItem as SermonItem,
+  buildTopicFilterOptions,
   formatTimestamp,
   getSermonDetailPath,
   getSermonThumbnailUrl,
   getSpotifyEmbedUrl,
   getYoutubeVideoId,
   isOptimizableSermonImageUrl,
+  withSermonAutoplay,
 } from '@/lib/sermonUtils'
 import { mergeAiSearchConfig } from '@/lib/sermon-ai/defaults'
 import type { AiSearchConfig, AiSearchFinderResponse } from '@/types'
@@ -98,6 +102,7 @@ export default function SermonsFeed({
     !startInAiMode && trimmedInitial ? trimmedInitial : ''
   )
   const [selectedTopic, setSelectedTopic] = useState('All')
+  const [tagPage, setTagPage] = useState(0)
 
   const [aiMode, setAiMode] = useState(startInAiMode)
   const [aiQuery, setAiQuery] = useState(startInAiMode ? trimmedInitial : '')
@@ -115,15 +120,15 @@ export default function SermonsFeed({
     })
   }, [sermons, config.hiddenYears])
 
-  // Derive dynamic topic filters from visible sermons
-  const dynamicTopics = useMemo(
-    () => [
-      'All',
-      ...Array.from(
-        new Set(visibleSermons.flatMap((s) => s.topics || []).filter(Boolean))
-      ),
-    ],
-    [visibleSermons]
+  // Derive case-insensitive, frequency-sorted topic filters with compact per-page slicing
+  const TAGS_PER_PAGE = 5
+  const topicOptions = useMemo(() => buildTopicFilterOptions(visibleSermons), [visibleSermons])
+  const totalTagPages = Math.max(1, Math.ceil(topicOptions.length / TAGS_PER_PAGE))
+  const safeTagPage = Math.min(tagPage, totalTagPages - 1)
+  const pagedTopicOptions = useMemo(
+    () =>
+      topicOptions.slice(safeTagPage * TAGS_PER_PAGE, (safeTagPage + 1) * TAGS_PER_PAGE),
+    [topicOptions, safeTagPage]
   )
 
   const syncUrl = useCallback((nextPath: string) => {
@@ -251,7 +256,10 @@ export default function SermonsFeed({
         (sermon.topics || []).some((topic) => topic.toLowerCase().includes(query))
 
       const matchesTopic =
-        selectedTopic === 'All' || (sermon.topics && sermon.topics.includes(selectedTopic))
+        selectedTopic === 'All' ||
+        (sermon.topics || []).some(
+          (topic) => topic.trim().toLowerCase() === selectedTopic.toLowerCase()
+        )
 
       return matchesSearch && matchesTopic
     })
@@ -485,8 +493,10 @@ export default function SermonsFeed({
                 {/* AI Matched Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                   {aiResponse.sermons.map((sermon) => {
+                    const startSeconds = Math.max(0, Math.floor(sermon.startSeconds || 0))
                     const momentLabel =
-                      sermon.moment || formatTimestamp(sermon.startSeconds || 0)
+                      sermon.moment || formatTimestamp(startSeconds)
+                    const playHref = withSermonAutoplay(sermon.url)
 
                     return (
                       <article
@@ -525,8 +535,12 @@ export default function SermonsFeed({
                             )}
 
                             <Link
-                              href={sermon.url}
-                              aria-label={`Play ${sermon.title} starting at ${momentLabel}`}
+                              href={playHref}
+                              aria-label={
+                                startSeconds > 0
+                                  ? `Play ${sermon.title} starting at ${momentLabel}`
+                                  : `Play ${sermon.title}`
+                              }
                               className="relative z-10 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#0077cc] hover:bg-[#0065b0] text-white shadow-xl group-hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8]"
                             >
                               <Play className="h-6 w-6 shrink-0 fill-white translate-x-0.5" aria-hidden="true" />
@@ -553,7 +567,7 @@ export default function SermonsFeed({
                             </div>
 
                             <Link
-                              href={sermon.url}
+                              href={playHref}
                               className="block font-serif font-bold text-xl text-slate-950 group-hover:text-[#0077cc] transition-colors leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] rounded-sm"
                             >
                               {sermon.title}
@@ -573,12 +587,14 @@ export default function SermonsFeed({
 
                         <div className="px-6 pb-6 pt-3 border-t border-slate-100">
                           <Link
-                            href={sermon.url}
+                            href={playHref}
                             className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-full bg-[#0077cc] hover:bg-[#0065b0] px-4 py-2 text-xs font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] focus-visible:ring-offset-2"
                           >
                             <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
                             <span>
-                              {momentLabel} &middot; Play from where this teaching starts
+                              {startSeconds > 0
+                                ? `${momentLabel} \u00b7 Play from where this teaching starts`
+                                : 'Play full message'}
                             </span>
                           </Link>
                         </div>
@@ -620,27 +636,68 @@ export default function SermonsFeed({
                 />
               </search>
 
-              {dynamicTopics.length > 1 && (
-                <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+              {topicOptions.length > 0 && (
+                <div
+                  role="group"
+                  aria-label="Filter sermons by topic"
+                  className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end"
+                >
                   <Filter className="h-4 w-4 shrink-0 text-slate-400 mr-1 hidden sm:block" aria-hidden="true" />
-                  {dynamicTopics.map((topic) => {
-                    const isActive = selectedTopic === topic
+                  <button
+                    type="button"
+                    aria-pressed={selectedTopic === 'All'}
+                    onClick={() => setSelectedTopic('All')}
+                    className={`min-h-[40px] rounded-full px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] ${
+                      selectedTopic === 'All'
+                        ? 'bg-slate-950 text-white shadow-md'
+                        : 'bg-stone-100 text-slate-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {pagedTopicOptions.map((topic) => {
+                    const isActive = selectedTopic.toLowerCase() === topic.key
                     return (
                       <button
-                        key={topic}
+                        key={topic.key}
                         type="button"
                         aria-pressed={isActive}
-                        onClick={() => setSelectedTopic(topic)}
-                        className={`min-h-[40px] rounded-full px-5 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] ${
+                        onClick={() => setSelectedTopic(topic.label)}
+                        className={`min-h-[40px] rounded-full px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc] ${
                           isActive
                             ? 'bg-slate-950 text-white shadow-md'
                             : 'bg-stone-100 text-slate-700 hover:bg-stone-200'
                         }`}
                       >
-                        {topic}
+                        {topic.label}
                       </button>
                     )
                   })}
+                  {totalTagPages > 1 && (
+                    <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-[#fafaf9] px-1.5 py-1">
+                      <button
+                        type="button"
+                        aria-label="Previous topic tags"
+                        disabled={safeTagPage === 0}
+                        onClick={() => setTagPage((p) => Math.max(0, p - 1))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-stone-200/70 disabled:opacity-35 disabled:pointer-events-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]"
+                      >
+                        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <span className="px-1 font-mono text-[11px] font-semibold text-slate-600 tabular-nums">
+                        {safeTagPage + 1}/{totalTagPages}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Next topic tags"
+                        disabled={safeTagPage >= totalTagPages - 1}
+                        onClick={() => setTagPage((p) => Math.min(totalTagPages - 1, p + 1))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-stone-200/70 disabled:opacity-35 disabled:pointer-events-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0077cc]"
+                      >
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

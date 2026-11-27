@@ -129,7 +129,8 @@ const SERMON_FINDER_CATALOG_QUERY = `
 const SEMANTIC_SEGMENTS_QUERY = `
   *[_type == "sermonSegment" && coalesce(isPublished, true) == true]
     | score(
-        boost([text, sermonTitle, preacher] match text::query($q), 2),
+        boost(text match text::query($q), 3),
+        [sermonTitle, preacher] match text::query($q),
         text::semanticSimilarity($q)
       )
     | order(_score desc)[0...36] {
@@ -155,21 +156,28 @@ const KEYWORD_SEGMENTS_QUERY = `
     text match $patterns ||
     sermonTitle match $patterns ||
     preacher match $patterns
-  )][0...48] {
-    _id,
-    sermonId,
-    sermonTitle,
-    preacher,
-    series,
-    datePreached,
-    durationSeconds,
-    isPublished,
-    segmentIndex,
-    startSeconds,
-    endSeconds,
-    timestampLabel,
-    text
-  }
+  )]
+    | score(
+        boost(text match $patterns, 3),
+        sermonTitle match $patterns,
+        preacher match $patterns
+      )
+    | order(_score desc, segmentIndex asc)[0...64] {
+      _id,
+      _score,
+      sermonId,
+      sermonTitle,
+      preacher,
+      series,
+      datePreached,
+      durationSeconds,
+      isPublished,
+      segmentIndex,
+      startSeconds,
+      endSeconds,
+      timestampLabel,
+      text
+    }
 `
 
 export function invalidatePublicAiConfigCache(): void {
@@ -544,7 +552,7 @@ function formatSermonResult(
     ...(sermon.series ? { series: sermon.series } : {}),
     ...(sermon.datePreached ? { datePreached: sermon.datePreached } : {}),
     ...(sermon.scriptureReference ? { scriptureReference: sermon.scriptureReference } : {}),
-    url: getSermonDetailPath({ _id: sermon._id, slug: sermon.slug }, safeStart),
+    url: getSermonDetailPath({ _id: sermon._id, slug: sermon.slug }, safeStart, true),
     thumb: getSermonThumbnailUrl(sermon),
     moment: formatTimestamp(safeStart),
     startSeconds: safeStart,
@@ -774,7 +782,7 @@ export async function findSermonsWithAi(
   const limit = Math.min(12, Math.max(1, Math.floor(req.limit ?? 5)))
 
   const cacheKeyInput = {
-    v: 1,
+    v: 2,
     q: trimmedQuery.toLowerCase().replace(/\s+/g, ' '),
     mode,
     preacher: preacherFilter.toLowerCase(),
@@ -783,6 +791,7 @@ export async function findSermonsWithAi(
     limit,
     excerptWords: config.excerptWords,
     hiddenYears: config.hiddenYears,
+    contentVersion: config.lastContentUpdatedAt || '',
   }
   const queryHash = crypto
     .createHash('sha256')
@@ -939,9 +948,12 @@ export async function findSermonsWithAi(
     const segScore = segLexical * 1.5 + semanticRankBonus
 
     const prevBest = bestSegmentScoreBySermon.get(sermon._id) ?? -1
-    if (segScore > prevBest) {
+    const safeStart = Math.max(0, Math.floor(seg.startSeconds || 0))
+    const beatsPrev =
+      segScore > prevBest ||
+      (segScore === prevBest && safeStart > 0 && candidate.bestSegment.startSeconds === 0)
+    if (beatsPrev) {
       bestSegmentScoreBySermon.set(sermon._id, segScore)
-      const safeStart = Math.max(0, Math.floor(seg.startSeconds || 0))
       candidate.bestSegment = {
         startSeconds: safeStart,
         timestampLabel: seg.timestampLabel || formatTimestamp(safeStart),

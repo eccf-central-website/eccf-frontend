@@ -30,6 +30,9 @@ export interface SiteSettingsData {
   heroParagraph?: string
   heroTopPill?: string
   heroCollagePhotos?: CollagePhotoItem[]
+  sermonsPageBadge?: string
+  sermonsPageHeadline?: string
+  sermonsPageSubtitle?: string
   whoWeArePhotoMinister?: unknown
   whoWeArePhotoMinisterUrl?: string
   whoWeArePhotoAudience?: unknown
