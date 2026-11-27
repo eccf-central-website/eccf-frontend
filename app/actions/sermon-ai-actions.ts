@@ -277,12 +277,14 @@ async function replaceSermonSegmentsAndThemes(
   const aiThemes = buildSanityThemes(extracted.themes)
 
   // 4. Patch parent sermonVault document with transcript status, metrics, and themes
+  const extractedYoutubeId = !sermon.youtubeVideoId ? getYoutubeVideoId(sermon) : undefined
   const patchSet: Record<string, unknown> = {
     transcriptStatus: 'ready',
     transcriptSource: source,
     transcriptWordCount: parsed.wordCount,
     transcriptUpdatedAt: new Date().toISOString(),
     aiThemes,
+    ...(extractedYoutubeId ? { youtubeVideoId: extractedYoutubeId } : {}),
   }
 
   if (
@@ -640,6 +642,7 @@ export async function pollMissingCaptionsAction(): Promise<{
   checked: number
   updated: number
   unavailable: number
+  sampleReason?: string
   error?: string
   warning?: string
 }> {
@@ -660,7 +663,7 @@ export async function pollMissingCaptionsAction(): Promise<{
 
   try {
     const candidates = await getReadClient().fetch<SermonVault[]>(
-      `*[_type == "sermonVault" && defined(youtubeVideoId) && youtubeVideoId != "" && coalesce(transcriptStatus, "waiting") != "ready"] | order(datePreached desc)[0...${POLL_MAX_SERMONS}] {
+      `*[_type == "sermonVault" && ((defined(youtubeVideoId) && youtubeVideoId != "") || (defined(youtubeUrl) && youtubeUrl != "")) && coalesce(transcriptStatus, "waiting") != "ready"] | order(select(coalesce(transcriptStatus, "waiting") == "waiting" => 0, 1) asc, datePreached desc)[0...${POLL_MAX_SERMONS}] {
         _id,
         _type,
         title,
@@ -684,6 +687,7 @@ export async function pollMissingCaptionsAction(): Promise<{
     let checked = 0
     let updated = 0
     let unavailable = 0
+    let sampleReason: string | undefined
     const startedAt = Date.now()
 
     for (let i = 0; i < sermons.length; i += 3) {
@@ -708,6 +712,9 @@ export async function pollMissingCaptionsAction(): Promise<{
               )
               updated += 1
             } else {
+              if (!sampleReason && captionResult.reason) {
+                sampleReason = captionResult.reason
+              }
               if (sermon.transcriptStatus !== 'unavailable') {
                 await sanityWriteClient
                   .patch(sermon._id)
@@ -721,6 +728,9 @@ export async function pollMissingCaptionsAction(): Promise<{
               `[pollMissingCaptionsAction] Failed polling sermon ${sermon._id}:`,
               itemErr
             )
+            if (!sampleReason && itemErr instanceof Error) {
+              sampleReason = itemErr.message
+            }
             unavailable += 1
           }
         })
@@ -736,6 +746,7 @@ export async function pollMissingCaptionsAction(): Promise<{
       checked,
       updated,
       unavailable,
+      ...(sampleReason ? { sampleReason } : {}),
     }
   } catch (err) {
     console.error('[pollMissingCaptionsAction] Failed:', err)

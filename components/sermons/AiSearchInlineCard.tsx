@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -21,10 +21,12 @@ import {
   Sparkles,
 } from 'lucide-react'
 import type { AiSearchConfig } from '@/types'
-import { mergeAiSearchConfig, pickRandomSuggestions } from '@/lib/sermon-ai/defaults'
+import { mergeAiSearchConfig } from '@/lib/sermon-ai/defaults'
 
 export interface AiSearchInlineCardProps {
   aiConfig?: Partial<AiSearchConfig> | null
+  /** Server-picked starter prompts so SSR and hydrated client match identically with zero CLS. */
+  initialSuggestions?: string[]
   initialQuery?: string
   showSuggestions?: boolean
   /** When provided (e.g. on /sermons), handles search inline instead of navigating. */
@@ -36,6 +38,7 @@ export interface AiSearchInlineCardProps {
 
 export default function AiSearchInlineCard({
   aiConfig,
+  initialSuggestions,
   initialQuery = '',
   showSuggestions = false,
   onAiSearch,
@@ -43,7 +46,7 @@ export default function AiSearchInlineCard({
   headingAs = 'h2',
   className = '',
 }: AiSearchInlineCardProps) {
-  const config = mergeAiSearchConfig(aiConfig)
+  const config = useMemo(() => mergeAiSearchConfig(aiConfig), [aiConfig])
   const router = useRouter()
 
   const headingId = useId()
@@ -56,23 +59,18 @@ export default function AiSearchInlineCard({
 
   const [query, setQuery] = useState(initialQuery)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  // Start deterministically from pool slice to avoid SSR/client hydration mismatch;
-  // randomize on client mount via effect.
-  const [suggestions, setSuggestions] = useState<string[]>(() =>
-    showSuggestions ? (config.suggestions || []).slice(0, 5) : []
-  )
 
   useEffect(() => {
     setQuery(initialQuery)
   }, [initialQuery])
 
-  useEffect(() => {
-    if (!showSuggestions) {
-      setSuggestions([])
-      return
+  const suggestions = useMemo(() => {
+    if (!showSuggestions) return []
+    if (Array.isArray(initialSuggestions) && initialSuggestions.length > 0) {
+      return initialSuggestions.slice(0, 5)
     }
-    setSuggestions(pickRandomSuggestions(config.suggestions || [], 5))
-  }, [showSuggestions, config.suggestions])
+    return (config.suggestions || []).slice(0, 5)
+  }, [showSuggestions, initialSuggestions, config.suggestions])
 
   if (config.enabled === false) {
     return null

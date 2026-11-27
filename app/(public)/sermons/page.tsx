@@ -13,7 +13,7 @@ import PreviewBanner from '@/components/common/PreviewBanner'
 import { PUBLIC_AI_SEARCH_CONFIG_QUERY, SERMONS_QUERY } from '@/lib/queries'
 import SermonsFeed, { SermonItem } from '@/components/sermons/SermonsFeed'
 import { triggerBackgroundSyncIfNeeded } from '@/lib/sermonSync'
-import { mergeAiSearchConfig } from '@/lib/sermon-ai/defaults'
+import { mergeAiSearchConfig, pickRandomSuggestions } from '@/lib/sermon-ai/defaults'
 import type { AiSearchConfig } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -57,6 +57,7 @@ export default async function SermonsPage({
 
   const sermons = Array.isArray(rawSermons) ? rawSermons : []
   const aiConfig = mergeAiSearchConfig(rawAiConfig)
+  const initialSuggestions = pickRandomSuggestions(aiConfig.suggestions, 5)
 
   const initialQuery = getParam(searchParams?.q).trim()
   const exactParam = getParam(searchParams?.exact).toLowerCase()
@@ -84,6 +85,7 @@ export default async function SermonsPage({
         <SermonsFeed
           sermons={sermons}
           aiConfig={aiConfig}
+          initialSuggestions={initialSuggestions}
           initialQuery={initialQuery}
           initialAiMode={initialAiMode}
           initialExactMode={initialExactMode}

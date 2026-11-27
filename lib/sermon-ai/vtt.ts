@@ -63,7 +63,11 @@ function cleanCueLine(line: string): string {
     .replace(/<\/?[a-zA-Z][^>]*>/g, ' ')
     // Remove ASS/SSA style overrides like {\an8}
     .replace(/\{\\[^}]*\}/g, ' ')
-  return decodeHtmlEntities(withoutTags).replace(/\s+/g, ' ').trim()
+  return decodeHtmlEntities(withoutTags)
+    // Strip YouTube automatic speaker-turn markers (e.g. ">> He made...")
+    .replace(/(?:^|\s)>>+\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function parseTimestampParts(
@@ -491,14 +495,22 @@ function isAllowedYoutubeCaptionUrl(rawUrl: unknown): URL | null {
     const parsed = new URL(rawUrl.trim())
     if (parsed.protocol !== 'https:') return null
     const host = parsed.hostname.toLowerCase()
-    if (host !== 'youtube.com' && !host.endsWith('.youtube.com')) return null
+    if (
+      host !== 'youtube.com' &&
+      !host.endsWith('.youtube.com') &&
+      host !== 'timedtext.googleapis.com'
+    ) {
+      return null
+    }
     return parsed
   } catch {
     return null
   }
 }
 
-function selectPreferredCaptionTrack(tracks: YoutubeCaptionTrack[]): { track: YoutubeCaptionTrack; url: URL } | null {
+function selectPreferredCaptionTrack(
+  tracks: YoutubeCaptionTrack[]
+): { track: YoutubeCaptionTrack; url: URL } | null {
   const valid = tracks
     .map((track) => ({ track, url: isAllowedYoutubeCaptionUrl(track?.baseUrl) }))
     .filter((entry): entry is { track: YoutubeCaptionTrack; url: URL } => entry.url !== null)
@@ -515,8 +527,114 @@ function selectPreferredCaptionTrack(tracks: YoutubeCaptionTrack[]): { track: Yo
   )
 }
 
+interface InnertubePlayerResponse {
+  playabilityStatus?: {
+    status?: string
+    reason?: string
+  }
+  captions?: {
+    playerCaptionsTracklistRenderer?: {
+      captionTracks?: YoutubeCaptionTrack[]
+    }
+  }
+}
+
+const DESKTOP_CHROME_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+
+const INNERTUBE_CLIENTS: Array<{
+  name: string
+  userAgent: string
+  clientContext: Record<string, unknown>
+}> = [
+  {
+    name: 'ANDROID',
+    userAgent: 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)',
+    clientContext: {
+      clientName: 'ANDROID',
+      clientVersion: '20.10.38',
+      androidSdkVersion: 34,
+      hl: 'en',
+      gl: 'US',
+    },
+  },
+  {
+    name: 'IOS',
+    userAgent:
+      'com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X)',
+    clientContext: {
+      clientName: 'IOS',
+      clientVersion: '20.10.4',
+      deviceModel: 'iPhone16,2',
+      hl: 'en',
+      gl: 'US',
+    },
+  },
+]
+
+async function tryDownloadAndParseTracks(
+  tracks: YoutubeCaptionTrack[],
+  userAgent: string
+): Promise<{ ok: true; raw: string; parsed: ParsedTranscriptResult } | { ok: false; hadTracks: boolean; reason?: string }> {
+  const selected = selectPreferredCaptionTrack(tracks)
+  if (!selected) {
+    return { ok: false, hadTracks: false }
+  }
+
+  // Prefer srv1 (<text start dur>, ~3x smaller & cleaner than srv3), then WebVTT, then raw baseUrl.
+  const srv1Url = new URL(selected.url.toString())
+  srv1Url.searchParams.set('fmt', 'srv1')
+
+  const vttUrl = new URL(selected.url.toString())
+  vttUrl.searchParams.set('fmt', 'vtt')
+
+  const candidates = [srv1Url, vttUrl, selected.url]
+  let sawEmptyOrRestrictedBody = false
+
+  for (const targetUrl of candidates) {
+    try {
+      const capRes = await fetch(targetUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': userAgent,
+        },
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store',
+      })
+      if (!capRes.ok) {
+        if (capRes.status === 403 || capRes.status === 429) {
+          sawEmptyOrRestrictedBody = true
+        }
+        continue
+      }
+      const body = await capRes.text()
+      if (!body.trim()) {
+        sawEmptyOrRestrictedBody = true
+        continue
+      }
+      const parsed = parseCaptionTextToSegments(body)
+      if (parsed.chunks.length > 0 && parsed.wordCount > 0) {
+        return { ok: true, raw: body, parsed }
+      }
+    } catch {
+      // Try next format/client cleanly
+    }
+  }
+
+  return {
+    ok: false,
+    hadTracks: true,
+    reason: sawEmptyOrRestrictedBody
+      ? 'YouTube returned an empty or restricted caption response for this track.'
+      : 'Captions track could not be parsed.',
+  }
+}
+
 /**
  * Fetch and parse YouTube captions for a strict 11-character YouTube video ID.
+ * Uses YouTube Innertube Android/iOS player APIs first (avoiding web PO-token empty
+ * responses on timedtext URLs), with desktop `/watch` HTML fallback.
  */
 export async function fetchYoutubeCaptionsForVideo(
   videoId: string
@@ -528,17 +646,75 @@ export async function fetchYoutubeCaptionsForVideo(
     return { ok: false, reason: 'Invalid YouTube video ID.' }
   }
 
+  let botOrAuthReason: string | null = null
+  let hadPublicTracks = false
+  let restrictedTrackReason: string | null = null
+
+  // 1. Primary path: YouTube Innertube player clients (Android / iOS)
+  for (const clientCfg of INNERTUBE_CLIENTS) {
+    try {
+      const res = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': clientCfg.userAgent,
+        },
+        body: JSON.stringify({
+          context: { client: clientCfg.clientContext },
+          videoId,
+        }),
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store',
+      })
+
+      if (!res.ok) continue
+
+      const payload = (await res.json().catch(() => null)) as InnertubePlayerResponse | null
+      if (!payload) continue
+
+      const status = payload.playabilityStatus?.status
+      if (status === 'LOGIN_REQUIRED' || status === 'ERROR') {
+        const reason = payload.playabilityStatus?.reason?.trim()
+        if (reason) botOrAuthReason = reason
+      }
+
+      const tracks = payload.captions?.playerCaptionsTracklistRenderer?.captionTracks
+      if (Array.isArray(tracks) && tracks.length > 0) {
+        const result = await tryDownloadAndParseTracks(tracks, clientCfg.userAgent)
+        if (result.ok) {
+          return {
+            ok: true,
+            source: 'youtube_captions',
+            raw: result.raw,
+            parsed: result.parsed,
+          }
+        }
+        if (result.hadTracks) {
+          hadPublicTracks = true
+          if (result.reason) restrictedTrackReason = result.reason
+        }
+      }
+    } catch {
+      // Continue cleanly to next client/fallback
+    }
+  }
+
+  // 2. Fallback: desktop watch HTML with consent bypass cookie + Chrome User-Agent
   try {
-    const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
-      method: 'GET',
-      headers: {
-        'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent':
-          'Mozilla/5.0 (compatible; ECCFSermonIndexer/1.0; +https://eccf.org)',
-      },
-      signal: AbortSignal.timeout(5000),
-      cache: 'no-store',
-    })
+    const watchRes = await fetch(
+      `https://www.youtube.com/watch?v=${videoId}&hl=en&bpctr=9999999999&has_verified=1`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': DESKTOP_CHROME_UA,
+          Cookie: 'CONSENT=YES+cb.20210328-17-p0.en+FX+999',
+        },
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store',
+      }
+    )
 
     if (!watchRes.ok) {
       return { ok: false, reason: `YouTube watch page returned HTTP ${watchRes.status}.` }
@@ -546,47 +722,41 @@ export async function fetchYoutubeCaptionsForVideo(
 
     const html = await watchRes.text()
     const tracks = extractCaptionTracksJson(html)
-    const selected = selectPreferredCaptionTrack(tracks)
-
-    if (!selected) {
-      return { ok: false, reason: 'No public YouTube captions available for this video.' }
+    const result = await tryDownloadAndParseTracks(tracks, DESKTOP_CHROME_UA)
+    if (result.ok) {
+      return {
+        ok: true,
+        source: 'youtube_captions',
+        raw: result.raw,
+        parsed: result.parsed,
+      }
     }
-
-    const vttUrl = new URL(selected.url.toString())
-    vttUrl.searchParams.set('fmt', 'vtt')
-
-    const tryFetchCaption = async (targetUrl: URL) => {
-      const capRes = await fetch(targetUrl.toString(), {
-        method: 'GET',
-        headers: {
-          'Accept-Language': 'en-US,en;q=0.9',
-          'User-Agent':
-            'Mozilla/5.0 (compatible; ECCFSermonIndexer/1.0; +https://eccf.org)',
-        },
-        signal: AbortSignal.timeout(5000),
-        cache: 'no-store',
-      })
-      if (!capRes.ok) return null
-      const body = await capRes.text()
-      if (!body.trim()) return null
-      const parsed = parseCaptionTextToSegments(body)
-      if (parsed.chunks.length === 0 || parsed.wordCount === 0) return null
-      return { raw: body, parsed }
+    if (result.hadTracks) {
+      hadPublicTracks = true
+      if (result.reason) restrictedTrackReason = result.reason
     }
-
-    const vttResult = await tryFetchCaption(vttUrl)
-    if (vttResult) {
-      return { ok: true, source: 'youtube_captions', raw: vttResult.raw, parsed: vttResult.parsed }
-    }
-
-    const xmlResult = await tryFetchCaption(selected.url)
-    if (xmlResult) {
-      return { ok: true, source: 'youtube_captions', raw: xmlResult.raw, parsed: xmlResult.parsed }
-    }
-
-    return { ok: false, reason: 'Captions track could not be parsed.' }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Caption fetch failed.'
-    return { ok: false, reason: message }
+    if (!hadPublicTracks && !botOrAuthReason) {
+      const message = err instanceof Error ? err.message : 'Caption fetch failed.'
+      return { ok: false, reason: message }
+    }
   }
+
+  if (hadPublicTracks) {
+    return {
+      ok: false,
+      reason:
+        restrictedTrackReason ||
+        'YouTube found captions but returned empty/restricted caption data from this server. Try uploading the .vtt/.srt file directly.',
+    }
+  }
+
+  if (botOrAuthReason) {
+    return {
+      ok: false,
+      reason: `YouTube blocked automated caption access (${botOrAuthReason}). Upload a .vtt/.srt caption file directly instead.`,
+    }
+  }
+
+  return { ok: false, reason: 'No public YouTube captions available for this video.' }
 }

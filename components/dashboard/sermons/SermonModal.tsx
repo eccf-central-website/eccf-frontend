@@ -38,12 +38,12 @@ import {
 } from '@/components/dashboard/ui/dialog'
 import { Input } from '@/components/dashboard/ui/input'
 import { Label } from '@/components/dashboard/ui/label'
-import { StatusBadge } from '@/components/dashboard/ui/status-badge'
 import { lagosDate } from '@/lib/dashboard/dates'
 import { formatCount } from '@/lib/dashboard/format'
 import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 import { getYoutubeVideoId } from '@/lib/sermonUtils'
 import { cn } from '@/lib/utils'
+import { TranscriptStatusBadge } from './TranscriptStatusBadge'
 
 interface SermonModalProps {
   open: boolean
@@ -681,13 +681,7 @@ export default function SermonModal({
                     Transcript
                   </h2>
                 </div>
-                {transcriptStatus === 'ready' ? (
-                  <StatusBadge variant="success">Ready</StatusBadge>
-                ) : transcriptStatus === 'unavailable' ? (
-                  <StatusBadge variant="neutral">Unavailable</StatusBadge>
-                ) : (
-                  <StatusBadge variant="warning">Waiting</StatusBadge>
-                )}
+                <TranscriptStatusBadge status={transcriptStatus} />
               </div>
 
               {/* Status Summary Box */}

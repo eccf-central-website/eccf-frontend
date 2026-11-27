@@ -48,6 +48,7 @@ export type { SermonPlayerItem as SermonItem } from '@/lib/sermonUtils'
 interface Props {
   sermons?: SermonItem[] | null
   aiConfig?: Partial<AiSearchConfig> | null
+  initialSuggestions?: string[]
   initialQuery?: string
   initialAiMode?: boolean
   initialExactMode?: boolean
@@ -79,6 +80,7 @@ function getAiBannerMessage(response: AiSearchFinderResponse): string {
 export default function SermonsFeed({
   sermons,
   aiConfig,
+  initialSuggestions,
   initialQuery = '',
   initialAiMode = false,
   initialExactMode = false,
@@ -261,6 +263,7 @@ export default function SermonsFeed({
       {config.enabled !== false && (
         <AiSearchInlineCard
           aiConfig={config}
+          initialSuggestions={initialSuggestions}
           initialQuery={aiMode ? aiQuery : ''}
           showSuggestions={true}
           onAiSearch={handleAiSearch}

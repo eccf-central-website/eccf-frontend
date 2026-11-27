@@ -343,7 +343,7 @@ export default function AiSearchSettingsTab({
               </h2>
             </div>
             <p className="max-w-[75ch] text-sm leading-relaxed text-muted-foreground">
-              For maximum speed and zero CMS exposure (matching Refiner&apos;s House), set{' '}
+              For maximum speed and zero CMS exposure, set{' '}
               <code className="rounded bg-surface-raised px-1.5 py-0.5 font-mono text-xs text-foreground">
                 GEMINI_API_KEY
               </code>{' '}

@@ -25,7 +25,6 @@ import type {
   AiSearchCacheStats,
   AiSearchConfig,
   AiSearchSecretStatus,
-  SermonTranscriptStatus,
   SermonVault,
 } from '@/types'
 import { deleteSermon } from '@/app/actions/sermon-management-actions'
@@ -59,6 +58,7 @@ import { toastError, toastSuccess } from '@/lib/dashboard/toast'
 import { cn } from '@/lib/utils'
 import SermonModal from './SermonModal'
 import TranscriptsTab from './TranscriptsTab'
+import { TranscriptStatusBadge } from './TranscriptStatusBadge'
 import AiSearchSettingsTab from './AiSearchSettingsTab'
 
 interface SermonsClientProps {
@@ -81,16 +81,6 @@ function isValidIso(dateStr?: string): dateStr is string {
 function safeFormatDate(dateStr?: string): string {
   if (!isValidIso(dateStr)) return dateStr || 'Date unavailable'
   return formatDate(dateStr)
-}
-
-function renderTranscriptBadge(status?: SermonTranscriptStatus) {
-  if (status === 'ready') {
-    return <StatusBadge variant="success">Ready</StatusBadge>
-  }
-  if (status === 'unavailable') {
-    return <StatusBadge variant="neutral">Unavailable</StatusBadge>
-  }
-  return <StatusBadge variant="warning">Waiting</StatusBadge>
 }
 
 export default function SermonsClient({
@@ -321,7 +311,7 @@ export default function SermonsClient({
                       </StatusBadge>
                     )}
 
-                    {renderTranscriptBadge(sermon.transcriptStatus)}
+                    <TranscriptStatusBadge status={sermon.transcriptStatus} />
 
                     <StatusBadge
                       variant={isLive ? 'success' : 'neutral'}
@@ -920,7 +910,7 @@ export default function SermonsClient({
                           {/* Transcript Status */}
                           <TableCell>
                             <div className="flex flex-col items-start gap-1">
-                              {renderTranscriptBadge(sermon.transcriptStatus)}
+                              <TranscriptStatusBadge status={sermon.transcriptStatus} />
                               {(sermon.transcriptWordCount ?? 0) > 0 && (
                                 <span className="text-[12px] text-muted-foreground tabular-nums">
                                   {formatCount(sermon.transcriptWordCount ?? 0)} words

@@ -31,17 +31,25 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/sermons')
+    await page.goto('/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
 
     await expect(
       page.getByRole('heading', { name: /Listen & Watch Inspired Teachings/i, level: 1 })
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 30_000 })
 
     // Inline AI Message Finder card
+    const aiRegion = page.getByRole('region', { name: /Looking for a word/i })
     const inlineFinder = page.getByRole('search', { name: /Looking for a word/i })
     const inlineInput = inlineFinder.getByRole('searchbox')
     await expect(inlineInput).toBeVisible()
     await expect(inlineFinder.getByRole('button', { name: /Find messages/i })).toBeVisible()
+
+    // Typing keystrokes must not re-shuffle suggestion chips or jump card height
+    const suggestionButtons = aiRegion.locator('button[type="button"]')
+    await expect(suggestionButtons.first()).toBeVisible()
+    const initialChips = await suggestionButtons.allTextContents()
+    await inlineInput.pressSequentially('I need strength', { delay: 25 })
+    expect(await suggestionButtons.allTextContents()).toEqual(initialChips)
 
     // Crisis guardrail test via inline search (cold Next dev compile of API route takes ~25-30s)
     await inlineInput.fill('I feel hopeless and want to hurt myself')
@@ -76,9 +84,11 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await signInAs(page, 'team_lead')
-    await page.goto('/dashboard/sermons')
+    await page.goto('/dashboard/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
 
-    await expect(page.getByRole('heading', { name: 'Sermons', level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Sermons', level: 1 })).toBeVisible({
+      timeout: 30_000,
+    })
 
     // Verify 3 tabs render
     const sermonsTab = page.getByRole('tab', { name: /Sermons/i })
@@ -115,18 +125,21 @@ test.describe('Sermon AI Message Search & Media Desk', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/sermons')
+    await page.goto('/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
     await expect(
       page.getByRole('heading', { name: /Listen & Watch Inspired Teachings/i, level: 1 })
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 30_000 })
     const publicOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1
     )
     expect(publicOverflow).toBe(false)
 
     await signInAs(page, 'team_lead')
-    await page.goto('/dashboard/sermons')
-    await expect(page.getByRole('heading', { name: 'Sermons', level: 1 })).toBeVisible()
+    await page.goto('/dashboard/sermons', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await expect(page.getByRole('heading', { name: 'Sermons', level: 1 })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByRole('tab', { name: /Sermons/i })).toBeVisible()
     const dashOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1
     )

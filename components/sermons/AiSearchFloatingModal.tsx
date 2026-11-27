@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -70,7 +70,7 @@ function getFallbackStatusMessage(response: AiSearchFinderResponse): string {
 }
 
 export default function AiSearchFloatingModal({ aiConfig }: AiSearchFloatingModalProps) {
-  const config = mergeAiSearchConfig(aiConfig)
+  const config = useMemo(() => mergeAiSearchConfig(aiConfig), [aiConfig])
   const pathname = usePathname()
 
   const titleId = useId()
@@ -746,11 +746,11 @@ export default function AiSearchFloatingModal({ aiConfig }: AiSearchFloatingModa
                           {getFallbackStatusMessage(response)}
                         </p>
 
-                        {(response.suggestions?.length || config.suggestions.length > 0) && (
+                        {(response.suggestions?.length || starterSuggestions.length > 0) && (
                           <div className="flex flex-wrap gap-2">
                             {(response.suggestions && response.suggestions.length > 0
                               ? response.suggestions
-                              : pickRandomSuggestions(config.suggestions || [], 4)
+                              : starterSuggestions
                             ).map((prompt) => (
                               <button
                                 key={prompt}

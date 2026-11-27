@@ -9,6 +9,7 @@
 
 'use client'
 
+import { useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -36,13 +37,15 @@ function getSermonYear(datePreached?: string): number | null {
 }
 
 export default function LatestSermonsSection({ sermons, aiConfig }: Props) {
-  const config = mergeAiSearchConfig(aiConfig)
-  const hiddenYears = new Set(config.hiddenYears || [])
-  const safeSermons = (sermons || []).filter((sermon) => {
-    if (hiddenYears.size === 0) return true
-    const year = getSermonYear(sermon.datePreached)
-    return year === null || !hiddenYears.has(year)
-  })
+  const config = useMemo(() => mergeAiSearchConfig(aiConfig), [aiConfig])
+  const safeSermons = useMemo(() => {
+    const hiddenYears = new Set(config.hiddenYears || [])
+    return (sermons || []).filter((sermon) => {
+      if (hiddenYears.size === 0) return true
+      const year = getSermonYear(sermon.datePreached)
+      return year === null || !hiddenYears.has(year)
+    })
+  }, [sermons, config.hiddenYears])
 
   return (
     <section className="py-16 sm:py-24 bg-white border-t border-stone-100">

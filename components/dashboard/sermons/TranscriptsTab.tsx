@@ -3,8 +3,8 @@
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  AlertCircle,
   Calendar,
+  CaptionsOff,
   CheckCircle2,
   Clock,
   Download,
@@ -40,6 +40,7 @@ import { StatusBadge } from '@/components/dashboard/ui/status-badge'
 import { formatCount, formatDate, toDateTimeAttr } from '@/lib/dashboard/format'
 import { toastError, toastInfo, toastSuccess } from '@/lib/dashboard/toast'
 import { getYoutubeVideoId } from '@/lib/sermonUtils'
+import { TranscriptStatusBadge } from './TranscriptStatusBadge'
 
 interface TranscriptsTabProps {
   sermons: SermonVault[]
@@ -147,6 +148,9 @@ export default function TranscriptsTab({
           toastSuccess(
             `Checked ${formatCount(res.checked)} ${res.checked === 1 ? 'sermon' : 'sermons'} · ${formatCount(res.updated)} ready, ${formatCount(res.unavailable)} unavailable.`
           )
+          if (res.unavailable > 0 && res.sampleReason) {
+            toastInfo(res.sampleReason)
+          }
         }
         router.refresh()
       } else {
@@ -273,7 +277,7 @@ export default function TranscriptsTab({
             value: formatCount(counts.unavailable),
             rawValue: counts.unavailable,
             caption: 'Upload .vtt/.srt fallback',
-            icon: <AlertCircle className="h-4 w-4" />,
+            icon: <CaptionsOff className="h-4 w-4" />,
             tone: 'neutral',
             active: statusFilter === 'unavailable',
             onClick: () =>
@@ -409,13 +413,7 @@ export default function TranscriptsTab({
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        {status === 'ready' ? (
-                          <StatusBadge variant="success">Ready</StatusBadge>
-                        ) : status === 'unavailable' ? (
-                          <StatusBadge variant="neutral">Unavailable</StatusBadge>
-                        ) : (
-                          <StatusBadge variant="warning">Waiting</StatusBadge>
-                        )}
+                        <TranscriptStatusBadge status={status} />
 
                         <StatusBadge
                           variant={isLive ? 'success' : 'neutral'}
